@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasChurchMemberships;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -19,7 +20,7 @@ use Spatie\Permission\Traits\HasRoles;
 class User extends Authenticatable implements HasMedia, MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
-    use HasApiTokens, HasFactory, HasRoles, InteractsWithMedia, Notifiable, SoftDeletes;
+    use HasApiTokens, HasChurchMemberships, HasFactory, HasRoles, InteractsWithMedia, Notifiable, SoftDeletes;
 
     protected $fillable = [
         'name', 'email', 'password', 'phone', 'country', 'city', 'language', 'timezone',
@@ -112,6 +113,11 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
     {
         if ($this->isSuperAdmin()) {
             return route('super-admin.dashboard');
+        }
+
+        $church = $this->staffChurches()->wherePivot('status', 'active')->first();
+        if ($church && $church->status !== 'archived') {
+            return route('church-admin.dashboard', $church);
         }
 
         return route('dashboard');

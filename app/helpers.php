@@ -57,6 +57,17 @@ if (! function_exists('ff_church_url')) {
     }
 }
 
+if (! function_exists('ff_platform_route')) {
+    /**
+     * Absolute URL to a named route on the main platform domain — used by
+     * church websites served from subdomains / custom domains.
+     */
+    function ff_platform_route(string $name, mixed $parameters = []): string
+    {
+        return rtrim(config('app.url'), '/').route($name, $parameters, false);
+    }
+}
+
 if (! function_exists('ff_safe_html')) {
     /**
      * Minimal allow-list sanitizer for rich-text (Quill) content.

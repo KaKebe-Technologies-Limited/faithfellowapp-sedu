@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Notifications\Channels\TenantDatabaseChannel;
+use App\View\Composers\AppShellComposer;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
@@ -12,6 +13,7 @@ use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -19,6 +21,7 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->bind(DatabaseChannel::class, TenantDatabaseChannel::class);
+        $this->app->singleton(AppShellComposer::class);
     }
 
     public function boot(): void
@@ -37,6 +40,13 @@ class AppServiceProvider extends ServiceProvider
         $this->configureRateLimiting();
 
         Blade::directive('money', fn ($expr) => "<?php echo e(ff_money($expr)); ?>");
+
+        View::composer([
+            'components.layouts.app-shell',
+            'components.layouts.member',
+            'components.layouts.church-admin',
+            'components.layouts.super-admin',
+        ], AppShellComposer::class);
     }
 
     private function configureRateLimiting(): void

@@ -1,6 +1,9 @@
 <?php
 
 use App\Http\Middleware\EnsureAccountActive;
+use App\Http\Middleware\EnsureChurchPermission;
+use App\Http\Middleware\EnsureChurchStaff;
+use App\Http\Middleware\ResolveCustomDomain;
 use App\Http\Middleware\SetLocale;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -21,6 +24,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->trustProxies(at: '*');
 
         $middleware->web(append: [
+            ResolveCustomDomain::class,
             SetLocale::class,
             EnsureAccountActive::class,
         ]);
@@ -31,6 +35,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => RoleMiddleware::class,
             'permission' => PermissionMiddleware::class,
             'role_or_permission' => RoleOrPermissionMiddleware::class,
+            'church.staff' => EnsureChurchStaff::class,
+            'church.can' => EnsureChurchPermission::class,
         ]);
 
         $middleware->redirectGuestsTo(fn () => route('login'));

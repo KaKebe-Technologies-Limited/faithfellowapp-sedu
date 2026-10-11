@@ -1,0 +1,221 @@
+<?php
+
+namespace App\Models;
+
+use App\Models\Concerns\Auditable;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\MediaLibrary\MediaCollections\Models\Media as SpatieMedia;
+
+class Church extends Model implements HasMedia
+{
+    use Auditable, HasFactory, InteractsWithMedia, SoftDeletes;
+
+    public const STATUSES = ['pending', 'active', 'suspended', 'archived'];
+
+    /** Default website builder layout for new churches. */
+    public const DEFAULT_BLOCKS = [
+        ['type' => 'hero', 'enabled' => true],
+        ['type' => 'live', 'enabled' => true],
+        ['type' => 'about', 'enabled' => true],
+        ['type' => 'service_times', 'enabled' => true],
+        ['type' => 'sermons', 'enabled' => true],
+        ['type' => 'events', 'enabled' => true],
+        ['type' => 'campaigns', 'enabled' => true],
+        ['type' => 'giving', 'enabled' => true],
+        ['type' => 'prayer', 'enabled' => true],
+        ['type' => 'contact', 'enabled' => true],
+    ];
+
+    protected $fillable = [
+        'owner_id', 'name', 'slug', 'denomination', 'tagline', 'description', 'about', 'pastor_name', 'founded_year',
+        'languages', 'country', 'district', 'city', 'address', 'lat', 'lng', 'phone', 'email', 'website',
+        'brand_color', 'website_blocks', 'settings', 'custom_domain', 'custom_domain_verified',
+        'status', 'application_notes', 'status_reason', 'approved_at', 'approved_by', 'setup_completed_at',
+        'requires_member_approval', 'is_featured',
+    ];
+
+    protected $attributes = [
+        'status' => 'pending',
+        'country' => 'UG',
+        'brand_color' => '#BC2649',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'languages' => 'array',
+            'website_blocks' => 'array',
+            'settings' => 'array',
+            'lat' => 'float',
+            'lng' => 'float',
+            'approved_at' => 'datetime',
+            'setup_completed_at' => 'datetime',
+            'custom_domain_verified' => 'boolean',
+            'requires_member_approval' => 'boolean',
+            'is_featured' => 'boolean',
+        ];
+    }
+
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
+    }
+
+    /**
+     * Generate a unique, URL- and subdomain-safe slug.
+     */
+    public static function uniqueSlug(string $name, ?int $ignoreId = null): string
+    {
+        $base = Str::of($name)->slug()->limit(60, '')->trim('-')->toString() ?: 'church';
+        $reserved = ['www', 'app', 'api', 'admin', 'mail', 'super-admin', 'church', 'churches', 'live', 'static', 'cdn', 'help', 'support', 'blog'];
+        $slug = in_array($base, $reserved, true) ? $base.'-church' : $base;
+        $i = 2;
+        while (static::withTrashed()->where('slug', $slug)->when($ignoreId, fn ($q) => $q->whereKeyNot($ignoreId))->exists()) {
+            $slug = $base.'-'.$i++;
+        }
+
+        return $slug;
+    }
+
+    // ── Media ────────────────────────────────────────────────────────────
+
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('logo')->singleFile()->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml']);
+        $this->addMediaCollection('cover')->singleFile()->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp']);
+        $this->addMediaCollection('gallery');
+    }
+
+    public function registerMediaConversions(?SpatieMedia $media = null): void
+    {
+        $this->addMediaConversion('thumb')->width(240)->height(240)->nonQueued()->performOnCollections('logo', 'gallery');
+        $this->addMediaConversion('banner')->width(1600)->height(600)->nonQueued()->performOnCollections('cover');
+    }
+
+    public function getLogoUrlAttribute(): ?string
+    {
+        $media = $this->relationLoaded('media') ? $this->media->firstWhere('collection_name', 'logo') : $this->getFirstMedia('logo');
+
+        return $media ? ($media->mime_type === 'image/svg+xml' ? $media->getUrl() : $media->getUrl('thumb')) : null;
+    }
+
+    public function getCoverUrlAttribute(): ?string
+    {
+        $media = $this->relationLoaded('media') ? $this->media->firstWhere('collection_name', 'cover') : $this->getFirstMedia('cover');
+
+        return $media?->getUrl('banner');
+    }
+
+    // ── Relationships ────────────────────────────────────────────────────
+
+    public function owner(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'owner_id');
+    }
+
+    public function approver(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    public function branches(): HasMany
+    {
+        return $this->hasMany(Branch::class);
+    }
+
+    public function serviceTimes(): HasMany
+    {
+        return $this->hasMany(ServiceTime::class)->orderBy('day_of_week')->orderBy('start_time');
+    }
+
+    public function socialLinks(): HasMany
+    {
+        return $this->hasMany(ChurchSocialLink::class);
+    }
+
+    public function roles(): HasMany
+    {
+        return $this->hasMany(ChurchRole::class);
+    }
+
+    public function staffMembers(): HasMany
+    {
+        return $this->hasMany(ChurchStaff::class);
+    }
+
+    public function staff(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'church_staff')
+            ->using(ChurchStaff::class)
+            ->withPivot(['id', 'church_role_id', 'branch_id', 'is_admin', 'title', 'status'])
+            ->withTimestamps();
+    }
+
+    public function auditLogs(): HasMany
+    {
+        return $this->hasMany(AuditLog::class);
+    }
+
+    // ── Scopes & helpers ─────────────────────────────────────────────────
+
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->where('status', 'active');
+    }
+
+    public function scopeSearch(Builder $query, ?string $term): Builder
+    {
+        if (! $term) {
+            return $query;
+        }
+
+        return $query->where(fn ($q) => $q->where('name', 'like', "%{$term}%")
+            ->orWhere('city', 'like', "%{$term}%")
+            ->orWhere('district', 'like', "%{$term}%")
+            ->orWhere('denomination', 'like', "%{$term}%")
+            ->orWhere('pastor_name', 'like', "%{$term}%"));
+    }
+
+    public function isActive(): bool
+    {
+        return $this->status === 'active';
+    }
+
+    public function blocks(): array
+    {
+        $blocks = $this->website_blocks ?: self::DEFAULT_BLOCKS;
+        // Make sure newly introduced block types appear (disabled) for older churches.
+        $known = collect($blocks)->pluck('type');
+        foreach (self::DEFAULT_BLOCKS as $default) {
+            if (! $known->contains($default['type'])) {
+                $blocks[] = ['type' => $default['type'], 'enabled' => false];
+            }
+        }
+
+        return $blocks;
+    }
+
+    public function setting(string $key, mixed $default = null): mixed
+    {
+        return data_get($this->settings ?? [], $key, $default);
+    }
+
+    public function subdomainUrl(): string
+    {
+        return ff_church_url($this);
+    }
+
+    public function getLocationAttribute(): string
+    {
+        return collect([$this->city, $this->district !== $this->city ? $this->district : null])->filter()->implode(', ') ?: 'Uganda';
+    }
+}

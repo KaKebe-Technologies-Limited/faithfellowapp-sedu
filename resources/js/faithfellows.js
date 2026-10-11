@@ -275,6 +275,7 @@ export function registerComponents(Alpine) {
     // Website builder — drag & drop block ordering with enable toggles.
     Alpine.data('blockEditor', (opts = {}) => ({
         blocks: opts.blocks ?? [],
+        labels: opts.labels ?? {},
         dragIndex: null, overIndex: null,
         start(i) { this.dragIndex = i; },
         over(i) { this.overIndex = i; },
