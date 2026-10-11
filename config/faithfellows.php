@@ -179,6 +179,15 @@ return [
     // Countries treated as "home" for diaspora mode (others see card first).
     'home_countries' => ['UG'],
 
+    // Default usage limits (overridden by the church's plan).
+    'limits' => [
+        'storage_mb' => (int) env('FF_DEFAULT_STORAGE_MB', 5120),
+        'stream_hours' => (int) env('FF_DEFAULT_STREAM_HOURS', 40),
+        'admins' => (int) env('FF_DEFAULT_ADMINS', 10),
+        'branches' => (int) env('FF_DEFAULT_BRANCHES', 5),
+        'max_upload_mb' => (int) env('FF_MAX_UPLOAD_MB', 200),
+    ],
+
     'payments' => [
         'sandbox' => (bool) env('PAYMENTS_SANDBOX', true),
     ],

@@ -93,11 +93,13 @@ class Church extends Model implements HasMedia
         $this->addMediaCollection('logo')->singleFile()->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml']);
         $this->addMediaCollection('cover')->singleFile()->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp']);
         $this->addMediaCollection('gallery');
+        // General-purpose media library uploads (images, audio, documents).
+        $this->addMediaCollection('library');
     }
 
     public function registerMediaConversions(?SpatieMedia $media = null): void
     {
-        $this->addMediaConversion('thumb')->width(240)->height(240)->nonQueued()->performOnCollections('logo', 'gallery');
+        $this->addMediaConversion('thumb')->width(240)->height(240)->nonQueued()->performOnCollections('logo', 'gallery', 'library');
         $this->addMediaConversion('banner')->width(1600)->height(600)->nonQueued()->performOnCollections('cover');
     }
 
@@ -176,6 +178,37 @@ class Church extends Model implements HasMedia
     public function posts(): HasMany
     {
         return $this->hasMany(Post::class);
+    }
+
+    public function sermons(): HasMany
+    {
+        return $this->hasMany(Sermon::class);
+    }
+
+    /** Named "series" so {series} route params resolve via scoped bindings. */
+    public function series(): HasMany
+    {
+        return $this->hasMany(SermonSeries::class);
+    }
+
+    public function playlists(): HasMany
+    {
+        return $this->hasMany(Playlist::class);
+    }
+
+    public function devotionals(): HasMany
+    {
+        return $this->hasMany(Devotional::class);
+    }
+
+    public function announcements(): HasMany
+    {
+        return $this->hasMany(Announcement::class);
+    }
+
+    public function readingPlans(): HasMany
+    {
+        return $this->hasMany(ReadingPlan::class);
     }
 
     public function auditLogs(): HasMany
