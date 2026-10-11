@@ -29,6 +29,13 @@ class ChurchPageService
             'posts' => $church->posts()->with(['author.media', 'media'])->published()
                 ->when(! $isMember, fn ($q) => $q->where('visibility', 'public'))
                 ->orderByDesc('is_pinned')->latest('published_at')->take(5)->get(),
+            'sermons' => $church->sermons()->with(['media', 'series'])->published()
+                ->when(! $isMember, fn ($q) => $q->where('visibility', 'public'))
+                ->latest('published_at')->take(12)->get()
+                ->each(fn ($s) => $s->setRelation('church', $church)),
+            'devotional' => $church->devotionals()->published()
+                ->when(! $isMember, fn ($q) => $q->where('visibility', 'public'))
+                ->latest('publish_date')->first(),
         ];
     }
 }

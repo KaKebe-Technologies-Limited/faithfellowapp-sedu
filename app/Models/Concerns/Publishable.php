@@ -3,6 +3,7 @@
 namespace App\Models\Concerns;
 
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Carbon;
 
 /**
  * Draft / scheduled / published content with public or members-only visibility.
@@ -47,7 +48,7 @@ trait Publishable
             return [...$data, 'status' => 'draft'];
         }
 
-        $at = ! empty($data['published_at']) ? \Illuminate\Support\Carbon::parse($data['published_at']) : now();
+        $at = ! empty($data['published_at']) ? Carbon::parse($data['published_at']) : now();
 
         return [...$data, 'published_at' => $at, 'status' => $at->isFuture() ? 'scheduled' : 'published'];
     }

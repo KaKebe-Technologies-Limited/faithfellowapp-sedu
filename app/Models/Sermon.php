@@ -40,7 +40,7 @@ class Sermon extends Model implements HasMedia
     public function registerMediaCollections(): void
     {
         $this->addMediaCollection('audio')->singleFile()
-            ->acceptsMimeTypes(['audio/mpeg', 'audio/mp3', 'audio/mp4', 'audio/x-m4a', 'audio/aac', 'audio/ogg', 'audio/wav', 'audio/webm']);
+            ->acceptsMimeTypes(['audio/mpeg', 'audio/mp3', 'audio/mp4', 'audio/x-m4a', 'audio/aac', 'audio/ogg', 'audio/wav', 'audio/x-wav', 'audio/webm']);
         $this->addMediaCollection('video')->singleFile()->acceptsMimeTypes(['video/mp4', 'video/webm']);
         $this->addMediaCollection('notes')->singleFile()->acceptsMimeTypes(['application/pdf']);
         $this->addMediaCollection('thumbnail')->singleFile()->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp']);

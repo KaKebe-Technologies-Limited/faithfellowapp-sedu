@@ -75,7 +75,24 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Opt-in member directory
     Route::get('/directory', [Member\DirectoryController::class, 'index'])->name('directory.index');
+
+    // Content
+    Route::get('/search', Member\SearchController::class)->name('search');
+    Route::get('/sermons', [Member\SermonController::class, 'index'])->name('sermons.index');
+    Route::get('/devotionals', [Member\DevotionalController::class, 'index'])->name('devotionals.index');
+    Route::get('/reading-plans', [Member\ReadingPlanController::class, 'index'])->name('reading-plans.index');
+    Route::get('/reading-plans/{readingPlan}', [Member\ReadingPlanController::class, 'show'])->name('reading-plans.show');
+    Route::post('/reading-plans/{readingPlan}/start', [Member\ReadingPlanController::class, 'start'])->name('reading-plans.start');
+    Route::post('/reading-plans/{readingPlan}/complete', [Member\ReadingPlanController::class, 'complete'])->name('reading-plans.complete');
+    Route::delete('/reading-plans/{readingPlan}', [Member\ReadingPlanController::class, 'leave'])->name('reading-plans.leave');
 });
+
+// Public sermons / devotionals / announcements are viewable by visitors (policies decide).
+Route::get('/sermons/{sermon}', [Member\SermonController::class, 'show'])->name('sermons.show');
+Route::post('/sermons/{sermon}/track', [Member\SermonController::class, 'track'])->middleware('throttle:engagement')->name('sermons.track');
+Route::get('/sermons/{sermon}/download', [Member\SermonController::class, 'download'])->middleware('throttle:engagement')->name('sermons.download');
+Route::get('/devotionals/{devotional}', [Member\DevotionalController::class, 'show'])->name('devotionals.show');
+Route::get('/announcements/{announcement}', [Member\DevotionalController::class, 'announcement'])->name('announcements.show');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -118,6 +135,33 @@ Route::prefix('church/{church}/admin')->name('church-admin.')
             Route::get('/settings/integrations', [ChurchAdmin\SettingsController::class, 'integrations'])->name('settings.integrations');
             Route::put('/settings/integrations', [ChurchAdmin\SettingsController::class, 'updateIntegrations'])->name('settings.integrations.update');
             Route::resource('branches', ChurchAdmin\BranchController::class)->except('show');
+        });
+
+        Route::get('/search', ChurchAdmin\SearchController::class)->name('search');
+
+        // Content
+        Route::middleware('church.can:content.manage')->group(function () {
+            Route::resource('sermons', ChurchAdmin\SermonController::class)->except('show');
+            Route::post('/sermons/{sermon}/transcribe', [ChurchAdmin\SermonController::class, 'transcribe'])->name('sermons.transcribe');
+            Route::get('/content/sermons', fn ($church) => redirect()->route('church-admin.sermons.index', $church));
+            Route::get('/content/sermons/create', fn ($church) => redirect()->route('church-admin.sermons.create', $church));
+            Route::post('/series', [ChurchAdmin\SeriesController::class, 'store'])->name('series.store');
+            Route::delete('/series/{series}', [ChurchAdmin\SeriesController::class, 'destroy'])->name('series.destroy');
+            Route::post('/playlists', [ChurchAdmin\SeriesController::class, 'storePlaylist'])->name('playlists.store');
+            Route::put('/playlists/{playlist}', [ChurchAdmin\SeriesController::class, 'updatePlaylist'])->name('playlists.update');
+            Route::delete('/playlists/{playlist}', [ChurchAdmin\SeriesController::class, 'destroyPlaylist'])->name('playlists.destroy');
+            Route::resource('devotionals', ChurchAdmin\DevotionalController::class)->except('show');
+            Route::resource('announcements', ChurchAdmin\AnnouncementController::class)->except('show');
+            Route::resource('reading-plans', ChurchAdmin\ReadingPlanController::class)->except('show')->parameters(['reading-plans' => 'readingPlan']);
+            Route::post('/reading-plans/import', [ChurchAdmin\ReadingPlanController::class, 'import'])->name('reading-plans.import');
+            Route::get('/content/devotionals', fn ($church) => redirect()->route('church-admin.devotionals.index', $church));
+            Route::get('/content/announcements', fn ($church) => redirect()->route('church-admin.announcements.index', $church));
+        });
+
+        Route::middleware('church.can:media.manage')->group(function () {
+            Route::get('/media', [ChurchAdmin\MediaLibraryController::class, 'index'])->name('media.index');
+            Route::post('/media', [ChurchAdmin\MediaLibraryController::class, 'store'])->name('media.store');
+            Route::delete('/media/{mediaId}', [ChurchAdmin\MediaLibraryController::class, 'destroy'])->whereNumber('mediaId')->name('media.destroy');
         });
 
         // Members
