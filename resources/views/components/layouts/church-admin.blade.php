@@ -14,7 +14,7 @@
             ['label' => __('Announcements'), 'icon' => 'bi-megaphone', 'route' => 'church-admin.announcements.index', 'params' => $p, 'active' => 'church-admin.announcements.*', 'show' => $can('content.manage')],
             ['label' => __('Reading plans'), 'icon' => 'bi-journal-check', 'route' => 'church-admin.reading-plans.index', 'params' => $p, 'active' => 'church-admin.reading-plans.*', 'show' => $can('content.manage')],
             ['label' => __('Media library'), 'icon' => 'bi-images', 'route' => 'church-admin.media.index', 'params' => $p, 'active' => ['church-admin.media.*', 'church-admin.playlists.*'], 'show' => $can('media.manage')],
-            ['label' => __('Feed posts'), 'icon' => 'bi-postcard-heart', 'route' => 'church-admin.posts.index', 'params' => $p, 'active' => 'church-admin.posts.*', 'show' => $can('community.moderate')],
+            ['label' => __('Feed posts'), 'icon' => 'bi-postcard-heart', 'route' => 'church-admin.posts.index', 'params' => $p, 'active' => 'church-admin.posts.*', 'show' => $can('content.manage') || $can('community.moderate')],
         ]],
         ['heading' => __('Live & events'), 'items' => [
             ['label' => __('Live streams'), 'icon' => 'bi-broadcast', 'route' => 'church-admin.live.index', 'params' => $p, 'active' => 'church-admin.live.*', 'show' => $can('live.manage')],

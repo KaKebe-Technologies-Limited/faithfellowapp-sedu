@@ -3,6 +3,7 @@
 use App\Http\Middleware\EnsureAccountActive;
 use App\Http\Middleware\EnsureChurchPermission;
 use App\Http\Middleware\EnsureChurchStaff;
+use App\Http\Middleware\EnsureSubscribed;
 use App\Http\Middleware\ResolveCustomDomain;
 use App\Http\Middleware\SetLocale;
 use Illuminate\Foundation\Application;
@@ -37,6 +38,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role_or_permission' => RoleOrPermissionMiddleware::class,
             'church.staff' => EnsureChurchStaff::class,
             'church.can' => EnsureChurchPermission::class,
+            'subscribed' => EnsureSubscribed::class,
         ]);
 
         $middleware->redirectGuestsTo(fn () => route('login'));

@@ -122,5 +122,63 @@ class DemoSeeder extends Seeder
         if (User::count() < 30) {
             User::factory(40)->create()->each(fn (User $u) => $u->assignRole($memberRole));
         }
+
+        $this->seedSubscriptionsAndPosts($member, $pastor);
+    }
+
+    /**
+     * Sprint 3: followers spread over the last few months + feed posts.
+     */
+    protected function seedSubscriptionsAndPosts(User $member, User $pastor): void
+    {
+        $churches = Church::where('status', 'active')->get();
+        $people = User::role('member')->whereNotIn('email', ['admin@faithfellows.app'])->get();
+
+        foreach ($people as $i => $person) {
+            foreach ($churches->random(min($churches->count(), 1 + $i % 3)) as $church) {
+                $church->subscriptions()->firstOrCreate(['user_id' => $person->id], [
+                    'status' => 'active',
+                    'stage' => collect(['visitor', 'new_member', 'member', 'member', 'member', 'worker', 'leader'])->random(),
+                    'share_email' => $person->email_consent,
+                    'subscribed_at' => now()->subDays(random_int(0, 90)),
+                    'approved_at' => now(),
+                    'source' => 'directory',
+                ]);
+            }
+        }
+
+        foreach (['grace-lira', 'new-life-kampala', 'st-peters-gulu'] as $slug) {
+            Church::where('slug', $slug)->first()?->subscriptions()->updateOrCreate(
+                ['user_id' => $member->id],
+                ['status' => 'active', 'stage' => 'member', 'share_email' => true, 'subscribed_at' => now()->subMonths(4), 'approved_at' => now()],
+            );
+        }
+
+        $updates = [
+            "🙏 Thank you to everyone who joined Sunday's thanksgiving service. Over 400 people worshipped with us in person and online!",
+            'Youth Camp registration is now open! Ages 13–25, 12–15 December at the church grounds. Speak to Pastor Joyce or register in the Events tab.',
+            "This week's midweek Bible study continues our series in the book of James. Bring a friend — Wednesday at 5:30 PM.",
+            'Our welfare team visited 12 families in Adyel this weekend with food packages. Thank you for your generous giving to the welfare fund. ❤️',
+            'Choir rehearsals move to Saturday 3 PM for the Christmas season. All singers welcome!',
+        ];
+
+        foreach ($churches as $c => $church) {
+            if ($church->posts()->exists()) {
+                continue;
+            }
+            foreach ($updates as $p => $body) {
+                if (($p + $c) % 2 === 1 && $church->slug !== 'grace-lira') {
+                    continue;
+                }
+                $church->posts()->create([
+                    'user_id' => $church->slug === 'grace-lira' ? $pastor->id : null,
+                    'body' => $body,
+                    'visibility' => $p === 3 ? 'members' : 'public',
+                    'status' => 'published',
+                    'is_pinned' => $p === 1 && $church->slug === 'grace-lira',
+                    'published_at' => now()->subDays($p * 2 + $c)->subHours($c),
+                ]);
+            }
+        }
     }
 }

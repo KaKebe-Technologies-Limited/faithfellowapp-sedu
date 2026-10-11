@@ -37,3 +37,17 @@ Decisions made while building FaithFellows, with the reasoning behind each. Newe
 | 24 | **Super admins impersonate via a session flag** (`impersonator_id`). A banner is shown, and start/stop plus every action taken are attributed in `audit_logs.impersonator_id`. | This meets the support requirement with a full audit trail. Super admins can't impersonate other super admins. |
 | 25 | **`media.church_id`** is set automatically by `App\Models\Media` from the owning model. | Per-church storage quotas and the "storage per church" super admin analytics need it. |
 | 26 | **Lazy-loading violations are logged, not thrown**, in development. | Blade views must not query (spec rule). Violations surface in `storage/logs` without breaking pages for testers. |
+
+## Sprint 3 — Subscriptions & Feed
+
+| # | Decision | Why |
+|---|----------|-----|
+| 27 | **Unsubscribing sets `status = left`** instead of deleting the row. Re-subscribing re-activates the same row. | Keeps the first-subscribed date and the follow-up stage, so growth and retention analytics stay accurate. `blocked` members can't re-subscribe. |
+| 28 | **`subscriptions.stage` (visitor → new member → member → worker → leader)** is the follow-up workflow, edited inline in the member manager. | This covers M3 ("visitor → member → leader") without a separate pipeline table. |
+| 29 | **Notification preferences resolve church row → global row → defaults** (`PreferenceResolver`). An empty channel list means "off". Users can only save preferences for churches they follow. | Users get fine-grained control (per church × category × channel) with sensible defaults and no rows written until something changes. |
+| 30 | **The feed merges per-source queries** (posts now; sermons, events, campaigns, live and announcements in later sprints) and pages with a `before` timestamp cursor. | Each module adds a small source closure in `FeedService`. A timestamp cursor doesn't skip or repeat items when new posts arrive. |
+| 31 | **Members-only content** is visible to active subscribers and church staff (`User::memberChurchIds()`). | One rule shared by feed, church pages, directory and later the prayer wall. |
+| 32 | **The member directory is opt-in twice:** global `directory_opt_in` and active membership of that church. Only members of the church can browse it. | Privacy by default for congregations. |
+| 33 | **Member CSV exports include an email only when that member consented** (`share_email`). All CSV cells are guarded against formula injection. | Implements the consent requirement (U5). |
+| 34 | **`/churches` is the shared directory** (public layout for guests, member layout when signed in). "My subscriptions" moved to `/my-churches`. | The spec listed `/churches` for both the public directory and member subscriptions, so one URL had to move. |
+| 35 | **Guests who click Subscribe** go to `/churches/{slug}/join` (auth-protected). After sign-up Laravel's intended-URL brings them back to confirm. | Avoids a state-changing GET while keeping the "prompted to sign up" visitor flow. |

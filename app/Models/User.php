@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasChurchMemberships;
+use App\Models\Concerns\HasSubscriptions;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -20,7 +21,7 @@ use Spatie\Permission\Traits\HasRoles;
 class User extends Authenticatable implements HasMedia, MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
-    use HasApiTokens, HasChurchMemberships, HasFactory, HasRoles, InteractsWithMedia, Notifiable, SoftDeletes;
+    use HasApiTokens, HasChurchMemberships, HasFactory, HasRoles, HasSubscriptions, InteractsWithMedia, Notifiable, SoftDeletes;
 
     protected $fillable = [
         'name', 'email', 'password', 'phone', 'country', 'city', 'language', 'timezone',

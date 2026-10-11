@@ -160,6 +160,24 @@ class Church extends Model implements HasMedia
             ->withTimestamps();
     }
 
+    public function subscriptions(): HasMany
+    {
+        return $this->hasMany(Subscription::class);
+    }
+
+    public function subscribers(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'subscriptions')
+            ->withPivot(['id', 'status', 'stage', 'branch_id', 'subscribed_at'])
+            ->wherePivot('status', 'active')
+            ->withTimestamps();
+    }
+
+    public function posts(): HasMany
+    {
+        return $this->hasMany(Post::class);
+    }
+
     public function auditLogs(): HasMany
     {
         return $this->hasMany(AuditLog::class);

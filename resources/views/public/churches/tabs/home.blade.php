@@ -17,6 +17,25 @@
         </div>
     </section>
 
+    @if (request('join') && ! ($sections['subscription']?->isActive()) && auth()->check())
+        <div class="ff-card bg-ff-gradient border-0 d-flex flex-column flex-md-row align-items-md-center gap-3">
+            <div class="flex-grow-1"><h2 class="h5 text-white mb-1">{{ __('Welcome! Follow :church?', ['church' => $church->name]) }}</h2>
+                <p class="small text-white mb-0" style="opacity:.9">{{ __('Get their sermons, live services and updates in your feed.') }}</p></div>
+            <form method="POST" action="{{ route('churches.subscribe', $church) }}">@csrf
+                <button class="btn btn-ff-white px-4">{{ __('Subscribe') }}</button>
+            </form>
+        </div>
+    @endif
+
+    @if (($sections['posts'] ?? collect())->isNotEmpty())
+        <section class="d-grid gap-3">
+            <h2 class="h5 mb-0">{{ __('Latest updates') }}</h2>
+            @foreach ($sections['posts'] as $post)
+                @include('member.feed._post', ['post' => $post->setRelation('church', $church)])
+            @endforeach
+        </section>
+    @endif
+
     @isset($sections['sermons'])
         @if ($sections['sermons']->isNotEmpty())
             <section>

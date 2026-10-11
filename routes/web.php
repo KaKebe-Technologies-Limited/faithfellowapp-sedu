@@ -6,6 +6,7 @@ use App\Http\Controllers\Member;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Public;
 use App\Http\Controllers\SuperAdmin;
+use App\Models\Church;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -54,6 +55,26 @@ Route::get('/churches/{church}', [Public\ChurchDirectoryController::class, 'show
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', Member\DashboardController::class)->name('dashboard');
+
+    // Subscriptions ("my churches")
+    Route::get('/my-churches', [Member\SubscriptionController::class, 'index'])->name('my-churches.index');
+    // Guests clicking "Subscribe" land here after signing up (intended URL), then confirm on the church page.
+    Route::get('/churches/{church}/join', fn (Church $church) => redirect()->route('churches.show', [$church, 'join' => 1]))->name('churches.join');
+    Route::post('/churches/{church}/subscribe', [Member\SubscriptionController::class, 'store'])->middleware('throttle:engagement')->name('churches.subscribe');
+    Route::delete('/churches/{church}/subscribe', [Member\SubscriptionController::class, 'destroy'])->name('churches.unsubscribe');
+    Route::put('/churches/{church}/mute', [Member\SubscriptionController::class, 'mute'])->name('churches.mute');
+
+    // Notification preferences & center
+    Route::get('/notification-preferences', [Member\NotificationPreferenceController::class, 'edit'])->name('notification-preferences.edit');
+    Route::put('/notification-preferences', [Member\NotificationPreferenceController::class, 'update'])->name('notification-preferences.update');
+    Route::get('/notifications', [Member\NotificationController::class, 'index'])->name('notifications.index');
+    Route::get('/notifications/count', [Member\NotificationController::class, 'count'])->name('notifications.count');
+    Route::post('/notifications/read-all', [Member\NotificationController::class, 'markAllRead'])->name('notifications.read-all');
+    Route::get('/notifications/{id}', [Member\NotificationController::class, 'open'])->name('notifications.open');
+    Route::delete('/notifications/{id}', [Member\NotificationController::class, 'destroy'])->name('notifications.destroy');
+
+    // Opt-in member directory
+    Route::get('/directory', [Member\DirectoryController::class, 'index'])->name('directory.index');
 });
 
 Route::middleware('auth')->group(function () {
@@ -97,6 +118,21 @@ Route::prefix('church/{church}/admin')->name('church-admin.')
             Route::get('/settings/integrations', [ChurchAdmin\SettingsController::class, 'integrations'])->name('settings.integrations');
             Route::put('/settings/integrations', [ChurchAdmin\SettingsController::class, 'updateIntegrations'])->name('settings.integrations.update');
             Route::resource('branches', ChurchAdmin\BranchController::class)->except('show');
+        });
+
+        // Members
+        Route::middleware('church.can:members.manage')->group(function () {
+            Route::get('/members', [ChurchAdmin\MemberController::class, 'index'])->name('members.index');
+            Route::get('/members/export', [ChurchAdmin\MemberController::class, 'export'])->name('members.export');
+            Route::put('/members/{subscription}', [ChurchAdmin\MemberController::class, 'update'])->name('members.update');
+        });
+
+        // Feed posts
+        Route::middleware('church.can:content.manage|community.moderate')->group(function () {
+            Route::get('/posts', [ChurchAdmin\PostController::class, 'index'])->name('posts.index');
+            Route::post('/posts', [ChurchAdmin\PostController::class, 'store'])->name('posts.store');
+            Route::put('/posts/{post}', [ChurchAdmin\PostController::class, 'update'])->name('posts.update');
+            Route::delete('/posts/{post}', [ChurchAdmin\PostController::class, 'destroy'])->name('posts.destroy');
         });
 
         // Staff & roles
