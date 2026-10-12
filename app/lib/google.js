@@ -14,6 +14,9 @@ import api, { SITE_URL } from './api';
 // While testing on a phone the sign-in page can live on a different (public https) address than the API.
 const AUTH_BASE = (process.env.EXPO_PUBLIC_GOOGLE_AUTH_URL || SITE_URL).replace(/\/+$/, '');
 
+// Google sign-in is built but switched off for now; set EXPO_PUBLIC_GOOGLE_SIGNIN=1 in app/.env to show the button.
+export const GOOGLE_ENABLED = process.env.EXPO_PUBLIC_GOOGLE_SIGNIN === '1';
+
 export class GoogleSignInError extends Error {
   constructor(message, code = 'failed') {
     super(message);

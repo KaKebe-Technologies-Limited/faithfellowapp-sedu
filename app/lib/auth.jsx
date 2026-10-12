@@ -52,6 +52,23 @@ export function AuthProvider({ children }) {
     return data.user;
   }, []);
 
+  // Create an account with email + password (POST /auth/register) and sign in. Throws the API error for the form to show.
+  const signUp = useCallback(async (form) => {
+    const { data } = await api.post('/auth/register', {
+      name: form.name.trim(),
+      email: form.email.trim().toLowerCase(),
+      phone: form.phone?.trim() || null,
+      password: form.password,
+      password_confirmation: form.password_confirmation,
+      terms: true,
+      device_name: `FaithFellows app (${Platform.OS})`,
+    });
+    await setToken(data.token);
+    setTokenState(data.token);
+    setUser(data.user);
+    return data.user;
+  }, []);
+
   // Google sign-in / sign-up in one: returns the user, or null if the person closed the browser.
   const signInWithGoogle = useCallback(async () => {
     const data = await signInWithGoogleBrowser();
@@ -73,7 +90,7 @@ export function AuthProvider({ children }) {
     setUser(null);
   }, []);
 
-  const value = useMemo(() => ({ ready, token, user, signIn, signInWithGoogle, signOut, setUser }), [ready, token, user, signIn, signInWithGoogle, signOut]);
+  const value = useMemo(() => ({ ready, token, user, signIn, signUp, signInWithGoogle, signOut, setUser }), [ready, token, user, signIn, signUp, signInWithGoogle, signOut]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

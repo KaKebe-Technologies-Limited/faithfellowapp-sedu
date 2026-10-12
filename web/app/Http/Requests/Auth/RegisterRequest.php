@@ -14,6 +14,14 @@ class RegisterRequest extends FormRequest
         return true;
     }
 
+    /** Phone keyboards capitalise and add spaces; treat "  Grace@Mail.com " as grace@mail.com. */
+    protected function prepareForValidation(): void
+    {
+        if (is_string($this->input('email'))) {
+            $this->merge(['email' => mb_strtolower(trim($this->input('email')))]);
+        }
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -21,7 +29,8 @@ class RegisterRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique(User::class)->withoutTrashed()],
+            // Closed (soft-deleted) accounts keep their email reserved: the database index covers them too.
+            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique(User::class)],
             'phone' => ['nullable', 'string', 'max:32', 'regex:/^[0-9+\s()-]{7,32}$/'],
             'country' => ['nullable', 'string', 'size:2'],
             'language' => ['nullable', Rule::in(array_keys(config('faithfellows.languages')))],

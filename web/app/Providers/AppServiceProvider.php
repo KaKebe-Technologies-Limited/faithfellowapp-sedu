@@ -74,6 +74,12 @@ class AppServiceProvider extends ServiceProvider
             Limit::perDay(20)->by($request->ip()),
         ]);
 
+        // Account creation from the app: a few per minute and a daily cap per address.
+        RateLimiter::for('register', fn (Request $request) => [
+            Limit::perMinute(5)->by($request->ip()),
+            Limit::perDay(30)->by($request->ip()),
+        ]);
+
         RateLimiter::for('giving', fn (Request $request) => Limit::perMinute(10)->by($request->user()?->id ?: $request->ip()));
 
         RateLimiter::for('engagement', fn (Request $request) => Limit::perMinute(30)->by($request->user()?->id ?: $request->ip()));

@@ -41,7 +41,7 @@ Every screen handles **loading**, **error** and **empty** states through `compon
   before relying on memory. Install native modules with `npx expo install <package>`.
 - Audio uses `expo-audio` (`expo-av` no longer exists in this SDK).
 - Check dependency health with `npx expo-doctor`; build a JS bundle without a device with `npm run bundle`.
-- Sign-up and sign-in are both "Continue with Google" (`lib/google.js`): it opens the server's sign-in page in the system
-  browser and trades a one-time code for an API token. Email + password stays available for existing accounts.
-  Setup (server `.env` values, the redirect address in Google Cloud, a tunnel for phone testing) is in
-  `../web/docs/API.md` under "Google sign-in through the browser".
+- Accounts: people create an account with email and password in the app (`POST /api/v1/auth/register`) and sign in with
+  `POST /api/v1/auth/token`. "Continue with Google" (`lib/google.js`) is built but switched off; set
+  `EXPO_PUBLIC_GOOGLE_SIGNIN=1` in `.env` to show it once the Google setup in `../web/docs/API.md` ("Google sign-in
+  through the browser") is done.

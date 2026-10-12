@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Auth\GoogleAppAuthController;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Auth\RegisterRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Services\Auth\GoogleAccounts;
 use App\Services\Auth\GoogleIdTokenVerifier;
+use App\Services\RegistrationService;
 use App\Support\Audit;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -46,6 +48,17 @@ class AuthController extends Controller
         abort_if($user->isSuperAdmin(), 403, __('Super admin accounts cannot use API tokens.'));
 
         return $this->issueToken($request, $user, $data['device_name'], 'api.token_created');
+    }
+
+    /**
+     * Create a member account with email and password, and sign it in. Same rules as the website
+     * form (RegisterRequest + RegistrationService); the device name labels the token.
+     */
+    public function register(RegisterRequest $request, RegistrationService $registration): JsonResponse
+    {
+        $device = $request->validate(['device_name' => ['required', 'string', 'max:100']])['device_name'];
+
+        return $this->issueToken($request, $registration->register($request), $device, 'api.registered', ['is_new_user' => true]);
     }
 
     /**

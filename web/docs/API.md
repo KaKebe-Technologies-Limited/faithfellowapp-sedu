@@ -44,6 +44,21 @@ Exchanges an email and password for a token. Super admin accounts are refused.
 }
 ```
 
+### `POST /auth/register`
+
+Creates a member account with email and password and signs it in. Same rules as the website's sign-up form.
+
+```json
+{ "name": "Grace Akello", "email": "grace@example.com", "phone": "0772 123 456", "password": "a-good-password-1",
+  "password_confirmation": "a-good-password-1", "terms": true, "device_name": "Grace's iPhone" }
+```
+
+`phone` is optional. `terms` must be `true` (the person has agreed to the Terms of Service and Privacy Policy). Emails are trimmed and
+lowercased, and an email that already belongs to an account, including a closed one, is refused with **422**. The password needs at
+least 8 characters (letters and numbers, and not a known breached password, in production).
+
+**201** returns the same body as `/auth/token` plus `"is_new_user": true`. The member is signed in at once; a "verify your email"
+message is sent, and the email stays unverified until they follow it. Limited to 5 requests per minute and 30 per day per address (**429**).
 ### `POST /auth/google`
 
 Signs in with Google, or creates the member account the first time. Send the **Google ID token** (a JWT the app receives from Google sign-in), not a password. The server checks Google's signature and that the token was issued for one of our OAuth client IDs (`GOOGLE_CLIENT_IDS`), so no client secret is involved.

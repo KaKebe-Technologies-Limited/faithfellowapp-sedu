@@ -1,4 +1,4 @@
-// Layout for the signed-out screens (the sign-in screen): a plain magenta header, and a
+// Layout for the signed-out screens (sign in, create account): a plain magenta header, and a
 // redirect into the app if the user is already signed in.
 import { Redirect, Stack } from 'expo-router';
 import { COLORS } from '../../constants/theme';
