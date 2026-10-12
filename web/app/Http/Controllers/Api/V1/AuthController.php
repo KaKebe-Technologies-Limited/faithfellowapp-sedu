@@ -2,20 +2,19 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Http\Controllers\Auth\GoogleAppAuthController;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\UserResource;
 use App\Models\User;
+use App\Services\Auth\GoogleAccounts;
 use App\Services\Auth\GoogleIdTokenVerifier;
 use App\Support\Audit;
-use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
-use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
-use Spatie\Permission\Models\Role;
 
 /**
  * Personal access tokens for the mobile app and integrations (Sanctum).
@@ -53,7 +52,7 @@ class AuthController extends Controller
      * "Continue with Google": sign in, or create the member account on first use.
      * The app sends the Google ID token; we verify it (GoogleIdTokenVerifier) and never see a password.
      */
-    public function google(Request $request, GoogleIdTokenVerifier $google): JsonResponse
+    public function google(Request $request, GoogleIdTokenVerifier $google, GoogleAccounts $accounts): JsonResponse
     {
         $data = $request->validate([
             'credential' => ['required', 'string', 'max:4096'],
@@ -64,52 +63,31 @@ class AuthController extends Controller
         $claims = $google->verify($data['credential']);
         abort_unless($claims, 401, __('We could not verify your Google sign-in. Please try again.'));
 
-        $email = Str::lower(trim($claims['email']));
-        $googleId = (string) $claims['sub'];
-
-        // A closed account keeps its email reserved; don't silently create a second one.
-        $user = User::withTrashed()->where('google_id', $googleId)->first() ?? User::withTrashed()->where('email', $email)->first();
-        abort_if($user?->trashed(), 403, __('This account has been closed. Please contact support.'));
-        // An email address can pass to a different Google account (recycled addresses); never hand over a linked account.
-        abort_if($user && $user->google_id && $user->google_id !== $googleId, 403, __('This email is linked to a different Google account.'));
-
-        $created = ! $user;
-        if ($created) {
-            $user = DB::transaction(function () use ($claims, $email, $googleId) {
-                $user = new User([
-                    'name' => Str::limit(trim((string) ($claims['name'] ?? '')) ?: Str::before($email, '@'), 255, ''),
-                    'email' => $email,
-                    // Nobody knows this password; the member signs in with Google (or resets it by email).
-                    'password' => Str::random(40),
-                    'country' => 'UG',
-                    'language' => app()->getLocale(),
-                    'terms_accepted_at' => now(),
-                ]);
-                // Google has proven the address, so it is verified from day one.
-                $user->forceFill(['google_id' => $googleId, 'email_verified_at' => now()])->save();
-                $user->assignRole(Role::findOrCreate('member', 'web'));
-
-                return $user;
-            });
-            event(new Registered($user));
-        } else {
-            abort_if($user->status !== 'active', 403, __('This account is suspended.'));
-            // Platform staff never get long-lived API tokens.
-            abort_if($user->isSuperAdmin(), 403, __('Super admin accounts cannot use API tokens.'));
-
-            // If the email was never verified, someone else may have registered it with a password they know.
-            // Google just proved who owns it, so cut off any such password and old tokens before linking.
-            if (! $user->email_verified_at) {
-                $user->password = Str::random(40);
-                $user->tokens()->delete();
-            }
-            $user->forceFill([
-                'google_id' => $user->google_id ?: $googleId,
-                'email_verified_at' => $user->email_verified_at ?: now(),
-            ])->save();
-        }
+        [$user, $created] = $accounts->resolve($claims);
 
         return $this->issueToken($request, $user, $data['device_name'], $created ? 'api.google_registered' : 'api.google_signin', ['is_new_user' => $created]);
+    }
+
+    /**
+     * Last step of the hosted-page Google flow: trade the one-time code (from the app's return link)
+     * plus the PKCE verifier only this app instance knows for a token. A code works once, for two minutes.
+     */
+    public function exchangeGoogleCode(Request $request, GoogleAccounts $accounts): JsonResponse
+    {
+        $data = $request->validate([
+            'code' => ['required', 'string', 'size:40'],
+            'verifier' => ['required', 'string', 'min:43', 'max:128'],
+            'device_name' => ['required', 'string', 'max:100'],
+        ]);
+
+        $grant = Cache::pull(GoogleAppAuthController::CODE_PREFIX.hash('sha256', $data['code'])); // pull = single use
+        $challenge = rtrim(strtr(base64_encode(hash('sha256', $data['verifier'], true)), '+/', '-_'), '=');
+        abort_unless($grant && hash_equals($grant['challenge'], $challenge), 401, __('This sign-in link has expired. Please try again.'));
+
+        $user = User::findOrFail($grant['user_id']);
+        $accounts->assertMayUseApp($user);
+
+        return $this->issueToken($request, $user, $data['device_name'], $grant['created'] ? 'api.google_registered' : 'api.google_signin', ['is_new_user' => $grant['created']]);
     }
 
     /**

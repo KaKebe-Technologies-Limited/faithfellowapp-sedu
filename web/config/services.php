@@ -68,6 +68,10 @@ return [
     // Google ID tokens are accepted only when issued for one of these OAuth client IDs
     // (the web client, plus iOS / Android clients if the app signs in natively).
     'google' => [
+        // Used only by the hosted-page flow (the server swaps Google's code for an ID token).
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        // Must match an Authorised redirect URI in Google Cloud. Defaults to this site's /auth/google/app/callback.
+        'redirect' => env('GOOGLE_REDIRECT_URI'),
         'client_ids' => array_values(array_filter(array_map('trim', explode(',', (string) env('GOOGLE_CLIENT_IDS', env('GOOGLE_CLIENT_ID', '')))))),
     ],
 

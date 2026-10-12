@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\ConfirmablePasswordController;
 use App\Http\Controllers\Auth\EmailVerificationNotificationController;
 use App\Http\Controllers\Auth\EmailVerificationPromptController;
+use App\Http\Controllers\Auth\GoogleAppAuthController;
 use App\Http\Controllers\Auth\MagicLinkController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordController;
@@ -52,3 +53,7 @@ Route::middleware('auth')->group(function () {
 
     Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 });
+
+// "Continue with Google" for the mobile app, through the system browser (see GoogleAppAuthController).
+Route::get('auth/google/app/start', [GoogleAppAuthController::class, 'start'])->middleware('throttle:20,1')->name('auth.google.app.start');
+Route::get('auth/google/app/callback', [GoogleAppAuthController::class, 'callback'])->middleware('throttle:20,1')->name('auth.google.app.callback');

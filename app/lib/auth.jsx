@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { Platform } from 'react-native';
 import api from './api';
+import { signInWithGoogleBrowser } from './google';
 import { clearToken, getToken, onSessionExpired, setToken } from './session';
 
 const AuthContext = createContext(null);
@@ -51,6 +52,16 @@ export function AuthProvider({ children }) {
     return data.user;
   }, []);
 
+  // Google sign-in / sign-up in one: returns the user, or null if the person closed the browser.
+  const signInWithGoogle = useCallback(async () => {
+    const data = await signInWithGoogleBrowser();
+    if (!data) return null;
+    await setToken(data.token);
+    setTokenState(data.token);
+    setUser(data.user);
+    return data.user;
+  }, []);
+
   const signOut = useCallback(async () => {
     try {
       await api.delete('/auth/token');
@@ -62,7 +73,7 @@ export function AuthProvider({ children }) {
     setUser(null);
   }, []);
 
-  const value = useMemo(() => ({ ready, token, user, signIn, signOut, setUser }), [ready, token, user, signIn, signOut]);
+  const value = useMemo(() => ({ ready, token, user, signIn, signInWithGoogle, signOut, setUser }), [ready, token, user, signIn, signInWithGoogle, signOut]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

@@ -57,6 +57,28 @@ Signs in with Google, or creates the member account the first time. Send the **G
 - An existing member with the same email is signed in and linked to the Google account; no second account is created. If their email was never verified, any password and tokens on it are discarded first.
 - New accounts are members, with the email marked verified and the Terms accepted (the app must show "By continuing you agree to the Terms and Privacy Policy").
 - **401** the token could not be verified (wrong audience, expired, unverified email, bad signature). **403** the account is suspended, closed, platform staff, or linked to a different Google account. **503** Google sign-in is not configured. Limited to 10 requests per minute.
+### Google sign-in through the browser (what the mobile app uses)
+
+The app does not need a native Google library. It opens a page on our server in the system browser:
+
+1. The app makes a random secret (`verifier`) and sends only its SHA-256 hash (`challenge`, base64url, 43 chars). It opens
+   `GET /auth/google/app/start?redirect=<app link>&challenge=<challenge>`. The `redirect` must be the app's own link
+   (`faithfellows://…`; `exp://…` only outside production), never a web address.
+2. The server sends the person to Google. After they approve, Google returns to `GET /auth/google/app/callback`, where the
+   server swaps Google's code for an ID token (using the OAuth client secret), verifies it, and finds or creates the member.
+3. The browser is sent back to the app link with `?code=<one-time code>` (or `?error=cancelled|failed|denied&message=…`).
+4. The app calls `POST /auth/google/exchange` with the code and its `verifier`:
+
+```json
+{ "code": "…40 characters…", "verifier": "…the secret from step 1…", "device_name": "Grace's iPhone" }
+```
+
+**201** returns the same body as `/auth/google` (token, user, `is_new_user`). A code works **once**, for **two minutes**, and
+only with the verifier of the app that started the sign-in, so an intercepted link is useless. **401** means the code is wrong,
+used, expired or the verifier does not match. Limited to 10 requests per minute.
+
+The server needs `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `https://<your-site>/auth/google/app/callback` added as an
+authorised redirect URI of the OAuth client in Google Cloud (set `GOOGLE_REDIRECT_URI` when the public address differs from `APP_URL`).
 ### `DELETE /auth/token` 🔒
 
 Revokes the token used for this request.
