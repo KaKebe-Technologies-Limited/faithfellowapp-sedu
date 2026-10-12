@@ -115,6 +115,42 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Live
     Route::get('/live', [Member\LiveController::class, 'index'])->name('live.index');
     Route::post('/live/{liveStream}/messages', [Member\LiveController::class, 'postMessage'])->middleware('throttle:engagement')->name('live.messages.store');
+
+    // Prayer wall & testimonies
+    Route::get('/prayer', [Member\PrayerController::class, 'index'])->name('prayer.index');
+    Route::get('/prayer/new', [Member\PrayerController::class, 'create'])->name('prayer.create');
+    Route::post('/prayer', [Member\PrayerController::class, 'store'])->middleware('throttle:engagement')->name('prayer.store');
+    Route::get('/prayer/{prayer}', [Member\PrayerController::class, 'show'])->name('prayer.show');
+    Route::post('/prayer/{prayer}/pray', [Member\PrayerController::class, 'pray'])->middleware('throttle:engagement')->name('prayer.pray');
+    Route::post('/prayer/{prayer}/answered', [Member\PrayerController::class, 'answered'])->name('prayer.answered');
+    Route::delete('/prayer/{prayer}', [Member\PrayerController::class, 'destroy'])->name('prayer.destroy');
+    Route::get('/testimonies', [Member\TestimonyController::class, 'index'])->name('testimonies.index');
+    Route::get('/testimonies/new', [Member\TestimonyController::class, 'create'])->name('testimonies.create');
+    Route::post('/testimonies', [Member\TestimonyController::class, 'store'])->middleware('throttle:engagement')->name('testimonies.store');
+
+    // Small groups (leaders manage their own group from the group page)
+    Route::get('/groups', [Member\GroupController::class, 'index'])->name('groups.index');
+    Route::get('/groups/{group}', [Member\GroupController::class, 'show'])->name('groups.show');
+    Route::post('/groups/{group}/join', [Member\GroupController::class, 'join'])->middleware('throttle:engagement')->name('groups.join');
+    Route::delete('/groups/{group}/leave', [Member\GroupController::class, 'leave'])->name('groups.leave');
+    Route::post('/groups/{group}/members', [Member\GroupController::class, 'addMember'])->name('groups.members.store');
+    Route::put('/groups/{group}/members/{membership}', [Member\GroupController::class, 'updateMember'])->scopeBindings()->name('groups.members.update');
+    Route::post('/groups/{group}/meetings', [Member\GroupController::class, 'storeMeeting'])->name('groups.meetings.store');
+    Route::post('/groups/{group}/announcements', [Member\GroupController::class, 'storeAnnouncement'])->name('groups.announcements.store');
+
+    // Counseling (confidential)
+    Route::get('/counseling', [Member\CounselingController::class, 'index'])->name('counseling.index');
+    Route::post('/counseling', [Member\CounselingController::class, 'store'])->middleware('throttle:engagement')->name('counseling.store');
+    Route::post('/counseling/{appointment}/cancel', [Member\CounselingController::class, 'cancel'])->name('counseling.cancel');
+
+    // Reactions & comments, service check-in, serving rota
+    Route::post('/react/{type}/{id}', [Member\EngagementController::class, 'react'])->whereNumber('id')->middleware('throttle:engagement')->name('reactions.toggle');
+    Route::post('/comments/{type}/{id}', [Member\EngagementController::class, 'comment'])->whereNumber('id')->middleware('throttle:engagement')->name('comments.store');
+    Route::delete('/comments/{comment}', [Member\EngagementController::class, 'deleteComment'])->name('comments.destroy');
+    Route::get('/check-in/{church}', [Member\EngagementController::class, 'checkInPage'])->name('check-in.show');
+    Route::post('/check-in/{church}', [Member\EngagementController::class, 'checkIn'])->middleware('throttle:engagement')->name('check-in.store');
+    Route::get('/serving', [Member\EngagementController::class, 'rota'])->name('volunteering.index');
+    Route::put('/serving/{rota}', [Member\EngagementController::class, 'respondRota'])->name('volunteering.respond');
 });
 
 Route::get('/events/{event}', [Member\EventController::class, 'show'])->name('events.show');
@@ -284,6 +320,58 @@ Route::prefix('church/{church}/admin')->name('church-admin.')
             Route::post('/posts', [ChurchAdmin\PostController::class, 'store'])->name('posts.store');
             Route::put('/posts/{post}', [ChurchAdmin\PostController::class, 'update'])->name('posts.update');
             Route::delete('/posts/{post}', [ChurchAdmin\PostController::class, 'destroy'])->name('posts.destroy');
+        });
+
+        // Small groups & volunteers
+        Route::middleware('church.can:groups.manage')->group(function () {
+            Route::resource('small-groups', ChurchAdmin\SmallGroupController::class)->except('show')->parameters(['small-groups' => 'smallGroup']);
+            Route::get('/volunteers', [ChurchAdmin\VolunteerController::class, 'index'])->name('volunteers.index');
+            Route::post('/volunteers/teams', [ChurchAdmin\VolunteerController::class, 'storeTeam'])->name('volunteers.teams.store');
+            Route::put('/volunteers/teams/{volunteerTeam}', [ChurchAdmin\VolunteerController::class, 'updateTeam'])->name('volunteers.teams.update');
+            Route::delete('/volunteers/teams/{volunteerTeam}', [ChurchAdmin\VolunteerController::class, 'destroyTeam'])->name('volunteers.teams.destroy');
+            Route::post('/volunteers/teams/{volunteerTeam}/members', [ChurchAdmin\VolunteerController::class, 'addMember'])->name('volunteers.members.store');
+            Route::delete('/volunteers/teams/{volunteerTeam}/members/{userId}', [ChurchAdmin\VolunteerController::class, 'removeMember'])->whereNumber('userId')->name('volunteers.members.destroy');
+            Route::post('/volunteers/rota', [ChurchAdmin\VolunteerController::class, 'storeRota'])->name('volunteers.rota.store');
+            Route::delete('/volunteers/rota/{volunteerRota}', [ChurchAdmin\VolunteerController::class, 'destroyRota'])->name('volunteers.rota.destroy');
+        });
+
+        // Service attendance
+        Route::middleware('church.can:groups.manage|members.manage')->group(function () {
+            Route::get('/attendance', [ChurchAdmin\AttendanceController::class, 'index'])->name('attendance.index');
+            Route::get('/attendance/qr', [ChurchAdmin\AttendanceController::class, 'qr'])->name('attendance.qr');
+            Route::get('/attendance/export', [ChurchAdmin\AttendanceController::class, 'export'])->name('attendance.export');
+            Route::post('/attendance', [ChurchAdmin\AttendanceController::class, 'store'])->name('attendance.store');
+            Route::delete('/attendance/{attendanceRecord}', [ChurchAdmin\AttendanceController::class, 'destroy'])->name('attendance.destroy');
+        });
+
+        // Pastoral care & counseling (confidential)
+        Route::middleware('church.can:care.manage')->group(function () {
+            Route::get('/care', [ChurchAdmin\CareController::class, 'index'])->name('care.index');
+            Route::get('/care/members/{memberId}', [ChurchAdmin\CareController::class, 'member'])->whereNumber('memberId')->name('care.member');
+            Route::post('/care/notes', [ChurchAdmin\CareController::class, 'storeNote'])->name('care.notes.store');
+            Route::delete('/care/notes/{pastoralNote}', [ChurchAdmin\CareController::class, 'destroyNote'])->name('care.notes.destroy');
+            Route::post('/care/welfare', [ChurchAdmin\CareController::class, 'storeWelfare'])->name('care.welfare.store');
+            Route::post('/care/visits', [ChurchAdmin\CareController::class, 'storeVisit'])->name('care.visits.store');
+            Route::put('/care/visits/{homeVisit}', [ChurchAdmin\CareController::class, 'updateVisit'])->name('care.visits.update');
+            Route::post('/care/milestones', [ChurchAdmin\CareController::class, 'storeMilestone'])->name('care.milestones.store');
+            Route::delete('/care/milestones/{discipleshipRecord}', [ChurchAdmin\CareController::class, 'destroyMilestone'])->name('care.milestones.destroy');
+            Route::get('/counseling', [ChurchAdmin\CounselingController::class, 'index'])->name('counseling.index');
+            Route::put('/counseling/{counselingAppointment}', [ChurchAdmin\CounselingController::class, 'update'])->name('counseling.update');
+        });
+
+        // Community moderation
+        Route::middleware('church.can:prayer.moderate')->group(function () {
+            Route::get('/prayer', [ChurchAdmin\PrayerController::class, 'index'])->name('prayer.index');
+            Route::put('/prayer/{prayerRequest}', [ChurchAdmin\PrayerController::class, 'update'])->name('prayer.update');
+            Route::delete('/prayer/{prayerRequest}', [ChurchAdmin\PrayerController::class, 'destroy'])->name('prayer.destroy');
+        });
+        Route::middleware('church.can:community.moderate')->group(function () {
+            Route::get('/testimonies', [ChurchAdmin\TestimonyController::class, 'index'])->name('testimonies.index');
+            Route::put('/testimonies/{testimony}', [ChurchAdmin\TestimonyController::class, 'update'])->name('testimonies.update');
+            Route::delete('/testimonies/{testimony}', [ChurchAdmin\TestimonyController::class, 'destroy'])->name('testimonies.destroy');
+            Route::get('/comments', [ChurchAdmin\CommentController::class, 'index'])->name('comments.index');
+            Route::put('/comments/{comment}', [ChurchAdmin\CommentController::class, 'update'])->name('comments.update');
+            Route::delete('/comments/{comment}', [ChurchAdmin\CommentController::class, 'destroy'])->name('comments.destroy');
         });
 
         // Staff & roles

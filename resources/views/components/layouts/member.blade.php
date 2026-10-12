@@ -22,6 +22,7 @@
             ['label' => __('Testimonies'), 'icon' => 'bi-stars', 'route' => 'testimonies.index', 'active' => 'testimonies.*'],
             ['label' => __('Small groups'), 'icon' => 'bi-people', 'route' => 'groups.index', 'active' => 'groups.*'],
             ['label' => __('Counseling'), 'icon' => 'bi-person-heart', 'route' => 'counseling.index', 'active' => 'counseling.*'],
+            ['label' => __('Serving'), 'icon' => 'bi-hand-thumbs-up', 'route' => 'volunteering.index', 'active' => 'volunteering.*'],
             ['label' => __('Member directory'), 'icon' => 'bi-person-lines-fill', 'route' => 'directory.index', 'active' => 'directory.*'],
         ]],
         ['heading' => __('Account'), 'items' => [

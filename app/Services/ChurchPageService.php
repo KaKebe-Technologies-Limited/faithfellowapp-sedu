@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Church;
+use App\Models\PrayerInteraction;
 use App\Models\Subscription;
 use App\Models\User;
 
@@ -47,6 +48,16 @@ class ChurchPageService
             'devotional' => $church->devotionals()->published()
                 ->when(! $isMember, fn ($q) => $q->where('visibility', 'public'))
                 ->latest('publish_date')->first(),
+            'prayer' => $prayers = $church->prayerRequests()->with('user.media')->where('status', 'open')
+                ->whereIn('visibility', $isMember ? ['public', 'church'] : ['public'])
+                ->latest()->take(9)->get()
+                ->each(fn ($p) => $p->setRelation('church', $church)),
+            'prayedIds' => $viewer
+                ? PrayerInteraction::where('user_id', $viewer->id)->where('type', 'prayed')->whereIn('prayer_request_id', $prayers->pluck('id'))->pluck('prayer_request_id')->all()
+                : [],
+            'testimonies' => $church->testimonies()->with(['user.media', 'reactions', 'comments.user.media'])->where('status', 'approved')
+                ->latest('reviewed_at')->take(4)->get()
+                ->each(fn ($t) => $t->setRelation('church', $church)),
         ];
     }
 }

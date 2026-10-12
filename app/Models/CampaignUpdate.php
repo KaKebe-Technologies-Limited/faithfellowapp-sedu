@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToChurch;
+use App\Models\Concerns\HasEngagement;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Spatie\MediaLibrary\HasMedia;
@@ -10,7 +11,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 
 class CampaignUpdate extends Model implements HasMedia
 {
-    use BelongsToChurch, InteractsWithMedia;
+    use BelongsToChurch, HasEngagement, InteractsWithMedia;
 
     protected $fillable = ['church_id', 'campaign_id', 'user_id', 'title', 'body', 'is_testimony', 'published_at'];
 

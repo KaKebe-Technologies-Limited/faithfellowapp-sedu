@@ -19,4 +19,5 @@
             @if ($sermon->series)<span class="ff-tag mt-1">{{ $sermon->series->title }}</span>@endif
         </span>
     </a>
+    @include('partials.engagement-bar', ['model' => $sermon, 'type' => 'sermon'])
 </article>

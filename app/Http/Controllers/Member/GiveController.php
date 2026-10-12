@@ -11,6 +11,7 @@ use App\Models\EventRsvp;
 use App\Models\GivingChannel;
 use App\Models\Pledge;
 use App\Models\RecurringGift;
+use App\Models\SmallGroup;
 use App\Services\DonationService;
 use App\Services\Payments\Drivers\SandboxDriver;
 use App\Services\PaymentService;
@@ -42,6 +43,9 @@ class GiveController extends Controller
             'church' => $church,
             'campaign' => $campaign,
             'pledge' => $pledge,
+            'group' => $request->filled('group')
+                ? SmallGroup::where('church_id', $church->id)->whereHas('memberships', fn ($q) => $q->where('user_id', $request->user()->id))->find($request->query('group'))
+                : null,
             'campaigns' => $church->campaigns()->active()->visibleTo($request->user()->memberChurchIds())->orderBy('title')->get(['id', 'title', 'slug']),
             'channels' => $church->givingChannels,
             'diaspora' => $this->isDiaspora($request),

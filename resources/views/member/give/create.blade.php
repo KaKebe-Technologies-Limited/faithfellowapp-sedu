@@ -55,6 +55,11 @@
                     </div>
                 @endif
 
+                @if ($group)
+                    <input type="hidden" name="small_group_id" value="{{ $group->id }}">
+                    <div class="alert alert-info small"><i class="bi bi-people"></i> {{ __('Giving through :group.', ['group' => $group->name]) }}</div>
+                @endif
+
                 @if ($pledge)
                     <input type="hidden" name="pledge_id" value="{{ $pledge->id }}">
                     <div class="alert alert-info small">{{ __('Paying towards your pledge: :paid of :total paid.', ['paid' => ff_money($pledge->paid_amount), 'total' => ff_money($pledge->amount)]) }}</div>

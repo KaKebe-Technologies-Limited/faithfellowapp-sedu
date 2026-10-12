@@ -28,7 +28,7 @@
             ['label' => __('Members'), 'icon' => 'bi-people', 'route' => 'church-admin.members.index', 'params' => $p, 'active' => 'church-admin.members.*', 'show' => $can('members.manage')],
             ['label' => __('Small groups'), 'icon' => 'bi-diagram-3', 'route' => 'church-admin.small-groups.index', 'params' => $p, 'active' => 'church-admin.small-groups.*', 'show' => $can('groups.manage')],
             ['label' => __('Volunteers'), 'icon' => 'bi-hand-thumbs-up', 'route' => 'church-admin.volunteers.index', 'params' => $p, 'active' => 'church-admin.volunteers.*', 'show' => $can('groups.manage')],
-            ['label' => __('Attendance'), 'icon' => 'bi-qr-code-scan', 'route' => 'church-admin.attendance.index', 'params' => $p, 'active' => 'church-admin.attendance.*', 'show' => $can('members.manage')],
+            ['label' => __('Attendance'), 'icon' => 'bi-qr-code-scan', 'route' => 'church-admin.attendance.index', 'params' => $p, 'active' => 'church-admin.attendance.*', 'show' => $can('groups.manage') || $can('members.manage')],
             ['label' => __('Pastoral care'), 'icon' => 'bi-heart-pulse', 'route' => 'church-admin.care.index', 'params' => $p, 'active' => ['church-admin.care.*', 'church-admin.counseling.*'], 'show' => $can('care.manage')],
         ]],
         ['heading' => __('Community'), 'items' => [

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\Auditable;
 use App\Models\Concerns\BelongsToChurch;
+use App\Models\Concerns\HasEngagement;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -16,7 +17,7 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media as SpatieMedia;
 
 class Post extends Model implements HasMedia
 {
-    use Auditable, BelongsToChurch, HasFactory, InteractsWithMedia, SoftDeletes;
+    use Auditable, BelongsToChurch, HasEngagement, HasFactory, InteractsWithMedia, SoftDeletes;
 
     protected $fillable = ['church_id', 'branch_id', 'user_id', 'body', 'visibility', 'status', 'is_pinned', 'published_at'];
 

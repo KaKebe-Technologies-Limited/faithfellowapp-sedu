@@ -17,4 +17,5 @@
         <div class="d-flex justify-content-between small mb-1"><strong class="text-ff-black">{{ $campaign->title }}</strong><span>{{ round($campaign->percent()) }}%</span></div>
         <x-ff.progress :value="$campaign->percent()" size="sm" />
     </a>
+    @include('partials.engagement-bar', ['model' => $campaign_update, 'type' => 'campaign_update'])
 </article>

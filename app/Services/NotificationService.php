@@ -46,7 +46,7 @@ class NotificationService
             'staff' => $query->whereHas('staffMemberships', fn ($q) => $q->where('church_id', $churchId)->where('status', 'active')),
             'branch' => $query->whereHas('subscriptions', fn ($q) => $q->where('church_id', $churchId)->where('status', 'active')
                 ->where('branch_id', $options['branch_id'] ?? 0)),
-            'group' => $query->whereIn('id', \DB::table('small_group_members')->where('small_group_id', $options['small_group_id'] ?? 0)->select('user_id')),
+            'group' => $query->whereIn('id', \DB::table('small_group_members')->where('small_group_id', $options['small_group_id'] ?? 0)->where('status', 'active')->select('user_id')),
             default => $query->where(fn ($q) => $q
                 ->whereHas('subscriptions', fn ($s) => $s->where('church_id', $churchId)->where('status', 'active'))
                 ->orWhereHas('staffMemberships', fn ($s) => $s->where('church_id', $churchId)->where('status', 'active'))),

@@ -254,6 +254,61 @@ class Church extends Model implements HasMedia
         return $this->hasMany(Payout::class);
     }
 
+    public function prayerRequests(): HasMany
+    {
+        return $this->hasMany(PrayerRequest::class);
+    }
+
+    public function testimonies(): HasMany
+    {
+        return $this->hasMany(Testimony::class);
+    }
+
+    public function smallGroups(): HasMany
+    {
+        return $this->hasMany(SmallGroup::class);
+    }
+
+    public function volunteerTeams(): HasMany
+    {
+        return $this->hasMany(VolunteerTeam::class);
+    }
+
+    public function volunteerRotas(): HasMany
+    {
+        return $this->hasMany(VolunteerRota::class);
+    }
+
+    public function attendanceRecords(): HasMany
+    {
+        return $this->hasMany(AttendanceRecord::class);
+    }
+
+    public function pastoralNotes(): HasMany
+    {
+        return $this->hasMany(PastoralNote::class);
+    }
+
+    public function welfareRecords(): HasMany
+    {
+        return $this->hasMany(WelfareRecord::class);
+    }
+
+    public function homeVisits(): HasMany
+    {
+        return $this->hasMany(HomeVisit::class);
+    }
+
+    public function discipleshipRecords(): HasMany
+    {
+        return $this->hasMany(DiscipleshipRecord::class);
+    }
+
+    public function counselingAppointments(): HasMany
+    {
+        return $this->hasMany(CounselingAppointment::class);
+    }
+
     public function bankStatementLines(): HasMany
     {
         return $this->hasMany(BankStatementLine::class);

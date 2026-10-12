@@ -8,7 +8,9 @@ use App\Models\Devotional;
 use App\Models\Event;
 use App\Models\LiveStream;
 use App\Models\Post;
+use App\Models\PrayerRequest;
 use App\Models\Sermon;
+use App\Models\Testimony;
 use App\Models\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -65,7 +67,7 @@ class FeedService
     {
         return [
             'posts' => fn (array $churchIds, Carbon $before, int $limit) => Post::query()
-                ->with(['church.media', 'author.media', 'media'])
+                ->with(['church.media', 'author.media', 'media', 'reactions', 'comments.user.media'])
                 ->forChurches($churchIds)
                 ->published()
                 ->where('published_at', '<', $before)
@@ -75,7 +77,7 @@ class FeedService
                 ->map(fn (Post $post) => ['type' => 'post', 'at' => $post->published_at, 'church' => $post->church, 'model' => $post]),
 
             'sermons' => fn (array $churchIds, Carbon $before, int $limit) => Sermon::query()
-                ->with(['church.media', 'media', 'series'])
+                ->with(['church.media', 'media', 'series', 'reactions', 'comments.user.media'])
                 ->forChurches($churchIds)->published()
                 ->where('published_at', '<', $before)
                 ->latest('published_at')->take($limit)->get()
@@ -105,7 +107,7 @@ class FeedService
                 ->filter(fn () => abs($before->diffInSeconds(now())) < 60),
 
             'campaign_updates' => fn (array $churchIds, Carbon $before, int $limit) => CampaignUpdate::query()
-                ->with(['campaign.church.media', 'campaign.media', 'media'])
+                ->with(['campaign.church.media', 'campaign.media', 'media', 'reactions', 'comments.user.media'])
                 ->forChurches($churchIds)->whereNotNull('published_at')
                 ->where('published_at', '<', $before)
                 ->whereHas('campaign', fn ($q) => $q->whereIn('status', ['active', 'completed']))
@@ -119,6 +121,21 @@ class FeedService
                 ->where('published_at', '<', $before)
                 ->latest('published_at')->take($limit)->get()
                 ->map(fn (Announcement $a) => ['type' => 'announcement', 'at' => $a->published_at, 'church' => $a->church, 'model' => $a]),
+
+            // Open prayer requests (never pastor-only ones) with the viewer's "prayed" state.
+            'prayers' => fn (array $churchIds, Carbon $before, int $limit) => PrayerRequest::query()
+                ->with(['church.media', 'user.media', 'interactions' => fn ($q) => $q->where('user_id', $this->user?->id)->where('type', 'prayed')])
+                ->forChurches($churchIds)->where('status', 'open')->whereIn('visibility', ['public', 'church'])
+                ->where('created_at', '<', $before)
+                ->latest()->take($limit)->get()
+                ->map(fn (PrayerRequest $p) => ['type' => 'prayer', 'at' => $p->created_at, 'church' => $p->church, 'model' => $p]),
+
+            'testimonies' => fn (array $churchIds, Carbon $before, int $limit) => Testimony::query()
+                ->with(['church.media', 'user.media', 'reactions', 'comments.user.media'])
+                ->forChurches($churchIds)->where('status', 'approved')
+                ->where('reviewed_at', '<', $before)
+                ->latest('reviewed_at')->take($limit)->get()
+                ->map(fn (Testimony $t) => ['type' => 'testimony', 'at' => $t->reviewed_at, 'church' => $t->church, 'model' => $t]),
         ];
     }
 

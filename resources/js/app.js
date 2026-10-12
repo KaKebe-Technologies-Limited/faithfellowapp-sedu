@@ -7,6 +7,7 @@ import '@fontsource/space-grotesk/500.css';
 import '@fontsource/space-grotesk/600.css';
 import '@fontsource/space-grotesk/700.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
+import '../css/community.css';
 
 import * as bootstrap from 'bootstrap';
 import Alpine from 'alpinejs';

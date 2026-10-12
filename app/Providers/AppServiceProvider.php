@@ -35,7 +35,8 @@ class AppServiceProvider extends ServiceProvider
         });
 
         // Super admins pass every authorization check.
-        Gate::before(fn ($user) => $user->isSuperAdmin() ? true : null);
+        // …except confidential counseling notes, which platform staff never read.
+        Gate::before(fn ($user, string $ability) => $user->isSuperAdmin() && $ability !== 'viewNotes' ? true : null);
 
         $this->configureRateLimiting();
 

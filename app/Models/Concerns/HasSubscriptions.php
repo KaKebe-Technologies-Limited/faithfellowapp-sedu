@@ -4,6 +4,7 @@ namespace App\Models\Concerns;
 
 use App\Models\Church;
 use App\Models\NotificationPreference;
+use App\Models\SmallGroupMember;
 use App\Models\Subscription;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -30,6 +31,27 @@ trait HasSubscriptions
             ->withPivot(['id', 'status', 'stage', 'branch_id', 'subscribed_at'])
             ->wherePivot('status', 'active')
             ->withTimestamps();
+    }
+
+    public function smallGroupMemberships(): HasMany
+    {
+        return $this->hasMany(SmallGroupMember::class);
+    }
+
+    /**
+     * Churches where the user may see pastor-only prayer requests.
+     *
+     * @return array<int, int>
+     */
+    public function pastoralChurchIds(): array
+    {
+        if ($this->isSuperAdmin()) {
+            return [];
+        }
+
+        return $this->staffMemberships()->with('role')->where('status', 'active')->get()
+            ->filter(fn ($s) => $s->is_admin || array_intersect(['prayer.moderate', 'care.manage'], $s->role?->permissions ?? []))
+            ->pluck('church_id')->map(fn ($id) => (int) $id)->values()->all();
     }
 
     public function notificationPreferences(): HasMany

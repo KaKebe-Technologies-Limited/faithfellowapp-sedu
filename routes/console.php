@@ -1,6 +1,7 @@
 <?php
 
 use App\Services\BillingService;
+use App\Services\CareService;
 use App\Services\ContentPublisher;
 use App\Services\EventService;
 use App\Services\GivingScheduler;
@@ -54,3 +55,14 @@ Schedule::command('ff:process-recurring')->dailyAt('07:00')->withoutOverlapping(
 Schedule::command('ff:pledge-reminders')->dailyAt('09:00');
 Schedule::command('ff:payments-reconcile')->everyFiveMinutes()->withoutOverlapping();
 Schedule::command('ff:billing')->dailyAt('06:00');
+
+Artisan::command('ff:care-digest', function (CareService $care) {
+    $this->info('Sent '.$care->sendWeeklyDigests().' pastoral care digest(s).');
+})->purpose('Monday digest to pastors: birthdays, anniversaries and follow-ups');
+
+Artisan::command('ff:rota-reminders', function (CareService $care) {
+    $this->info('Reminded '.$care->remindVolunteers().' volunteer(s).');
+})->purpose('Remind volunteers who are serving tomorrow');
+
+Schedule::command('ff:care-digest')->weeklyOn(1, '07:30');
+Schedule::command('ff:rota-reminders')->dailyAt('18:00');

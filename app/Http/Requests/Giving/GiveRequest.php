@@ -35,6 +35,7 @@ class GiveRequest extends FormRequest
             'campaign_id' => ['nullable', Rule::exists('campaigns', 'id')->where('church_id', $church->id)],
             'campaign_team_id' => ['nullable', Rule::exists('campaign_teams', 'id')->where('church_id', $church->id)],
             'pledge_id' => ['nullable', Rule::exists('pledges', 'id')->where('church_id', $church->id)->where('user_id', $this->user()->id)],
+            'small_group_id' => ['nullable', Rule::exists('small_groups', 'id')->where('church_id', $church->id)],
             'is_anonymous' => ['boolean'],
             'show_on_leaderboard' => ['boolean'],
             'recurring' => ['nullable', Rule::in(['weekly', 'monthly', 'quarterly'])],

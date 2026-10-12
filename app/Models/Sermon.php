@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Concerns\Auditable;
 use App\Models\Concerns\BelongsToChurch;
 use App\Models\Concerns\HasChurchSlug;
+use App\Models\Concerns\HasEngagement;
 use App\Models\Concerns\Publishable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -20,7 +21,7 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media as SpatieMedia;
 
 class Sermon extends Model implements HasMedia
 {
-    use Auditable, BelongsToChurch, HasChurchSlug, HasFactory, InteractsWithMedia, Publishable, SoftDeletes;
+    use Auditable, BelongsToChurch, HasChurchSlug, HasEngagement, HasFactory, InteractsWithMedia, Publishable, SoftDeletes;
 
     protected $fillable = [
         'church_id', 'branch_id', 'sermon_series_id', 'user_id', 'title', 'slug', 'preacher', 'scripture', 'description',

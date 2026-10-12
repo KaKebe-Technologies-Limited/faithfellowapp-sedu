@@ -3,6 +3,8 @@
 namespace Database\Seeders;
 
 use App\Models\Church;
+use App\Models\DiscipleshipRecord;
+use App\Models\Reaction;
 use App\Models\User;
 use App\Services\CampaignService;
 use App\Services\ChurchOnboardingService;
@@ -131,6 +133,175 @@ class DemoSeeder extends Seeder
         $this->seedContent($member, $pastor);
         $this->seedEventsAndLive($member, $pastor);
         $this->seedGiving($member, $pastor);
+        $this->seedCommunity($member, $pastor);
+    }
+
+    /**
+     * Sprint 7: prayer wall, testimonies, small groups, volunteers, attendance and care.
+     * Inserted directly so seeding sends no notifications.
+     */
+    protected function seedCommunity(User $member, User $pastor): void
+    {
+        $grace = Church::where('slug', 'grace-lira')->first();
+        if (! $grace || $grace->prayerRequests()->exists()) {
+            return;
+        }
+
+        $people = User::whereIn('id', $grace->subscriptions()->where('status', 'active')->select('user_id'))
+            ->whereKeyNot($member->id)->get();
+        $pick = fn (int $n) => $people->shuffle()->take(min($n, $people->count()));
+
+        // A few birthdays this week so the care dashboard has celebrations.
+        $pick(3)->each(fn (User $u, $i) => $u->forceFill(['date_of_birth' => now()->subYears(25 + $i * 7)->addDays($i * 2 + 1)])->save());
+        $pick(2)->each(fn (User $u, $i) => $u->forceFill(['wedding_anniversary' => now()->subYears(5 + $i * 3)->addDays($i + 3)])->save());
+
+        // ── Prayer wall ─────────────────────────────────────────────────
+        $requests = [
+            [$member, 'Healing for my mother', 'My mother was admitted at Lira Regional Referral Hospital with malaria and typhoid. Please stand with us for quick and complete healing.', 'church', false, true],
+            [null, 'School fees for next term', 'Pray that God opens doors for my children’s school fees. Term starts in three weeks.', 'church', true, false],
+            [null, 'Safe journey', 'Travelling to Kampala for a job interview on Monday. Pray for favour and safety on the road.', 'public', false, false],
+            [null, null, 'Our family is going through a very difficult season. We need wisdom and peace in our home.', 'pastor', true, false],
+            [null, 'Rain for our gardens', 'The dry spell has affected our crops in Alebtong. Pray for rain and a good harvest.', 'public', false, true],
+            [null, 'Exams', 'S6 candidates at Lira Town College are sitting UACE. Pray for focus, memory and calm.', 'church', false, false],
+            [$member, 'New job', 'I start a new job at the district health office next month. Pray that I serve with integrity.', 'public', false, false],
+        ];
+        foreach ($requests as $i => [$author, $title, $body, $visibility, $anonymous, $chain]) {
+            $author ??= $people->get($i % max(1, $people->count())) ?? $member;
+            $prayer = $grace->prayerRequests()->create([
+                'user_id' => $author->id, 'title' => $title, 'body' => $body, 'visibility' => $visibility,
+                'is_anonymous' => $anonymous, 'chain_enabled' => $chain, 'status' => 'open',
+            ]);
+            $prayer->forceFill(['created_at' => now()->subHours($i * 9 + 2)])->saveQuietly();
+
+            foreach ($pick(random_int(3, 14)) as $prayerFriend) {
+                $prayer->interactions()->create(['church_id' => $grace->id, 'user_id' => $prayerFriend->id, 'type' => 'prayed']);
+            }
+            $prayer->forceFill(['prayed_count' => $prayer->interactions()->where('type', 'prayed')->count()])->saveQuietly();
+        }
+
+        $answered = $grace->prayerRequests()->create([
+            'user_id' => $people->first()?->id ?? $member->id, 'title' => 'Baby on the way',
+            'body' => 'We have waited six years for a child. Please pray with us.', 'visibility' => 'church',
+            'status' => 'answered', 'answered_at' => now()->subDays(6), 'prayed_count' => 41,
+            'answer_note' => 'Our son Emmanuel was born healthy last week! Thank you church family for praying.',
+        ]);
+
+        // ── Testimonies ─────────────────────────────────────────────────
+        $testimonies = [
+            [$answered->user_id, $answered->id, 'God gave us Emmanuel', 'After six years of waiting and many tears, God has blessed us with a healthy baby boy. The doctors had told us it was unlikely. To everyone who prayed with us on the prayer wall — thank you. God is faithful!', 'approved'],
+            [$people->get(1)?->id, null, 'Healed from ulcers', 'For three years I suffered from stomach ulcers and spent a lot on medicine. During the Friday overnight prayer, the pastor prayed for the sick and I have not felt the pain since. I went for a check-up and the doctor confirmed I am well.', 'approved'],
+            [$people->get(2)?->id, null, 'A job after two years', 'I graduated in 2023 and searched for work for two years. Last month I was employed by a bank in Lira. I give God all the glory and thank my cell group for standing with me.', 'approved'],
+            [$member->id, null, 'Provision for school fees', "At the start of the term I did not know where my daughter's school fees would come from. A stranger paid half the fees and my business picked up. God provides!", 'pending'],
+        ];
+        foreach ($testimonies as $i => [$userId, $prayerId, $title, $body, $status]) {
+            $grace->testimonies()->create([
+                'user_id' => $userId ?? $member->id, 'prayer_request_id' => $prayerId, 'title' => $title, 'body' => $body, 'status' => $status,
+                'reviewed_by' => $status === 'approved' ? $pastor->id : null, 'reviewed_at' => $status === 'approved' ? now()->subDays($i * 3 + 1) : null,
+            ]);
+        }
+
+        // ── Small groups ────────────────────────────────────────────────
+        $groups = [
+            ['name' => 'Ireda Cell', 'type' => 'cell', 'meeting_day' => 2, 'meeting_time' => '18:00', 'location' => 'Mama Grace’s home, Ireda', 'lat' => 2.2551, 'lng' => 32.8867, 'leader' => $member],
+            ['name' => 'Adyel Home Fellowship', 'type' => 'home_fellowship', 'meeting_day' => 4, 'meeting_time' => '18:30', 'location' => 'Adyel Division, near the market', 'lat' => 2.2368, 'lng' => 32.9123],
+            ['name' => 'Young Professionals Bible Study', 'type' => 'bible_study', 'meeting_day' => 6, 'meeting_time' => '16:00', 'location' => 'Church boardroom', 'lat' => 2.2478, 'lng' => 32.9006],
+            ['name' => 'Women of Purpose', 'type' => 'women', 'meeting_day' => 6, 'meeting_time' => '10:00', 'location' => 'Church hall'],
+        ];
+        foreach ($groups as $g => $data) {
+            $leader = $data['leader'] ?? $people->get($g + 3) ?? $pastor;
+            unset($data['leader']);
+            $group = $grace->smallGroups()->create([...$data, 'leader_id' => $leader->id, 'description' => 'We meet weekly to pray, study the Word and care for one another. Everyone is welcome.', 'is_open' => true, 'status' => 'active']);
+            $members = $pick(random_int(6, 11))->push($leader)->unique('id');
+            foreach ($members as $person) {
+                $group->memberships()->create(['church_id' => $grace->id, 'user_id' => $person->id, 'role' => $person->id === $leader->id ? 'leader' : 'member', 'status' => 'active', 'joined_at' => now()->subMonths(2)]);
+            }
+            $pending = $people->whereNotIn('id', $members->pluck('id'))->first();
+            if ($pending && $g === 0) {
+                $group->memberships()->create(['church_id' => $grace->id, 'user_id' => $pending->id, 'role' => 'member', 'status' => 'pending']);
+            }
+            foreach (range(1, 4) as $w) {
+                $meeting = $group->meetings()->create([
+                    'church_id' => $grace->id, 'meeting_date' => now()->subWeeks($w)->startOfWeek()->addDays(($data['meeting_day'] + 6) % 7)->toDateString(),
+                    'topic' => ['Faith that works (James 2)', 'Taming the tongue (James 3)', 'Patience in suffering (James 5)', 'Wisdom from above (James 3:13)'][$w - 1],
+                    'visitors' => random_int(0, 3), 'offering_amount' => random_int(2, 12) * 5000, 'recorded_by' => $leader->id,
+                ]);
+                foreach ($members as $person) {
+                    $meeting->attendance()->create(['church_id' => $grace->id, 'small_group_id' => $group->id, 'user_id' => $person->id, 'status' => random_int(1, 10) <= 8 ? 'present' : 'absent']);
+                }
+            }
+        }
+        $grace->announcements()->create([
+            'small_group_id' => $grace->smallGroups()->where('name', 'Ireda Cell')->value('id'), 'user_id' => $member->id,
+            'title' => 'No cell meeting next Tuesday', 'body' => '<p>We will join the church overnight prayer on Friday instead. See you there!</p>',
+            'audience' => 'group', 'priority' => 'normal', 'status' => 'published', 'published_at' => now()->subDay(), 'notified_at' => now()->subDay(), 'channels' => [],
+        ]);
+
+        // ── Volunteers & rota ───────────────────────────────────────────
+        $sunday = now()->next('Sunday');
+        foreach ([['Ushers', '#BC2649'], ['Praise & Worship', '#2D7FF9'], ['Media & Sound', '#1E9E5A'], ['Children’s Church', '#E8A317']] as $t => [$name, $color]) {
+            $team = $grace->volunteerTeams()->create(['name' => $name, 'color' => $color, 'leader_id' => $people->get($t + 8)?->id, 'description' => null]);
+            $volunteers = $pick(5);
+            if ($t === 0) {
+                $volunteers->push($member);
+            }
+            $team->members()->syncWithoutDetaching($volunteers->mapWithKeys(fn ($v) => [$v->id => ['church_id' => $grace->id]])->all());
+            foreach ([0, 1] as $week) {
+                foreach ($volunteers->take(2 + $week) as $v => $volunteer) {
+                    $grace->volunteerRotas()->create([
+                        'volunteer_team_id' => $team->id, 'user_id' => $volunteer->id, 'service_date' => $sunday->copy()->addWeeks($week)->toDateString(),
+                        'role' => $t === 0 ? ['Main door', 'Side door', 'Offering'][$v] ?? null : null,
+                        'status' => $week === 0 ? ($v === 0 ? 'confirmed' : 'scheduled') : 'scheduled',
+                    ]);
+                }
+            }
+        }
+        $grace->volunteerRotas()->firstOrCreate(
+            ['user_id' => $member->id, 'service_date' => $sunday->toDateString()],
+            ['volunteer_team_id' => $grace->volunteerTeams()->where('name', 'Ushers')->value('id'), 'role' => 'Welcome desk', 'status' => 'scheduled'],
+        );
+
+        // ── Service attendance (last 10 Sundays) ────────────────────────
+        $mainService = $grace->serviceTimes()->where('name', 'Main Service')->value('id');
+        foreach (range(1, 10) as $w) {
+            $date = now()->previous('Sunday')->subWeeks($w - 1)->toDateString();
+            foreach ($people->shuffle()->take((int) round($people->count() * random_int(55, 85) / 100)) as $person) {
+                $grace->attendanceRecords()->create(['user_id' => $person->id, 'service_date' => $date, 'service_time_id' => $mainService, 'method' => collect(['qr', 'qr', 'geofence', 'manual'])->random()]);
+            }
+            $grace->attendanceRecords()->create(['service_date' => $date, 'method' => 'manual', 'guest_name' => 'Children’s church', 'headcount' => random_int(35, 60), 'recorded_by' => $pastor->id]);
+            if ($w > 1) {
+                $grace->attendanceRecords()->create(['user_id' => $member->id, 'service_date' => $date, 'service_time_id' => $mainService, 'method' => 'qr']);
+            }
+        }
+
+        // ── Pastoral care (encrypted fields go through the model casts) ─
+        foreach ($pick(4) as $i => $person) {
+            $grace->pastoralNotes()->create(['user_id' => $person->id, 'author_id' => $pastor->id, 'is_private' => $i % 2 === 0,
+                'body' => ['Lost her job in March; connected her with the welfare team.', 'Wants to be baptised at the next service.', 'Husband is unwell — follow up weekly.', 'Interested in joining the media team.'][$i]]);
+        }
+        foreach ($pick(3) as $i => $person) {
+            $grace->welfareRecords()->create(['user_id' => $person->id, 'type' => ['food', 'medical', 'school_fees'][$i], 'amount' => [80000, 150000, 350000][$i], 'given_on' => now()->subDays($i * 9 + 2)->toDateString(), 'recorded_by' => $pastor->id, 'notes' => 'Approved by the welfare committee.']);
+        }
+        foreach ($pick(2) as $i => $person) {
+            $grace->homeVisits()->create(['user_id' => $person->id, 'visitor_id' => $pastor->id, 'scheduled_at' => now()->addDays($i * 2 + 1)->setTime(16, 0), 'purpose' => ['Pray with the family', 'Welcome visit for new members'][$i], 'status' => 'scheduled']);
+        }
+        foreach ($people->take(25) as $i => $person) {
+            foreach (array_slice(array_keys(DiscipleshipRecord::MILESTONES), 0, 1 + $i % 5) as $m => $milestone) {
+                $grace->discipleshipRecords()->create(['user_id' => $person->id, 'milestone' => $milestone, 'completed_on' => now()->subMonths(6 - $m)->toDateString(), 'mentor_id' => $pastor->id]);
+            }
+        }
+        $grace->discipleshipRecords()->create(['user_id' => $member->id, 'milestone' => 'salvation', 'completed_on' => now()->subYears(3)->toDateString()]);
+        $grace->counselingAppointments()->create(['user_id' => $member->id, 'mode' => 'in_person', 'topic' => 'Premarital counseling for my fiancé and me.', 'preferred_at' => now()->addDays(4)->setTime(14, 0), 'status' => 'requested']);
+        $grace->counselingAppointments()->create(['user_id' => $people->first()?->id ?? $member->id, 'counselor_id' => $pastor->id, 'mode' => 'phone', 'topic' => 'Grief after losing my father.', 'scheduled_at' => now()->addDays(2)->setTime(10, 0), 'status' => 'confirmed']);
+
+        // ── Reactions & comments on recent posts ────────────────────────
+        foreach ($grace->posts()->latest('published_at')->take(3)->get() as $post) {
+            foreach ($pick(random_int(4, 12)) as $person) {
+                $post->reactions()->create(['church_id' => $grace->id, 'user_id' => $person->id, 'type' => collect(array_keys(Reaction::TYPES))->random()]);
+            }
+            foreach ($pick(2) as $c => $person) {
+                $post->comments()->create(['church_id' => $grace->id, 'user_id' => $person->id, 'body' => ['Amen! God bless you Pastor.', 'Thank you for this update 🙏'][$c]]);
+            }
+        }
     }
 
     /**
