@@ -20,6 +20,7 @@ Route::get('/ping', fn () => response()->json([
 
 Route::prefix('v1')->name('api.v1.')->middleware('throttle:api')->group(function () {
     Route::post('/auth/token', [V1\AuthController::class, 'token'])->middleware('throttle:10,1')->name('auth.token');
+    Route::post('/auth/google', [V1\AuthController::class, 'google'])->middleware('throttle:10,1')->name('auth.google');
 
     // Public directory
     Route::get('/churches', [V1\ChurchController::class, 'index'])->name('churches.index');

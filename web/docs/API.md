@@ -44,6 +44,19 @@ Exchanges an email and password for a token. Super admin accounts are refused.
 }
 ```
 
+### `POST /auth/google`
+
+Signs in with Google, or creates the member account the first time. Send the **Google ID token** (a JWT the app receives from Google sign-in), not a password. The server checks Google's signature and that the token was issued for one of our OAuth client IDs (`GOOGLE_CLIENT_IDS`), so no client secret is involved.
+
+```json
+{ "credential": "eyJhbGciOiJSUzI1NiIs…", "device_name": "Grace's iPhone" }
+```
+
+**201** returns the same body as `/auth/token`, plus `"is_new_user": true|false` (use it to show a "follow a church" welcome).
+
+- An existing member with the same email is signed in and linked to the Google account; no second account is created. If their email was never verified, any password and tokens on it are discarded first.
+- New accounts are members, with the email marked verified and the Terms accepted (the app must show "By continuing you agree to the Terms and Privacy Policy").
+- **401** the token could not be verified (wrong audience, expired, unverified email, bad signature). **403** the account is suspended, closed, platform staff, or linked to a different Google account. **503** Google sign-in is not configured. Limited to 10 requests per minute.
 ### `DELETE /auth/token` 🔒
 
 Revokes the token used for this request.

@@ -64,6 +64,13 @@ return [
         'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
     ],
 
+    // ── Sign-in ─────────────────────────────────────────────────────────
+    // Google ID tokens are accepted only when issued for one of these OAuth client IDs
+    // (the web client, plus iOS / Android clients if the app signs in natively).
+    'google' => [
+        'client_ids' => array_values(array_filter(array_map('trim', explode(',', (string) env('GOOGLE_CLIENT_IDS', env('GOOGLE_CLIENT_ID', '')))))),
+    ],
+
     // ── Messaging ───────────────────────────────────────────────────────
     'bible' => [
         'api_bible_key' => env('API_BIBLE_KEY'),
