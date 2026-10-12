@@ -35,6 +35,7 @@ Route::prefix('v1')->name('api.v1.')->middleware('throttle:api')->group(function
         Route::post('/churches/{church}/subscription', [V1\ChurchController::class, 'subscribe'])->name('churches.subscribe');
         Route::delete('/churches/{church}/subscription', [V1\ChurchController::class, 'unsubscribe'])->name('churches.unsubscribe');
 
+        Route::get('/home', V1\HomeController::class)->name('home');
         Route::get('/feed', [V1\ContentController::class, 'feed'])->name('feed');
         Route::get('/sermons', [V1\ContentController::class, 'sermons'])->name('sermons.index');
         Route::get('/sermons/{sermon}', [V1\ContentController::class, 'sermon'])->name('sermons.show');

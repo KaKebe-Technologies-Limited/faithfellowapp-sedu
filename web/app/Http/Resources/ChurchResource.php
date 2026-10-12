@@ -11,7 +11,9 @@ class ChurchResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
-        $contacts = $this->resource->contactsVisibleTo($request->user() ?? $request->user('sanctum'));
+        // The church directory routes are public, so the app's token user is only found through the sanctum guard.
+        $viewer = $request->user() ?? $request->user('sanctum');
+        $contacts = $this->resource->contactsVisibleTo($viewer);
 
         return [
             'id' => $this->id,
@@ -30,7 +32,7 @@ class ChurchResource extends JsonResource
             'cover_url' => $this->cover_url,
             'web_url' => route('churches.show', $this->resource),
             'subscribers' => $this->whenCounted('subscriptions'),
-            'is_subscribed' => $this->when($request->user() !== null, fn () => $request->user()->isSubscribedTo($this->id)),
+            'is_subscribed' => $this->when($viewer !== null, fn () => $viewer->isSubscribedTo($this->id)),
             'service_times' => $this->whenLoaded('serviceTimes', fn () => $this->serviceTimes->map(fn ($s) => [
                 'name' => $s->name, 'day' => $s->day_name, 'time' => $s->time_range, 'language' => $s->language, 'location' => $s->location,
             ])),

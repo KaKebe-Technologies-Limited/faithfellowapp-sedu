@@ -13,7 +13,7 @@ use Illuminate\Support\Collection;
 class HomeSlider
 {
     /**
-     * @return Collection<int, array{image: string, image_sm: string, title: string, subtitle: ?string, church: string, logo: ?string, url: string}>
+     * @return Collection<int, array{image: string, image_sm: string, title: string, subtitle: ?string, church: string, church_id: int, church_slug: string, logo: ?string, url: string}>
      */
     public function forUser(User $user, ?Church $only = null): Collection
     {
@@ -28,6 +28,8 @@ class HomeSlider
                 'title' => $m->getCustomProperty('title') ?: $c->name,
                 'subtitle' => $m->getCustomProperty('subtitle') ?: $c->tagline,
                 'church' => $c->name,
+                'church_id' => $c->id,
+                'church_slug' => $c->slug,
                 'logo' => $c->logo_url,
                 'url' => route('churches.show', $c),
             ])->values())

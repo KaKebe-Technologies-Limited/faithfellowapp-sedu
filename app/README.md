@@ -20,8 +20,10 @@ app/                 Expo Router screens (file = route)
   _layout.jsx          root layout: fonts, splash, auth provider
   index.jsx            entry: redirect to tabs or login
   (auth)/              login, register
-  (tabs)/              feed, churches, sermons, give, profile
-components/          shared UI (AppText, Button, TextField, StateView, FeedItem, SermonPlayer…)
+  (tabs)/              home feed, churches, sermons, give, profile
+  church/[slug].jsx    a church's page (cover, follow, service times, events, sermons, contact)
+components/          shared UI (AppText, Button, Pill, StateView, FeedItem, SermonPlayer…)
+  home/                the home screen's sections: banner carousel, church stories, live card, highlights…
 lib/                 api.js (Axios + helpers), auth.jsx (session), session.js (secure token), useFetch.js
 constants/theme.js   brand colours, fonts, spacing
 assets/              icon, adaptive icon, splash (generated, brand magenta)

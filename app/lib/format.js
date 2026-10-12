@@ -45,3 +45,32 @@ export function excerpt(text = '', max = 220) {
   const clean = String(text).replace(/\s+/g, ' ').trim();
   return clean.length > max ? `${clean.slice(0, max - 1).trim()}…` : clean;
 }
+
+/** "Good morning" / "Good afternoon" / "Good evening" for the viewer's local time. */
+export function greeting(date = new Date()) {
+  const hour = date.getHours();
+  return hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+}
+
+/** "MONDAY, 12 OCTOBER" style line for the home header. */
+export function longDate(date = new Date()) {
+  return date.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' }).toUpperCase();
+}
+
+/** Month ("NOV") and day ("1") for a calendar tile. */
+export function dateTile(iso) {
+  const date = new Date(iso);
+  return { month: date.toLocaleDateString(undefined, { month: 'short' }).toUpperCase(), day: String(date.getDate()) };
+}
+
+/** "Wed, 6:00 PM" */
+export function dayAndTime(iso) {
+  if (!iso) return '';
+  const date = new Date(iso);
+  return `${date.toLocaleDateString(undefined, { weekday: 'short' })}, ${date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`;
+}
+
+/** First name for greetings. */
+export function firstName(name = '') {
+  return String(name).trim().split(/\s+/)[0] || '';
+}

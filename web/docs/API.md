@@ -112,7 +112,7 @@ This endpoint is public and lists active churches. Optional filters: `q` (name o
 
 ### `GET /churches/{slug}`
 
-This endpoint is public. It returns church details, service times, accepted giving methods and the subscriber count. `contact` (phone, email, street address and social links) is filled in only for subscribers and the church's staff; for everyone else it is `null`.
+This endpoint is public. It returns church details, service times, accepted giving methods and the subscriber count. `contact` (phone, email, street address and social links) is filled in only for subscribers and the church's staff; for everyone else it is `null`. When a token is sent, `is_subscribed` says whether this member follows the church.
 
 ```json
 { "data": { "id": 1, "slug": "grace-lira", "name": "Grace Community Church Lira", "denomination": "Pentecostal",
@@ -133,9 +133,29 @@ Unfollows the church.
 
 ## Feed and content 🔒
 
+### `GET /home` 🔒
+
+Everything the app's home screen shows above the feed, in one request (all content is limited to churches the member follows):
+
+```json
+{ "data": {
+  "slides": [ { "kind": "slide", "image": "…", "image_sm": "…", "title": "Welcome home", "subtitle": "…", "church": { "id": 1, "slug": "grace-lira", "name": "…", "logo_url": "…" } } ],
+  "churches": [ { "id": 1, "slug": "grace-lira", "name": "…", "logo_url": "…", "is_live": false } ],
+  "live": [ { "…": "live stream (as /live), live ones first" } ],
+  "announcements": [ { "id": 7, "title": "…", "body": "short text", "urgent": true, "published_at": "…", "church": { "…": "…" } } ],
+  "events": [ { "…": "next upcoming events (as /events)" } ],
+  "devotional": { "id": 3, "title": "…", "scripture": "Psalm 119:105", "scripture_text": "…", "excerpt": "…", "publish_date": "2026-10-12", "church": { }, "web_url": "…" },
+  "campaigns": [ { "id": 2, "title": "…", "goal": 150000000, "raised": 22700000, "percent": 15.1, "currency": "UGX", "givers": 40, "ends_at": null, "cover_url": null, "church": { }, "web_url": "…" } ],
+  "sermons": [ { "…": "latest sermons (as /sermons)" } ]
+} }
+```
+
+`slides` are the churches' banner photos taking turns between the churches (a church needs at least 4 photos). A church without enough
+photos falls back to its cover photo (`"kind": "cover"`), so a member who follows any church always gets a banner. Announcements list
+urgent ones first, `devotional` is the newest from the last 7 days (or `null`), and ended campaigns are left out.
 ### `GET /feed?before=<ISO time>`
 
-Returns the home feed across every church the member follows, newest first. Each item has `type` (`post`, `sermon`, `devotional`, `announcement`, `event`, `live`, `campaign_update`, `prayer` or `testimony`), `at`, `church` and an `item` payload. To fetch the next page, pass `before=<next_before>`.
+Returns the home feed across every church the member follows, newest first. Each item has `type` (`post`, `sermon`, `devotional`, `announcement`, `event`, `live`, `campaign_update`, `prayer` or `testimony`), `at`, `church` (with `logo_url`) and an `item` payload. Beyond `id`, `title` and `body`, the payload carries what a card needs: `scripture` / `scripture_text` / `web_url` for devotionals, `urgent` for announcements, `images` (up to 4 URLs) for posts and `author` for testimonies (`null` when anonymous). To fetch the next page, pass `before=<next_before>`.
 
 ```json
 { "data": [ { "type": "sermon", "at": "2026-10-11T10:00:00+03:00", "church": { "id": 1, "slug": "grace-lira", "name": "…" },

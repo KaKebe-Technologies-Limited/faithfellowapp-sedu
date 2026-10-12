@@ -4,6 +4,7 @@
 import { useState } from 'react';
 import { Alert, FlatList, Pressable, RefreshControl, StyleSheet, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import AppText from '../../components/AppText';
 import Button from '../../components/Button';
 import Card from '../../components/Card';
@@ -102,6 +103,7 @@ export default function ChurchesScreen() {
             const following = followedSlugs.has(church.slug);
             const place = [church.location?.city ?? church.city, church.denomination].filter(Boolean).join(' · ');
             return (
+              <Pressable onPress={() => router.push({ pathname: '/church/[slug]', params: { slug: church.slug } })} accessibilityLabel={"Open " + church.name}>
               <Card style={styles.row}>
                 <ChurchAvatar church={church} size={48} />
                 <View style={styles.rowText}>
@@ -116,6 +118,7 @@ export default function ChurchesScreen() {
                   <Button title="Follow" small loading={busySlug === church.slug} onPress={() => toggle(church, true)} />
                 )}
               </Card>
+              </Pressable>
             );
           }}
         />

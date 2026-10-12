@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\ChurchSummaryResource;
 use App\Http\Resources\EventResource;
 use App\Http\Resources\LiveStreamResource;
 use App\Http\Resources\PrayerRequestResource;
@@ -11,6 +12,7 @@ use App\Models\Event;
 use App\Models\LiveStream;
 use App\Models\Sermon;
 use App\Services\FeedService;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -28,21 +30,40 @@ class ContentController extends Controller
             'data' => $page['items']->map(fn ($item) => [
                 'type' => $item['type'],
                 'at' => $item['at']->toIso8601String(),
-                'church' => ['id' => $item['church']->id, 'slug' => $item['church']->slug, 'name' => $item['church']->name],
+                'church' => new ChurchSummaryResource($item['church']),
                 'item' => match ($item['type']) {
                     'sermon' => new SermonResource($item['model']),
                     'event' => new EventResource($item['model']),
                     'live' => new LiveStreamResource($item['model']),
                     'prayer' => new PrayerRequestResource($item['model']),
-                    default => [
-                        'id' => $item['model']->getKey(),
-                        'title' => $item['model']->title ?? null,
-                        'body' => strip_tags((string) ($item['model']->body ?? $item['model']->content ?? '')),
-                    ],
+                    default => $this->plainItem($item['type'], $item['model']),
                 },
             ])->values(),
             'next_before' => $page['next'],
         ]);
+    }
+
+    /**
+     * Feed items that have no resource of their own: title and text, plus the few extras the app draws
+     * (scripture for devotionals, the urgent flag for announcements, photos for posts, the author of a testimony).
+     *
+     * @return array<string, mixed>
+     */
+    protected function plainItem(string $type, Model $model): array
+    {
+        $base = [
+            'id' => $model->getKey(),
+            'title' => $model->title ?? null,
+            'body' => strip_tags((string) ($model->body ?? $model->content ?? '')),
+        ];
+
+        return match ($type) {
+            'devotional' => $base + ['scripture' => $model->scripture, 'scripture_text' => $model->scripture_text, 'web_url' => route('devotionals.show', $model)],
+            'announcement' => $base + ['urgent' => $model->priority === 'urgent'],
+            'post' => $base + ['images' => $model->getMedia('images')->take(4)->map(fn ($media) => $media->getUrl('feed'))->values()->all()],
+            'testimony' => $base + ['author' => $model->is_anonymous ? null : $model->user?->name],
+            default => $base,
+        };
     }
 
     public function sermons(Request $request): AnonymousResourceCollection

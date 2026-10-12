@@ -29,10 +29,10 @@ export default function TabsLayout() {
         tabBarLabelStyle: { fontFamily: FONTS.medium, fontSize: 11, lineHeight: 14 },
         // Room for icon + label, plus the home-indicator area on notched phones.
         tabBarStyle: { backgroundColor: COLORS.white, borderTopColor: COLORS.gray100, height: 72 + insets.bottom, paddingTop: 8, paddingBottom: 10 + insets.bottom },
-        sceneStyle: { backgroundColor: COLORS.gray100 },
+        sceneStyle: { backgroundColor: COLORS.canvas },
       }}
     >
-      <Tabs.Screen name="index" options={{ title: 'Feed', tabBarIcon: icon('home-outline', 'home') }} />
+      <Tabs.Screen name="index" options={{ title: 'Feed', headerShown: false, tabBarIcon: icon('home-outline', 'home') }} />
       <Tabs.Screen name="churches" options={{ title: 'Churches', tabBarIcon: icon('people-outline', 'people') }} />
       <Tabs.Screen name="sermons" options={{ title: 'Sermons', tabBarIcon: icon('mic-outline', 'mic') }} />
       <Tabs.Screen name="give" options={{ title: 'Give', tabBarIcon: icon('heart-outline', 'heart') }} />
