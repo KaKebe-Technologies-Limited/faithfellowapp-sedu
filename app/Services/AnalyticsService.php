@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Church;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Str;
 
 /**
  * Aggregates metrics for church admin and super admin dashboards.
@@ -48,6 +49,15 @@ class AnalyticsService
             ],
         ];
 
+        if (auth()->user()?->canInChurch($church, 'giving.view')) {
+            $finance = $this->financeDashboard($church);
+            $cards[] = ['label' => __('Giving this month'), 'value' => ff_money($finance['month']), 'icon' => 'bi-cash-coin', 'trend' => $finance['month_trend'], 'href' => route('church-admin.giving.index', $church)];
+            $active = $church->campaigns()->active()->orderByDesc('raised_amount')->first();
+            $cards[] = $active
+                ? ['label' => __('Top campaign'), 'value' => round($active->percent()).'%', 'icon' => 'bi-flag', 'note' => Str::limit($active->title, 28), 'href' => route('church-admin.campaigns.show', [$church, $active])]
+                : ['label' => __('Givers this month'), 'value' => number_format($finance['givers_month']), 'icon' => 'bi-heart'];
+        }
+
         return [
             'cards' => $cards,
             'charts' => [[
@@ -56,6 +66,45 @@ class AnalyticsService
             ]],
             'lists' => [],
             'side' => [],
+        ];
+    }
+
+    /**
+     * Finance dashboard: totals, categories, methods, weekly trend.
+     *
+     * @return array<string, mixed>
+     */
+    public function financeDashboard(Church $church): array
+    {
+        $ok = fn () => $church->donations()->getQuery()->where('status', 'succeeded');
+
+        $thisMonth = (float) $ok()->where('paid_at', '>=', now()->startOfMonth())->sum('amount');
+        $lastMonth = (float) $ok()->whereBetween('paid_at', [now()->subMonthNoOverflow()->startOfMonth(), now()->subMonthNoOverflow()->endOfMonth()])->sum('amount');
+
+        $byCategory = $ok()->where('paid_at', '>=', now()->startOfYear())->selectRaw('category, SUM(amount) total')->groupBy('category')->orderByDesc('total')->pluck('total', 'category');
+        $byMethod = $ok()->where('paid_at', '>=', now()->startOfYear())->selectRaw('method, SUM(amount) total')->groupBy('method')->orderByDesc('total')->pluck('total', 'method');
+
+        return [
+            'today' => (float) $ok()->where('paid_at', '>=', today())->sum('amount'),
+            'week' => (float) $ok()->where('paid_at', '>=', now()->startOfWeek())->sum('amount'),
+            'month' => $thisMonth,
+            'month_trend' => $this->trend($thisMonth, $lastMonth),
+            'year' => (float) $ok()->where('paid_at', '>=', now()->startOfYear())->sum('amount'),
+            'givers_month' => $ok()->where('paid_at', '>=', now()->startOfMonth())->distinct()->count('user_id'),
+            'pending' => $church->donations()->whereIn('status', ['pending', 'processing'])->count(),
+            'pledged_outstanding' => (float) $church->pledges()->whereIn('status', ['active', 'overdue'])->sum(\DB::raw('amount - paid_amount')),
+            'recurring_monthly' => (float) $church->recurringGifts()->where('status', 'active')
+                ->sum(\DB::raw("CASE frequency WHEN 'weekly' THEN amount * 4.33 WHEN 'quarterly' THEN amount / 3 ELSE amount END")),
+            'trendChart' => $this->weeklySeries($ok(), 'paid_at', __('Giving (UGX)'), 12, 'amount'),
+            'categoryChart' => [
+                'type' => 'doughnut',
+                'data' => [
+                    'labels' => $byCategory->keys()->map(fn ($c) => config('faithfellows.giving_categories.'.$c, $c))->values(),
+                    'datasets' => [['data' => $byCategory->values()->map(fn ($v) => (float) $v)]],
+                ],
+                'legend' => true,
+            ],
+            'byMethod' => $byMethod,
         ];
     }
 

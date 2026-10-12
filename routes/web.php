@@ -6,7 +6,9 @@ use App\Http\Controllers\Member;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Public;
 use App\Http\Controllers\SuperAdmin;
+use App\Http\Controllers\Webhooks\PaymentWebhookController;
 use App\Http\Controllers\Webhooks\RtmpController;
+use App\Http\Controllers\Webhooks\UssdController;
 use App\Models\Church;
 use Illuminate\Support\Facades\Route;
 
@@ -95,12 +97,29 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/events/{event}/questions', [Member\EventController::class, 'ask'])->middleware('throttle:engagement')->name('events.questions.store');
     Route::post('/events/{event}/questions/{question}/upvote', [Member\EventController::class, 'upvote'])->name('events.questions.upvote');
 
+    // Giving
+    Route::get('/giving', [Member\GivingController::class, 'index'])->name('giving.index');
+    Route::get('/giving/receipts/{reference}', [Member\GivingController::class, 'receipt'])->name('giving.receipt');
+    Route::post('/churches/{church}/pledges', [Member\GivingController::class, 'storePledge'])->name('pledges.store');
+    Route::delete('/pledges/{pledge}', [Member\GivingController::class, 'cancelPledge'])->name('pledges.cancel');
+    Route::put('/recurring/{recurringGift}', [Member\GivingController::class, 'updateRecurring'])->name('recurring.update');
+    Route::get('/give/{church}', [Member\GiveController::class, 'create'])->name('give.create');
+    Route::post('/give/{church}', [Member\GiveController::class, 'store'])->middleware('throttle:giving')->name('give.store');
+    Route::get('/give/status/{reference}', [Member\GiveController::class, 'status'])->name('give.status');
+    Route::get('/give/status/{reference}/check', [Member\GiveController::class, 'statusJson'])->middleware('throttle:60,1')->name('give.status.check');
+    Route::match(['get', 'post'], '/give/sandbox/{reference}', [Member\GiveController::class, 'sandbox'])->name('give.sandbox');
+    Route::match(['get', 'post'], '/give/ticket/{rsvp}', [Member\GiveController::class, 'ticket'])->middleware('throttle:giving')->name('give.ticket');
+    Route::get('/campaigns', [Member\CampaignController::class, 'index'])->name('campaigns.index');
+    Route::post('/campaigns/{campaign}/comments', [Member\CampaignController::class, 'comment'])->middleware('throttle:engagement')->name('campaigns.comments.store');
+
     // Live
     Route::get('/live', [Member\LiveController::class, 'index'])->name('live.index');
     Route::post('/live/{liveStream}/messages', [Member\LiveController::class, 'postMessage'])->middleware('throttle:engagement')->name('live.messages.store');
 });
 
 Route::get('/events/{event}', [Member\EventController::class, 'show'])->name('events.show');
+Route::get('/campaigns/{campaign}', [Member\CampaignController::class, 'show'])->name('campaigns.show');
+Route::get('/campaigns/{campaign}/poster', [Member\CampaignController::class, 'poster'])->name('campaigns.poster');
 Route::get('/live/{liveStream}', [Member\LiveController::class, 'show'])->name('live.show');
 Route::post('/live/{liveStream}/heartbeat', [Member\LiveController::class, 'heartbeat'])->middleware('throttle:engagement')->name('live.heartbeat');
 Route::get('/live/{liveStream}/messages', [Member\LiveController::class, 'messages'])->middleware('throttle:120,1')->name('live.messages');
@@ -114,6 +133,9 @@ Route::get('/live/{liveStream}/messages', [Member\LiveController::class, 'messag
 Route::prefix('webhooks')->name('webhooks.')->middleware('throttle:webhooks')->group(function () {
     Route::post('/rtmp/publish', [RtmpController::class, 'publish'])->name('rtmp.publish');
     Route::post('/rtmp/done', [RtmpController::class, 'done'])->name('rtmp.done');
+    Route::post('/ussd', UssdController::class)->name('ussd');
+    Route::post('/{provider}', PaymentWebhookController::class)
+        ->whereIn('provider', ['mtn-momo', 'mtn_momo', 'airtel', 'airtel_money', 'iotec', 'stripe'])->name('payments');
 });
 
 // Public sermons / devotionals / announcements are viewable by visitors (policies decide).
@@ -164,6 +186,13 @@ Route::prefix('church/{church}/admin')->name('church-admin.')
             Route::get('/settings/integrations', [ChurchAdmin\SettingsController::class, 'integrations'])->name('settings.integrations');
             Route::put('/settings/integrations', [ChurchAdmin\SettingsController::class, 'updateIntegrations'])->name('settings.integrations.update');
             Route::resource('branches', ChurchAdmin\BranchController::class)->except('show');
+            Route::get('/settings/giving', [ChurchAdmin\GivingChannelController::class, 'edit'])->name('settings.giving');
+            Route::put('/settings/giving', [ChurchAdmin\GivingChannelController::class, 'update'])->name('settings.giving.update');
+            Route::get('/billing', [ChurchAdmin\BillingController::class, 'index'])->name('billing.index');
+            Route::post('/billing/invoices/{invoice}/pay', [ChurchAdmin\BillingController::class, 'pay'])->middleware('throttle:giving')->name('billing.pay');
+            Route::post('/billing/invoices/{invoice}/check', [ChurchAdmin\BillingController::class, 'check'])->name('billing.check');
+            Route::post('/billing/plan', [ChurchAdmin\BillingController::class, 'changePlan'])->name('billing.plan');
+            Route::post('/billing/domain', [ChurchAdmin\BillingController::class, 'requestDomain'])->name('billing.domain');
         });
 
         Route::get('/search', ChurchAdmin\SearchController::class)->name('search');
@@ -208,6 +237,32 @@ Route::prefix('church/{church}/admin')->name('church-admin.')
             Route::post('/live/{liveStream}/key', [ChurchAdmin\LiveStreamController::class, 'rotateKey'])->name('live.key');
             Route::get('/live/{liveStream}/stats', [ChurchAdmin\LiveStreamController::class, 'stats'])->name('live.stats');
             Route::post('/live/{liveStream}/messages/{messageId}/hide', [ChurchAdmin\LiveStreamController::class, 'hideMessage'])->whereNumber('messageId')->name('live.messages.hide');
+        });
+
+        // Giving & finance
+        Route::middleware('church.can:giving.view')->group(function () {
+            Route::get('/giving', [ChurchAdmin\GivingController::class, 'index'])->name('giving.index');
+            Route::get('/giving/transactions', [ChurchAdmin\GivingController::class, 'transactions'])->name('giving.transactions');
+            Route::get('/giving/export', [ChurchAdmin\GivingController::class, 'export'])->name('giving.export');
+            Route::get('/giving/payouts', [ChurchAdmin\PayoutController::class, 'index'])->name('payouts.index');
+        });
+        Route::middleware('church.can:giving.manage')->group(function () {
+            Route::post('/giving/record', [ChurchAdmin\GivingController::class, 'record'])->name('giving.record');
+            Route::post('/giving/{donation}/refund', [ChurchAdmin\GivingController::class, 'refund'])->name('giving.refund');
+            Route::post('/giving/{donation}/confirm', [ChurchAdmin\GivingController::class, 'confirm'])->name('giving.confirm');
+            Route::post('/giving/payouts', [ChurchAdmin\PayoutController::class, 'store'])->name('payouts.store');
+            Route::put('/giving/payouts/{payout}', [ChurchAdmin\PayoutController::class, 'update'])->name('payouts.update');
+            Route::get('/giving/reconciliation', [ChurchAdmin\ReconciliationController::class, 'index'])->name('reconciliation.index');
+            Route::post('/giving/reconciliation', [ChurchAdmin\ReconciliationController::class, 'import'])->name('reconciliation.import');
+            Route::put('/giving/reconciliation/{bankStatementLine}', [ChurchAdmin\ReconciliationController::class, 'match'])->name('reconciliation.match');
+            Route::get('/giving/channels', fn ($church) => redirect()->route('church-admin.settings.giving', $church));
+        });
+
+        // Campaigns
+        Route::middleware('church.can:campaigns.manage')->group(function () {
+            Route::resource('campaigns', ChurchAdmin\CampaignController::class);
+            Route::post('/campaigns/{campaign}/updates', [ChurchAdmin\CampaignController::class, 'storeUpdate'])->name('campaigns.updates.store');
+            Route::get('/campaigns/{campaign}/export', [ChurchAdmin\CampaignController::class, 'export'])->name('campaigns.export');
         });
 
         Route::middleware('church.can:media.manage')->group(function () {
@@ -266,6 +321,18 @@ Route::prefix('super-admin')->name('super-admin.')
         Route::post('/churches/{church:id}/archive', [SuperAdmin\ChurchController::class, 'archive'])->name('churches.archive');
 
         Route::post('/impersonate/{user}', [SuperAdmin\ImpersonationController::class, 'start'])->name('impersonate.start');
+
+        // Billing
+        Route::get('/subscriptions', [SuperAdmin\BillingController::class, 'subscriptions'])->name('subscriptions.index');
+        Route::put('/subscriptions/{church:id}', [SuperAdmin\BillingController::class, 'updateSubscription'])->name('subscriptions.update');
+        Route::get('/invoices', [SuperAdmin\BillingController::class, 'invoices'])->name('invoices.index');
+        Route::post('/invoices', [SuperAdmin\BillingController::class, 'createInvoice'])->name('invoices.store');
+        Route::post('/invoices/generate', [SuperAdmin\BillingController::class, 'generate'])->name('invoices.generate');
+        Route::post('/invoices/{invoice}/paid', [SuperAdmin\BillingController::class, 'markPaid'])->name('invoices.paid');
+        Route::post('/invoices/{invoice}/void', [SuperAdmin\BillingController::class, 'void'])->name('invoices.void');
+        Route::get('/plans', [SuperAdmin\BillingController::class, 'plans'])->name('plans.index');
+        Route::post('/plans', [SuperAdmin\BillingController::class, 'savePlan'])->name('plans.store');
+        Route::put('/plans/{plan}', [SuperAdmin\BillingController::class, 'savePlan'])->name('plans.update');
     });
 
 require __DIR__.'/auth.php';

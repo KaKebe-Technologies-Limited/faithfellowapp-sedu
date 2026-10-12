@@ -1,0 +1,75 @@
+<?php
+
+namespace App\Services;
+
+use App\Contracts\PaymentDriver;
+use App\Services\Payments\Drivers\AirtelMoneyDriver;
+use App\Services\Payments\Drivers\IotecDriver;
+use App\Services\Payments\Drivers\ManualDriver;
+use App\Services\Payments\Drivers\MtnMomoDriver;
+use App\Services\Payments\Drivers\SandboxDriver;
+use App\Services\Payments\Drivers\StripeDriver;
+use InvalidArgumentException;
+
+/**
+ * Driver-based payment manager.
+ *
+ *   PaymentService::driver('iotec')->charge($donation);
+ *   PaymentService::driver('mtn_momo')->charge($donation);
+ *   PaymentService::driver('airtel_money')->charge($donation);
+ *   PaymentService::driver('stripe')->charge($donation);
+ *
+ * When PAYMENTS_SANDBOX=true, or a gateway has no credentials configured,
+ * the SandboxDriver simulates it so the whole flow works locally.
+ */
+class PaymentService
+{
+    /** @var array<string, class-string<PaymentDriver>> */
+    protected const DRIVERS = [
+        'mtn_momo' => MtnMomoDriver::class,
+        'airtel_money' => AirtelMoneyDriver::class,
+        'iotec' => IotecDriver::class,
+        'stripe' => StripeDriver::class,
+        'bank' => ManualDriver::class,
+        'cash' => ManualDriver::class,
+        'ussd' => IotecDriver::class,
+    ];
+
+    /** @var array<string, PaymentDriver> */
+    protected static array $resolved = [];
+
+    public static function driver(string $method): PaymentDriver
+    {
+        if (! array_key_exists($method, self::DRIVERS)) {
+            throw new InvalidArgumentException("Unsupported payment method [$method].");
+        }
+
+        return static::$resolved[$method] ??= static::make($method);
+    }
+
+    protected static function make(string $method): PaymentDriver
+    {
+        $class = self::DRIVERS[$method];
+
+        if ($class === ManualDriver::class) {
+            return new ManualDriver($method);
+        }
+
+        if (config('faithfellows.payments.sandbox') || ! $class::configured()) {
+            return new SandboxDriver($method);
+        }
+
+        return app($class);
+    }
+
+    public static function isSandbox(string $method): bool
+    {
+        return static::driver($method) instanceof SandboxDriver;
+    }
+
+    /** Reset cached drivers (tests / config changes). */
+    public static function flush(): void
+    {
+        static::$resolved = [];
+    }
+}

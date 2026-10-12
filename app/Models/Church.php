@@ -40,7 +40,7 @@ class Church extends Model implements HasMedia
         'languages', 'country', 'district', 'city', 'address', 'lat', 'lng', 'phone', 'email', 'website',
         'brand_color', 'website_blocks', 'settings', 'custom_domain', 'custom_domain_verified',
         'status', 'application_notes', 'status_reason', 'approved_at', 'approved_by', 'setup_completed_at',
-        'requires_member_approval', 'is_featured',
+        'requires_member_approval', 'is_featured', 'plan_id', 'billing_status', 'trial_ends_at', 'paid_until', 'domain_addon',
     ];
 
     protected $attributes = [
@@ -62,6 +62,9 @@ class Church extends Model implements HasMedia
             'custom_domain_verified' => 'boolean',
             'requires_member_approval' => 'boolean',
             'is_featured' => 'boolean',
+            'trial_ends_at' => 'date',
+            'paid_until' => 'date',
+            'domain_addon' => 'boolean',
         ];
     }
 
@@ -219,6 +222,71 @@ class Church extends Model implements HasMedia
     public function liveStreams(): HasMany
     {
         return $this->hasMany(LiveStream::class);
+    }
+
+    public function givingChannels(): HasMany
+    {
+        return $this->hasMany(GivingChannel::class)->orderBy('sort');
+    }
+
+    public function campaigns(): HasMany
+    {
+        return $this->hasMany(Campaign::class);
+    }
+
+    public function donations(): HasMany
+    {
+        return $this->hasMany(Donation::class);
+    }
+
+    public function pledges(): HasMany
+    {
+        return $this->hasMany(Pledge::class);
+    }
+
+    public function recurringGifts(): HasMany
+    {
+        return $this->hasMany(RecurringGift::class);
+    }
+
+    public function payouts(): HasMany
+    {
+        return $this->hasMany(Payout::class);
+    }
+
+    public function bankStatementLines(): HasMany
+    {
+        return $this->hasMany(BankStatementLine::class);
+    }
+
+    public function comments(): HasMany
+    {
+        return $this->hasMany(Comment::class);
+    }
+
+    public function plan(): BelongsTo
+    {
+        return $this->belongsTo(Plan::class);
+    }
+
+    public function invoices(): HasMany
+    {
+        return $this->hasMany(SubscriptionInvoice::class);
+    }
+
+    /**
+     * A usage limit from the church's plan (storage_mb, stream_hours, max_admins, max_branches).
+     */
+    public function planLimit(string $key): ?int
+    {
+        $column = match ($key) {
+            'admins' => 'max_admins',
+            'branches' => 'max_branches',
+            default => $key,
+        };
+        $plan = $this->relationLoaded('plan') ? $this->plan : ($this->plan_id ? $this->plan()->first() : null);
+
+        return $plan?->{$column} !== null ? (int) $plan->{$column} : null;
     }
 
     public function auditLogs(): HasMany

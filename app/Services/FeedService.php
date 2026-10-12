@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Announcement;
+use App\Models\CampaignUpdate;
 use App\Models\Devotional;
 use App\Models\Event;
 use App\Models\LiveStream;
@@ -102,6 +103,14 @@ class FeedService
                 // Live services always float to the top of the first page.
                 ->map(fn (LiveStream $s) => ['type' => 'live', 'at' => $before->copy()->subSecond(), 'church' => $s->church, 'model' => $s])
                 ->filter(fn () => abs($before->diffInSeconds(now())) < 60),
+
+            'campaign_updates' => fn (array $churchIds, Carbon $before, int $limit) => CampaignUpdate::query()
+                ->with(['campaign.church.media', 'campaign.media', 'media'])
+                ->forChurches($churchIds)->whereNotNull('published_at')
+                ->where('published_at', '<', $before)
+                ->whereHas('campaign', fn ($q) => $q->whereIn('status', ['active', 'completed']))
+                ->latest('published_at')->take($limit)->get()
+                ->map(fn (CampaignUpdate $u) => ['type' => 'campaign_update', 'at' => $u->published_at, 'church' => $u->campaign->church, 'model' => $u]),
 
             'announcements' => fn (array $churchIds, Carbon $before, int $limit) => Announcement::query()
                 ->with(['church.media', 'media'])

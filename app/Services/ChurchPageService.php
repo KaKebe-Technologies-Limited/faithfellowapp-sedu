@@ -37,6 +37,11 @@ class ChurchPageService
                 ->when(! $isMember, fn ($q) => $q->where('visibility', 'public'))
                 ->orderBy('starts_at')->take(10)->get()
                 ->each(fn ($e) => $e->setRelation('church', $church)),
+            'campaigns' => $church->campaigns()->with('media')->whereIn('status', ['active'])
+                ->when(! $isMember, fn ($q) => $q->where('visibility', 'public'))
+                ->orderByDesc('is_featured')->latest()->take(6)->get()
+                ->each(fn ($c) => $c->setRelation('church', $church)),
+            'givingChannels' => $church->givingChannels()->where('is_active', true)->get(),
             'liveNow' => $church->liveStreams()->live()->latest('started_at')->first(),
             'nextLive' => $church->liveStreams()->where('status', 'scheduled')->where('scheduled_at', '>=', now())->orderBy('scheduled_at')->first(),
             'devotional' => $church->devotionals()->published()

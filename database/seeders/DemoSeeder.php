@@ -4,10 +4,12 @@ namespace Database\Seeders;
 
 use App\Models\Church;
 use App\Models\User;
+use App\Services\CampaignService;
 use App\Services\ChurchOnboardingService;
 use App\Services\StreamingService;
 use App\Support\ReadingPlanTemplates;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 use Spatie\Permission\Models\Role;
 
 /**
@@ -128,6 +130,94 @@ class DemoSeeder extends Seeder
         $this->seedSubscriptionsAndPosts($member, $pastor);
         $this->seedContent($member, $pastor);
         $this->seedEventsAndLive($member, $pastor);
+        $this->seedGiving($member, $pastor);
+    }
+
+    /**
+     * Sprint 6: giving channels, a building campaign with gifts, pledges, recurring.
+     * Records are inserted directly (no gateway calls, no notification spam).
+     */
+    protected function seedGiving(User $member, User $pastor): void
+    {
+        $grace = Church::where('slug', 'grace-lira')->first();
+        if ($grace->campaigns()->exists()) {
+            return;
+        }
+
+        foreach (Church::where('status', 'active')->get() as $church) {
+            foreach (['mtn_momo', 'airtel_money', 'stripe', 'bank', 'cash'] as $i => $type) {
+                $church->givingChannels()->updateOrCreate(['type' => $type], [
+                    'is_active' => true, 'sort' => $i,
+                    'details' => $type === 'bank' ? ['bank_name' => 'Centenary Bank', 'account_name' => $church->name, 'account_number' => '31000'.str_pad((string) $church->id, 5, '0', STR_PAD_LEFT), 'branch' => $church->city] : null,
+                ]);
+            }
+        }
+
+        $campaign = $grace->campaigns()->create([
+            'user_id' => $pastor->id, 'title' => 'New Sanctuary Building Fund', 'type' => 'building',
+            'short_description' => 'Help us build a 1,200-seat sanctuary for our growing church family in Lira.',
+            'story' => '<p>Every Sunday we hold three services because our hall seats only 350. The new sanctuary will welcome 1,200 people, host community events and shelter our children’s ministry.</p><h3>What your gift does</h3><ul><li>UGX 50,000 buys 100 bricks</li><li>UGX 500,000 buys a bag of cement for every row of pews</li><li>UGX 5,000,000 roofs one bay</li></ul>',
+            'goal_amount' => 150000000, 'currency' => 'UGX', 'status' => 'active', 'visibility' => 'public', 'show_leaderboard' => true,
+            'allow_anonymous' => true, 'is_featured' => true, 'starts_at' => now()->subMonths(3), 'ends_at' => now()->addMonths(5),
+        ]);
+        app(CampaignService::class)->createDefaultMilestones($campaign);
+        $youth = $campaign->teams()->create(['church_id' => $grace->id, 'name' => 'Youth', 'goal_amount' => 30000000, 'color' => '#2D7FF9']);
+        $women = $campaign->teams()->create(['church_id' => $grace->id, 'name' => 'Women’s Guild', 'goal_amount' => 30000000, 'color' => '#BC2649']);
+
+        $welfare = $grace->campaigns()->create([
+            'user_id' => $pastor->id, 'title' => 'Christmas Welfare Drive', 'type' => 'welfare',
+            'short_description' => 'Food parcels for 200 vulnerable families this Christmas.', 'goal_amount' => 20000000,
+            'status' => 'active', 'visibility' => 'public', 'ends_at' => now()->addWeeks(6),
+        ]);
+        app(CampaignService::class)->createDefaultMilestones($welfare);
+
+        $givers = User::whereHas('subscriptions', fn ($q) => $q->where('church_id', $grace->id))->get();
+        $methods = ['mtn_momo', 'mtn_momo', 'airtel_money', 'airtel_money', 'stripe', 'cash', 'bank'];
+        $categories = ['tithe', 'tithe', 'tithe', 'offering', 'offering', 'building_fund', 'missions', 'welfare'];
+        $n = 0;
+
+        foreach (range(0, 120) as $i) {
+            $giver = $givers->random();
+            $forCampaign = $i % 3 === 0;
+            $paidAt = now()->subDays(random_int(0, 84))->setTime(random_int(7, 20), random_int(0, 59));
+            $amount = collect([5000, 10000, 20000, 50000, 100000, 200000, 500000])->random();
+            $donation = $grace->donations()->create([
+                'user_id' => $giver->id, 'campaign_id' => $forCampaign ? $campaign->id : null,
+                'campaign_team_id' => $forCampaign ? collect([$youth->id, $women->id, null])->random() : null,
+                'category' => $forCampaign ? 'campaign' : collect($categories)->random(), 'amount' => $forCampaign ? $amount * 4 : $amount,
+                'currency' => 'UGX', 'method' => collect($methods)->random(), 'phone' => $giver->phone,
+                'status' => 'succeeded', 'paid_at' => $paidAt, 'provider_ref' => 'DEMO-'.strtoupper(Str::random(10)),
+                'show_on_leaderboard' => $i % 2 === 0, 'is_anonymous' => $i % 9 === 0,
+                'created_at' => $paidAt, 'updated_at' => $paidAt,
+            ]);
+            $donation->forceFill(['receipt_number' => 'R'.$grace->id.'-'.$paidAt->format('y').'-'.str_pad((string) $donation->id, 7, '0', STR_PAD_LEFT), 'receipt_sent_at' => $paidAt])->saveQuietly();
+            $n++;
+        }
+
+        // Member's own giving history
+        foreach ([[50000, 'tithe', 20], [20000, 'offering', 13], [200000, 'campaign', 6], [50000, 'tithe', 2]] as [$amt, $cat, $days]) {
+            $d = $grace->donations()->create([
+                'user_id' => $member->id, 'category' => $cat, 'amount' => $amt, 'currency' => 'UGX', 'method' => 'mtn_momo', 'phone' => $member->phone,
+                'campaign_id' => $cat === 'campaign' ? $campaign->id : null, 'status' => 'succeeded', 'paid_at' => now()->subDays($days),
+                'provider_ref' => 'DEMO-M'.$days.strtoupper(Str::random(6)), 'show_on_leaderboard' => true,
+            ]);
+            $d->forceFill(['receipt_number' => 'R'.$grace->id.'-'.now()->format('y').'-'.str_pad((string) $d->id, 7, '0', STR_PAD_LEFT)])->saveQuietly();
+        }
+
+        $grace->pledges()->create(['user_id' => $member->id, 'campaign_id' => $campaign->id, 'category' => 'campaign', 'amount' => 1200000, 'paid_amount' => 200000, 'frequency' => 'monthly', 'installments' => 6, 'start_date' => now()->subMonth(), 'due_date' => now()->addMonths(5), 'next_reminder_on' => now()->addWeek(), 'status' => 'active']);
+        $grace->recurringGifts()->create(['user_id' => $member->id, 'category' => 'tithe', 'amount' => 50000, 'frequency' => 'monthly', 'method' => 'mtn_momo', 'phone' => $member->phone, 'next_run_on' => now()->addDays(10)->toDateString(), 'status' => 'active']);
+
+        // Totals & milestones without firing celebrations.
+        foreach ([$campaign, $welfare] as $c) {
+            $ok = $c->donations()->where('status', 'succeeded');
+            $c->update(['raised_amount' => (clone $ok)->sum('amount'), 'givers_count' => (clone $ok)->distinct()->count('user_id'), 'pledged_amount' => $c->pledges()->sum('amount')]);
+            $c->milestones()->where('percent', '<=', $c->fresh()->percent())->update(['reached_at' => now()->subWeek()]);
+            foreach ($c->teams as $team) {
+                $team->update(['raised_amount' => (clone $ok)->where('campaign_team_id', $team->id)->sum('amount')]);
+            }
+        }
+
+        $campaign->updates()->create(['church_id' => $grace->id, 'user_id' => $pastor->id, 'title' => 'Foundation complete! 🧱', 'body' => '<p>Thanks to your generosity the foundation was poured this month. Next: walls and pillars.</p>', 'published_at' => now()->subDays(4)]);
     }
 
     /**

@@ -91,6 +91,9 @@ class ChurchOnboardingService
 
             $this->createPresetRoles($church);
             $this->ensureMainBranch($church);
+            if (! $church->trial_ends_at) {
+                app(BillingService::class)->startTrial($church);
+            }
         });
 
         Audit::log('church.approved', $church, $church->name);
