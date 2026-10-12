@@ -11,6 +11,14 @@
     $tab = $tabs->has($tab) ? $tab : 'home';
 @endphp
 <x-dynamic-component :component="$layout" :title="$church->name" :description="$church->description" :image="$church->cover_url">
+    @push('head')
+        <script type="application/ld+json">{!! json_encode(array_filter([
+            '@@context' => 'https://schema.org', '@@type' => 'Church', 'name' => $church->name, 'url' => route('churches.show', $church),
+            'description' => $church->description, 'logo' => $church->logo_url, 'image' => $church->cover_url, 'telephone' => $church->phone, 'email' => $church->email,
+            'address' => ['@@type' => 'PostalAddress', 'streetAddress' => $church->address, 'addressLocality' => $church->city, 'addressRegion' => $church->district, 'addressCountry' => $church->country],
+            'geo' => $church->lat ? ['@@type' => 'GeoCoordinates', 'latitude' => (float) $church->lat, 'longitude' => (float) $church->lng] : null,
+        ]), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG) !!}</script>
+    @endpush
     <div @class(['ff-church-page', 'mx-n3 mx-md-n4 mt-n3 mt-md-n4' => auth()->check()])>
         <div class="ff-church-cover" style="{{ $church->cover_url ? "background-image:url('".e($church->cover_url)."')" : 'background: linear-gradient(135deg, '.e($church->brand_color).' 0%, #F27EA8 100%)' }}"></div>
         <div class="container-xxl px-3 px-md-4">

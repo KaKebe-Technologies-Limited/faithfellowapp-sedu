@@ -1,59 +1,125 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# FaithFellows
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+**Empowering Your Ministry in the Digital Age.**
 
-## About Laravel
+FaithFellows is a multi-tenant church management and engagement platform built for Uganda and East Africa by **Kakebe Technologies Limited** (Lira City). Every church gets its own digital home with a website, sermons, live streams, events, mobile-money giving, community features and pastoral care. Members follow any number of churches from one account.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+> Traditional methods of reaching and engaging congregations are no longer sufficient. Expensive radio and TV broadcasts limit your reach. FaithFellows offers a cost-effective, far-reaching, and user-friendly digital solution to keep your ministry thriving.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+**Pricing:** UGX 60,000 per church per month, with the first 12 months of hosting free. A custom domain is optional at UGX 60,000 per year.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+---
 
-## Learning Laravel
+## Features
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+| Area | What churches and members get |
+|------|-------------------------------|
+| **Church websites** | An auto-generated site at `{slug}.faithfellows.app` (or a custom domain) built from drag-and-drop blocks, plus a public page in the church directory |
+| **Content** | Sermons (audio/video, series, playlists, transcripts, offline listening), devotionals, announcements, reading plans |
+| **Live** | RTMP (OBS) or embedded streams, an HLS player with an audio-only mode for low bandwidth, live chat, viewer analytics and recordings |
+| **Events** | RSVPs, paid tickets, QR check-in, reminders, Q&A |
+| **Giving** | MTN MoMo, Airtel Money, Iotec, cards (Stripe), bank transfer, USSD, cash records, campaigns with milestones, pledges, recurring gifts, PDF receipts, payouts and reconciliation |
+| **Community** | A prayer wall (public / church / pastor-only, "I prayed", prayer chains), moderated testimonies, reactions and comments, small groups with leader tools, a volunteer rota |
+| **Care** | Service attendance (daily QR + geofence), birthdays and follow-ups, encrypted pastoral notes, welfare, home visits, a discipleship pathway, confidential counseling |
+| **Messaging** | In-app, email, web push, SMS and WhatsApp notifications, with quiet hours, a daily digest, a fallback chain and a church composer with SMS cost estimates |
+| **Insight** | Church analytics and platform analytics, CSV exports and PDF reports |
+| **Platform** | Church approvals, plans and billing, support tickets, moderation, users, blog, contact inbox, audit log, a payment-gateway kill switch |
+| **Access** | Bootstrap PWA (installable, works offline), a lite mode for slow connections, English, Luo, Luganda and Swahili, a JSON API (`/api/v1`) |
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+Roles: **Super Admin** (Kakebe staff), **Church Admin**, **Church Staff** (custom roles from a permission catalogue), **Member** and **Visitor**.
 
-## Laravel Sponsors
+## Tech stack
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+- **Laravel 12** on PHP 8.2+. Laravel 11 is blocked by security advisories; see [DECISIONS.md](DECISIONS.md) #1.
+- **MySQL 8 / MariaDB 10.4+**
+- **Blade + Alpine.js + Bootstrap 5.3**, built with **Vite**. No React, Vue, Tailwind or Inertia.
+- Breeze (auth), Sanctum (API tokens), Spatie Permission and Medialibrary, DomPDF, simple-qrcode, minishlink/web-push
+- Chart.js, Quill, hls.js and Leaflet, all lazy-loaded
+- Pest for tests, Pint for formatting
+- Brand: Viva Magenta `#BC2649`
 
-### Premium Partners
+## Quick start (local)
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+Requirements: PHP 8.2 with `pdo_mysql`, `gd` or `imagick`, `bcmath`, `intl`, `zip` and `openssl`; Composer; Node 20+; MySQL or MariaDB.
 
-## Contributing
+```bash
+git clone <repo> faithfellows && cd faithfellows
+composer install
+npm install
+cp .env.example .env
+php artisan key:generate
+# create the databases "faithfellows" and "faithfellows_test", then:
+php artisan migrate --seed
+php artisan ff:vapid --write        # web push keys (optional)
+npm run build                       # or: npm run dev
+php artisan serve
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+On Windows with XAMPP, use `C:\xampp\php\php.exe` for `php`. Web-push encryption also needs `OPENSSL_CONF=C:\xampp\php\extras\ssl\openssl.cnf` in the environment of the PHP process.
 
-## Code of Conduct
+To process queued notifications, receipts and other jobs, run a queue worker in a second terminal:
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+```bash
+php artisan queue:work
+```
 
-## Security Vulnerabilities
+To run scheduled tasks locally (publishing, reminders, digests and so on), run the scheduler:
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```bash
+php artisan schedule:work
+```
 
-## License
+### Demo accounts (seeded when `APP_ENV` is not `production`)
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+| Role | Email | Password |
+|------|-------|----------|
+| Super admin | `admin@faithfellows.app` | `SEED_SUPER_ADMIN_PASSWORD` from `.env` |
+| Church admin (Grace Community Church Lira) | `pastor@faithfellows.test` | `password` |
+| Finance staff | `finance@faithfellows.test` | `password` |
+| Member | `member@faithfellows.test` | `password` |
+
+Payments run in **sandbox mode** (`PAYMENTS_SANDBOX=true`): mobile-money gifts "approve" after a few seconds, numbers ending in `0000` are declined, and numbers ending in `1111` never answer. SMS and WhatsApp are written to the log until `SMS_ENABLED` / `WHATSAPP_ENABLED` are set.
+
+## Tests
+
+Tests run against the MySQL database `faithfellows_test` (configured in `phpunit.xml`):
+
+```bash
+php artisan test            # full suite
+php artisan test --filter=Giving
+./vendor/bin/pint           # code style
+```
+
+## Project layout
+
+```
+app/
+  Http/Controllers/{Public,Member,ChurchAdmin,SuperAdmin,Api/V1,Webhooks,ChurchSite}
+  Models/                   Eloquent models (tenant models use BelongsToChurch)
+  Services/                 Domain logic: Payment, Donation, Notification, Feed, Prayer, Care, Analytics…
+  Notifications/            ChurchNotification base + channels (SMS, WhatsApp, WebPush)
+  Policies/                 Per-model authorisation (tenant isolation + church permissions)
+config/faithfellows.php     Brand, pricing, permission catalogue, languages, payment methods
+routes/web.php              Public, member, /church/{slug}/admin, /super-admin, webhooks
+routes/api.php              /api/v1 (Sanctum)
+routes/console.php          ff:* commands and the schedule
+deploy/                     nginx, RTMP, supervisor, cron, deploy/backup/restore scripts
+docs/                       Deployment, admin, onboarding and API guides
+lang/                       Luo, Luganda, Swahili UI translations (drafts for native review)
+DECISIONS.md                Every architectural decision, sprint by sprint
+```
+
+## Documentation
+
+- [Deployment guide](docs/DEPLOYMENT.md): server setup, environment, workers, streaming, backups
+- [Super admin guide](docs/ADMIN_GUIDE.md): running the platform day to day
+- [Church onboarding guide](docs/CHURCH_ONBOARDING.md): from application to first live service
+- [API reference](docs/API.md): `/api/v1` for the mobile app and integrations
+- [DECISIONS.md](DECISIONS.md): why things are built the way they are
+
+## Company
+
+**Kakebe Technologies Limited**, Rm B1 Plot 43, Renzo City House, Obote Ave., Lira City · P.O Box 660031, Lira City
+0393249845 · service@kakebe.tech · [kakebe.tech](https://www.kakebe.tech)
+
+© Kakebe Technologies Limited. All rights reserved. Proprietary software.

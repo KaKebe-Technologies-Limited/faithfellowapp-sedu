@@ -1,0 +1,174 @@
+# FaithFellows API v1
+
+This is a JSON REST API for the FaithFellows mobile app and integrations.
+
+**Base URL:** `https://faithfellows.app/api/v1`
+
+## Conventions
+
+- Send `Accept: application/json` and, for writes, `Content-Type: application/json`. All responses are JSON, including errors.
+- **Authentication:** `Authorization: Bearer <token>` (Laravel Sanctum personal access tokens). Tokens expire after 180 days.
+- **Rate limits:** 60 requests per minute per user (or IP). Token creation is limited to 10 per minute, plus 5 failed sign-ins per email/IP per minute. Giving is limited to 10 per minute. A `429` response includes `Retry-After`.
+- **Pagination:** list endpoints return Laravel's `data`, `links` and `meta` envelope. Use `?page=` and, where offered, `?per_page=` (maximum 50).
+- **Errors:** `401` unauthenticated, `403` forbidden or account suspended, `404` not found, `422` validation (`{"message": …, "errors": {field: [..]}}`), `429` throttled.
+- **Times** are ISO 8601. **Money** is a number in UGX unless `currency` says otherwise.
+
+---
+
+## Authentication
+
+### `POST /auth/token`
+
+Exchanges an email and password for a token. Super admin accounts are refused.
+
+```json
+{ "email": "member@example.com", "password": "secret", "device_name": "Grace's Tecno Spark" }
+```
+
+**201**
+
+```json
+{
+  "token": "12|Jm7c0x…",
+  "token_type": "Bearer",
+  "expires_at": "2027-04-10T12:00:00+03:00",
+  "user": { "id": 2, "name": "Grace Akello", "email": "…", "churches": [ { "id": 1, "slug": "grace-lira", "name": "Grace Community Church Lira", "logo_url": "…" } ], "unread_notifications": 3, "…": "…" }
+}
+```
+
+### `DELETE /auth/token` 🔒
+
+Revokes the token used for this request.
+
+### `GET /me` 🔒
+
+Returns the signed-in user: profile, preferences, followed churches and unread notification count.
+
+---
+
+## Churches
+
+### `GET /churches`
+
+This endpoint is public and lists active churches. Optional filters: `q` (name or pastor), `city`, `denomination`, `per_page`.
+
+### `GET /churches/{slug}`
+
+This endpoint is public. It returns church details, service times, accepted giving methods and the subscriber count.
+
+```json
+{ "data": { "id": 1, "slug": "grace-lira", "name": "Grace Community Church Lira", "denomination": "Pentecostal",
+  "location": { "city": "Lira", "district": "Lira", "lat": 2.2475, "lng": 32.9001 },
+  "service_times": [ { "name": "Main Service", "day": "Sunday", "time": "10:00 AM – 12:30 PM", "language": "en" } ],
+  "giving_methods": ["mtn_momo", "airtel_money", "stripe"], "subscribers": 47, "is_subscribed": true, "web_url": "https://faithfellows.app/churches/grace-lira" } }
+```
+
+### `POST /churches/{slug}/subscription` 🔒
+
+Follows a church. The response is `201` with `{"status": "active" | "pending"}`. The status is `pending` when the church approves new members.
+
+### `DELETE /churches/{slug}/subscription` 🔒
+
+Unfollows the church.
+
+---
+
+## Feed and content 🔒
+
+### `GET /feed?before=<ISO time>`
+
+Returns the home feed across every church the member follows, newest first. Each item has `type` (`post`, `sermon`, `devotional`, `announcement`, `event`, `live`, `campaign_update`, `prayer` or `testimony`), `at`, `church` and an `item` payload. To fetch the next page, pass `before=<next_before>`.
+
+```json
+{ "data": [ { "type": "sermon", "at": "2026-10-11T10:00:00+03:00", "church": { "id": 1, "slug": "grace-lira", "name": "…" },
+  "item": { "id": 12, "title": "Faith that works", "preacher": "Rev. Daniel Okello", "audio_url": "…", "duration_seconds": 2710 } } ],
+  "next_before": "2026-10-04T08:12:00+03:00" }
+```
+
+### `GET /sermons?church=<id>&q=<text>` and `GET /sermons/{id}`
+
+Lists or shows sermons. Members-only sermons appear only for churches the member follows. Each sermon includes `audio_url`, `video_url` (an embed or file URL) and `thumbnail_url`.
+
+### `GET /events?church=<id>` and `GET /events/{id}`
+
+Upcoming published events.
+
+### `GET /live`
+
+Services that are live now or scheduled, for the member's churches. Open `watch_url` in a web view to get the HLS or audio-only player.
+
+---
+
+## Giving 🔒
+
+### `POST /churches/{slug}/give`
+
+```json
+{ "amount": 20000, "category": "tithe", "method": "mtn_momo", "phone": "0772123456", "is_anonymous": false }
+```
+
+- `method` is one of the church's `giving_methods`: `mtn_momo`, `airtel_money`, `iotec` or `stripe`.
+- `category` is one of `tithe`, `offering`, `project`, `building_fund`, `missions`, `welfare` or `special`. Omit it when you pass `campaign_id`.
+- `phone` is required for mobile money.
+
+**201**
+
+```json
+{ "data": { "reference": "FF-8Q2MZ4", "status": "processing", "amount": 20000, "currency": "UGX", "method": "mtn_momo", "church": { "…": "…" } },
+  "next": { "action": "approve_on_phone", "redirect_url": null, "message": "Approve the payment on your phone", "poll_url": "https://faithfellows.app/api/v1/giving/FF-8Q2MZ4" } }
+```
+
+How to handle each `next.action`:
+
+- `approve_on_phone`: show "Check your phone and enter your PIN", then poll `poll_url` every 3–5 seconds for up to 2 minutes.
+- `redirect`: open `redirect_url` (card checkout), then poll.
+- `done`: the gift is already confirmed.
+
+### `GET /giving/{reference}`
+
+Returns the gift status: `pending`, `processing`, `succeeded`, `failed` or `refunded`. While a gift is pending, the server re-checks with the gateway on each call. After success, `receipt_url` links to the PDF receipt (requires a web session).
+
+### `GET /giving`
+
+The member's giving history, paginated.
+
+---
+
+## Prayer wall 🔒
+
+### `GET /prayer?status=open|answered`
+
+Lists requests the member may see. Pastor-only requests appear only to their author and the pastoral team. Each item includes `prayed`, which is true when this member has already prayed.
+
+### `POST /prayer`
+
+```json
+{ "church_id": 1, "title": "Healing", "body": "Please pray for my mother…", "visibility": "church", "is_anonymous": false, "chain_enabled": true }
+```
+
+`visibility` is `public`, `church` or `pastor`.
+
+### `POST /prayer/{id}/pray`
+
+Toggles "I prayed" and returns `{"prayed": true, "count": 15}`.
+
+---
+
+## Notifications 🔒
+
+### `GET /notifications?unread=1`
+
+```json
+{ "data": [ { "id": "9b1e…", "category": "live", "church_id": 1, "title": "Grace Community Church Lira is live", "body": "…", "url": "…", "read": false, "created_at": "…" } ],
+  "meta": { "current_page": 1, "last_page": 3, "unread": 4 } }
+```
+
+### `POST /notifications/read`
+
+Marks everything as read, or only the given notifications when you pass `{"ids": ["9b1e…"]}`. Returns the new unread count.
+
+---
+
+## Versioning
+
+Breaking changes go to `/api/v2`, and v1 keeps working for at least 12 months after v2 ships. Additive fields may appear at any time, so clients must ignore unknown keys.

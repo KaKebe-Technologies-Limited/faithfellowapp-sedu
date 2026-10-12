@@ -36,6 +36,8 @@ Route::get('/pricing', [Public\PageController::class, 'pricing'])->name('pricing
 Route::get('/privacy', [Public\PageController::class, 'privacy'])->name('privacy');
 Route::get('/terms', [Public\PageController::class, 'terms'])->name('terms');
 Route::get('/offline', [Public\PageController::class, 'offline'])->name('offline');
+Route::get('/sitemap.xml', [Public\SeoController::class, 'sitemap'])->name('sitemap');
+Route::get('/robots.txt', [Public\SeoController::class, 'robots'])->name('robots');
 
 Route::get('/contact', [Public\ContactController::class, 'show'])->name('contact');
 Route::post('/contact', [Public\ContactController::class, 'store'])->middleware('throttle:contact')->name('contact.store');

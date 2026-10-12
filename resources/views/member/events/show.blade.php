@@ -1,5 +1,16 @@
 @php($layout = auth()->check() ? 'layouts.member' : 'layouts.public')
 <x-dynamic-component :component="$layout" :title="$event->title" :description="strip_tags((string) $event->description)" :image="$event->cover_url">
+    @if ($event->visibility === 'public')
+        @push('head')
+            <script type="application/ld+json">{!! json_encode(array_filter([
+                '@@context' => 'https://schema.org', '@@type' => 'Event', 'name' => $event->title, 'description' => \Illuminate\Support\Str::limit(strip_tags((string) $event->description), 300),
+                'startDate' => $event->starts_at?->toIso8601String(), 'endDate' => $event->ends_at?->toIso8601String(), 'image' => $event->cover_url,
+                'eventAttendanceMode' => $event->is_online ? 'https://schema.org/OnlineEventAttendanceMode' : 'https://schema.org/OfflineEventAttendanceMode',
+                'location' => $event->is_online ? ['@@type' => 'VirtualLocation', 'url' => route('events.show', $event)] : ['@@type' => 'Place', 'name' => $event->location_name ?: $event->church->name, 'address' => $event->address ?: $event->church->city],
+                'organizer' => ['@@type' => 'Organization', 'name' => $event->church->name, 'url' => route('churches.show', $event->church)],
+            ]), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG) !!}</script>
+        @endpush
+    @endif
     <div @class(['container py-4 py-md-5' => ! auth()->check()])>
         @if ($event->cover_url)
             <img src="{{ $event->cover_url }}" alt="" class="ff-cover ff-rounded-xl mb-4" style="aspect-ratio: 21/9">

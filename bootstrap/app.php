@@ -1,10 +1,12 @@
 <?php
 
 use App\Http\Middleware\EnsureAccountActive;
+use App\Http\Middleware\EnsureApiUserActive;
 use App\Http\Middleware\EnsureChurchPermission;
 use App\Http\Middleware\EnsureChurchStaff;
 use App\Http\Middleware\EnsureSubscribed;
 use App\Http\Middleware\ResolveCustomDomain;
+use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\SetLocale;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -25,6 +27,8 @@ return Application::configure(basePath: dirname(__DIR__))
         // Behind Cloudflare / a load balancer in production.
         $middleware->trustProxies(at: '*');
 
+        $middleware->append(SecurityHeaders::class);
+
         $middleware->web(append: [
             ResolveCustomDomain::class,
             SetLocale::class,
@@ -43,10 +47,12 @@ return Application::configure(basePath: dirname(__DIR__))
             'church.staff' => EnsureChurchStaff::class,
             'church.can' => EnsureChurchPermission::class,
             'subscribed' => EnsureSubscribed::class,
+            'api.active' => EnsureApiUserActive::class,
         ]);
 
         $middleware->redirectGuestsTo(fn () => route('login'));
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        // The API always answers in JSON, even when a client forgets the Accept header.
+        $exceptions->shouldRenderJsonWhen(fn ($request) => $request->is('api/*') || $request->expectsJson());
     })->create();

@@ -1,4 +1,13 @@
 <x-layouts.public :title="$post->title" :description="$post->excerpt" :image="$post->cover_url">
+    @push('head')
+        <script type="application/ld+json">{!! json_encode(array_filter([
+            '@@context' => 'https://schema.org', '@@type' => 'BlogPosting', 'headline' => $post->title, 'description' => $post->excerpt,
+            'image' => $post->cover_url, 'datePublished' => $post->published_at?->toIso8601String(), 'dateModified' => $post->updated_at?->toIso8601String(),
+            'author' => ['@@type' => 'Organization', 'name' => config('faithfellows.company.name')],
+            'publisher' => ['@@type' => 'Organization', 'name' => config('faithfellows.brand.name'), 'logo' => ['@@type' => 'ImageObject', 'url' => asset('images/icon-512.png')]],
+            'mainEntityOfPage' => route('blog.show', $post),
+        ]), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG) !!}</script>
+    @endpush
     <article>
         <header class="ff-page-hero">
             <div class="container" style="max-width: 820px">
