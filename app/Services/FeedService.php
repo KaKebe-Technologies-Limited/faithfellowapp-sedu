@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Models\Announcement;
 use App\Models\Devotional;
+use App\Models\Event;
+use App\Models\LiveStream;
 use App\Models\Post;
 use App\Models\Sermon;
 use App\Models\User;
@@ -85,6 +87,21 @@ class FeedService
                 ->latest('publish_date')->take($limit)->get()
                 // Devotionals sort at 05:00 on their date (or just before the cursor if that's still ahead).
                 ->map(fn (Devotional $d) => ['type' => 'devotional', 'at' => $d->publish_date->copy()->setTime(5, 0)->min($before->copy()->subSecond()), 'church' => $d->church, 'model' => $d]),
+
+            'events' => fn (array $churchIds, Carbon $before, int $limit) => Event::query()
+                ->with(['church.media', 'media'])
+                ->forChurches($churchIds)->published()->upcoming()
+                ->where('created_at', '<', $before)
+                ->latest('created_at')->take($limit)->get()
+                ->map(fn (Event $e) => ['type' => 'event', 'at' => $e->created_at, 'church' => $e->church, 'model' => $e]),
+
+            'live' => fn (array $churchIds, Carbon $before, int $limit) => LiveStream::query()
+                ->with(['church.media'])
+                ->forChurches($churchIds)->live()
+                ->get()
+                // Live services always float to the top of the first page.
+                ->map(fn (LiveStream $s) => ['type' => 'live', 'at' => $before->copy()->subSecond(), 'church' => $s->church, 'model' => $s])
+                ->filter(fn () => abs($before->diffInSeconds(now())) < 60),
 
             'announcements' => fn (array $churchIds, Carbon $before, int $limit) => Announcement::query()
                 ->with(['church.media', 'media'])

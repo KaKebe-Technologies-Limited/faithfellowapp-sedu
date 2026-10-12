@@ -32,6 +32,9 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->encryptCookies(except: ['ff_lite']);
 
+        // Payment gateways, RTMP server, SMS/USSD providers post here; each verifies its own signature.
+        $middleware->validateCsrfTokens(except: ['webhooks/*']);
+
         $middleware->alias([
             'role' => RoleMiddleware::class,
             'permission' => PermissionMiddleware::class,

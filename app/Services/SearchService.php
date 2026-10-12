@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Announcement;
 use App\Models\Church;
 use App\Models\Devotional;
+use App\Models\Event;
 use App\Models\Sermon;
 use App\Models\User;
 use Illuminate\Support\Collection;
@@ -49,7 +50,13 @@ class SearchService
      */
     protected function extraMemberSources(): array
     {
-        return [];
+        return [
+            'events' => fn (User $user, string $q) => Event::with('church.media')->published()->upcoming()
+                ->visibleTo($user->memberChurchIds())
+                ->whereHas('church', fn ($c) => $c->where('status', 'active'))
+                ->where(fn ($w) => $w->where('title', 'like', "%{$q}%")->orWhere('location_name', 'like', "%{$q}%"))
+                ->orderBy('starts_at')->take(6)->get(),
+        ];
     }
 
     /**

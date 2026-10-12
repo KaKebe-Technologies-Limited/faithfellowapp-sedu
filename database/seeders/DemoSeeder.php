@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Church;
 use App\Models\User;
 use App\Services\ChurchOnboardingService;
+use App\Services\StreamingService;
 use App\Support\ReadingPlanTemplates;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Role;
@@ -126,6 +127,62 @@ class DemoSeeder extends Seeder
 
         $this->seedSubscriptionsAndPosts($member, $pastor);
         $this->seedContent($member, $pastor);
+        $this->seedEventsAndLive($member, $pastor);
+    }
+
+    /**
+     * Sprint 5: events (free, ticketed, past) and live streams.
+     */
+    protected function seedEventsAndLive(User $member, User $pastor): void
+    {
+        $grace = Church::where('slug', 'grace-lira')->first();
+        if ($grace->events()->exists()) {
+            return;
+        }
+
+        $camp = $grace->events()->create([
+            'user_id' => $pastor->id, 'title' => 'Youth Camp 2026', 'description' => '<p>Three days of worship, teaching, games and friendship for ages 13–25.</p>',
+            'location_name' => 'Church grounds, Lira', 'address' => 'Plot 12, Obote Avenue', 'lat' => 2.2475, 'lng' => 32.9001,
+            'starts_at' => now()->addDays(20)->setTime(9, 0), 'ends_at' => now()->addDays(22)->setTime(16, 0), 'capacity' => 150,
+            'rsvp_enabled' => true, 'is_paid' => true, 'status' => 'published', 'visibility' => 'public', 'qa_enabled' => true,
+            'agenda' => [['time' => '09:00', 'title' => 'Registration & breakfast', 'speaker' => null], ['time' => '10:00', 'title' => 'Opening worship', 'speaker' => 'Worship team'], ['time' => '11:00', 'title' => 'Faith that works', 'speaker' => 'Pastor Joyce Atim']],
+            'speakers' => [['name' => 'Pastor Joyce Atim', 'role' => 'Youth Pastor', 'bio' => 'Leads the youth ministry at Grace Community Church.']],
+            'notified_at' => now(),
+        ]);
+        $camp->tickets()->createMany([
+            ['church_id' => $grace->id, 'name' => 'Camper (3 days, meals)', 'price' => 50000, 'quantity' => 120, 'sold_count' => 1],
+            ['church_id' => $grace->id, 'name' => 'Day pass', 'price' => 15000, 'quantity' => null],
+        ]);
+        $camp->rsvps()->create(['church_id' => $grace->id, 'user_id' => $member->id, 'event_ticket_id' => $camp->tickets()->first()->id, 'quantity' => 1, 'status' => 'going', 'amount' => 50000]);
+
+        $carols = $grace->events()->create([
+            'user_id' => $pastor->id, 'title' => 'Christmas Carols Night', 'description' => '<p>An evening of carols, testimonies and fellowship. Bring the whole family!</p>',
+            'location_name' => 'Main sanctuary', 'starts_at' => now()->addDays(9)->setTime(18, 0), 'ends_at' => now()->addDays(9)->setTime(21, 0),
+            'rsvp_enabled' => true, 'status' => 'published', 'visibility' => 'public', 'notified_at' => now(),
+        ]);
+        foreach (User::role('member')->take(12)->get() as $u) {
+            $carols->rsvps()->firstOrCreate(['user_id' => $u->id], ['church_id' => $grace->id, 'quantity' => random_int(1, 3), 'status' => 'going']);
+        }
+
+        $grace->events()->create([
+            'user_id' => $pastor->id, 'title' => 'Leaders’ Retreat', 'starts_at' => now()->subDays(14)->setTime(9, 0), 'ends_at' => now()->subDays(14)->setTime(17, 0),
+            'location_name' => 'Lira Hotel', 'rsvp_enabled' => true, 'status' => 'published', 'visibility' => 'members', 'notified_at' => now(),
+        ]);
+
+        $streaming = app(StreamingService::class);
+        $next = $grace->liveStreams()->create([
+            'user_id' => $pastor->id, 'title' => 'Sunday Service', 'description' => 'Join us live for worship and the Word.',
+            'scheduled_at' => now()->next('Sunday')->setTime(10, 0), 'status' => 'scheduled', 'source_type' => 'rtmp', 'chat_enabled' => true,
+        ]);
+        $streaming->rotateKey($next);
+
+        $last = $grace->liveStreams()->create([
+            'user_id' => $pastor->id, 'title' => 'Sunday Service — A Great Cloud of Witnesses', 'scheduled_at' => now()->previous('Sunday')->setTime(10, 0),
+            'started_at' => now()->previous('Sunday')->setTime(10, 2), 'ended_at' => now()->previous('Sunday')->setTime(12, 15),
+            'status' => 'archived', 'source_type' => 'rtmp', 'peak_viewers' => 214, 'total_viewers' => 380, 'notified_at' => now(),
+            'sermon_id' => $grace->sermons()->latest('published_at')->value('id'),
+        ]);
+        $streaming->rotateKey($last);
     }
 
     /**

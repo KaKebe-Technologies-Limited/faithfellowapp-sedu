@@ -6,6 +6,7 @@ use App\Http\Controllers\Member;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Public;
 use App\Http\Controllers\SuperAdmin;
+use App\Http\Controllers\Webhooks\RtmpController;
 use App\Models\Church;
 use Illuminate\Support\Facades\Route;
 
@@ -85,6 +86,34 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/reading-plans/{readingPlan}/start', [Member\ReadingPlanController::class, 'start'])->name('reading-plans.start');
     Route::post('/reading-plans/{readingPlan}/complete', [Member\ReadingPlanController::class, 'complete'])->name('reading-plans.complete');
     Route::delete('/reading-plans/{readingPlan}', [Member\ReadingPlanController::class, 'leave'])->name('reading-plans.leave');
+
+    // Events
+    Route::get('/events', [Member\EventController::class, 'index'])->name('events.index');
+    Route::post('/events/{event}/rsvp', [Member\EventController::class, 'rsvp'])->middleware('throttle:engagement')->name('events.rsvp');
+    Route::delete('/events/{event}/rsvp', [Member\EventController::class, 'cancel'])->name('events.rsvp.cancel');
+    Route::get('/events/{event}/ticket', [Member\EventController::class, 'ticket'])->name('events.ticket');
+    Route::post('/events/{event}/questions', [Member\EventController::class, 'ask'])->middleware('throttle:engagement')->name('events.questions.store');
+    Route::post('/events/{event}/questions/{question}/upvote', [Member\EventController::class, 'upvote'])->name('events.questions.upvote');
+
+    // Live
+    Route::get('/live', [Member\LiveController::class, 'index'])->name('live.index');
+    Route::post('/live/{liveStream}/messages', [Member\LiveController::class, 'postMessage'])->middleware('throttle:engagement')->name('live.messages.store');
+});
+
+Route::get('/events/{event}', [Member\EventController::class, 'show'])->name('events.show');
+Route::get('/live/{liveStream}', [Member\LiveController::class, 'show'])->name('live.show');
+Route::post('/live/{liveStream}/heartbeat', [Member\LiveController::class, 'heartbeat'])->middleware('throttle:engagement')->name('live.heartbeat');
+Route::get('/live/{liveStream}/messages', [Member\LiveController::class, 'messages'])->middleware('throttle:120,1')->name('live.messages');
+
+/*
+|--------------------------------------------------------------------------
+| Webhooks (CSRF-exempt, signature/secret verified per provider)
+|--------------------------------------------------------------------------
+*/
+
+Route::prefix('webhooks')->name('webhooks.')->middleware('throttle:webhooks')->group(function () {
+    Route::post('/rtmp/publish', [RtmpController::class, 'publish'])->name('rtmp.publish');
+    Route::post('/rtmp/done', [RtmpController::class, 'done'])->name('rtmp.done');
 });
 
 // Public sermons / devotionals / announcements are viewable by visitors (policies decide).
@@ -156,6 +185,29 @@ Route::prefix('church/{church}/admin')->name('church-admin.')
             Route::post('/reading-plans/import', [ChurchAdmin\ReadingPlanController::class, 'import'])->name('reading-plans.import');
             Route::get('/content/devotionals', fn ($church) => redirect()->route('church-admin.devotionals.index', $church));
             Route::get('/content/announcements', fn ($church) => redirect()->route('church-admin.announcements.index', $church));
+        });
+
+        // Events
+        Route::middleware('church.can:events.manage')->group(function () {
+            Route::resource('events', ChurchAdmin\EventController::class);
+            Route::get('/events/{event}/export', [ChurchAdmin\EventController::class, 'export'])->name('events.export');
+            Route::get('/events/{event}/check-in', [ChurchAdmin\EventController::class, 'checkInScreen'])->name('events.check-in');
+            Route::post('/events/{event}/check-in', [ChurchAdmin\EventController::class, 'checkIn'])->name('events.check-in.store');
+            Route::get('/events/{event}/check-in/{code}', [ChurchAdmin\EventController::class, 'checkInCode'])->name('events.check-in.code');
+            Route::post('/events/{event}/recording', [ChurchAdmin\EventController::class, 'publishRecording'])->name('events.recording');
+            Route::put('/events/{event}/questions/{question}', [ChurchAdmin\EventController::class, 'moderateQuestion'])->name('events.questions.update');
+        });
+
+        // Live streaming
+        Route::middleware('church.can:live.manage')->group(function () {
+            Route::resource('live', ChurchAdmin\LiveStreamController::class)->parameters(['live' => 'liveStream']);
+            Route::get('/live-schedule', fn ($church) => redirect()->route('church-admin.live.create', $church))->name('live.schedule');
+            Route::post('/live/{liveStream}/start', [ChurchAdmin\LiveStreamController::class, 'start'])->name('live.start');
+            Route::post('/live/{liveStream}/stop', [ChurchAdmin\LiveStreamController::class, 'stop'])->name('live.stop');
+            Route::post('/live/{liveStream}/archive', [ChurchAdmin\LiveStreamController::class, 'archive'])->name('live.archive');
+            Route::post('/live/{liveStream}/key', [ChurchAdmin\LiveStreamController::class, 'rotateKey'])->name('live.key');
+            Route::get('/live/{liveStream}/stats', [ChurchAdmin\LiveStreamController::class, 'stats'])->name('live.stats');
+            Route::post('/live/{liveStream}/messages/{messageId}/hide', [ChurchAdmin\LiveStreamController::class, 'hideMessage'])->whereNumber('messageId')->name('live.messages.hide');
         });
 
         Route::middleware('church.can:media.manage')->group(function () {

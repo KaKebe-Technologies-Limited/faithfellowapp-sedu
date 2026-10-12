@@ -67,3 +67,16 @@ Decisions made while building FaithFellows, with the reasoning behind each. Newe
 | 44 | **Search uses SQL `LIKE`** across titles, preachers, scripture, bodies and transcripts (`SearchService`). | Good enough for an MVP on shared hosting. It can move to MySQL FULLTEXT or Meilisearch behind the same service. |
 | 45 | **Storage quotas are checked at validation time** (`WithinStorageQuota`) using `media.church_id` sums. The limit comes from the church's plan (Sprint 6), otherwise `FF_DEFAULT_STORAGE_MB`. | Enforces "usage limits: storage" before files hit disk. |
 | 46 | **Engagement analytics** are stored per event in `content_views` (view, listen with seconds, watch, download). Counter columns on sermons are kept for fast lists. Views are de-duplicated per session. | Powers "views, listens, watch time" analytics in Sprint 8 without double counting refreshes. |
+
+## Sprint 5 — Events & Live Streams
+
+| # | Decision | Why |
+|---|----------|-----|
+| 47 | **Live streaming supports four sources:** FaithFellows RTMP (nginx-rtmp or Cloudflare Stream → HLS), YouTube, Facebook or any HLS URL. | Many Ugandan churches already stream to YouTube or Facebook. RTMP gives them their own player with an **audio-only rendition** (`{key}_audio.m3u8`) for data-light listening. |
+| 48 | **Going live is automatic for RTMP.** The nginx-rtmp `on_publish` / `on_publish_done` callbacks hit `/webhooks/rtmp/*`, and unknown keys get 403. Stream keys are **encrypted at rest**, with a SHA-256 hash for lookup. | Pressing "Start" in OBS or Larix is all a media volunteer has to do. A leaked database dump doesn't leak broadcast rights. |
+| 49 | **Viewer counts come from a 30-second heartbeat** into `live_stream_viewers` (75-second window), with peak tracking. **Live chat uses 5-second polling.** | Works on shared hosting and flaky 3G without WebSockets. Reverb broadcasting can replace polling later behind the same endpoints. |
+| 50 | **Auto-archive:** ending a stream records the recording URL. "Archive as sermon" creates a published sermon (marked already-notified, since members were alerted when the service went live). | Covers "auto-archive recording as sermon after service" without double notifications. |
+| 51 | **RSVP capacity is enforced inside a DB transaction with `lockForUpdate`** on the event. Paid tickets create `pending_payment` RSVPs that the giving flow confirms (Sprint 6). | Prevents overbooking the last seats under concurrent requests. |
+| 52 | **QR check-in:** each RSVP has a unique 10-character code. The ticket QR encodes the staff check-in URL, so any staff phone camera can scan it (no scanner app). Manual code entry is the fallback. | No extra hardware or JavaScript QR library needed at the door. |
+| 53 | **Reminders** run via `ff:event-reminders` every 5 minutes (24h and 1h windows, idempotent via `reminder_*_sent_at`). | Meets K7 with exactly-once delivery. |
+| 54 | Seat selection (K4, optional) is modelled with an `event_rsvps.seat` column but has no seat-map UI yet. | Rarely needed by pilot churches. The column avoids a later migration. |

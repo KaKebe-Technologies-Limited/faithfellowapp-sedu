@@ -211,6 +211,16 @@ class Church extends Model implements HasMedia
         return $this->hasMany(ReadingPlan::class);
     }
 
+    public function events(): HasMany
+    {
+        return $this->hasMany(Event::class);
+    }
+
+    public function liveStreams(): HasMany
+    {
+        return $this->hasMany(LiveStream::class);
+    }
+
     public function auditLogs(): HasMany
     {
         return $this->hasMany(AuditLog::class);
