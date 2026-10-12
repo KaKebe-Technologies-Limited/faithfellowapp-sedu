@@ -1,0 +1,14 @@
+// VS Code multi-root workspace: opens the Laravel web app and the Expo app side by side.
+{
+  "folders": [
+    { "name": "🌐 Web (Laravel)", "path": "web" },
+    { "name": "📱 App (Expo)", "path": "app" }
+  ],
+  "settings": {
+    "files.exclude": {
+      "**/node_modules": true,
+      "**/vendor": true,
+      "**/.expo": true
+    }
+  }
+}

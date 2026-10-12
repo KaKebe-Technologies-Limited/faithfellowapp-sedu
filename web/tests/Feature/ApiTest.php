@@ -24,6 +24,18 @@ function apiMember(): array
     return [$church, $member, $member->createToken('test', ['member'])->plainTextToken];
 }
 
+test('the API health check answers without a token', function () {
+    $this->getJson('/api/ping')->assertOk()
+        ->assertJson(['status' => 'ok', 'service' => 'FaithFellows API', 'version' => '1.0.0'])
+        ->assertJsonStructure(['time'])
+        ->assertHeader('Cache-Control', 'no-store, private');
+});
+
+test('browsers get CORS headers on the API; credentials are not offered', function () {
+    $this->call('OPTIONS', '/api/ping', [], [], [], ['HTTP_ORIGIN' => 'http://localhost:8081', 'HTTP_ACCESS_CONTROL_REQUEST_METHOD' => 'GET'])
+        ->assertNoContent()->assertHeader('Access-Control-Allow-Origin', '*')->assertHeaderMissing('Access-Control-Allow-Credentials');
+});
+
 test('members exchange credentials for a token; wrong passwords and super admins are refused', function () {
     $member = member(['email' => 'grace@example.com', 'password' => 'secret-pass-1']);
 

@@ -10,6 +10,14 @@ use Illuminate\Support\Facades\Route;
 | Bearer tokens from POST /api/v1/auth/token (Laravel Sanctum).
 */
 
+// Health check for the mobile app and uptime monitors: GET /api/ping (no auth, never cached).
+Route::get('/ping', fn () => response()->json([
+    'status' => 'ok',
+    'service' => 'FaithFellows API',
+    'version' => '1.0.0',
+    'time' => now()->toIso8601String(),
+])->header('Cache-Control', 'no-store'))->name('api.ping');
+
 Route::prefix('v1')->name('api.v1.')->middleware('throttle:api')->group(function () {
     Route::post('/auth/token', [V1\AuthController::class, 'token'])->middleware('throttle:10,1')->name('auth.token');
 

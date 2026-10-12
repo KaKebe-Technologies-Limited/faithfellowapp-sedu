@@ -1,0 +1,17 @@
+{
+  "name": "faithfellows",
+  "version": "1.0.0",
+  "private": true,
+  "description": "FaithFellows — church management platform (web + app)",
+  "scripts": {
+    "web:dev": "cd web && php artisan serve --host=0.0.0.0 --port=8000",
+    "web:assets": "cd web && npm run dev",
+    "web:build": "cd web && npm run build",
+    "web:test": "cd web && php artisan test",
+    "app:start": "cd app && npx expo start",
+    "app:android": "cd app && npx expo start --android",
+    "app:ios": "cd app && npx expo start --ios",
+    "app:tunnel": "cd app && npx expo start --tunnel",
+    "install:all": "cd web && composer install && npm install && cd ../app && npm install"
+  }
+}

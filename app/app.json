@@ -1,0 +1,65 @@
+{
+  "expo": {
+    "name": "FaithFellows",
+    "slug": "faithfellows",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "faithfellows",
+    "userInterfaceStyle": "light",
+    "icon": "./assets/icon.png",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "tech.kakebe.faithfellows"
+    },
+    "android": {
+      "package": "tech.kakebe.faithfellows",
+      "adaptiveIcon": {
+        "backgroundColor": "#BC2649",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-font",
+      "expo-status-bar",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": false
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#BC2649",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 180
+        }
+      ],
+      "expo-asset"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "apiUrl": {
+        "development": "http://192.168.0.103:8000/api",
+        "staging": "https://staging.faithfellows.app/api",
+        "production": "https://faithfellows.app/api"
+      },
+      "eas": {
+        "projectId": "REPLACE_WITH_EAS_PROJECT_ID"
+      }
+    }
+  }
+}
