@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * One live game of a quiz: lobby → question → reveal → … → finished.
+ * After the host starts it, QuizService::advance() moves it along by the clock.
  */
 class QuizSession extends Model
 {
@@ -17,7 +18,7 @@ class QuizSession extends Model
 
     public const ACTIVE = ['lobby', 'question', 'reveal'];
 
-    protected $fillable = ['church_id', 'quiz_id', 'host_id', 'pin', 'status', 'current_index', 'question_started_at', 'started_at', 'finished_at'];
+    protected $fillable = ['church_id', 'quiz_id', 'host_id', 'pin', 'status', 'current_index', 'question_started_at', 'revealed_at', 'started_at', 'finished_at'];
 
     /** Millisecond precision so answer speed can be scored fairly. */
     protected $dateFormat = 'Y-m-d H:i:s.v';
@@ -26,6 +27,7 @@ class QuizSession extends Model
     {
         return [
             'question_started_at' => 'datetime',
+            'revealed_at' => 'datetime',
             'started_at' => 'datetime',
             'finished_at' => 'datetime',
             'current_index' => 'integer',

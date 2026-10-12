@@ -6,7 +6,7 @@
               questions: @js($questions),
               colors: ['#E21B3C', '#1368CE', '#D89E00', '#26890C'],
               shapes: ['bi-triangle-fill', 'bi-diamond-fill', 'bi-circle-fill', 'bi-square-fill'],
-              add() { this.questions.push({ question: '', options: ['', '', '', ''], correct: 0, time_limit: 20, points: 1000 }); this.$nextTick(() => this.$refs.list.lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'center' })); },
+              add() { this.questions.push({ question: '', options: ['', '', '', ''], correct: 0, points: 1000 }); this.$nextTick(() => this.$refs.list.lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'center' })); },
               remove(i) { if (this.questions.length > 1) this.questions.splice(i, 1); },
               move(i, d) { const j = i + d; if (j < 0 || j >= this.questions.length) return; [this.questions[i], this.questions[j]] = [this.questions[j], this.questions[i]]; },
           }">
@@ -18,7 +18,10 @@
                 <div class="ff-card position-sticky" style="top: 90px">
                     <x-ff.input name="title" :label="__('Quiz title')" :value="$quiz->title" required maxlength="160" :placeholder="__('e.g. Bible Heroes Trivia')" />
                     <x-ff.textarea name="description" :label="__('Description')" :value="$quiz->description" rows="3" maxlength="1000" :placeholder="__('Shown to players in the lobby')" />
-                    <div class="small text-ff-muted mb-3"><i class="bi bi-lightning-charge"></i> {{ __('Faster correct answers earn more points (up to the full value). Wrong answers score 0.') }}</div>
+                    <div class="ff-quiz-howto mb-3">
+                        <div><i class="bi bi-stopwatch"></i> {!! __('Each question is open for <strong>:q seconds</strong>, then the answer and live scores show for :r seconds and the next question starts by itself.', ['q' => \App\Services\QuizService::questionSeconds(), 'r' => \App\Services\QuizService::revealSeconds()]) !!}</div>
+                        <div><i class="bi bi-lightning-charge"></i> {{ __('Faster correct answers earn more points (up to the full value). Wrong answers score 0.') }}</div>
+                    </div>
                     <div class="d-flex align-items-center justify-content-between mb-3">
                         <span class="fw-semibold"><span x-text="questions.length"></span> {{ __('questions') }}</span>
                         <button type="button" class="btn btn-sm btn-ff-soft" @click="add()" :disabled="questions.length >= 50"><i class="bi bi-plus-lg"></i> {{ __('Add question') }}</button>
@@ -53,11 +56,7 @@
                         </div>
                         <div class="d-flex flex-wrap gap-3 align-items-center mt-2 small">
                             <span class="text-success"><i class="bi bi-check-circle"></i> {{ __('Tick the correct answer') }}</span>
-                            <label class="d-flex align-items-center gap-2 ms-auto">{{ __('Time') }}
-                                <select class="form-select form-select-sm" style="width:auto" :name="`questions[${i}][time_limit]`" x-model.number="q.time_limit">
-                                    @foreach ([10, 15, 20, 30, 45, 60] as $t)<option value="{{ $t }}">{{ $t }}s</option>@endforeach
-                                </select>
-                            </label>
+                            <span class="text-ff-muted ms-auto"><i class="bi bi-stopwatch"></i> {{ __(':n seconds', ['n' => \App\Services\QuizService::questionSeconds()]) }}</span>
                             <label class="d-flex align-items-center gap-2">{{ __('Points') }}
                                 <select class="form-select form-select-sm" style="width:auto" :name="`questions[${i}][points]`" x-model.number="q.points">
                                     <option value="500">{{ __('Half (500)') }}</option><option value="1000">{{ __('Standard (1000)') }}</option><option value="2000">{{ __('Double (2000)') }}</option>

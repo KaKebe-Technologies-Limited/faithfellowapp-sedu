@@ -24,21 +24,72 @@
     float: left; font-family: var(--ff-font); font-weight: 700; color: var(--ff-primary, #BC2649);
     font-size: 3.6em; line-height: .82; margin: 6px 12px 0 0;
 }
-.ff-verse { cursor: pointer; border-radius: 4px; padding: 1px 0; transition: background .15s; -webkit-tap-highlight-color: transparent; }
+.ff-verse { cursor: pointer; border-radius: 6px; padding: 1px 0; transition: background .2s, box-shadow .2s; -webkit-tap-highlight-color: transparent; outline: none; }
 .ff-verse:hover { background: rgba(188, 38, 73, .05); }
-.ff-verse.is-selected { background: #FFF2B8; box-shadow: 0 0 0 2px #FFF2B8; }
-.ff-verse.is-highlight { background: rgba(188, 38, 73, .08); }
+.ff-verse:focus-visible { box-shadow: 0 0 0 2px var(--ff-primary, #BC2649); }
 .ff-verse sup {
     font-family: var(--ff-font); font-size: .58em; font-weight: 700; color: var(--ff-primary, #BC2649);
     margin: 0 3px 0 6px; vertical-align: .55em; user-select: none;
 }
-.ff-verse-bar {
-    position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 1050;
-    display: flex; align-items: center; gap: 6px; padding: 8px 10px 8px 16px;
-    background: #1d1416; color: #fff; border-radius: 999px; box-shadow: 0 16px 40px rgba(0, 0, 0, .3);
+/* Saved highlights (marker-pen look) */
+.ff-verse[data-hl="yellow"] { background: #FFF1A8; }
+.ff-verse[data-hl="green"] { background: #D3F2DB; }
+.ff-verse[data-hl="blue"] { background: #DCEBFF; }
+.ff-verse[data-hl="pink"] { background: #FFDCEA; }
+.ff-verse[data-hl]:hover { filter: saturate(1.15); }
+/* Tapped verses: a dotted underline + side bar, so a highlight colour stays visible */
+.ff-verse.is-selected { box-shadow: inset 0 -2px 0 var(--ff-primary, #BC2649); }
+.ff-verse.is-selected:not([data-hl]) { background: rgba(188, 38, 73, .08); }
+/* Jumped-to verse (from a link like John 3:16) */
+.ff-verse.is-target { animation: ff-verse-target 2.4s ease 1; }
+@keyframes ff-verse-target { 0%, 60% { background: rgba(188, 38, 73, .16); } 100% { background: transparent; } }
+.ff-verse[data-hl].is-target { animation: none; }
+
+/* One verse per line: number in a gutter, text in a clean column */
+.ff-scripture.is-lines { line-height: 1.7; }
+.ff-scripture.is-lines .ff-chapter-drop { display: none; }
+.ff-scripture.is-lines .ff-verse { display: block; position: relative; padding: 7px 12px 7px 46px; margin: 2px 0; border-radius: 12px; }
+.ff-scripture.is-lines .ff-verse sup {
+    position: absolute; left: 6px; top: .62em; width: 30px; margin: 0; text-align: right;
+    font-size: .62em; vertical-align: baseline; line-height: 1.7; opacity: .9;
 }
-.ff-verse-bar .btn { color: #fff; border-radius: 999px; font-size: .85rem; font-weight: 600; }
+.ff-scripture.is-lines .ff-verse.is-selected { box-shadow: inset 3px 0 0 var(--ff-primary, #BC2649); }
+.ff-scripture.is-lines .ff-passage-section h3 { margin-left: 12px; }
+.ff-verse-hint { text-align: center; }
+
+/* Floating verse actions */
+.ff-verse-bar {
+    position: fixed; left: 50%; bottom: max(20px, env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 1050;
+    width: min(560px, calc(100vw - 24px)); padding: 10px 12px 12px;
+    background: #1d1416; color: #fff; border-radius: 20px; box-shadow: 0 18px 44px rgba(0, 0, 0, .32);
+}
+.ff-verse-bar-top { display: flex; align-items: center; gap: 8px; padding: 0 2px 8px 6px; font-size: .9rem; min-width: 0; }
+.ff-verse-bar-actions { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.ff-verse-bar .btn { color: #fff; border-radius: 999px; font-size: .85rem; font-weight: 600; padding: 6px 12px; }
 .ff-verse-bar .btn:hover { background: rgba(255, 255, 255, .12); }
+.ff-hl-swatches { display: flex; align-items: center; gap: 8px; padding: 4px 10px 4px 4px; margin-right: auto; }
+.ff-hl-swatch {
+    width: 28px; height: 28px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, .25); background: var(--sw);
+    padding: 0; display: inline-flex; align-items: center; justify-content: center; transition: transform .15s, border-color .15s;
+}
+.ff-hl-swatch:hover { transform: scale(1.12); }
+.ff-hl-swatch.is-on { border-color: #fff; box-shadow: 0 0 0 2px rgba(255, 255, 255, .35); }
+.ff-hl-swatch.is-clear { background: rgba(255, 255, 255, .12); color: #fff; font-size: .85rem; }
+@media (max-width: 480px) {
+    /* Colours on one row, labelled actions on the next */
+    .ff-hl-swatches { flex-basis: 100%; justify-content: center; margin: 0 0 6px; padding: 2px 0 8px; border-bottom: 1px solid rgba(255, 255, 255, .1); }
+    .ff-verse-bar .ff-verse-bar-actions .btn { flex: 1; }
+}
+@media (max-width: 575.98px) {
+    .ff-bible-toolbar { flex-wrap: nowrap; gap: 2px; padding: 6px 8px; }
+    .ff-bible-toolbar .form-select { max-width: 80px; padding-left: .6rem; padding-right: 1.6rem; background-position: right .45rem center; }
+    .ff-bible-toolbar .btn { padding-left: .45rem; padding-right: .45rem; }
+}
+/* Recent highlights on the Bible home */
+.ff-hl-card { display: block; height: 100%; padding: 14px 16px; border-radius: 16px; border-left: 5px solid var(--sw); background: #fff; box-shadow: 0 4px 18px rgba(0, 0, 0, .05); color: var(--ff-black, #1a1a1a); }
+.ff-hl-card:hover { text-decoration: none; box-shadow: 0 8px 26px rgba(0, 0, 0, .09); }
+.ff-hl-card .ff-scripture { font-size: 1rem; line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.ff-hl-card mark { padding: 0 2px; border-radius: 4px; background: var(--sw-soft); }
 .ff-chapter-nav { display: flex; justify-content: space-between; gap: 12px; margin: 40px 0 12px; }
 .ff-chapter-nav a { flex: 1; padding: 14px 18px; border-radius: var(--ff-radius-lg, 16px); background: #fff; border: 1px solid rgba(0, 0, 0, .06); color: var(--ff-black, #1a1a1a); }
 .ff-chapter-nav a:hover { border-color: var(--ff-primary, #BC2649); text-decoration: none; }
@@ -161,7 +212,7 @@
 .ff-quiz-timer span { width: 70px; height: 70px; border-radius: 50%; background: #5d1229; display: flex; align-items: center; justify-content: center; }
 .ff-quiz-bar { height: 8px; border-radius: 8px; background: rgba(255, 255, 255, .18); overflow: hidden; }
 .ff-quiz-bar > div { height: 100%; background: #fff; transition: width .1s linear; }
-.ff-quiz-board { display: grid; gap: 8px; }
+.ff-quiz-board { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
 .ff-quiz-row { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-radius: 14px; background: rgba(255, 255, 255, .1); font-weight: 600; transition: transform .3s; }
 .ff-quiz-row.is-me { background: #fff; color: #7a1733; }
 .ff-quiz-row .ff-quiz-rank { width: 30px; height: 30px; border-radius: 50%; background: rgba(255, 255, 255, .18); display: flex; align-items: center; justify-content: center; font-size: .9rem; flex: 0 0 30px; }
@@ -181,6 +232,38 @@
 .ff-quiz-q-editor .ff-opt { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
 .ff-quiz-q-editor .ff-opt .ff-opt-dot { width: 30px; height: 30px; border-radius: 8px; color: #fff; display: flex; align-items: center; justify-content: center; flex: 0 0 30px; }
 .ff-quiz-card-cover { height: 110px; border-radius: 14px; background: linear-gradient(135deg, #3a0d1d, #BC2649); position: relative; overflow: hidden; color: #fff; display: flex; align-items: flex-end; padding: 12px 14px; }
+/* Live leaderboard (always visible during a game) */
+.ff-quiz-live { border-radius: 20px; padding: 16px; background: rgba(0, 0, 0, .18); backdrop-filter: blur(6px); }
+.ff-quiz-live-head { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.ff-quiz-live-dot { width: 10px; height: 10px; border-radius: 50%; background: #FF5A6E; box-shadow: 0 0 0 0 rgba(255, 90, 110, .7); animation: ff-quiz-pulse 1.6s infinite; }
+@keyframes ff-quiz-pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 90, 110, .6); } 70% { box-shadow: 0 0 0 10px rgba(255, 90, 110, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 90, 110, 0); } }
+.ff-quiz-row .ff-quiz-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ff-quiz-row.is-top { background: rgba(255, 255, 255, .16); }
+.ff-quiz-row.is-top .ff-quiz-rank { background: transparent; font-size: 1.25rem; }
+.ff-quiz-row.is-gap { margin-top: 10px; position: relative; }
+.ff-quiz-row.is-gap::before { content: "⋯"; position: absolute; top: -17px; left: 50%; transform: translateX(-50%); opacity: .6; color: #fff; }
+.ff-quiz-move { font-size: .72rem; font-weight: 700; padding: 1px 6px; border-radius: 999px; flex: 0 0 auto; }
+.ff-quiz-move.is-up { background: rgba(38, 137, 12, .9); color: #fff; }
+.ff-quiz-move.is-down { background: rgba(0, 0, 0, .25); color: #fff; }
+.ff-quiz-row.is-me .ff-quiz-move.is-down { background: #F3D6DD; color: #7a1733; }
+.ff-quiz-streak { font-size: .78rem; flex: 0 0 auto; }
+.ff-quiz-gain { font-size: .8rem; font-weight: 700; color: #7CF29C; flex: 0 0 auto; animation: ff-pop .4s ease; }
+.ff-quiz-row.is-me .ff-quiz-gain { color: #26890C; }
+.ff-quiz-row .ff-quiz-score { font-size: 1.05rem; }
+/* "Next question in 4" */
+.ff-quiz-next { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-radius: 999px; background: rgba(255, 255, 255, .12); font-weight: 600; }
+.ff-quiz-next strong { font-size: 1.25rem; min-width: 1.2em; text-align: center; font-variant-numeric: tabular-nums; }
+.ff-quiz-timer.is-next { --p: 100; font-size: 1.4rem; }
+.ff-quiz-bar.is-urgent > div { background: #FFD24D; }
+.ff-quiz-seconds { min-width: 1.4em; text-align: center; font-variant-numeric: tabular-nums; }
+.ff-quiz-seconds.is-urgent { color: #FFD24D; animation: ff-quiz-tick .5s ease infinite alternate; }
+@keyframes ff-quiz-tick { from { transform: scale(1); } to { transform: scale(1.18); } }
+/* Player: the answer they locked in */
+.ff-quiz-locked { display: grid; gap: 10px; justify-items: center; text-align: center; padding: 8px 0; }
+.ff-quiz-locked .ff-quiz-option { min-height: 64px; min-width: min(320px, 100%); justify-content: center; }
+/* Editor timing note */
+.ff-quiz-howto { display: grid; gap: 6px; padding: 12px 14px; border-radius: 14px; background: var(--ff-primary-mist, #FFE9F5); color: var(--ff-primary-dark, #8E1C37); font-size: .85rem; }
+.ff-quiz-howto i { margin-right: 4px; }
 .ff-quiz-card-cover::after { content: ""; position: absolute; width: 160px; height: 160px; border-radius: 50%; background: rgba(255, 255, 255, .08); right: -40px; top: -60px; }
 
 /* ── In-app notification pop-up cards ─────────────────────────────────── */

@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\BibleHighlight;
 use App\Models\Church;
 use App\Models\DiscipleshipRecord;
 use App\Models\Note;
@@ -15,6 +16,7 @@ use App\Services\CampaignService;
 use App\Services\ChurchArtworkService;
 use App\Services\ChurchOnboardingService;
 use App\Services\ModerationService;
+use App\Services\QuizService;
 use App\Services\StreamingService;
 use App\Services\SupportService;
 use App\Support\ReadingPlanTemplates;
@@ -766,6 +768,11 @@ class DemoSeeder extends Seeder
             ]);
         }
 
+        // Verses the member coloured in the Bible reader.
+        foreach ([['JHN', 3, 16, 'yellow'], ['JHN', 3, 17, 'yellow'], ['JHN', 3, 3, 'green'], ['PSA', 23, 1, 'blue'], ['PSA', 23, 4, 'pink'], ['ROM', 8, 28, 'yellow']] as [$book, $chapter, $verse, $color]) {
+            BibleHighlight::updateOrCreate(['user_id' => $member->id, 'book' => $book, 'chapter' => $chapter, 'verse' => $verse], ['color' => $color]);
+        }
+
         // ── Quizzes ─────────────────────────────────────────────────────
         $trivia = $grace->quizzes()->create(['user_id' => $pastor->id, 'title' => 'Bible Heroes Trivia', 'description' => 'How well do you know the heroes of faith? Fast answers score more!']);
         $questions = [
@@ -779,7 +786,7 @@ class DemoSeeder extends Seeder
             ['How many disciples did Jesus choose?', ['7', '10', '12', '70'], 2],
         ];
         foreach ($questions as $i => [$q, $options, $correct]) {
-            $trivia->questions()->create(['position' => $i, 'question' => $q, 'options' => $options, 'correct_option' => $correct, 'time_limit' => 20, 'points' => $i === 7 ? 2000 : 1000]);
+            $trivia->questions()->create(['position' => $i, 'question' => $q, 'options' => $options, 'correct_option' => $correct, 'time_limit' => QuizService::questionSeconds(), 'points' => $i === 7 ? 2000 : 1000]);
         }
 
         $youth = $grace->quizzes()->create(['user_id' => $pastor->id, 'title' => 'Youth Night: Life of Jesus', 'description' => 'Six quick questions for Friday youth night.']);
@@ -791,7 +798,7 @@ class DemoSeeder extends Seeder
             ['Who denied Jesus three times?', ['John', 'Peter', 'Philip', 'Mark'], 1],
             ['On which day did Jesus rise again?', ['Friday', 'Saturday', 'The first day of the week', 'The seventh day'], 2],
         ] as $i => [$q, $options, $correct]) {
-            $youth->questions()->create(['position' => $i, 'question' => $q, 'options' => $options, 'correct_option' => $correct, 'time_limit' => 15, 'points' => 1000]);
+            $youth->questions()->create(['position' => $i, 'question' => $q, 'options' => $options, 'correct_option' => $correct, 'time_limit' => QuizService::questionSeconds(), 'points' => 1000]);
         }
 
         // A finished game with a full scoreboard.
@@ -809,7 +816,7 @@ class DemoSeeder extends Seeder
                 $skill = $p === 0 ? 85 : max(35, 80 - $p * 4);
                 $isRight = mt_rand(1, 100) <= $skill;
                 $option = $isRight ? $question->correct_option : ($question->correct_option + mt_rand(1, 3)) % count($question->options);
-                $ms = mt_rand(1800, 16000);
+                $ms = mt_rand(1200, 9500);
                 $points = $isRight ? (int) round($question->points * (1 - $ms / ($question->time_limit * 1000) / 2)) : 0;
                 QuizAnswer::create(['quiz_session_id' => $finished->id, 'quiz_player_id' => $player->id, 'quiz_question_id' => $question->id, 'option' => $option, 'is_correct' => $isRight, 'points' => $points, 'response_ms' => $ms]);
                 $score += $points;

@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\BibleChapter;
+use App\Models\BibleHighlight;
 use App\Models\Church;
 use App\Models\Note;
 use App\Models\PrayerRequest;
@@ -20,6 +21,7 @@ use App\Notifications\Reading\ReadingCircleUpdate;
 use App\Services\Bible\BibleService;
 use App\Services\ChurchArtworkService;
 use App\Services\HomeSlider;
+use App\Services\QuizService;
 use App\Services\ReadingCircleService;
 use App\Support\Bible\Reference;
 use Illuminate\Http\UploadedFile;
@@ -120,6 +122,38 @@ test('when the bible service is unreachable the reader shows a friendly message'
     $passage = app(BibleService::class)->passage('John 3', 'kjv');
     expect($passage['sections'][0]['verses'])->toBe([])->and($passage['sections'][0]['error'])->not->toBeNull();
     $this->actingAs($member)->get(route('bible.passage', ['ref' => 'John 3', 'partial' => 1]))->assertOk()->assertSee('could not load');
+});
+
+test('members highlight verses in colour, privately, and see them in every translation', function () {
+    fakeBibleApi();
+    [, , $member, $fellow] = fellowshipChurch();
+
+    $this->actingAs($member)->postJson(route('bible.highlight'), ['verses' => ['MAT.3.2', 'MAT.3.3'], 'color' => 'yellow'])->assertOk()->assertJson(['count' => 2]);
+    $this->actingAs($member)->postJson(route('bible.highlight'), ['verses' => ['MAT.3.3'], 'color' => 'blue'])->assertOk();
+    expect(BibleHighlight::where('user_id', $member->id)->orderBy('verse')->pluck('color', 'verse')->all())->toBe([2 => 'yellow', 3 => 'blue']);
+
+    $this->actingAs($member)->get(route('bible.read', ['MAT', 3]))->assertOk()->assertSee('data-hl="yellow"', false)->assertSee('data-hl="blue"', false);
+    $this->actingAs($member)->get(route('bible.read', ['MAT', 3, 't' => 'web']))->assertSee('data-hl="blue"', false);
+    $this->actingAs($member)->get(route('bible.passage', ['ref' => 'Matthew 3-4', 'partial' => 1]))->assertSee('data-hl="yellow"', false);
+    $this->actingAs($fellow)->get(route('bible.read', ['MAT', 3]))->assertDontSee('data-hl=', false);
+    $this->actingAs($member)->get(route('bible.index'))->assertSee('My highlights')->assertSee('Matthew 3:3')->assertSee('Verse 3 text.');
+
+    $this->actingAs($member)->postJson(route('bible.highlight'), ['verses' => ['MAT.3.2'], 'color' => null])->assertOk();
+    $this->actingAs($member)->postJson(route('bible.highlight'), ['verses' => ['not a verse'], 'color' => 'yellow'])->assertUnprocessable();
+    $this->actingAs($member)->postJson(route('bible.highlight'), ['verses' => ['MAT.3.4'], 'color' => 'purple'])->assertUnprocessable();
+    $this->actingAs($member)->postJson(route('bible.highlight'), ['verses' => ['XYZ.1.1', 'MAT.99.1'], 'color' => 'green'])->assertJson(['count' => 0]);
+    expect(BibleHighlight::pluck('verse')->all())->toBe([3]);
+});
+
+test('every verse is its own tappable line in the reader and in plan passages', function () {
+    fakeBibleApi();
+    [, , $member] = fellowshipChurch();
+
+    $this->actingAs($member)->get(route('bible.read', ['MAT', 5]))->assertOk()
+        ->assertSee('ff-scripture is-lines', false)->assertSee('data-key="MAT.5.1"', false)->assertSee('data-key="MAT.5.10"', false)
+        ->assertSee('Tap a verse to copy, highlight, share or add it to your notes.');
+    $this->actingAs($member)->get(route('bible.passage', ['ref' => 'Matthew 5:3-4', 'partial' => 1]))->assertOk()
+        ->assertSee('data-key="MAT.5.3"', false)->assertSee('data-key="MAT.5.4"', false)->assertDontSee('data-key="MAT.5.5"', false);
 });
 
 /*
@@ -237,8 +271,8 @@ test('everyone in a circle is reminded once at the agreed reading time', functio
 function quizPayload(): array
 {
     return ['title' => 'Bible heroes', 'description' => 'Fast answers score more', 'questions' => [
-        ['question' => 'Who built the ark?', 'options' => ['Moses', 'Noah', 'Abraham', 'David'], 'correct' => 1, 'time_limit' => 20, 'points' => 1000],
-        ['question' => 'How many days of rain?', 'options' => ['7', '40'], 'correct' => 1, 'time_limit' => 10, 'points' => 1000],
+        ['question' => 'Who built the ark?', 'options' => ['Moses', 'Noah', 'Abraham', 'David'], 'correct' => 1, 'points' => 1000],
+        ['question' => 'How many days of rain?', 'options' => ['7', '40'], 'correct' => 1, 'points' => 1000],
     ]];
 }
 
@@ -256,7 +290,7 @@ test('admins write multiple-choice quizzes; members cannot', function () {
 
     $this->actingAs($admin)->get(route('church-admin.quizzes.edit', [$church, $quiz]))->assertOk()->assertSee('Who built the ark', false);
 
-    $this->actingAs($admin)->post(route('church-admin.quizzes.store', $church), ['title' => 'Bad', 'questions' => [['question' => 'Q', 'options' => ['only one'], 'correct' => 0, 'time_limit' => 20]]])
+    $this->actingAs($admin)->post(route('church-admin.quizzes.store', $church), ['title' => 'Bad', 'questions' => [['question' => 'Q', 'options' => ['only one'], 'correct' => 0]]])
         ->assertSessionHasErrors('questions.0.options');
 });
 
@@ -283,7 +317,7 @@ test('a live quiz scores fast correct answers higher and congratulates the winne
 
     $this->actingAs($fast)->postJson(route('games.answer', $session), ['option' => 1, 'question' => 0])->assertOk();
     $this->actingAs($wrong)->postJson(route('games.answer', $session), ['option' => 0, 'question' => 0])->assertOk();
-    $this->travel(10)->seconds();
+    $this->travel(5)->seconds(); // half the 10 seconds gone → 750 of 1000
     $this->actingAs($slow)->postJson(route('games.answer', $session), ['option' => 1, 'question' => 0])->assertOk();
     $this->actingAs($fast)->postJson(route('games.answer', $session), ['option' => 0, 'question' => 0])->assertOk(); // second answer ignored
 
@@ -307,6 +341,53 @@ test('a live quiz scores fast correct answers higher and congratulates the winne
     Notification::assertNotSentTo($wrong, QuizUpdate::class, fn ($n) => $n->kind === 'winner');
 
     $this->actingAs($slow)->get(route('games.scores', $session))->assertOk()->assertSee($fast->first_name);
+});
+
+test('a live quiz runs by itself: 10-second questions, a short reveal, then the next question', function () {
+    Notification::fake();
+    $this->freezeTime();
+    config(['faithfellows.quizzes.question_seconds' => 10, 'faithfellows.quizzes.reveal_seconds' => 5]);
+    [$church, $admin, $a, $b] = fellowshipChurch();
+    $this->actingAs($admin)->post(route('church-admin.quizzes.store', $church), quizPayload());
+    expect(Quiz::sole()->questions->pluck('time_limit')->unique()->values()->all())->toBe([10]);
+
+    $this->actingAs($admin)->post(route('church-admin.quizzes.host', [$church, Quiz::sole()]));
+    $session = QuizSession::sole();
+    foreach ([$a, $b] as $p) {
+        $this->actingAs($p)->post(route('games.join'), ['pin' => $session->pin]);
+    }
+    $this->actingAs($admin)->postJson(route('church-admin.quizzes.session.action', [$church, $session, 'start']))->assertJson(['timing' => ['question' => 10, 'reveal' => 5]]);
+    $poll = fn (User $u) => $this->actingAs($u)->getJson(route('games.state', $session))->assertOk()->json();
+
+    // Only one player answers, so question one runs its full 10 seconds, with live scores meanwhile.
+    $this->actingAs($a)->postJson(route('games.answer', $session), ['option' => 1, 'question' => 0])->assertOk();
+    $this->travel(9)->seconds();
+    $s = $poll($b);
+    expect($s['status'])->toBe('question')
+        ->and($s['question']['remaining_ms'])->toBeBetween(990, 1000)
+        ->and($s['leaderboard'][0])->toMatchArray(['score' => 1000, 'gained' => 1000, 'answered' => true])
+        ->and($s['leaderboard'][1])->toMatchArray(['score' => 0, 'gained' => 0, 'answered' => false]);
+
+    $this->travel(2)->seconds(); // time + network grace
+    $s = $poll($b);
+    expect($s['status'])->toBe('reveal')->and($s['next_in_ms'])->toBeBetween(4990, 5000)->and($s['me']['correct'])->toBeFalse();
+
+    // Two screens polling at the same moment move the game on only once.
+    $this->travel(5)->seconds();
+    [$one, $two] = [QuizSession::find($session->id), QuizSession::find($session->id)];
+    app(QuizService::class)->advance($one);
+    app(QuizService::class)->advance($two);
+    expect($session->fresh()->current_index)->toBe(1)->and($poll($a))->toMatchArray(['status' => 'question', 'index' => 1]);
+
+    // When everyone has answered, the answer shows straight away.
+    $this->actingAs($a)->postJson(route('games.answer', $session), ['option' => 1, 'question' => 1])->assertOk();
+    $this->actingAs($b)->postJson(route('games.answer', $session), ['option' => 1, 'question' => 1])->assertOk();
+    expect($poll($a))->toMatchArray(['status' => 'reveal', 'is_last' => true]);
+
+    $this->travel(5)->seconds();
+    expect($poll($b)['status'])->toBe('finished');
+    Notification::assertSentTo($a, QuizUpdate::class, fn ($n) => $n->kind === 'winner' && $n->place === 1);
+    Notification::assertSentToTimes($a, QuizUpdate::class, 1);
 });
 
 test('only members of the hosting church can join a game', function () {

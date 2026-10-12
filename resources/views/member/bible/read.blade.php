@@ -1,5 +1,5 @@
 <x-layouts.member :title="$bookName.' '.$chapter">
-    <div class="ff-bible-page" x-data="bibleReader({ reference: @js($bookName.' '.$chapter), translation: @js($translations[$translation]['short'] ?? strtoupper($translation)) })">
+    <div class="ff-bible-page" x-data="bibleReader({ translation: @js($translations[$translation]['short'] ?? strtoupper($translation)), highlightUrl: @js(route('bible.highlight')) })">
         <div class="ff-bible-toolbar">
             <a href="{{ route('bible.index') }}" class="btn btn-sm btn-ff-ghost" aria-label="{{ __('All books') }}"><i class="bi bi-grid-3x3-gap"></i></a>
             <div class="dropdown">
@@ -19,6 +19,7 @@
                 </select>
             </form>
             <div class="ms-auto d-flex align-items-center gap-1">
+                <button type="button" class="btn btn-sm btn-ff-ghost" @click="toggleLines()" :aria-pressed="lines" :title="lines ? '{{ __('Show as paragraphs') }}' : '{{ __('One verse per line') }}'" aria-label="{{ __('Change layout') }}"><i class="bi" :class="lines ? 'bi-text-paragraph' : 'bi-list-ol'"></i></button>
                 <button type="button" class="btn btn-sm btn-ff-ghost" @click="resize(-1)" aria-label="{{ __('Smaller text') }}">A<sup>−</sup></button>
                 <button type="button" class="btn btn-sm btn-ff-ghost fw-bold" @click="resize(1)" aria-label="{{ __('Larger text') }}">A<sup>+</sup></button>
             </div>
@@ -34,14 +35,16 @@
                 <a href="{{ request()->fullUrl() }}" class="btn btn-ff-primary mt-2">{{ __('Try again') }}</a>
             </x-ff.empty-state>
         @else
-            <article class="ff-scripture" :style="`font-size: ${size}px`" style="font-size: 19px">
+            <article class="ff-scripture is-lines" :class="{ 'is-lines': lines }" :style="`font-size: ${size}px`" style="font-size: 19px" @click="pick($event)" @keydown.enter="pick($event)"
+                data-label="{{ $bookName }} {{ $chapter }}">
                 <span class="ff-chapter-drop" aria-hidden="true">{{ $chapter }}</span>
                 @foreach ($verses as $verse)
-                    <span @class(['ff-verse', 'is-highlight' => $highlight && $verse['v'] >= $highlight[0] && $verse['v'] <= ($highlight[1] ?? $highlight[0])])
-                        data-verse="{{ $verse['v'] }}" :class="selected.includes({{ $verse['v'] }}) && 'is-selected'" @click="toggle({{ $verse['v'] }})"
-                        @if ($highlight && $verse['v'] === $highlight[0]) id="v{{ $verse['v'] }}" @endif><sup>{{ $verse['v'] }}</sup><span class="ff-verse-text">{{ $verse['t'] }}</span> </span>
+                    @php($key = $book.'.'.$chapter.'.'.$verse['v'])
+                    <span @class(['ff-verse', 'is-target' => $target && $verse['v'] >= $target[0] && $verse['v'] <= ($target[1] ?? $target[0])])
+                        id="v{{ $verse['v'] }}" data-key="{{ $key }}" @isset($highlights[$key]) data-hl="{{ $highlights[$key] }}" @endisset tabindex="0" role="button"><sup>{{ $verse['v'] }}</sup><span class="ff-verse-text">{{ $verse['t'] }}</span> </span>
                 @endforeach
             </article>
+            <p class="small text-ff-muted mt-3 mb-0 ff-verse-hint"><i class="bi bi-hand-index"></i> {{ __('Tap a verse to copy, highlight, share or add it to your notes.') }}</p>
         @endif
 
         <nav class="ff-chapter-nav" aria-label="{{ __('Chapters') }}">
@@ -53,13 +56,7 @@
             @endif
         </nav>
 
-        <div class="ff-verse-bar" x-show="selected.length" x-transition x-cloak role="toolbar" aria-label="{{ __('Selected verses') }}">
-            <span class="small fw-semibold me-1" x-text="label"></span>
-            <button type="button" class="btn btn-sm" @click="note()"><i class="bi bi-journal-plus"></i> {{ __('Note') }}</button>
-            <button type="button" class="btn btn-sm" @click="copy()"><i class="bi bi-clipboard"></i> {{ __('Copy') }}</button>
-            <button type="button" class="btn btn-sm" @click="share()"><i class="bi bi-share"></i> {{ __('Share') }}</button>
-            <button type="button" class="btn btn-sm" @click="clear()" aria-label="{{ __('Clear selection') }}"><i class="bi bi-x-lg"></i></button>
-        </div>
+        @include('member.bible._verse-bar')
     </div>
 
     @include('partials.note-taker', ['context' => 'bible:'.$book.'.'.$chapter, 'reference' => $bookName.' '.$chapter])

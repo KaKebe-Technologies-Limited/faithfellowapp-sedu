@@ -6,7 +6,8 @@
                 <div class="small" style="opacity:.8">{{ $session->church->name }}</div>
                 <div class="fw-bold text-truncate">{{ $session->quiz->title }}</div>
             </div>
-            <span class="ff-quiz-chip" x-show="s.me"><i class="bi bi-person-fill"></i> <span x-text="s.me?.name"></span></span>
+            <span class="ff-quiz-chip d-none d-sm-inline-flex" x-show="s.me"><i class="bi bi-person-fill"></i> <span x-text="s.me?.name"></span></span>
+            <span class="ff-quiz-chip" x-show="s.me?.rank && s.status !== 'lobby'"><i class="bi bi-trophy-fill"></i> #<span x-text="s.me?.rank"></span></span>
             <span class="ff-quiz-chip" x-show="s.me"><i class="bi bi-star-fill"></i> <span x-text="(s.me?.score ?? 0).toLocaleString()"></span></span>
         </div>
 
@@ -25,8 +26,8 @@
             <div class="d-grid gap-3">
                 <div class="d-flex align-items-center gap-3">
                     <span class="ff-quiz-chip" x-text="`${s.index + 1} / ${s.total}`"></span>
-                    <div class="ff-quiz-bar flex-grow-1"><div :style="`width:${progress}%`"></div></div>
-                    <strong class="fs-4" x-text="remaining"></strong>
+                    <div class="ff-quiz-bar flex-grow-1" :class="remaining <= 3 && 'is-urgent'"><div :style="`width:${progress}%`"></div></div>
+                    <strong class="fs-3 ff-quiz-seconds" :class="remaining <= 3 && 'is-urgent'" x-text="remaining"></strong>
                 </div>
                 <div class="ff-quiz-question" x-text="s.question?.text"></div>
                 <template x-if="s.me?.answer === null || s.me?.answer === undefined">
@@ -39,32 +40,32 @@
                     </div>
                 </template>
                 <template x-if="s.me?.answer !== null && s.me?.answer !== undefined">
-                    <div class="text-center py-4">
-                        <div class="display-4 mb-2">⏳</div>
-                        <h3 class="fw-bold">{{ __('Answer locked in!') }}</h3>
-                        <p style="opacity:.9">{{ __('Waiting for everyone else…') }}</p>
+                    <div class="ff-quiz-locked">
+                        <span class="ff-quiz-option" :class="`o${s.me.answer}`"><i class="bi" :class="shape(s.me.answer)"></i><span x-text="s.question?.options?.[s.me.answer]"></span></span>
+                        <div><strong>{{ __('Answer locked in!') }}</strong> <span style="opacity:.85">{{ __('The answer shows when the time is up.') }}</span></div>
                     </div>
                 </template>
+                @include('partials.quiz-live-board', ['rows' => 'board(5)'])
             </div>
         </template>
 
         <template x-if="s.status === 'reveal'">
-            <div class="d-grid gap-3" style="max-width: 640px; margin-inline: auto">
+            <div class="d-grid gap-3" style="max-width: 640px; margin-inline: auto; width: 100%">
                 <div class="ff-quiz-feedback" :class="s.me?.correct ? 'is-right' : 'is-wrong'">
                     <div class="big" x-text="s.me?.correct ? '🎉' : (s.me?.answer === null || s.me?.answer === undefined ? '⌛' : '🙈')"></div>
                     <h2 class="fw-bold mb-1" x-text="s.me?.correct ? '{{ __('Correct!') }}' : (s.me?.answer === null || s.me?.answer === undefined ? '{{ __('Time’s up') }}' : '{{ __('Not this time') }}')"></h2>
                     <div class="fs-5" x-show="s.me?.correct" x-text="`+${(s.me?.points ?? 0).toLocaleString()} {{ __('points') }}`"></div>
                     <div class="small mt-2" style="opacity:.9" x-text="`{{ __('Answer') }}: ${s.question?.options?.[s.reveal?.correct] ?? ''}`"></div>
+                    <div class="small mt-1 fw-semibold" x-show="(s.me?.streak ?? 0) >= 2" x-text="`🔥 ${s.me?.streak} {{ __('in a row') }}`"></div>
                 </div>
-                <div class="text-center fs-5">{{ __('You are') }} <strong x-text="`#${s.me?.rank ?? '–'}`"></strong> · <span x-text="(s.me?.score ?? 0).toLocaleString()"></span> {{ __('pts') }}</div>
-                <div class="ff-quiz-board">
-                    <template x-for="row in s.leaderboard.slice(0, 5)" :key="row.rank">
-                        <div class="ff-quiz-row" :class="row.me && 'is-me'"><span class="ff-quiz-rank" x-text="row.rank"></span><span x-text="row.name"></span><span class="ff-quiz-score" x-text="row.score.toLocaleString()"></span></div>
-                    </template>
+                <div class="ff-quiz-next">
+                    <span x-text="s.is_last ? '{{ __('Final results in') }}' : '{{ __('Next question in') }}'"></span>
+                    <strong x-text="nextIn"></strong>
+                    <div class="ff-quiz-bar flex-grow-1"><div :style="`width:${nextProgress}%`"></div></div>
                 </div>
+                @include('partials.quiz-live-board', ['rows' => 'board(5)'])
             </div>
         </template>
-
         <template x-if="s.status === 'finished'">
             <div class="text-center">
                 <h2 class="display-6 fw-bold">{{ __('Final results') }}</h2>

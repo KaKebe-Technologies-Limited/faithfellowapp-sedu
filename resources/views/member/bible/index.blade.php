@@ -23,6 +23,27 @@
         </div>
     </div>
 
+    @if ($recentHighlights->isNotEmpty())
+        <section class="mb-4" aria-labelledby="my-highlights">
+            <h2 class="h5 mb-3" id="my-highlights"><i class="bi bi-highlighter text-ff-primary"></i> {{ __('My highlights') }}</h2>
+            <div class="row g-3">
+                @foreach ($recentHighlights as $h)
+                    @php([, $swatch] = \App\Models\BibleHighlight::COLORS[$h['color']] ?? \App\Models\BibleHighlight::COLORS['yellow'])
+                    <div class="col-md-6 col-xl-4">
+                        <a href="{{ $h['url'] }}" class="ff-hl-card" style="--sw: {{ $swatch }}; --sw-soft: {{ $swatch }}88">
+                            <div class="small fw-bold text-ff-primary mb-1">{{ $h['label'] }}</div>
+                            @if ($h['text'])
+                                <div class="ff-scripture"><mark>{{ $h['text'] }}</mark></div>
+                            @else
+                                <div class="small text-ff-muted">{{ __('Open to read this verse') }} <i class="bi bi-arrow-right"></i></div>
+                            @endif
+                        </a>
+                    </div>
+                @endforeach
+            </div>
+        </section>
+    @endif
+
     <div class="d-flex flex-wrap align-items-center gap-3 mb-3">
         <h1 class="h4 mb-0 me-auto">{{ __('Books of the Bible') }}</h1>
         <form method="POST" action="{{ route('bible.translation') }}" class="d-flex align-items-center gap-2">@csrf

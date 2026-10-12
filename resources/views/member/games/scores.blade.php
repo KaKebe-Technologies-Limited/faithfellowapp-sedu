@@ -27,18 +27,32 @@
                 </div>
             </div>
             <div :class="s.question ? 'col-lg-7' : 'col-12'">
-                <h2 class="h4 mb-3" x-text="s.status === 'finished' ? '🏆 {{ __('Final leaderboard') }}' : '{{ __('Leaderboard') }}'"></h2>
-                <div class="ff-quiz-board">
-                    <template x-for="row in s.leaderboard" :key="row.rank">
-                        <div class="ff-quiz-row" :class="row.me && 'is-me'">
-                            <span class="ff-quiz-rank" x-text="row.rank <= 3 ? ['🥇','🥈','🥉'][row.rank - 1] : row.rank"></span>
-                            <span x-text="row.name"></span>
-                            <span class="small ms-2" style="opacity:.7" x-text="`${row.correct} ✓`"></span>
-                            <span class="ff-quiz-score" x-text="row.score.toLocaleString()"></span>
+                <template x-if="s.status !== 'finished'">
+                    <div class="d-grid gap-3">
+                        <div class="ff-quiz-next" x-show="s.status === 'reveal'">
+                            <span x-text="s.is_last ? '{{ __('Final results in') }}' : '{{ __('Next question in') }}'"></span>
+                            <strong x-text="nextIn"></strong>
+                            <div class="ff-quiz-bar flex-grow-1"><div :style="`width:${nextProgress}%`"></div></div>
                         </div>
-                    </template>
-                    <p x-show="!s.leaderboard.length" style="opacity:.8">{{ __('No players yet.') }}</p>
-                </div>
+                        @include('partials.quiz-live-board', ['rows' => 's.leaderboard'])
+                    </div>
+                </template>
+                <template x-if="s.status === 'finished'">
+                    <div>
+                        <h2 class="h4 mb-3">🏆 {{ __('Final leaderboard') }}</h2>
+                        <div class="ff-quiz-board">
+                            <template x-for="row in s.leaderboard" :key="row.id">
+                                <div class="ff-quiz-row" :class="{ 'is-me': row.me, 'is-top': row.rank <= 3 }">
+                                    <span class="ff-quiz-rank" x-text="medal(row.rank)"></span>
+                                    <span class="ff-quiz-name" x-text="row.name"></span>
+                                    <span class="small" style="opacity:.7" x-text="`${row.correct} ✓`"></span>
+                                    <span class="ff-quiz-score" x-text="row.score.toLocaleString()"></span>
+                                </div>
+                            </template>
+                            <p x-show="!s.leaderboard.length" style="opacity:.8">{{ __('No players yet.') }}</p>
+                        </div>
+                    </div>
+                </template>
             </div>
         </div>
     </div>

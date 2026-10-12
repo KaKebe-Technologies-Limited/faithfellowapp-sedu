@@ -167,6 +167,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/bible/passage', [Member\BibleController::class, 'passage'])->middleware('throttle:60,1')->name('bible.passage');
     Route::get('/bible/{book}/{chapter}', [Member\BibleController::class, 'read'])->where(['book' => '[1-3A-Za-z]{3}', 'chapter' => '[0-9]+'])->middleware('throttle:60,1')->name('bible.read');
     Route::post('/bible/translation', [Member\BibleController::class, 'setTranslation'])->name('bible.translation');
+    Route::post('/bible/highlights', [Member\BibleController::class, 'highlight'])->middleware('throttle:60,1')->name('bible.highlight');
 
     // Notes (note taker + notebook)
     Route::get('/notes', [Member\NoteController::class, 'index'])->name('notes.index');

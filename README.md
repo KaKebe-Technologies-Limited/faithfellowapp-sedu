@@ -16,9 +16,9 @@ FaithFellows is a multi-tenant church management and engagement platform built f
 |------|-------------------------------|
 | **Church websites** | An auto-generated site at `{slug}.faithfellows.app` (or a custom domain) built from drag-and-drop blocks, plus a public page in the church directory |
 | **Content** | Sermons (audio/video, series, playlists, transcripts, offline listening), devotionals, announcements, reading plans |
-| **Bible & notes** | An in-app Bible (KJV, WEB, BBE, ASV; Swahili and Luganda with an API.Bible key) with cached chapters, reading-plan days that open the exact verses ("Matthew 3–5"), and a private autosaving note taker beside every chapter, plan day, sermon and live stream |
+| **Bible & notes** | An in-app Bible (KJV, WEB, BBE, ASV; Swahili and Luganda with an API.Bible key) with cached chapters, one verse per line, tap-to-copy and colour highlights, reading-plan days that open the exact verses ("Matthew 3–5"), and a private autosaving note taker beside every chapter, plan day, sermon and live stream |
 | **Reading partners** | Circles of up to 4 church members joined with a code, with a shared reading time, reminders, "finished" alerts and summaries only the circle can read |
-| **Games** | Admin-written multiple-choice quizzes played live on phones, with a PIN/QR lobby, speed scoring, a live leaderboard and winners' podium |
+| **Games** | Admin-written multiple-choice quizzes played live on phones: a PIN/QR lobby, 10-second questions that move on by themselves, speed scoring, an always-on live leaderboard and a winners' podium |
 | **Live** | RTMP (OBS) or embedded streams, an HLS player with an audio-only mode for low bandwidth, live chat, viewer analytics and recordings |
 | **Events** | RSVPs, paid tickets, QR check-in, reminders, Q&A |
 | **Giving** | MTN MoMo, Airtel Money, Iotec, cards (Stripe), bank transfer, USSD, cash records, campaigns with milestones, pledges, recurring gifts, PDF receipts, payouts and reconciliation |

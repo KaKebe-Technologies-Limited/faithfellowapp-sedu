@@ -3,13 +3,17 @@
 namespace App\Http\Controllers\Member;
 
 use App\Http\Controllers\Controller;
+use App\Models\BibleChapter;
+use App\Models\BibleHighlight;
 use App\Services\Bible\BibleService;
 use App\Services\Bible\BibleUnavailable;
 use App\Support\Bible\Books;
 use App\Support\Bible\Reference;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Collection;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -43,6 +47,7 @@ class BibleController extends Controller
             'translation' => $this->bible->defaultTranslation($request->user()),
             'last' => $last && Books::exists($last['book'] ?? '') ? $last : null,
             'books' => collect(Books::ALL)->map(fn ($b, $code) => ['code' => $code, 'name' => $b[0], 'chapters' => $b[1], 'testament' => $b[2]])->groupBy('testament'),
+            'recentHighlights' => $this->recentHighlights($request),
         ]);
     }
 
@@ -76,7 +81,8 @@ class BibleController extends Controller
             'translations' => $this->bible->translations(),
             'previous' => $previous,
             'next' => $next,
-            'highlight' => array_filter(array_map('intval', explode('-', (string) $request->query('v')))),
+            'target' => array_filter(array_map('intval', explode('-', (string) $request->query('v')))),
+            'highlights' => BibleHighlight::mapFor($request->user(), [['book' => $book, 'chapter' => $chapter]]),
         ]);
     }
 
@@ -90,8 +96,10 @@ class BibleController extends Controller
         $translation = $this->translation($request);
         $passage = $this->bible->passage($request->query('ref'), $translation);
 
+        $highlights = $passage ? BibleHighlight::mapFor($request->user(), $passage['sections']) : [];
+
         if ($request->boolean('partial')) {
-            return response()->view('member.bible._passage', ['passage' => $passage, 'translation' => $translation, 'compact' => true]);
+            return response()->view('member.bible._passage', ['passage' => $passage, 'translation' => $translation, 'translations' => $this->bible->translations(), 'highlights' => $highlights, 'compact' => true]);
         }
 
         abort_unless($passage, 404);
@@ -101,7 +109,33 @@ class BibleController extends Controller
             'reference' => $request->query('ref'),
             'translation' => $translation,
             'translations' => $this->bible->translations(),
+            'highlights' => $highlights,
         ]);
+    }
+
+    /**
+     * Colour (or clear) verses. Body: { verses: ["JHN.3.16", …], color: "yellow" | null }.
+     */
+    public function highlight(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'verses' => ['required', 'array', 'min:1', 'max:200'],
+            'verses.*' => ['string', 'regex:/^[1-3A-Z]{3}\.\d{1,3}\.\d{1,3}$/'],
+            'color' => ['nullable', Rule::in(array_keys(BibleHighlight::COLORS))],
+        ]);
+
+        $user = $request->user();
+        $keys = collect($data['verses'])->unique()->map(fn ($key) => array_combine(['book', 'chapter', 'verse'], explode('.', $key)))
+            ->filter(fn ($v) => Books::exists($v['book']) && (int) $v['chapter'] >= 1 && (int) $v['chapter'] <= Books::chapters($v['book']) && (int) $v['verse'] >= 1);
+
+        foreach ($keys as $v) {
+            $match = ['user_id' => $user->id, 'book' => $v['book'], 'chapter' => (int) $v['chapter'], 'verse' => (int) $v['verse']];
+            $data['color']
+                ? BibleHighlight::updateOrCreate($match, ['color' => $data['color']])
+                : BibleHighlight::where($match)->delete();
+        }
+
+        return response()->json(['color' => $data['color'], 'count' => $keys->count()]);
     }
 
     public function setTranslation(Request $request): RedirectResponse
@@ -111,6 +145,31 @@ class BibleController extends Controller
         session(['bible_translation' => $data['translation']]);
 
         return back();
+    }
+
+    /**
+     * The member's latest highlights with verse text, read from the chapter
+     * cache only (never calls the Bible API just to fill this list).
+     *
+     * @return Collection<int, array{label: string, text: ?string, color: string, url: string}>
+     */
+    protected function recentHighlights(Request $request)
+    {
+        $highlights = BibleHighlight::where('user_id', $request->user()->id)->latest('updated_at')->take(6)->get();
+        if ($highlights->isEmpty()) {
+            return collect();
+        }
+        $translation = $this->bible->defaultTranslation($request->user());
+        $chapters = BibleChapter::where('translation', $translation)
+            ->where(fn ($q) => $highlights->each(fn ($h) => $q->orWhere(fn ($w) => $w->where('book', $h->book)->where('chapter', $h->chapter))))
+            ->get()->keyBy(fn ($c) => $c->book.'.'.$c->chapter);
+
+        return $highlights->map(fn (BibleHighlight $h) => [
+            'label' => $h->label(),
+            'text' => collect($chapters[$h->book.'.'.$h->chapter]->verses ?? [])->firstWhere('v', $h->verse)['t'] ?? null,
+            'color' => $h->color,
+            'url' => route('bible.read', [$h->book, $h->chapter, 'v' => $h->verse]).'#v'.$h->verse,
+        ]);
     }
 
     protected function translation(Request $request): string

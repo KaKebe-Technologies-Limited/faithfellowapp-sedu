@@ -42,38 +42,37 @@
             </div>
         </template>
 
-        {{-- Question / reveal --}}
+        {{-- Question / reveal: runs by itself, with live scores beside it --}}
         <template x-if="s.status === 'question' || s.status === 'reveal'">
-            <div class="d-grid gap-4">
-                <div class="d-flex align-items-center gap-3">
-                    <span class="ff-quiz-chip" x-text="`{{ __('Question') }} ${s.index + 1} / ${s.total}`"></span>
-                    <span class="ms-auto ff-quiz-chip"><i class="bi bi-check2-square"></i> <span x-text="s.question?.answered_count ?? 0"></span> / <span x-text="s.players_count"></span> {{ __('answered') }}</span>
-                    <div class="ff-quiz-timer" :style="`--p: ${progress}`" x-show="s.status === 'question'"><span x-text="remaining"></span></div>
+            <div class="row g-4">
+                <div class="col-xl-7 d-grid gap-3 align-content-start">
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="ff-quiz-chip" x-text="`{{ __('Question') }} ${s.index + 1} / ${s.total}`"></span>
+                        <span class="ff-quiz-chip d-none d-sm-inline-flex"><i class="bi bi-check2-square"></i> <span x-text="s.question?.answered_count ?? 0"></span> / <span x-text="s.players_count"></span></span>
+                        <div class="ms-auto ff-quiz-timer" :style="{ '--p': progress }" x-show="s.status === 'question'"><span x-text="remaining"></span></div>
+                        <div class="ms-auto ff-quiz-timer is-next" :style="{ '--p': nextProgress }" x-show="s.status === 'reveal'"><span><i class="bi bi-skip-forward-fill"></i></span></div>
+                    </div>
+                    <div class="ff-quiz-question" x-text="s.question?.text"></div>
+                    <div class="ff-quiz-options">
+                        <template x-for="(opt, i) in s.question?.options || []" :key="i">
+                            <div class="ff-quiz-option" :class="[`o${i}`, s.status === 'reveal' && s.reveal?.correct !== i ? 'is-dim' : '', s.status === 'reveal' && s.reveal?.correct === i ? 'is-correct' : '']">
+                                <i class="bi" :class="shape(i)"></i><span x-text="opt"></span>
+                                <span class="ff-quiz-count" x-show="s.status === 'reveal'" x-text="s.reveal?.counts?.[i] ?? 0"></span>
+                                <i class="bi bi-check-circle-fill ms-1" x-show="s.status === 'reveal' && s.reveal?.correct === i"></i>
+                            </div>
+                        </template>
+                    </div>
+                    <div class="ff-quiz-next" x-show="s.status === 'reveal'">
+                        <span x-text="s.is_last ? '{{ __('Final results in') }}' : '{{ __('Next question in') }}'"></span>
+                        <strong x-text="nextIn"></strong>
+                        <div class="ff-quiz-bar flex-grow-1"><div :style="`width:${nextProgress}%`"></div></div>
+                    </div>
                 </div>
-                <div class="ff-quiz-question" x-text="s.question?.text"></div>
-                <div class="ff-quiz-options">
-                    <template x-for="(opt, i) in s.question?.options || []" :key="i">
-                        <div class="ff-quiz-option" :class="[`o${i}`, s.status === 'reveal' && s.reveal?.correct !== i ? 'is-dim' : '', s.status === 'reveal' && s.reveal?.correct === i ? 'is-correct' : '']">
-                            <i class="bi" :class="shape(i)"></i><span x-text="opt"></span>
-                            <span class="ff-quiz-count" x-show="s.status === 'reveal'" x-text="s.reveal?.counts?.[i] ?? 0"></span>
-                        </div>
-                    </template>
-                </div>
-                <div class="d-flex flex-wrap gap-2 justify-content-end">
-                    <button type="button" class="btn btn-lg btn-outline-light" x-show="s.status === 'question'" @click="act('reveal')" :disabled="busy">{{ __('Show answer') }}</button>
-                    <button type="button" class="btn btn-lg btn-ff-white fw-bold px-4" x-show="s.status === 'reveal'" @click="act('next')" :disabled="busy">
-                        <span x-text="s.index + 1 >= s.total ? '{{ __('Final results') }}' : '{{ __('Next question') }}'"></span> <i class="bi bi-arrow-right"></i>
-                    </button>
-                </div>
-                <div x-show="s.status === 'reveal'" class="ff-quiz-board" style="max-width: 640px; margin-inline: auto; width: 100%">
-                    <h3 class="h5 text-center mb-1">{{ __('Leaderboard') }}</h3>
-                    <template x-for="row in s.leaderboard.slice(0, 5)" :key="row.rank">
-                        <div class="ff-quiz-row"><span class="ff-quiz-rank" x-text="row.rank"></span><span x-text="row.name"></span><span class="ff-quiz-score" x-text="row.score.toLocaleString()"></span></div>
-                    </template>
+                <div class="col-xl-5">
+                    @include('partials.quiz-live-board', ['rows' => 's.leaderboard'])
                 </div>
             </div>
         </template>
-
         {{-- Finished: podium --}}
         <template x-if="s.status === 'finished'">
             <div class="text-center">
@@ -88,8 +87,8 @@
                     </template>
                 </div>
                 <div class="ff-quiz-board text-start" style="max-width: 640px; margin-inline: auto">
-                    <template x-for="row in s.leaderboard.slice(3)" :key="row.rank">
-                        <div class="ff-quiz-row"><span class="ff-quiz-rank" x-text="row.rank"></span><span x-text="row.name"></span><span class="ff-quiz-score" x-text="row.score.toLocaleString()"></span></div>
+                    <template x-for="row in s.leaderboard.slice(3)" :key="row.id">
+                        <div class="ff-quiz-row"><span class="ff-quiz-rank" x-text="row.rank"></span><span class="ff-quiz-name" x-text="row.name"></span><span class="ff-quiz-score" x-text="row.score.toLocaleString()"></span></div>
                     </template>
                 </div>
                 <a href="{{ route('church-admin.quizzes.index', $church) }}" class="btn btn-ff-white mt-4">{{ __('Back to quizzes') }}</a>
@@ -100,7 +99,9 @@
             <div class="text-center py-5"><h2>{{ __('Game cancelled') }}</h2></div>
         </template>
 
-        <div class="text-end mt-4" x-show="s.status === 'lobby' || s.status === 'question' || s.status === 'reveal'">
+        <div class="d-flex justify-content-end align-items-center gap-2 mt-4" x-show="s.status === 'lobby' || s.status === 'question' || s.status === 'reveal'">
+            <span class="small me-auto" style="opacity:.75" x-show="s.status !== 'lobby'"><i class="bi bi-stopwatch"></i> {{ __('Questions move on by themselves every :n seconds.', ['n' => \App\Services\QuizService::questionSeconds()]) }}</span>
+            <button type="button" class="btn btn-sm btn-outline-light" x-show="s.status === 'question' || s.status === 'reveal'" @click="skip()" :disabled="busy">{{ __('Skip') }} <i class="bi bi-chevron-right"></i></button>
             <button type="button" class="btn btn-sm btn-link text-white-50" @click="if (confirm(@js(__('End the game now and show the results?')))) act('end')">{{ __('End game') }}</button>
         </div>
     </div>

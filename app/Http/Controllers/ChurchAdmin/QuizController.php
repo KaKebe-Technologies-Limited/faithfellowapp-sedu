@@ -121,7 +121,6 @@ class QuizController extends Controller
             'questions.*.options' => ['required', 'array', 'min:2', 'max:4'],
             'questions.*.options.*' => ['nullable', 'string', 'max:120'],
             'questions.*.correct' => ['required', 'integer', 'between:0,3'],
-            'questions.*.time_limit' => ['required', 'integer', Rule::in([10, 15, 20, 30, 45, 60])],
             'questions.*.points' => ['nullable', 'integer', Rule::in([500, 1000, 2000])],
         ], [], ['questions.*.question' => __('question'), 'questions.*.options' => __('answers')]);
 
@@ -146,7 +145,7 @@ class QuizController extends Controller
                 'question' => trim($q['question']),
                 'options' => $options->all(),
                 'correct_option' => $correct,
-                'time_limit' => (int) $q['time_limit'],
+                'time_limit' => QuizService::questionSeconds(),
                 'points' => (int) ($q['points'] ?? 1000),
             ]);
         }
@@ -155,8 +154,8 @@ class QuizController extends Controller
     protected function form(Church $church, Quiz $quiz): View
     {
         $questions = $quiz->exists
-            ? $quiz->questions->map(fn ($q) => ['question' => $q->question, 'options' => array_pad($q->options, 4, ''), 'correct' => $q->correct_option, 'time_limit' => $q->time_limit, 'points' => $q->points])->all()
-            : [['question' => '', 'options' => ['', '', '', ''], 'correct' => 0, 'time_limit' => 20, 'points' => 1000]];
+            ? $quiz->questions->map(fn ($q) => ['question' => $q->question, 'options' => array_pad($q->options, 4, ''), 'correct' => $q->correct_option, 'points' => $q->points])->all()
+            : [['question' => '', 'options' => ['', '', '', ''], 'correct' => 0, 'points' => 1000]];
 
         return view('church-admin.quizzes.form', ['church' => $church, 'quiz' => $quiz, 'questions' => old('questions', $questions)]);
     }

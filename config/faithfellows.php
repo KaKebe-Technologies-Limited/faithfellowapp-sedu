@@ -207,6 +207,15 @@ return [
     ],
 
     /*
+    | Live quizzes run by themselves: each question is open for question_seconds,
+    | the answer and leaderboard show for reveal_seconds, then the next question starts.
+    */
+    'quizzes' => [
+        'question_seconds' => (int) env('FF_QUIZ_QUESTION_SECONDS', 10),
+        'reveal_seconds' => (int) env('FF_QUIZ_REVEAL_SECONDS', 5),
+    ],
+
+    /*
     | In-app Bible. 'bible_api_com' needs no key (public-domain English texts);
     | 'api_bible' needs API_BIBLE_KEY and the translation's API.Bible id.
     */

@@ -10,6 +10,27 @@ const debounce = (fn, ms) => {
     return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
 };
 
+// localStorage can throw (private mode, blocked storage) — never let that break a page.
+const stored = (key) => { try { return localStorage.getItem(key); } catch (e) { return null; } };
+const store = (key, value) => { try { localStorage.setItem(key, value); } catch (e) { /* ignore */ } };
+
+/** Copy text, falling back to a hidden textarea where the Clipboard API is unavailable (plain http). */
+async function copyText(text) {
+    try {
+        await navigator.clipboard.writeText(text);
+        return true;
+    } catch (e) {
+        const area = Object.assign(document.createElement('textarea'), { value: text, readOnly: true });
+        area.style.cssText = 'position:fixed;opacity:0;top:0;left:0';
+        document.body.appendChild(area);
+        area.select();
+        let ok = false;
+        try { ok = document.execCommand('copy'); } catch (err) { ok = false; }
+        area.remove();
+        return ok;
+    }
+}
+
 /* ── In-app notification pop-up card ────────────────────────────────── */
 
 window.ffNotificationPop = (n) => {
@@ -43,11 +64,11 @@ export function registerFellowship(Alpine) {
             this.persist = debounce(() => this.save(), 900);
             window.addEventListener('ff-note-insert', (e) => { this.open = true; this.insert(e.detail); });
             if (opts.inline) { this.open = true; this.load(); return; }
-            this.open = window.matchMedia('(min-width: 1400px)').matches && localStorage.getItem('ff-notes-open') === '1';
+            this.open = window.matchMedia('(min-width: 1400px)').matches && stored('ff-notes-open') === '1';
             if (this.open) this.load();
             const dock = (v) => document.body.classList.toggle('ff-notes-docked', v);
             dock(this.open);
-            this.$watch('open', (v) => { localStorage.setItem('ff-notes-open', v ? '1' : '0'); dock(v); if (v) this.load(); });
+            this.$watch('open', (v) => { store('ff-notes-open', v ? '1' : '0'); dock(v); if (v) this.load(); });
         },
         async load() {
             if (this.loaded) return;
@@ -91,36 +112,72 @@ export function registerFellowship(Alpine) {
         },
     }));
 
-    /* ── Bible reader: font size, verse selection, copy / note / share ─ */
+    /* ── Bible reader: layout, font size, tap verses to copy / highlight / note / share ─ */
+    // Verses carry data-key="BOOK.chapter.verse"; their chapter's container has data-label.
     Alpine.data('bibleReader', (opts = {}) => ({
-        size: Number(localStorage.getItem('ff-bible-size') || 19), selected: [],
-        resize(d) { this.size = Math.min(28, Math.max(15, this.size + d)); localStorage.setItem('ff-bible-size', this.size); },
-        toggle(v) { this.selected = this.selected.includes(v) ? this.selected.filter((x) => x !== v) : [...this.selected, v].sort((a, b) => a - b); },
-        clear() { this.selected = []; },
+        size: Number(stored('ff-bible-size') || 19),
+        lines: (stored('ff-bible-layout') || 'lines') === 'lines',
+        selected: [],
+        resize(d) { this.size = Math.min(28, Math.max(15, this.size + d)); store('ff-bible-size', this.size); },
+        toggleLines() { this.lines = !this.lines; store('ff-bible-layout', this.lines ? 'lines' : 'paragraph'); },
+        pick(e) {
+            const el = e.target.closest('.ff-verse[data-key]');
+            // Let people drag-select text normally; a tap toggles the verse.
+            if (!el || (e.type === 'click' && String(window.getSelection?.() || '').length > 1)) return;
+            el.classList.toggle('is-selected');
+            this.selected = [...this.$root.querySelectorAll('.ff-verse.is-selected')].map((v) => v.dataset.key);
+            if (navigator.vibrate) navigator.vibrate(12);
+        },
+        verses() { return this.selected.map((k) => this.$root.querySelector(`.ff-verse[data-key="${k}"]`)).filter(Boolean); },
+        clear() { this.verses().forEach((el) => el.classList.remove('is-selected')); this.selected = []; },
+        /** "John 3:16–18, 21; John 4:1" */
         get label() {
-            if (!this.selected.length) return '';
-            const s = this.selected; const ranges = [];
-            for (let i = 0; i < s.length; i++) {
-                let j = i; while (j + 1 < s.length && s[j + 1] === s[j] + 1) j++;
-                ranges.push(i === j ? `${s[i]}` : `${s[i]}–${s[j]}`); i = j;
-            }
-            return `${opts.reference}:${ranges.join(',')}`;
+            const groups = [];
+            this.verses().forEach((el) => {
+                const name = el.closest('[data-label]')?.dataset.label || '';
+                const v = Number(el.dataset.key.split('.')[2]);
+                const last = groups[groups.length - 1];
+                if (last && last.name === name) last.verses.push(v); else groups.push({ name, verses: [v] });
+            });
+            return groups.map(({ name, verses }) => {
+                const ranges = [];
+                for (let i = 0; i < verses.length; i++) {
+                    let j = i; while (j + 1 < verses.length && verses[j + 1] === verses[j] + 1) j++;
+                    ranges.push(i === j ? `${verses[i]}` : `${verses[i]}–${verses[j]}`); i = j;
+                }
+                return `${name}:${ranges.join(', ')}`;
+            }).join('; ');
         },
-        text() {
-            return this.selected.map((v) => this.$root.querySelector(`[data-verse="${v}"] .ff-verse-text`)?.textContent.trim()).join(' ');
-        },
+        text() { return this.verses().map((el) => el.querySelector('.ff-verse-text')?.textContent.trim()).join(' '); },
+        allColored(c) { const v = this.verses(); return v.length > 0 && v.every((el) => el.dataset.hl === c); },
+        anyColored() { return this.verses().some((el) => el.dataset.hl); },
         async copy() {
-            try { await navigator.clipboard.writeText(`“${this.text()}” — ${this.label} (${opts.translation})`); toast('Verse copied.', 'success', 2500); } catch (e) { toast('Copy failed.', 'warning'); }
+            const ok = await copyText(`“${this.text()}”\n— ${this.label} (${opts.translation})`);
+            toast(ok ? 'Copied — paste it anywhere.' : 'Copy failed. Long-press the text to copy it.', ok ? 'success' : 'warning', 2500);
             this.clear();
+        },
+        async highlight(color) {
+            const els = this.verses();
+            const before = els.map((el) => el.dataset.hl);
+            els.forEach((el) => { if (color) el.dataset.hl = color; else delete el.dataset.hl; });
+            const keys = [...this.selected];
+            this.clear();
+            try {
+                await http(opts.highlightUrl, { method: 'POST', body: { verses: keys, color } });
+                toast(color ? 'Highlighted. Find it again under Bible → My highlights.' : 'Highlight removed.', 'success', 2200);
+            } catch (e) {
+                els.forEach((el, i) => { if (before[i]) el.dataset.hl = before[i]; else delete el.dataset.hl; });
+                toast('Could not save the highlight. Please try again.', 'warning');
+            }
         },
         note() {
             window.dispatchEvent(new CustomEvent('ff-note-insert', { detail: `> ${this.text()} (${this.label})` }));
             this.clear();
         },
         share() {
-            const text = `“${this.text()}” — ${this.label}`;
-            if (navigator.share) navigator.share({ text, url: location.href }).catch(() => {});
-            else window.open(`https://wa.me/?text=${encodeURIComponent(text + ' ' + location.href)}`, '_blank', 'noopener');
+            const text = `“${this.text()}” — ${this.label} (${opts.translation})`;
+            if (navigator.share) navigator.share({ text }).catch(() => {});
+            else window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener');
             this.clear();
         },
     }));
@@ -138,22 +195,45 @@ export function registerFellowship(Alpine) {
     }));
 
     /* ── Live quiz ─────────────────────────────────────────────────── */
+    // The server runs the clock (question → answer → next). Each screen keeps at
+    // most one request in flight and wakes exactly when the current phase ends,
+    // so slow connections or a busy server never pile requests up.
     const quizBase = (opts) => ({
-        s: opts.initial || {}, now: Date.now(), clockOffset: 0, busy: false, timer: null, poller: null,
+        s: opts.initial || {}, now: Date.now(), busy: false, loading: false, poller: null, baseRanks: {},
         init() {
+            this.stamp(this.s);
             this.tick = setInterval(() => (this.now = Date.now()), 100);
             this.refresh();
-            this.poller = setInterval(() => this.refresh(), opts.every || 1000);
+            document.addEventListener('visibilitychange', () => { if (!document.hidden) this.refresh(); });
         },
-        destroy() { clearInterval(this.tick); clearInterval(this.poller); },
+        destroy() { clearInterval(this.tick); clearTimeout(this.poller); },
+        stamp(s) {
+            if (s.question && s.question.remaining_ms !== undefined) s.question.deadline = Date.now() + s.question.remaining_ms;
+            if (s.next_in_ms !== undefined) s.next_deadline = Date.now() + s.next_in_ms;
+        },
+        apply(s) {
+            this.stamp(s);
+            // Rank arrows compare with the standings when the question started.
+            if (s.index !== this.s.index) this.baseRanks = Object.fromEntries((this.s.leaderboard || []).map((r) => [r.id, r.rank]));
+            if (s.status === 'question' && this.s.status !== 'question' && navigator.vibrate) navigator.vibrate(40);
+            flip(this.$root, () => { this.s = s; });
+            if (this.after) this.after();
+        },
+        /** When to ask again: the regular beat, or sooner if a phase ends first. */
+        schedule() {
+            clearTimeout(this.poller);
+            const s = this.s;
+            if (s.status === 'finished' || s.status === 'cancelled') return;
+            const every = s.status === 'lobby' ? 1000 : (opts.every || 1000);
+            // The server shows the answer 1 s after the timer (network grace) and starts the next question on time.
+            const due = s.status === 'question' ? s.question?.deadline + 1050 : (s.status === 'reveal' ? s.next_deadline + 100 : null);
+            const until = due ? due - Date.now() : every;
+            this.poller = setTimeout(() => this.refresh(), until > 0 ? Math.min(every, until) : Math.min(every, 400));
+        },
         async refresh() {
-            try {
-                const s = await http(opts.stateUrl);
-                if (s.question && s.question.remaining_ms !== undefined) s.question.deadline = Date.now() + s.question.remaining_ms;
-                this.s = s;
-                if (this.after) this.after();
-                if (s.status === 'finished' || s.status === 'cancelled') clearInterval(this.poller);
-            } catch (e) { /* keep last state */ }
+            if (this.loading) return;
+            this.loading = true;
+            try { this.apply(await http(opts.stateUrl)); } catch (e) { /* keep the last state and try again */ } finally { this.loading = false; this.schedule(); }
         },
         get remaining() {
             if (!this.s.question || this.s.status !== 'question') return 0;
@@ -163,43 +243,72 @@ export function registerFellowship(Alpine) {
             if (!this.s.question) return 0;
             return Math.max(0, Math.min(100, ((this.s.question.deadline - this.now) / (this.s.question.time_limit * 1000)) * 100));
         },
+        get nextIn() {
+            return this.s.status === 'reveal' && this.s.next_deadline ? Math.max(0, Math.ceil((this.s.next_deadline - this.now) / 1000)) : 0;
+        },
+        get nextProgress() {
+            const total = (this.s.timing?.reveal || 5) * 1000;
+            return this.s.status === 'reveal' && this.s.next_deadline ? Math.max(0, Math.min(100, ((this.s.next_deadline - this.now) / total) * 100)) : 0;
+        },
+        move(row) {
+            const before = this.baseRanks[row.id];
+            if (before === undefined) return 0;
+            return before - row.rank;
+        },
+        /** Top rows plus the viewer's own row when they are further down. */
+        board(n = 5) {
+            const rows = (this.s.leaderboard || []).slice(0, n);
+            const me = this.s.me;
+            if (me?.id && !rows.some((r) => r.id === me.id)) {
+                rows.push({ id: me.id, rank: me.rank, name: me.name, score: me.score, gained: 0, answered: me.answer !== null && me.answer !== undefined, me: true, gap: true });
+            }
+            return rows;
+        },
+        medal(rank) { return ['🥇', '🥈', '🥉'][rank - 1] || rank; },
         shape(i) { return ['bi-triangle-fill', 'bi-diamond-fill', 'bi-circle-fill', 'bi-square-fill'][i]; },
     });
 
-    Alpine.data('quizPlayer', (opts = {}) => ({
-        ...quizBase(opts),
+    // Combine component parts keeping getters live (object spread would freeze them into values).
+    const mix = (...parts) => parts.reduce((o, p) => Object.defineProperties(o, Object.getOwnPropertyDescriptors(p)), {});
+
+    // Smoothly slide leaderboard rows to their new places ([data-flip] keys).
+    const flip = (root, mutate) => {
+        const rows = root ? [...root.querySelectorAll('[data-flip]')] : [];
+        const before = new Map(rows.map((el) => [el.dataset.flip, el.getBoundingClientRect().top]));
+        mutate();
+        if (!before.size || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        window.Alpine.nextTick(() => root.querySelectorAll('[data-flip]').forEach((el) => {
+            const top = before.get(el.dataset.flip);
+            const dy = top === undefined ? 0 : top - el.getBoundingClientRect().top;
+            if (Math.abs(dy) > 1) el.animate([{ transform: `translateY(${dy}px)` }, { transform: 'none' }], { duration: 550, easing: 'cubic-bezier(.2,.8,.2,1)' });
+        }));
+    };
+
+    Alpine.data('quizPlayer', (opts = {}) => mix(quizBase({ ...opts, every: opts.every || 1500 }), {
         async answer(i) {
-            if (this.busy || this.s.me?.answer !== null || this.s.status !== 'question' || this.remaining <= 0) return;
+            if (this.busy || (this.s.me?.answer !== null && this.s.me?.answer !== undefined) || this.s.status !== 'question' || this.remaining <= 0) return;
             this.busy = true;
             try {
                 const r = await http(opts.answerUrl, { method: 'POST', body: { option: i, question: this.s.index } });
                 this.s.me = { ...this.s.me, answer: i, ...r };
                 if (navigator.vibrate) navigator.vibrate(30);
+                this.refresh();
             } catch (e) { toast(e.data?.message || 'Too late for this question.', 'warning', 2500); } finally { this.busy = false; }
         },
     }));
 
-    Alpine.data('quizHost', (opts = {}) => ({
-        ...quizBase(opts),
-        autoRevealed: -1,
-        after() {
-            // Reveal automatically when time runs out or everyone has answered.
-            const q = this.s.question;
-            if (this.s.status === 'question' && q && this.autoRevealed !== this.s.index
-                && (q.remaining_ms <= 0 || (this.s.players_count > 0 && q.answered_count >= this.s.players_count))) {
-                this.autoRevealed = this.s.index;
-                this.act('reveal');
-            }
-        },
+    Alpine.data('quizHost', (opts = {}) => mix(quizBase(opts), {
         async act(action) {
             if (this.busy) return;
             this.busy = true;
-            try { this.s = await http(opts.actions[action], { method: 'POST' }); } catch (e) { toast(e.data?.message || 'Please try again.', 'error'); } finally { this.busy = false; this.refresh(); }
+            try { this.apply(await http(opts.actions[action], { method: 'POST' })); this.schedule(); } catch (e) { toast(e.data?.message || 'Please try again.', 'error'); } finally { this.busy = false; }
         },
+        // "Skip": show the answer now, or go straight to the next question.
+        skip() { this.act(this.s.status === 'question' ? 'reveal' : 'next'); },
         async copyLink() {
-            try { await navigator.clipboard.writeText(opts.joinUrl); toast('Join link copied.', 'success', 2000); } catch (e) {}
+            if (await copyText(opts.joinUrl)) toast('Join link copied.', 'success', 2000);
         },
     }));
 
-    Alpine.data('quizBoard', (opts = {}) => ({ ...quizBase({ ...opts, every: opts.every || 1500 }) }));
+    Alpine.data('quizBoard', (opts = {}) => quizBase({ ...opts, every: opts.every || 1500 }));
 }
