@@ -36,14 +36,7 @@
                             <li class="d-flex gap-3"><i class="bi bi-telephone text-ff-primary fs-5"></i><a href="tel:{{ $company['phone'] }}">{{ $company['phone'] }}</a></li>
                             <li class="d-flex gap-3"><i class="bi bi-envelope text-ff-primary fs-5"></i><a href="mailto:{{ $company['email'] }}">{{ $company['email'] }}</a></li>
                         </ul>
-                        <hr>
-                        <h3 class="h6">{{ __('Direct contacts') }}</h3>
-                        @foreach (config('faithfellows.team') as $member)
-                            <div class="d-flex justify-content-between small py-1">
-                                <span><strong class="text-ff-black">{{ $member['name'] }}</strong> · {{ $member['role'] }}</span>
-                                @if ($member['phone'])<a href="tel:{{ $member['phone'] }}">{{ $member['phone'] }}</a>@endif
-                            </div>
-                        @endforeach
+
                     </div>
                     <div class="ff-card ff-card-flush">
                         <iframe title="{{ __('Map to Kakebe Technologies') }}" src="https://www.openstreetmap.org/export/embed.html?bbox={{ $company['lng'] - 0.01 }}%2C{{ $company['lat'] - 0.007 }}%2C{{ $company['lng'] + 0.01 }}%2C{{ $company['lat'] + 0.007 }}&amp;layer=mapnik&amp;marker={{ $company['lat'] }}%2C{{ $company['lng'] }}"

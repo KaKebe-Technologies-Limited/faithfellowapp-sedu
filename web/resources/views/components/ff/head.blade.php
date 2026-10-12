@@ -25,5 +25,8 @@
 <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="any">
 <link rel="apple-touch-icon" href="{{ asset('images/icon-192.png') }}">
 <link rel="manifest" href="{{ asset('manifest.webmanifest') }}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Clarity+City:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
 @vite(['resources/scss/app.scss', 'resources/css/faithfellows.css', 'resources/js/app.js'])
 @stack('head')

@@ -34,7 +34,7 @@
             <div class="col-lg-4">
                 <h4>{{ __('Get in touch') }}</h4>
                 <ul>
-                    <li class="d-flex gap-2"><i class="bi bi-geo-alt"></i><span>{{ $company['address'] }}<br>{{ $company['po_box'] }}</span></li>
+                    <li class="d-flex gap-2"><i class="bi bi-geo-alt"></i><span>Lira City, Uganda</span></li>
                     <li class="d-flex gap-2"><i class="bi bi-telephone"></i><a href="tel:{{ $company['phone'] }}">{{ $company['phone'] }}</a></li>
                     <li class="d-flex gap-2"><i class="bi bi-envelope"></i><a href="mailto:{{ $company['email'] }}">{{ $company['email'] }}</a></li>
                     <li class="d-flex gap-2"><i class="bi bi-globe2"></i>
