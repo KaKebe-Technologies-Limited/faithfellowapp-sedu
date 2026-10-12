@@ -88,3 +88,17 @@ if (! function_exists('ff_safe_html')) {
         return $clean;
     }
 }
+
+if (! function_exists('plain_text')) {
+    /**
+     * Rich text (Quill HTML) as plain text for the mobile app: paragraphs and list items keep their
+     * line breaks, every tag and entity is gone.
+     */
+    function plain_text(?string $html): string
+    {
+        $text = preg_replace('~</(p|div|h[1-6]|li|blockquote)>|<br\s*/?>~i', "\n\n", (string) $html);
+        $text = html_entity_decode(strip_tags($text), ENT_QUOTES | ENT_HTML5);
+
+        return trim(preg_replace("/[ \t]+\n|\n{3,}/", "\n\n", $text));
+    }
+}

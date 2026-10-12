@@ -6,6 +6,7 @@ use App\Events\DonationSucceeded;
 use App\Models\Campaign;
 use App\Models\Church;
 use App\Models\Donation;
+use App\Models\RecurringGift;
 use App\Models\User;
 use App\Services\Payments\PaymentResult;
 use App\Support\Audit;
@@ -74,6 +75,25 @@ class DonationService
         $this->applyResult($donation, $result);
 
         return ['donation' => $donation->fresh(), 'result' => $result];
+    }
+
+    /**
+     * Save a recurring-gift schedule. The first gift is charged right away (by the caller), so the schedule's
+     * next run is one period later.
+     *
+     * @param  array<string, mixed>  $data  recurring (weekly|monthly|quarterly), amount, method, phone, category, campaign_id
+     */
+    public function scheduleRecurring(User $user, Church $church, array $data): RecurringGift
+    {
+        $recurring = RecurringGift::create([
+            'church_id' => $church->id, 'user_id' => $user->id, 'campaign_id' => $data['campaign_id'] ?? null,
+            'category' => $data['category'] ?? 'tithe', 'amount' => $data['amount'], 'currency' => config('faithfellows.currency'),
+            'frequency' => $data['recurring'], 'method' => $data['method'], 'phone' => $data['phone'] ?? null,
+            'next_run_on' => today(), 'status' => 'active',
+        ]);
+        $recurring->update(['next_run_on' => $recurring->nextDateAfter(today()), 'last_run_at' => now()]);
+
+        return $recurring;
     }
 
     /**

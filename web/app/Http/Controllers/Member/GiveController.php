@@ -10,7 +10,6 @@ use App\Models\Donation;
 use App\Models\EventRsvp;
 use App\Models\GivingChannel;
 use App\Models\Pledge;
-use App\Models\RecurringGift;
 use App\Models\SmallGroup;
 use App\Services\DonationService;
 use App\Services\Payments\Drivers\SandboxDriver;
@@ -60,14 +59,7 @@ class GiveController extends Controller
 
         // Recurring giving: save the schedule; the first gift is charged now.
         if (! empty($data['recurring'])) {
-            $recurring = RecurringGift::create([
-                'church_id' => $church->id, 'user_id' => $request->user()->id, 'campaign_id' => $data['campaign_id'] ?? null,
-                'category' => $data['category'] ?? 'tithe', 'amount' => $data['amount'], 'currency' => config('faithfellows.currency'),
-                'frequency' => $data['recurring'], 'method' => $data['method'], 'phone' => $data['phone'] ?? null,
-                'next_run_on' => today(), 'status' => 'active',
-            ]);
-            $recurring->update(['next_run_on' => $recurring->nextDateAfter(today()), 'last_run_at' => now()]);
-            $data['recurring_gift_id'] = $recurring->id;
+            $data['recurring_gift_id'] = $this->donations->scheduleRecurring($request->user(), $church, $data)->id;
         }
 
         $result = $this->donations->initiate($request->user(), $church, $data);

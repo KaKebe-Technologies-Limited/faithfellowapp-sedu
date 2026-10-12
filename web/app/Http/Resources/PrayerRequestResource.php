@@ -26,6 +26,8 @@ class PrayerRequestResource extends JsonResource
             'prayed_count' => (int) $this->prayed_count,
             'prayed' => $this->when(isset($this->prayed_by_viewer), fn () => (bool) $this->prayed_by_viewer),
             'answer_note' => $this->when($this->status === 'answered', $this->answer_note),
+            'chain_enabled' => (bool) $this->chain_enabled,
+            'pastor_response' => $this->when($request->user()?->id === $this->user_id && $this->pastor_response, fn () => $this->pastor_response),
             'created_at' => $this->created_at?->toIso8601String(),
             'church' => new ChurchSummaryResource($this->whenLoaded('church')),
         ];
