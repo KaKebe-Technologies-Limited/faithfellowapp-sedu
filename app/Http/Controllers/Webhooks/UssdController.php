@@ -27,6 +27,10 @@ class UssdController extends Controller
 
     public function __invoke(Request $request, DonationService $donations): Response
     {
+        // The callback URL registered with Africa's Talking carries ?secret=… when USSD_SECRET is set.
+        $secret = config('services.africastalking.ussd_secret');
+        abort_if(filled($secret) && ! hash_equals((string) $secret, (string) $request->query('secret')), 403);
+
         $parts = array_values(array_filter(explode('*', (string) $request->input('text')), fn ($p) => $p !== ''));
         $phone = (string) $request->input('phoneNumber');
 

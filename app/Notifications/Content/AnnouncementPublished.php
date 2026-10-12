@@ -14,6 +14,7 @@ class AnnouncementPublished extends ChurchNotification
         $this->churchId = $announcement->church_id;
         // Admins can push an announcement over extra channels (email / SMS / WhatsApp).
         $this->forceChannels = $announcement->channels ?? [];
+        $this->urgent = $announcement->priority === 'urgent';
     }
 
     public function title(): string

@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Church;
 use App\Models\Plan;
+use App\Models\PlatformSetting;
 use App\Models\SubscriptionInvoice;
 use App\Notifications\Billing\SubscriptionExpiring;
 use App\Services\Payments\PaymentResult;
@@ -26,7 +27,11 @@ class BillingService
         $church->forceFill([
             'plan_id' => $church->plan_id ?? Plan::default()?->id,
             'billing_status' => 'trial',
-            'trial_ends_at' => $church->trial_ends_at ?? today()->addMonths(config('faithfellows.pricing.free_hosting_months')),
+            'trial_ends_at' => $church->trial_ends_at ?? today()->addMonths((int) rescue(
+                fn () => PlatformSetting::get('trial_months', config('faithfellows.pricing.free_hosting_months')),
+                config('faithfellows.pricing.free_hosting_months'),
+                false,
+            )),
         ])->save();
     }
 

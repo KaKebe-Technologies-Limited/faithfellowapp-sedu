@@ -7,6 +7,7 @@ use App\Models\Concerns\HasSubscriptions;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -55,6 +56,7 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
             'wedding_anniversary' => 'date',
             'terms_accepted_at' => 'datetime',
             'last_login_at' => 'datetime',
+            'last_digest_at' => 'datetime',
             'two_factor_expires_at' => 'datetime',
             'digest_mode' => 'boolean',
             'email_consent' => 'boolean',
@@ -159,6 +161,17 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         }
 
         return $end->setTimezone(config('app.timezone'));
+    }
+
+    public function pushSubscriptions(): HasMany
+    {
+        return $this->hasMany(PushSubscription::class);
+    }
+
+    /** Private channel for real-time in-app notifications (when broadcasting is on). */
+    public function receivesBroadcastNotificationsOn(): string
+    {
+        return 'App.Models.User.'.$this->id;
     }
 
     public function routeNotificationForSms(): ?string

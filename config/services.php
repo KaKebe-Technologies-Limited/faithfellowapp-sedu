@@ -65,6 +65,12 @@ return [
     ],
 
     // ── Messaging ───────────────────────────────────────────────────────
+    'webpush' => [
+        'subject' => env('VAPID_SUBJECT', 'mailto:service@kakebe.tech'),
+        'public_key' => env('VAPID_PUBLIC_KEY'),
+        'private_key' => env('VAPID_PRIVATE_KEY'),
+    ],
+
     'africastalking' => [
         'username' => env('AFRICASTALKING_USERNAME', 'sandbox'),
         'api_key' => env('AFRICASTALKING_API_KEY'),
@@ -72,6 +78,8 @@ return [
         'whatsapp_number' => env('AFRICASTALKING_WHATSAPP_NUMBER'),
         'sms_enabled' => (bool) env('SMS_ENABLED', false),
         'whatsapp_enabled' => (bool) env('WHATSAPP_ENABLED', false),
+        'sms_cost' => (float) env('SMS_COST_UGX', 35),
+        'ussd_secret' => env('USSD_SECRET'),
     ],
 
     // ── Live streaming ──────────────────────────────────────────────────

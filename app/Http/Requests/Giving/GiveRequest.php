@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Giving;
 
 use App\Models\GivingChannel;
+use App\Services\PaymentService;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -30,7 +31,11 @@ class GiveRequest extends FormRequest
         return [
             'amount' => ['required', 'numeric', 'min:500', 'max:100000000'],
             'category' => ['required_without:campaign_id', 'nullable', Rule::in($categories)],
-            'method' => ['required', Rule::in(array_merge(GivingChannel::ONLINE, ['bank']))],
+            'method' => ['required', Rule::in(array_merge(GivingChannel::ONLINE, ['bank'])), function ($attribute, $value, $fail) {
+                if (! PaymentService::enabled((string) $value)) {
+                    $fail(__('This payment method is temporarily unavailable. Please choose another.'));
+                }
+            }],
             'phone' => ['nullable', 'required_if:method,iotec,mtn_momo,airtel_money', 'regex:/^(\+?256|0)?7\d{8}$/'],
             'campaign_id' => ['nullable', Rule::exists('campaigns', 'id')->where('church_id', $church->id)],
             'campaign_team_id' => ['nullable', Rule::exists('campaign_teams', 'id')->where('church_id', $church->id)],

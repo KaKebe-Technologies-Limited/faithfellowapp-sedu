@@ -35,6 +35,7 @@
             </button>
         @endif
         @if ($prayer->chain_enabled && $prayer->status === 'open')<span class="small-xs text-ff-muted" title="{{ __('Prayer chain') }}"><i class="bi bi-link-45deg"></i> {{ __('Chain') }}</span>@endif
-        <a href="{{ route('prayer.show', $prayer) }}" class="small ms-auto">{{ __('Open') }} <i class="bi bi-arrow-right"></i></a>
+        @if (auth()->id() !== $prayer->user_id)<span class="ms-auto">@include('partials.report-button', ['type' => 'prayer', 'id' => $prayer->id])</span>@endif
+        <a href="{{ route('prayer.show', $prayer) }}" @class(['small', 'ms-auto' => auth()->id() === $prayer->user_id])>{{ __('Open') }} <i class="bi bi-arrow-right"></i></a>
     </div>
 </article>

@@ -2,7 +2,10 @@
 
 namespace App\Providers;
 
+use App\Notifications\Channels\SmsChannel;
 use App\Notifications\Channels\TenantDatabaseChannel;
+use App\Notifications\Channels\WebPushChannel;
+use App\Notifications\Channels\WhatsAppChannel;
 use App\View\Composers\AppShellComposer;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
@@ -12,6 +15,7 @@ use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -39,6 +43,11 @@ class AppServiceProvider extends ServiceProvider
         Gate::before(fn ($user, string $ability) => $user->isSuperAdmin() && $ability !== 'viewNotes' ? true : null);
 
         $this->configureRateLimiting();
+
+        // Custom notification channels: via() can return 'sms', 'whatsapp', 'webpush'.
+        Notification::extend('sms', fn ($app) => $app->make(SmsChannel::class));
+        Notification::extend('whatsapp', fn ($app) => $app->make(WhatsAppChannel::class));
+        Notification::extend('webpush', fn ($app) => $app->make(WebPushChannel::class));
 
         Blade::directive('money', fn ($expr) => "<?php echo e(ff_money($expr)); ?>");
 

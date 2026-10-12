@@ -4,13 +4,18 @@ namespace Database\Seeders;
 
 use App\Models\Church;
 use App\Models\DiscipleshipRecord;
+use App\Models\NotificationDelivery;
 use App\Models\Reaction;
 use App\Models\User;
 use App\Services\CampaignService;
 use App\Services\ChurchOnboardingService;
+use App\Services\ModerationService;
 use App\Services\StreamingService;
+use App\Services\SupportService;
 use App\Support\ReadingPlanTemplates;
 use Illuminate\Database\Seeder;
+use Illuminate\Notifications\ChannelManager;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 use Spatie\Permission\Models\Role;
 
@@ -134,6 +139,65 @@ class DemoSeeder extends Seeder
         $this->seedEventsAndLive($member, $pastor);
         $this->seedGiving($member, $pastor);
         $this->seedCommunity($member, $pastor);
+        $this->seedSupportAndMessaging($member, $pastor);
+    }
+
+    /**
+     * Sprint 8: a sent church notification with delivery stats, support tickets, a content report.
+     */
+    protected function seedSupportAndMessaging(User $member, User $pastor): void
+    {
+        $grace = Church::where('slug', 'grace-lira')->first();
+        if (! $grace || $grace->churchBroadcasts()->exists()) {
+            return;
+        }
+        $admin = User::role('super_admin')->first();
+
+        $broadcast = $grace->churchBroadcasts()->create([
+            'user_id' => $pastor->id, 'title' => 'Sunday service moves to 9:00 AM',
+            'body' => 'Because of the district thanksgiving rally, this Sunday we have one combined service at 9:00 AM. Come early and bring a friend!',
+            'audience' => 'members', 'channels' => ['mail', 'webpush', 'sms'], 'category' => 'announcement', 'is_urgent' => true,
+            'status' => 'sent', 'sent_at' => now()->subDays(3), 'recipients_count' => $grace->subscriptions()->where('status', 'active')->count(),
+        ]);
+        $grace->churchBroadcasts()->create([
+            'user_id' => $pastor->id, 'title' => 'Youth camp registration closes Friday', 'body' => 'Register in the Events tab before Friday 6 PM.',
+            'audience' => 'stage', 'audience_options' => ['stages' => ['member', 'worker']], 'channels' => ['mail', 'webpush'], 'category' => 'event',
+            'status' => 'scheduled', 'scheduled_at' => now()->addDays(2)->setTime(9, 0),
+        ]);
+
+        $people = User::whereIn('id', $grace->subscriptions()->where('status', 'active')->select('user_id'))->get();
+        $rows = [];
+        foreach ($people as $i => $person) {
+            foreach (['mail' => 0, 'webpush' => 0, 'sms' => 35] as $channel => $cost) {
+                if ($channel === 'webpush' && $i % 3 !== 0) {
+                    continue; // only some members enabled push
+                }
+                $failed = $channel === 'sms' && $i % 11 === 0;
+                $rows[] = [
+                    'church_id' => $grace->id, 'user_id' => $person->id, 'church_broadcast_id' => $broadcast->id, 'notification' => 'ChurchMessage',
+                    'category' => 'announcement', 'channel' => $channel, 'status' => $failed ? 'failed' : 'sent', 'cost' => $failed ? 0 : $cost,
+                    'error' => $failed ? 'InvalidPhoneNumber' : null, 'created_at' => now()->subDays(3),
+                ];
+            }
+        }
+        NotificationDelivery::insert($rows);
+
+        $support = app(SupportService::class);
+        Notification::fake();
+        $ticket = $support->open($pastor, $grace, ['subject' => 'Airtel Money gifts not showing', 'category' => 'payments', 'priority' => 'high',
+            'body' => "Two members gave by Airtel Money yesterday and received the SMS from Airtel, but the gifts still show as pending on our giving page.\nReferences FF-8Q2M and FF-9K1L."]);
+        if ($admin) {
+            $support->reply($ticket, $admin, "Thank you Pastor Daniel. Airtel's callback was delayed yesterday afternoon. We re-checked both payments and they are now confirmed — receipts have been sent to the givers. Please confirm on your side.", true);
+            $ticket->update(['assigned_to' => $admin->id]);
+        }
+        $support->open($pastor, $grace, ['subject' => 'Can we add a second live stream for the Luo service?', 'category' => 'feature', 'priority' => 'normal',
+            'body' => 'We run an English service and a Luo service at the same time. Is it possible to stream both?']);
+        Notification::swap(app(ChannelManager::class));
+
+        $comment = $grace->comments()->latest()->first();
+        if ($comment && ($reporter = $people->firstWhere('id', '!=', $comment->user_id))) {
+            app(ModerationService::class)->report($reporter, $comment, ['reason' => 'spam', 'details' => 'Looks like an advert.']);
+        }
     }
 
     /**

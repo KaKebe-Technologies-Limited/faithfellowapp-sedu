@@ -34,6 +34,7 @@
         ['heading' => __('Community'), 'items' => [
             ['label' => __('Prayer wall'), 'icon' => 'bi-chat-heart', 'route' => 'church-admin.prayer.index', 'params' => $p, 'active' => 'church-admin.prayer.*', 'show' => $can('prayer.moderate')],
             ['label' => __('Testimonies'), 'icon' => 'bi-stars', 'route' => 'church-admin.testimonies.index', 'params' => $p, 'active' => 'church-admin.testimonies.*', 'show' => $can('community.moderate')],
+            ['label' => __('Reports'), 'icon' => 'bi-flag', 'route' => 'church-admin.reports.index', 'params' => $p, 'active' => 'church-admin.reports.*', 'show' => $can('community.moderate')],
             ['label' => __('Comments'), 'icon' => 'bi-chat-left-dots', 'route' => 'church-admin.comments.index', 'params' => $p, 'active' => 'church-admin.comments.*', 'show' => $can('community.moderate')],
             ['label' => __('Send notification'), 'icon' => 'bi-send', 'route' => 'church-admin.notifications.create', 'params' => $p, 'active' => 'church-admin.notifications.*', 'show' => $can('notifications.send')],
         ]],

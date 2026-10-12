@@ -2,7 +2,12 @@
     @php
         $done = collect($checklist)->where('done', true)->count();
         $user = auth()->user();
+        $maintenanceNote = rescue(fn () => \App\Models\PlatformSetting::get('maintenance_note'), null, false);
     @endphp
+
+    @if ($maintenanceNote)
+        <div class="alert alert-info d-flex gap-2 align-items-start"><i class="bi bi-tools"></i><div>{{ $maintenanceNote }}</div></div>
+    @endif
 
     <div class="ff-page-header">
         <div>

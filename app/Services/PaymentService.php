@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Contracts\PaymentDriver;
+use App\Models\PlatformSetting;
 use App\Services\Payments\Drivers\AirtelMoneyDriver;
 use App\Services\Payments\Drivers\IotecDriver;
 use App\Services\Payments\Drivers\ManualDriver;
@@ -60,6 +61,27 @@ class PaymentService
         }
 
         return app($class);
+    }
+
+    /**
+     * Platform kill switch per gateway (Super admin → Payment gateways), e.g.
+     * during a provider outage. Cash/bank recording is never switched off.
+     */
+    public static function enabled(string $method): bool
+    {
+        if (in_array($method, ['cash', 'bank'], true)) {
+            return true;
+        }
+
+        return (string) rescue(fn () => PlatformSetting::get("gateway.{$method}.enabled", '1'), '1', false) !== '0';
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public static function methods(): array
+    {
+        return array_keys(self::DRIVERS);
     }
 
     public static function isSandbox(string $method): bool

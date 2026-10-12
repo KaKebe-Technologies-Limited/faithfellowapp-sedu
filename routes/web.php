@@ -151,6 +151,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/check-in/{church}', [Member\EngagementController::class, 'checkIn'])->middleware('throttle:engagement')->name('check-in.store');
     Route::get('/serving', [Member\EngagementController::class, 'rota'])->name('volunteering.index');
     Route::put('/serving/{rota}', [Member\EngagementController::class, 'respondRota'])->name('volunteering.respond');
+
+    // Reporting content, web push devices
+    Route::post('/report/{type}/{id}', [Member\ReportController::class, 'store'])->whereNumber('id')->middleware('throttle:engagement')->name('reports.store');
+    Route::post('/push-subscriptions', [Member\PushSubscriptionController::class, 'store'])->middleware('throttle:engagement')->name('push-subscriptions.store');
+    Route::delete('/push-subscriptions', [Member\PushSubscriptionController::class, 'destroy'])->name('push-subscriptions.destroy');
 });
 
 Route::get('/events/{event}', [Member\EventController::class, 'show'])->name('events.show');
@@ -366,6 +371,8 @@ Route::prefix('church/{church}/admin')->name('church-admin.')
             Route::delete('/prayer/{prayerRequest}', [ChurchAdmin\PrayerController::class, 'destroy'])->name('prayer.destroy');
         });
         Route::middleware('church.can:community.moderate')->group(function () {
+            Route::get('/reports', [ChurchAdmin\ReportController::class, 'index'])->name('reports.index');
+            Route::put('/reports/{contentReport}', [ChurchAdmin\ReportController::class, 'update'])->name('reports.update');
             Route::get('/testimonies', [ChurchAdmin\TestimonyController::class, 'index'])->name('testimonies.index');
             Route::put('/testimonies/{testimony}', [ChurchAdmin\TestimonyController::class, 'update'])->name('testimonies.update');
             Route::delete('/testimonies/{testimony}', [ChurchAdmin\TestimonyController::class, 'destroy'])->name('testimonies.destroy');
@@ -373,6 +380,32 @@ Route::prefix('church/{church}/admin')->name('church-admin.')
             Route::put('/comments/{comment}', [ChurchAdmin\CommentController::class, 'update'])->name('comments.update');
             Route::delete('/comments/{comment}', [ChurchAdmin\CommentController::class, 'destroy'])->name('comments.destroy');
         });
+
+        // Notification composer
+        Route::middleware('church.can:notifications.send')->group(function () {
+            Route::get('/notifications', [ChurchAdmin\NotificationController::class, 'index'])->name('notifications.index');
+            Route::get('/notifications/create', [ChurchAdmin\NotificationController::class, 'create'])->name('notifications.create');
+            Route::get('/notifications/estimate', [ChurchAdmin\NotificationController::class, 'estimate'])->name('notifications.estimate');
+            Route::post('/notifications', [ChurchAdmin\NotificationController::class, 'store'])->middleware('throttle:10,1')->name('notifications.store');
+            Route::get('/notifications/{churchBroadcast}', [ChurchAdmin\NotificationController::class, 'show'])->name('notifications.show');
+            Route::delete('/notifications/{churchBroadcast}', [ChurchAdmin\NotificationController::class, 'destroy'])->name('notifications.destroy');
+        });
+
+        // Analytics & reports
+        Route::middleware('church.can:analytics.view')->group(function () {
+            Route::get('/analytics', [ChurchAdmin\AnalyticsController::class, 'index'])->name('analytics');
+            Route::get('/analytics/report.pdf', [ChurchAdmin\AnalyticsController::class, 'pdf'])->name('analytics.pdf');
+            Route::get('/analytics/export/{dataset}', [ChurchAdmin\AnalyticsController::class, 'export'])
+                ->whereIn('dataset', ['members', 'engagement', 'attendance', 'giving', 'notifications'])->name('analytics.export');
+        });
+
+        // Support tickets (any active staff member)
+        Route::get('/support', [ChurchAdmin\SupportController::class, 'index'])->name('support.index');
+        Route::get('/support/new', [ChurchAdmin\SupportController::class, 'create'])->name('support.create');
+        Route::post('/support', [ChurchAdmin\SupportController::class, 'store'])->middleware('throttle:10,60')->name('support.store');
+        Route::get('/support/{supportTicket}', [ChurchAdmin\SupportController::class, 'show'])->name('support.show');
+        Route::post('/support/{supportTicket}/reply', [ChurchAdmin\SupportController::class, 'reply'])->name('support.reply');
+        Route::post('/support/{supportTicket}/close', [ChurchAdmin\SupportController::class, 'close'])->name('support.close');
 
         // Staff & roles
         Route::middleware('church.can:roles.manage')->group(function () {
@@ -421,6 +454,43 @@ Route::prefix('super-admin')->name('super-admin.')
         Route::get('/plans', [SuperAdmin\BillingController::class, 'plans'])->name('plans.index');
         Route::post('/plans', [SuperAdmin\BillingController::class, 'savePlan'])->name('plans.store');
         Route::put('/plans/{plan}', [SuperAdmin\BillingController::class, 'savePlan'])->name('plans.update');
+
+        // Analytics
+        Route::get('/analytics', [SuperAdmin\AnalyticsController::class, 'index'])->name('analytics');
+        Route::get('/analytics/report.pdf', [SuperAdmin\AnalyticsController::class, 'pdf'])->name('analytics.pdf');
+        Route::get('/analytics/churches.csv', [SuperAdmin\AnalyticsController::class, 'export'])->name('analytics.export');
+
+        // Users
+        Route::get('/users', [SuperAdmin\UserController::class, 'index'])->name('users.index');
+        Route::get('/users/export', [SuperAdmin\UserController::class, 'export'])->name('users.export');
+        Route::get('/users/{user}', [SuperAdmin\UserController::class, 'show'])->name('users.show');
+        Route::patch('/users/{user}', [SuperAdmin\UserController::class, 'update'])->name('users.update');
+
+        // Support, moderation, content
+        Route::get('/support', [SuperAdmin\SupportController::class, 'index'])->name('support.index');
+        Route::get('/support/{supportTicket}', [SuperAdmin\SupportController::class, 'show'])->name('support.show');
+        Route::post('/support/{supportTicket}/reply', [SuperAdmin\SupportController::class, 'reply'])->name('support.reply');
+        Route::patch('/support/{supportTicket}', [SuperAdmin\SupportController::class, 'update'])->name('support.update');
+        Route::get('/moderation', [SuperAdmin\ModerationController::class, 'index'])->name('moderation.index');
+        Route::patch('/moderation/{contentReport}', [SuperAdmin\ModerationController::class, 'update'])->name('moderation.update');
+        Route::get('/blog', [SuperAdmin\BlogController::class, 'index'])->name('blog.index');
+        Route::get('/blog/create', [SuperAdmin\BlogController::class, 'create'])->name('blog.create');
+        Route::post('/blog', [SuperAdmin\BlogController::class, 'store'])->name('blog.store');
+        Route::get('/blog/{blogPost:id}/edit', [SuperAdmin\BlogController::class, 'edit'])->name('blog.edit');
+        Route::put('/blog/{blogPost:id}', [SuperAdmin\BlogController::class, 'update'])->name('blog.update');
+        Route::delete('/blog/{blogPost:id}', [SuperAdmin\BlogController::class, 'destroy'])->name('blog.destroy');
+        Route::get('/messages', [SuperAdmin\MessageController::class, 'index'])->name('messages.index');
+        Route::get('/messages/{message}', [SuperAdmin\MessageController::class, 'show'])->name('messages.show');
+        Route::post('/messages/{message}/reply', [SuperAdmin\MessageController::class, 'reply'])->name('messages.reply');
+        Route::delete('/messages/{message}', [SuperAdmin\MessageController::class, 'destroy'])->name('messages.destroy');
+        Route::get('/audit-logs', [SuperAdmin\AuditLogController::class, 'index'])->name('audit-logs');
+        Route::get('/audit-logs/export', [SuperAdmin\AuditLogController::class, 'export'])->name('audit-logs.export');
+
+        // Platform settings & gateways
+        Route::get('/settings', [SuperAdmin\SettingsController::class, 'edit'])->name('settings');
+        Route::put('/settings', [SuperAdmin\SettingsController::class, 'update'])->name('settings.update');
+        Route::get('/settings/gateways', [SuperAdmin\SettingsController::class, 'gateways'])->name('settings.gateways');
+        Route::put('/settings/gateways/{method}', [SuperAdmin\SettingsController::class, 'toggleGateway'])->name('settings.gateways.toggle');
     });
 
 require __DIR__.'/auth.php';

@@ -319,6 +319,21 @@ class Church extends Model implements HasMedia
         return $this->hasMany(Comment::class);
     }
 
+    public function churchBroadcasts(): HasMany
+    {
+        return $this->hasMany(ChurchBroadcast::class);
+    }
+
+    public function supportTickets(): HasMany
+    {
+        return $this->hasMany(SupportTicket::class);
+    }
+
+    public function contentReports(): HasMany
+    {
+        return $this->hasMany(ContentReport::class);
+    }
+
     public function plan(): BelongsTo
     {
         return $this->belongsTo(Plan::class);

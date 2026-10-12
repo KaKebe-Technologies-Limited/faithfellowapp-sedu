@@ -9,7 +9,6 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Notification;
 
 /**
  * Fans a church notification out to its audience in chunks so a church
@@ -37,7 +36,7 @@ class NotifyChurchMembers implements ShouldQueue
     {
         $service->recipients($this->churchId, $this->audience, $this->options)
             ->when($this->options['except_user_id'] ?? null, fn ($q, $id) => $q->whereKeyNot($id))
-            // Already on the queue: deliver directly instead of queuing a job per user × channel.
-            ->chunkById(500, fn ($users) => Notification::sendNow($users, $this->notification));
+            // Already on the queue: deliver in-process (quiet-hours channels are re-queued with a delay).
+            ->chunkById(500, fn ($users) => $users->each(fn ($user) => $service->deliver($user, $this->notification)));
     }
 }

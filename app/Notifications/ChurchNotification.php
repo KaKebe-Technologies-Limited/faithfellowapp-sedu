@@ -2,9 +2,11 @@
 
 namespace App\Notifications;
 
+use App\Models\User;
 use App\Services\NotificationService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Str;
@@ -26,6 +28,15 @@ abstract class ChurchNotification extends Notification implements ShouldQueue
 
     /** Channels the sender insists on (e.g. urgent announcement by SMS). */
     public array $forceChannels = [];
+
+    /** Limit delivery to these channels (the composer's picks); null = any the member wants. */
+    public ?array $onlyChannels = null;
+
+    /** Urgent messages skip quiet hours and digest mode. */
+    public bool $urgent = false;
+
+    /** Set when the message was composed in the church notification composer. */
+    public ?int $broadcastId = null;
 
     abstract public function title(): string;
 
@@ -49,6 +60,21 @@ abstract class ChurchNotification extends Notification implements ShouldQueue
     public function via(object $notifiable): array
     {
         return app(NotificationService::class)->channelsFor($notifiable, $this);
+    }
+
+    /**
+     * Quiet hours: when queued, push/SMS/WhatsApp wait until the window ends.
+     */
+    public function withDelay(object $notifiable, string $channel): ?\DateTimeInterface
+    {
+        return $notifiable instanceof User
+            ? app(NotificationService::class)->delayFor($notifiable, $channel, $this)
+            : null;
+    }
+
+    public function toBroadcast(object $notifiable): BroadcastMessage
+    {
+        return new BroadcastMessage($this->toArray($notifiable));
     }
 
     public function toArray(object $notifiable): array

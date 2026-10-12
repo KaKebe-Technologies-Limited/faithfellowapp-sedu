@@ -30,7 +30,7 @@ class AppShellComposer
             'subscribedChurches' => $user->subscribedChurches()->with('media')->orderBy('name')->get(),
             'pendingChurches' => $user->isSuperAdmin() ? Church::where('status', 'pending')->count() : 0,
             'openTickets' => $user->isSuperAdmin() && Schema::hasTable('support_tickets')
-                ? DB::table('support_tickets')->whereIn('status', ['open', 'waiting'])->count() : 0,
+                ? DB::table('support_tickets')->where('status', 'open')->count() : 0,
             'liveNowCount' => Schema::hasTable('live_streams')
                 ? DB::table('live_streams')->where('status', 'live')->whereIn('church_id', $user->memberChurchIds())->count() : 0,
         ];

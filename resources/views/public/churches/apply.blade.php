@@ -19,6 +19,10 @@
                         <a href="{{ route('login') }}" class="btn btn-ff-outline px-4">{{ __('I already have an account') }}</a>
                     </div>
                 </div>
+            @elseif ($paused ?? false)
+                <x-ff.empty-state icon="bi-pause-circle" :title="__('Applications are paused')" :message="__('We are not accepting new church applications right now. Please check back soon or contact us.')">
+                    <a href="{{ route('contact') }}" class="btn btn-ff-primary mt-2">{{ __('Contact us') }}</a>
+                </x-ff.empty-state>
             @else
                 <div class="row g-4">
                     <div class="col-lg-8">

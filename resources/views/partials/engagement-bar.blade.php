@@ -35,6 +35,7 @@
                         <div class="small-xs d-flex gap-2 align-items-center">
                             <strong class="text-ff-black">{{ $comment->user?->name ?? __('Member') }}</strong>
                             <span class="text-ff-muted">{{ $comment->created_at->diffForHumans() }}</span>
+                            @if ($viewer && $comment->user_id !== $viewer->id)<span class="ms-auto">@include('partials.report-button', ['type' => 'comment', 'id' => $comment->id])</span>@endif
                             @if ($viewer && ($comment->user_id === $viewer->id || $canModerate))
                                 <form method="POST" action="{{ route('comments.destroy', $comment) }}" class="ms-auto" data-ff-confirm="{{ __('Delete this comment?') }}">@csrf @method('DELETE')
                                     <button class="btn btn-link btn-sm p-0 text-ff-muted" aria-label="{{ __('Delete comment') }}"><i class="bi bi-x-lg"></i></button>

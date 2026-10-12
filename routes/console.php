@@ -1,10 +1,13 @@
 <?php
 
+use App\Models\NotificationDelivery;
 use App\Services\BillingService;
 use App\Services\CareService;
 use App\Services\ContentPublisher;
 use App\Services\EventService;
 use App\Services\GivingScheduler;
+use App\Services\Notifications\BroadcastService;
+use App\Services\Notifications\DigestService;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -66,3 +69,56 @@ Artisan::command('ff:rota-reminders', function (CareService $care) {
 
 Schedule::command('ff:care-digest')->weeklyOn(1, '07:30');
 Schedule::command('ff:rota-reminders')->dailyAt('18:00');
+
+Artisan::command('ff:send-broadcasts', function (BroadcastService $broadcasts) {
+    $this->info('Sent '.$broadcasts->sendDue().' scheduled notification(s).');
+})->purpose('Send church notifications scheduled in the composer');
+
+Artisan::command('ff:send-digests', function (DigestService $digests) {
+    $this->info('Sent '.$digests->sendDue().' daily digest(s).');
+})->purpose('Email the daily digest to members in digest mode');
+
+/*
+ * VAPID keys for web push. Prints the .env lines (or writes them with --write).
+ * On Windows/XAMPP OpenSSL needs its config file, which we pass explicitly.
+ */
+Artisan::command('ff:vapid {--write : Write the keys into .env}', function () {
+    $options = ['curve_name' => 'prime256v1', 'private_key_type' => OPENSSL_KEYTYPE_EC];
+    $key = @openssl_pkey_new($options);
+    if (! $key) {
+        foreach ([getenv('OPENSSL_CONF'), dirname(PHP_BINARY).'/extras/ssl/openssl.cnf', 'C:/xampp/apache/conf/openssl.cnf'] as $cnf) {
+            if ($cnf && is_file($cnf) && ($key = @openssl_pkey_new([...$options, 'config' => $cnf]))) {
+                break;
+            }
+        }
+    }
+    if (! $key) {
+        $this->error('OpenSSL could not create an EC key. Set OPENSSL_CONF to your openssl.cnf and try again.');
+
+        return 1;
+    }
+
+    $ec = openssl_pkey_get_details($key)['ec'];
+    $b64 = fn (string $bin) => rtrim(strtr(base64_encode($bin), '+/', '-_'), '=');
+    $pad = fn (string $bin) => str_pad($bin, 32, "\0", STR_PAD_LEFT);
+    $public = $b64("\x04".$pad($ec['x']).$pad($ec['y']));
+    $private = $b64($pad($ec['d']));
+
+    if ($this->option('write')) {
+        $env = file_get_contents(base_path('.env'));
+        foreach (['VAPID_PUBLIC_KEY' => $public, 'VAPID_PRIVATE_KEY' => $private] as $k => $v) {
+            $env = preg_match("/^{$k}=.*$/m", $env) ? preg_replace("/^{$k}=.*$/m", "{$k}={$v}", $env) : $env."\n{$k}={$v}";
+        }
+        file_put_contents(base_path('.env'), $env);
+        $this->info('VAPID keys written to .env. Run php artisan config:clear if config is cached.');
+    } else {
+        $this->line("VAPID_PUBLIC_KEY={$public}");
+        $this->line("VAPID_PRIVATE_KEY={$private}");
+    }
+
+    return 0;
+})->purpose('Generate VAPID keys for web push notifications');
+
+Schedule::command('ff:send-broadcasts')->everyMinute()->withoutOverlapping();
+Schedule::command('ff:send-digests')->dailyAt('18:00');
+Schedule::command('model:prune', ['--model' => [NotificationDelivery::class]])->daily();

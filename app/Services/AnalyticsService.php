@@ -3,7 +3,10 @@
 namespace App\Services;
 
 use App\Models\Church;
+use App\Models\Sermon;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 /**
@@ -105,6 +108,198 @@ class AnalyticsService
                 'legend' => true,
             ],
             'byMethod' => $byMethod,
+        ];
+    }
+
+    /**
+     * Church analytics page: growth, engagement, attendance, prayer, giving and
+     * notification delivery over the last $days days, with the previous period
+     * as the baseline for trends.
+     *
+     * @return array<string, mixed>
+     */
+    public function churchAnalytics(Church $church, int $days = 90, bool $withGiving = false): array
+    {
+        $from = now()->subDays($days)->startOfDay();
+        $prevFrom = $from->copy()->subDays($days);
+        $weeks = max(4, min(52, intdiv($days, 7)));
+        $id = $church->id;
+        $between = fn ($q, string $col, bool $previous = false) => $previous ? $q->whereBetween($col, [$prevFrom, $from]) : $q->where($col, '>=', $from);
+
+        $subs = fn () => DB::table('subscriptions')->where('church_id', $id);
+        $views = fn () => DB::table('content_views')->where('church_id', $id);
+        $attendance = fn () => DB::table('attendance_records')->where('church_id', $id);
+        $prayers = fn () => DB::table('prayer_requests')->where('church_id', $id)->whereNull('deleted_at');
+        $streams = fn () => DB::table('live_streams')->where('church_id', $id)->whereNull('deleted_at');
+
+        $newMembers = $between($subs(), 'subscribed_at')->count();
+        $viewCount = $between($views(), 'created_at')->count();
+        $attendanceTotal = (int) $between($attendance(), 'service_date')->sum('headcount');
+
+        $headline = [
+            'members' => ['value' => $subs()->where('status', 'active')->count(), 'trend' => $this->trend($newMembers, $between($subs(), 'subscribed_at', true)->count()), 'note' => __(':n new', ['n' => number_format($newMembers)])],
+            'engagement' => ['value' => $viewCount, 'trend' => $this->trend($viewCount, $between($views(), 'created_at', true)->count())],
+            'attendance' => ['value' => (int) round($attendanceTotal / max(1, $weeks)), 'trend' => $this->trend($attendanceTotal, (int) $between($attendance(), 'service_date', true)->sum('headcount'))],
+            'live' => ['value' => (int) $between($streams(), 'started_at')->sum('peak_viewers'), 'note' => trans_choice(':count service|:count services', $between($streams(), 'started_at')->count())],
+            'prayer' => ['value' => $between($prayers(), 'created_at')->count(), 'note' => __(':n prayers offered', ['n' => number_format(DB::table('prayer_interactions')->where('church_id', $id)->where('type', 'prayed')->where('created_at', '>=', $from)->count())])],
+        ];
+
+        $charts = [
+            'growth' => $this->weeklySeries($subs(), 'subscribed_at', __('New members'), $weeks),
+            'engagement' => $this->mergeSeries([
+                $this->weeklySeries($views()->where('action', 'view'), 'created_at', __('Views'), $weeks),
+                $this->weeklySeries($views()->whereIn('action', ['listen', 'watch']), 'created_at', __('Listens & watches'), $weeks),
+                $this->weeklySeries($views()->where('action', 'download'), 'created_at', __('Downloads'), $weeks),
+            ]),
+            'attendance' => ['type' => 'bar', ...array_diff_key($this->weeklySeries($attendance(), 'service_date', __('Attendance'), $weeks, 'headcount'), ['type' => 1])],
+            'stages' => $this->doughnut($subs()->where('status', 'active')->selectRaw('stage k, COUNT(*) v')->groupBy('stage')->pluck('v', 'k')
+                ->mapWithKeys(fn ($v, $k) => [__(Str::headline((string) $k)) => $v])),
+            'channels' => $this->doughnut(DB::table('notification_deliveries')->where('church_id', $id)->where('created_at', '>=', $from)->where('status', 'sent')
+                ->selectRaw('channel k, COUNT(*) v')->groupBy('channel')->pluck('v', 'k')
+                ->mapWithKeys(fn ($v, $k) => [__(config('faithfellows.notification_channels.'.$k, $k)) => $v])),
+        ];
+
+        $topSermons = DB::table('content_views')->join('sermons', 'sermons.id', '=', 'content_views.viewable_id')
+            ->where('content_views.church_id', $id)->where('content_views.viewable_type', Sermon::class)
+            ->where('content_views.created_at', '>=', $from)->whereNull('sermons.deleted_at')
+            ->selectRaw("sermons.id, sermons.title, sermons.preacher, SUM(content_views.action = 'view') views, SUM(content_views.action IN ('listen','watch')) listens, SUM(content_views.action = 'download') downloads")
+            ->groupBy('sermons.id', 'sermons.title', 'sermons.preacher')->orderByDesc('views')->take(5)->get();
+
+        $topEvents = DB::table('events')->where('events.church_id', $id)->where('events.starts_at', '>=', $from)->whereNull('events.deleted_at')
+            ->leftJoin('event_rsvps', fn ($j) => $j->on('event_rsvps.event_id', '=', 'events.id')->where('event_rsvps.status', '!=', 'cancelled'))
+            ->selectRaw('events.id, events.title, events.starts_at, COALESCE(SUM(event_rsvps.quantity), 0) rsvps, COUNT(event_rsvps.checked_in_at) checked_in')
+            ->groupBy('events.id', 'events.title', 'events.starts_at')->orderByDesc('rsvps')->take(5)->get();
+
+        $liveStreams = $streams()->whereNotNull('started_at')->where('started_at', '>=', $from)->latest('started_at')->take(5)
+            ->get(['id', 'title', 'started_at', 'peak_viewers'])
+            ->map(fn ($s) => (object) [...(array) $s, 'unique' => DB::table('live_stream_viewers')->where('live_stream_id', $s->id)->count()]);
+
+        $groups = DB::table('small_group_attendance')->join('small_groups', 'small_groups.id', '=', 'small_group_attendance.small_group_id')
+            ->where('small_group_attendance.church_id', $id)->where('small_group_attendance.created_at', '>=', $from)
+            ->selectRaw("small_groups.name, SUM(small_group_attendance.status = 'present') present, COUNT(*) total")
+            ->groupBy('small_groups.name')->orderByDesc('total')->take(8)->get();
+
+        $delivery = DB::table('notification_deliveries')->where('church_id', $id)->where('created_at', '>=', $from)
+            ->selectRaw("channel, SUM(status = 'sent') sent, SUM(status = 'failed') failed, SUM(cost) cost")->groupBy('channel')->get();
+
+        $result = compact('headline', 'charts', 'topSermons', 'topEvents', 'liveStreams', 'groups', 'delivery') + ['from' => $from, 'days' => $days];
+
+        if ($withGiving) {
+            $gifts = fn () => DB::table('donations')->where('church_id', $id)->where('status', 'succeeded');
+            $total = (float) $between($gifts(), 'paid_at')->sum('amount');
+            $count = $between($gifts(), 'paid_at')->count();
+            $result['headline']['giving'] = ['value' => $total, 'money' => true, 'trend' => $this->trend($total, (float) $between($gifts(), 'paid_at', true)->sum('amount')),
+                'note' => __(':n gifts · avg :avg', ['n' => number_format($count), 'avg' => ff_money($count ? $total / $count : 0)])];
+            $result['charts']['giving'] = $this->weeklySeries($gifts(), 'paid_at', __('Giving (UGX)'), $weeks, 'amount');
+            $result['charts']['givingMethods'] = $this->doughnut($between($gifts(), 'paid_at')->selectRaw('method k, SUM(amount) v')->groupBy('method')->pluck('v', 'k')
+                ->mapWithKeys(fn ($v, $k) => [config('faithfellows.payment_methods.'.$k, Str::headline((string) $k)) => (float) $v]));
+        }
+
+        return $result;
+    }
+
+    /**
+     * Headline numbers merged into the super admin dashboard.
+     *
+     * @return array<string, int|float>
+     */
+    public function platformHeadline(): array
+    {
+        return [
+            'giving' => (float) DB::table('donations')->where('status', 'succeeded')->where('paid_at', '>=', now()->subDays(30))->sum('amount'),
+            'mrr' => $this->mrr(),
+            'tickets' => DB::table('support_tickets')->whereIn('status', ['open', 'pending'])->count(),
+        ];
+    }
+
+    /** Monthly recurring revenue from churches on an active paid plan. */
+    public function mrr(): float
+    {
+        return (float) DB::table('churches')->join('plans', 'plans.id', '=', 'churches.plan_id')
+            ->where('churches.status', 'active')->where('churches.billing_status', 'active')->whereNull('churches.deleted_at')
+            ->sum(DB::raw("CASE plans.interval WHEN 'year' THEN plans.price / 12 ELSE plans.price END"));
+    }
+
+    /**
+     * Platform analytics for super admins.
+     *
+     * @return array<string, mixed>
+     */
+    public function platformAnalytics(int $days = 90): array
+    {
+        $from = now()->subDays($days)->startOfDay();
+        $prevFrom = $from->copy()->subDays($days);
+        $weeks = max(4, min(52, intdiv($days, 7)));
+
+        $count = fn (string $table, string $col, bool $prev = false) => DB::table($table)
+            ->when($prev, fn ($q) => $q->whereBetween($col, [$prevFrom, $from]), fn ($q) => $q->where($col, '>=', $from))->count();
+        $gifts = fn () => DB::table('donations')->where('status', 'succeeded');
+        $giving = (float) $gifts()->where('paid_at', '>=', $from)->sum('amount');
+        $mau = DB::table('users')->where('last_login_at', '>=', now()->subDays(30))->count();
+
+        $headline = [
+            'churches' => ['value' => DB::table('churches')->where('status', 'active')->whereNull('deleted_at')->count(), 'trend' => $this->trend($count('churches', 'approved_at'), $count('churches', 'approved_at', true)), 'note' => __(':n pending', ['n' => DB::table('churches')->where('status', 'pending')->count()])],
+            'users' => ['value' => DB::table('users')->whereNull('deleted_at')->count(), 'trend' => $this->trend($count('users', 'created_at'), $count('users', 'created_at', true)), 'note' => __(':n active this month', ['n' => number_format($mau)])],
+            'giving' => ['value' => $giving, 'money' => true, 'trend' => $this->trend($giving, (float) $gifts()->whereBetween('paid_at', [$prevFrom, $from])->sum('amount'))],
+            'mrr' => ['value' => $this->mrr(), 'money' => true, 'note' => __(':n paying churches', ['n' => DB::table('churches')->where('billing_status', 'active')->count()])],
+            'streams' => ['value' => DB::table('live_streams')->where('started_at', '>=', $from)->count(), 'note' => __(':n peak viewers', ['n' => number_format((int) DB::table('live_streams')->where('started_at', '>=', $from)->sum('peak_viewers'))])],
+            'sms' => ['value' => (float) DB::table('notification_deliveries')->where('channel', 'sms')->where('created_at', '>=', $from)->sum('cost'), 'money' => true, 'note' => __(':n SMS sent', ['n' => number_format(DB::table('notification_deliveries')->where('channel', 'sms')->where('status', 'sent')->where('created_at', '>=', $from)->count())])],
+        ];
+
+        $charts = [
+            'growth' => $this->mergeSeries([
+                $this->weeklySeries(DB::table('users'), 'created_at', __('New users'), $weeks),
+                $this->weeklySeries(DB::table('subscriptions'), 'subscribed_at', __('New church subscriptions'), $weeks),
+            ]),
+            'giving' => $this->weeklySeries($gifts(), 'paid_at', __('Giving across all churches (UGX)'), $weeks, 'amount'),
+            'methods' => $this->doughnut($gifts()->where('paid_at', '>=', $from)->selectRaw('method k, SUM(amount) v')->groupBy('method')->pluck('v', 'k')
+                ->mapWithKeys(fn ($v, $k) => [config('faithfellows.payment_methods.'.$k, Str::headline((string) $k)) => (float) $v])),
+            'regions' => ['type' => 'bar', 'data' => (function () {
+                $rows = DB::table('churches')->where('status', 'active')->whereNull('deleted_at')->selectRaw("COALESCE(NULLIF(district, ''), city) k, COUNT(*) v")->groupBy('k')->orderByDesc('v')->take(10)->pluck('v', 'k');
+
+                return ['labels' => $rows->keys()->all(), 'datasets' => [['label' => __('Churches'), 'data' => $rows->values()->all()]]];
+            })()],
+        ];
+
+        $topChurches = DB::table('churches')->where('churches.status', 'active')->whereNull('churches.deleted_at')
+            ->leftJoin('subscriptions', fn ($j) => $j->on('subscriptions.church_id', '=', 'churches.id')->where('subscriptions.status', 'active'))
+            ->selectRaw('churches.id, churches.name, churches.slug, churches.city, churches.billing_status, COUNT(subscriptions.id) members')
+            ->groupBy('churches.id', 'churches.name', 'churches.slug', 'churches.city', 'churches.billing_status')
+            ->orderByDesc('members')->take(10)->get()
+            ->map(fn ($c) => (object) [...(array) $c, 'giving' => (float) DB::table('donations')->where('church_id', $c->id)->where('status', 'succeeded')->where('paid_at', '>=', $from)->sum('amount')]);
+
+        $channels = DB::table('notification_deliveries')->where('created_at', '>=', $from)
+            ->selectRaw("channel, SUM(status = 'sent') sent, SUM(status = 'failed') failed, SUM(cost) cost")->groupBy('channel')->get();
+
+        return compact('headline', 'charts', 'topChurches', 'channels') + ['from' => $from, 'days' => $days];
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $series  weeklySeries() configs sharing labels
+     * @return array<string, mixed>
+     */
+    public function mergeSeries(array $series): array
+    {
+        return [
+            'type' => 'line',
+            'data' => [
+                'labels' => $series[0]['data']['labels'] ?? [],
+                'datasets' => collect($series)->flatMap(fn ($s) => $s['data']['datasets'])->map(fn ($d) => [...$d, 'fill' => false])->all(),
+            ],
+            'legend' => true,
+        ];
+    }
+
+    /**
+     * @param  Collection<string, int|float>  $values
+     * @return array<string, mixed>
+     */
+    public function doughnut($values): array
+    {
+        return [
+            'type' => 'doughnut',
+            'data' => ['labels' => $values->keys()->values()->all(), 'datasets' => [['data' => $values->values()->map(fn ($v) => (float) $v)->all()]]],
+            'legend' => true,
         ];
     }
 

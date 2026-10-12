@@ -11,6 +11,7 @@
             </div>
         </div>
         <span class="ff-feed-type ff-tag">{{ __('Update') }}</span>
+        @include('partials.report-button', ['type' => 'post', 'id' => $post->id])
     </div>
     <div class="text-ff-black" style="white-space: pre-line">{{ $post->body }}</div>
     @if ($post->media->isNotEmpty())

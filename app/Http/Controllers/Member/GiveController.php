@@ -47,7 +47,7 @@ class GiveController extends Controller
                 ? SmallGroup::where('church_id', $church->id)->whereHas('memberships', fn ($q) => $q->where('user_id', $request->user()->id))->find($request->query('group'))
                 : null,
             'campaigns' => $church->campaigns()->active()->visibleTo($request->user()->memberChurchIds())->orderBy('title')->get(['id', 'title', 'slug']),
-            'channels' => $church->givingChannels,
+            'channels' => $church->givingChannels->filter(fn ($c) => PaymentService::enabled($c->type))->values(),
             'diaspora' => $this->isDiaspora($request),
             'savedPhone' => $request->user()->phone,
         ]);

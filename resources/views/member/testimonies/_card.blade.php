@@ -11,6 +11,7 @@
             <div class="small-xs text-ff-muted text-truncate">{{ $testimony->church->name }} · {{ ($testimony->reviewed_at ?? $testimony->created_at)->diffForHumans() }}</div>
         </div>
         <span class="ff-feed-type ff-tag"><i class="bi bi-stars"></i> {{ __('Testimony') }}</span>
+        @if (auth()->id() !== $testimony->user_id)@include('partials.report-button', ['type' => 'testimony', 'id' => $testimony->id])@endif
     </div>
     <h3 class="h5 mb-0 text-ff-black">{{ $testimony->title }}</h3>
     <div class="text-ff-black" style="white-space: pre-line">{{ $testimony->body }}</div>

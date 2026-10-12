@@ -54,7 +54,7 @@
                     <button class="btn btn-ff-primary px-4">{{ __('Save') }}</button>
                     <span class="small text-ff-muted">
                         {{ __('Quiet hours, daily digest and language are in') }} <a href="{{ route('profile.edit', ['tab' => 'preferences']) }}">{{ __('Profile → Preferences') }}</a>.
-                        {{ __('If a channel isn’t available (e.g. no push on this device) we fall back to email, then SMS.') }}
+                        {{ __('If none of your chosen channels can reach you (e.g. no push on this device) we fall back to email — and to SMS only for urgent messages.') }}
                     </span>
                 </div>
             </form>
@@ -64,7 +64,7 @@
                     <h2 class="h6 mb-1"><i class="bi bi-phone-vibrate"></i> {{ __('Push notifications on this device') }}</h2>
                     <p class="small mb-0">{{ __('Get live-service alerts instantly, even when FaithFellows is closed.') }}</p>
                 </div>
-                <button type="button" class="btn btn-ff-primary" data-ff-push-subscribe data-vapid="{{ config('webpush.vapid.public_key') }}" data-url="{{ Route::has('push-subscriptions.store') ? route('push-subscriptions.store') : '' }}">{{ __('Enable push') }}</button>
+                <button type="button" class="btn btn-ff-primary" data-ff-push-subscribe data-vapid="{{ config('services.webpush.public_key') }}" data-url="{{ Route::has('push-subscriptions.store') ? route('push-subscriptions.store') : '' }}">{{ __('Enable push') }}</button>
             </div>
         </div>
     </div>
