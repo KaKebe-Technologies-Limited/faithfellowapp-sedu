@@ -1,0 +1,55 @@
+/* ==========================================================================
+   Community & engagement (Sprint 7): reactions, comments, groups, rota
+   ========================================================================== */
+
+.ff-engagement { border-top: 1px solid var(--ff-gray-200, #eee); padding-top: 10px; }
+.ff-reaction {
+    display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px;
+    border-radius: var(--ff-radius-full, 999px); border: 1px solid transparent; background: transparent;
+    font-size: var(--ff-text-sm, .875rem); color: var(--ff-gray-700, #575757); font-weight: 600; line-height: 1.4;
+}
+.ff-reaction:hover { background: var(--ff-primary-mist, #fbeef1); }
+.ff-reaction.is-mine { background: var(--ff-primary-mist, #fbeef1); border-color: var(--ff-primary, #BC2649); color: var(--ff-primary, #BC2649); }
+.ff-reaction:focus-visible { outline: 2px solid var(--ff-primary, #BC2649); outline-offset: 2px; }
+
+.ff-comment { display: flex; gap: 10px; padding: 10px 0; }
+.ff-comment + .ff-comment { border-top: 1px solid var(--ff-gray-100, #f3f3f3); }
+.ff-comment-body { background: var(--ff-gray-50, #f8f8f8); border-radius: 4px 14px 14px 14px; padding: 8px 12px; flex: 1; min-width: 0; }
+
+.ff-chain-ask { border-left: 4px solid var(--ff-primary, #BC2649); }
+
+.ff-group-card { display: flex; flex-direction: column; gap: 10px; height: 100%; }
+.ff-group-type { font-size: var(--ff-text-xs, .75rem); text-transform: uppercase; letter-spacing: .06em; color: var(--ff-primary, #BC2649); font-weight: 700; }
+
+.ff-attendance-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; }
+.ff-attendance-grid label {
+    display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: var(--ff-radius-md, 10px);
+    border: 1px solid var(--ff-gray-200, #e3e3e3); cursor: pointer; font-size: var(--ff-text-sm, .875rem);
+}
+.ff-attendance-grid label:has(input:checked) { border-color: var(--ff-success, #1E9E5A); background: rgba(30, 158, 90, .08); }
+
+.ff-rota-table td { min-width: 150px; vertical-align: top; }
+.ff-rota-chip {
+    display: flex; align-items: center; gap: 6px; padding: 3px 8px; margin-bottom: 4px;
+    border-radius: var(--ff-radius-full, 999px); background: var(--ff-gray-50, #f6f6f6); font-size: var(--ff-text-xs, .75rem);
+}
+.ff-rota-chip.is-confirmed { background: rgba(30, 158, 90, .1); }
+.ff-rota-chip.is-declined { background: rgba(214, 48, 49, .1); text-decoration: line-through; }
+
+.ff-checkin-hero { max-width: 460px; margin: 0 auto; text-align: center; }
+.ff-checkin-hero .ff-checkin-icon {
+    width: 96px; height: 96px; border-radius: 50%; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center;
+    font-size: 2.6rem; background: var(--ff-primary-mist, #fbeef1); color: var(--ff-primary, #BC2649);
+}
+.ff-checkin-hero .ff-checkin-icon.is-done { background: rgba(30, 158, 90, .12); color: var(--ff-success, #1E9E5A); }
+
+.ff-milestones { display: grid; gap: 8px; }
+.ff-milestone { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: var(--ff-radius-md, 10px); background: var(--ff-gray-50, #f6f6f6); }
+.ff-milestone.is-done { background: rgba(30, 158, 90, .1); }
+.ff-milestone .bi { font-size: 1.1rem; }
+
+.ff-confidential { display: inline-flex; align-items: center; gap: 6px; font-size: var(--ff-text-xs, .75rem); color: var(--ff-gray-700, #575757); }
+
+@media print {
+    .ff-qr-poster { page-break-inside: avoid; }
+}

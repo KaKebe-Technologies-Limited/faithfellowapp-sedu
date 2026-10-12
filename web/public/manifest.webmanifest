@@ -1,0 +1,15 @@
+{
+    "name": "FaithFellows",
+    "short_name": "FaithFellows",
+    "description": "Empowering Your Ministry in the Digital Age — sermons, live streams, giving and community for your churches.",
+    "start_url": "/dashboard",
+    "scope": "/",
+    "display": "standalone",
+    "background_color": "#FFFFFF",
+    "theme_color": "#BC2649",
+    "icons": [
+        { "src": "/images/icon-192.png", "sizes": "192x192", "type": "image/png" },
+        { "src": "/images/icon-512.png", "sizes": "512x512", "type": "image/png" },
+        { "src": "/images/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    ]
+}

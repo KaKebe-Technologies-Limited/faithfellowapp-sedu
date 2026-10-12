@@ -1,0 +1,17 @@
+# FaithFellows cron — install with:  sudo cp deploy/cron/faithfellows /etc/cron.d/faithfellows
+# The Laravel scheduler runs every task in routes/console.php:
+#   every minute   ff:publish-scheduled, ff:send-broadcasts
+#   every 5 min    ff:event-reminders, ff:payments-reconcile
+#   06:00          ff:billing
+#   07:00          ff:process-recurring
+#   07:30 Mondays  ff:care-digest
+#   09:00          ff:pledge-reminders
+#   18:00          ff:rota-reminders, ff:send-digests
+#   daily          model:prune (notification delivery log)
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+* * * * * www-data cd /var/www/faithfellows/current && php artisan schedule:run >> /dev/null 2>&1
+
+# Nightly backup at 02:15 (database + uploaded files), kept 14 days.
+15 2 * * * root /var/www/faithfellows/current/deploy/scripts/backup.sh >> /var/log/faithfellows-backup.log 2>&1

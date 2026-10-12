@@ -1,0 +1,92 @@
+<?php
+
+namespace App\Http\Controllers\Api\V1;
+
+use App\Http\Controllers\Controller;
+use App\Http\Resources\PrayerRequestResource;
+use App\Models\Church;
+use App\Models\PrayerInteraction;
+use App\Models\PrayerRequest;
+use App\Services\PrayerService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Validation\Rule;
+
+/**
+ * Prayer wall and notifications for the app.
+ */
+class CommunityController extends Controller
+{
+    public function __construct(protected PrayerService $prayers) {}
+
+    public function prayers(Request $request): AnonymousResourceCollection
+    {
+        $user = $request->user();
+        $memberIds = $user->memberChurchIds();
+
+        $page = PrayerRequest::with('church.media')
+            ->visibleTo($user, $memberIds, $user->pastoralChurchIds())
+            ->whereIn('church_id', $memberIds ?: [0])
+            ->where('status', $request->query('status') === 'answered' ? 'answered' : 'open')
+            ->latest()->paginate(20)->withQueryString();
+
+        $prayed = PrayerInteraction::where('user_id', $user->id)->where('type', 'prayed')->whereIn('prayer_request_id', $page->pluck('id'))->pluck('prayer_request_id')->all();
+        $page->getCollection()->each(fn ($p) => $p->prayed_by_viewer = in_array($p->id, $prayed, true));
+
+        return PrayerRequestResource::collection($page);
+    }
+
+    public function storePrayer(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'church_id' => ['required', Rule::in($request->user()->memberChurchIds())],
+            'title' => ['nullable', 'string', 'max:160'],
+            'body' => ['required', 'string', 'min:5', 'max:2000'],
+            'visibility' => ['required', Rule::in(['public', 'church', 'pastor'])],
+            'is_anonymous' => ['boolean'],
+            'chain_enabled' => ['boolean'],
+        ]);
+
+        $prayer = $this->prayers->submit($request->user(), Church::findOrFail($data['church_id']), $data);
+
+        return (new PrayerRequestResource($prayer->load('church.media')))->response()->setStatusCode(201);
+    }
+
+    public function pray(Request $request, PrayerRequest $prayer): JsonResponse
+    {
+        $this->authorize('pray', $prayer);
+
+        return response()->json($this->prayers->togglePrayed($prayer, $request->user()));
+    }
+
+    public function notifications(Request $request): JsonResponse
+    {
+        $page = $request->user()->notifications()
+            ->when($request->boolean('unread'), fn ($q) => $q->whereNull('read_at'))
+            ->paginate(30);
+
+        return response()->json([
+            'data' => collect($page->items())->map(fn ($n) => [
+                'id' => $n->id,
+                'category' => $n->category,
+                'church_id' => $n->church_id,
+                'title' => $n->data['title'] ?? null,
+                'body' => $n->data['body'] ?? null,
+                'url' => $n->data['url'] ?? null,
+                'read' => $n->read_at !== null,
+                'created_at' => $n->created_at?->toIso8601String(),
+            ]),
+            'meta' => ['current_page' => $page->currentPage(), 'last_page' => $page->lastPage(), 'unread' => $request->user()->unreadNotifications()->count()],
+        ]);
+    }
+
+    public function readNotifications(Request $request): JsonResponse
+    {
+        $request->user()->unreadNotifications()
+            ->when($request->filled('ids'), fn ($q) => $q->whereIn('id', (array) $request->input('ids')))
+            ->update(['read_at' => now()]);
+
+        return response()->json(['unread' => $request->user()->unreadNotifications()->count()]);
+    }
+}
