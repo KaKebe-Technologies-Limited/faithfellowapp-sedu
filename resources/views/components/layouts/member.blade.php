@@ -7,10 +7,12 @@
             ['label' => __('Discover churches'), 'icon' => 'bi-compass', 'route' => 'churches.index', 'active' => 'churches.*'],
         ]],
         ['heading' => __('Worship'), 'items' => [
+            ['label' => __('Bible'), 'icon' => 'bi-book-half', 'route' => 'bible.index', 'active' => 'bible.*'],
+            ['label' => __('My notes'), 'icon' => 'bi-journal-text', 'route' => 'notes.index', 'active' => 'notes.*'],
             ['label' => __('Sermons'), 'icon' => 'bi-mic', 'route' => 'sermons.index', 'active' => 'sermons.*'],
             ['label' => __('Live'), 'icon' => 'bi-broadcast', 'route' => 'live.index', 'active' => 'live.*', 'badge' => ($liveNowCount ?? 0) ?: null],
             ['label' => __('Devotionals'), 'icon' => 'bi-book', 'route' => 'devotionals.index', 'active' => 'devotionals.*'],
-            ['label' => __('Reading plans'), 'icon' => 'bi-journal-check', 'route' => 'reading-plans.index', 'active' => 'reading-plans.*'],
+            ['label' => __('Reading plans'), 'icon' => 'bi-journal-check', 'route' => 'reading-plans.index', 'active' => ['reading-plans.*', 'reading-circles.*']],
             ['label' => __('Events'), 'icon' => 'bi-calendar-event', 'route' => 'events.index', 'active' => 'events.*'],
         ]],
         ['heading' => __('Give'), 'items' => [
@@ -21,6 +23,7 @@
             ['label' => __('Prayer wall'), 'icon' => 'bi-chat-heart', 'route' => 'prayer.index', 'active' => 'prayer.*'],
             ['label' => __('Testimonies'), 'icon' => 'bi-stars', 'route' => 'testimonies.index', 'active' => 'testimonies.*'],
             ['label' => __('Small groups'), 'icon' => 'bi-people', 'route' => 'groups.index', 'active' => 'groups.*'],
+            ['label' => __('Quizzes & games'), 'icon' => 'bi-controller', 'route' => 'games.index', 'active' => 'games.*', 'badge' => ($liveGamesCount ?? 0) ?: null],
             ['label' => __('Counseling'), 'icon' => 'bi-person-heart', 'route' => 'counseling.index', 'active' => 'counseling.*'],
             ['label' => __('Serving'), 'icon' => 'bi-hand-thumbs-up', 'route' => 'volunteering.index', 'active' => 'volunteering.*'],
             ['label' => __('Member directory'), 'icon' => 'bi-person-lines-fill', 'route' => 'directory.index', 'active' => 'directory.*'],

@@ -91,6 +91,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/reading-plans/{readingPlan}/complete', [Member\ReadingPlanController::class, 'complete'])->name('reading-plans.complete');
     Route::delete('/reading-plans/{readingPlan}', [Member\ReadingPlanController::class, 'leave'])->name('reading-plans.leave');
 
+    // Reading partners (circles of up to 4)
+    Route::post('/reading-plans/{readingPlan}/circles', [Member\ReadingCircleController::class, 'store'])->name('reading-circles.store');
+    Route::post('/reading-circles/join', [Member\ReadingCircleController::class, 'join'])->middleware('throttle:20,1')->name('reading-circles.join');
+    Route::get('/reading-circles/{readingCircle}', [Member\ReadingCircleController::class, 'show'])->name('reading-circles.show');
+    Route::post('/reading-circles/{readingCircle}/days/{day}', [Member\ReadingCircleController::class, 'complete'])->whereNumber('day')->name('reading-circles.complete');
+    Route::put('/reading-circles/{readingCircle}', [Member\ReadingCircleController::class, 'update'])->name('reading-circles.update');
+    Route::delete('/reading-circles/{readingCircle}/leave', [Member\ReadingCircleController::class, 'leave'])->name('reading-circles.leave');
+
     // Events
     Route::get('/events', [Member\EventController::class, 'index'])->name('events.index');
     Route::post('/events/{event}/rsvp', [Member\EventController::class, 'rsvp'])->middleware('throttle:engagement')->name('events.rsvp');
@@ -153,6 +161,30 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/check-in/{church}', [Member\EngagementController::class, 'checkIn'])->middleware('throttle:engagement')->name('check-in.store');
     Route::get('/serving', [Member\EngagementController::class, 'rota'])->name('volunteering.index');
     Route::put('/serving/{rota}', [Member\EngagementController::class, 'respondRota'])->name('volunteering.respond');
+
+    // In-app Bible
+    Route::get('/bible', [Member\BibleController::class, 'index'])->name('bible.index');
+    Route::get('/bible/passage', [Member\BibleController::class, 'passage'])->middleware('throttle:60,1')->name('bible.passage');
+    Route::get('/bible/{book}/{chapter}', [Member\BibleController::class, 'read'])->where(['book' => '[1-3A-Za-z]{3}', 'chapter' => '[0-9]+'])->middleware('throttle:60,1')->name('bible.read');
+    Route::post('/bible/translation', [Member\BibleController::class, 'setTranslation'])->name('bible.translation');
+
+    // Notes (note taker + notebook)
+    Route::get('/notes', [Member\NoteController::class, 'index'])->name('notes.index');
+    Route::post('/notes', [Member\NoteController::class, 'create'])->name('notes.create');
+    Route::get('/notes/export', [Member\NoteController::class, 'export'])->name('notes.export');
+    Route::get('/notes/context', [Member\NoteController::class, 'context'])->name('notes.context');
+    Route::put('/notes/context', [Member\NoteController::class, 'save'])->middleware('throttle:120,1')->name('notes.save');
+    Route::get('/notes/{note}', [Member\NoteController::class, 'show'])->name('notes.show');
+    Route::post('/notes/{note}/pin', [Member\NoteController::class, 'pin'])->name('notes.pin');
+    Route::delete('/notes/{note}', [Member\NoteController::class, 'destroy'])->name('notes.destroy');
+
+    // Quizzes & games (live)
+    Route::get('/games', [Member\GameController::class, 'index'])->name('games.index');
+    Route::post('/games/join', [Member\GameController::class, 'join'])->middleware('throttle:20,1')->name('games.join');
+    Route::get('/games/{quizSession}/play', [Member\GameController::class, 'play'])->name('games.play');
+    Route::get('/games/{quizSession}/state', [Member\GameController::class, 'state'])->middleware('throttle:240,1')->name('games.state');
+    Route::post('/games/{quizSession}/answer', [Member\GameController::class, 'answer'])->middleware('throttle:60,1')->name('games.answer');
+    Route::get('/games/{quizSession}/scores', [Member\GameController::class, 'scores'])->name('games.scores');
 
     // Reporting content, web push devices
     Route::post('/report/{type}/{id}', [Member\ReportController::class, 'store'])->whereNumber('id')->middleware('throttle:engagement')->name('reports.store');
@@ -224,6 +256,10 @@ Route::prefix('church/{church}/admin')->name('church-admin.')
             Route::put('/settings/profile', [ChurchAdmin\SettingsController::class, 'updateProfile'])->name('settings.profile.update');
             Route::get('/settings/branding', [ChurchAdmin\SettingsController::class, 'branding'])->name('settings.branding');
             Route::post('/settings/branding', [ChurchAdmin\SettingsController::class, 'updateBranding'])->name('settings.branding.update');
+            Route::post('/settings/slides', [ChurchAdmin\SlideController::class, 'store'])->name('slides.store');
+            Route::put('/settings/slides/{mediaId}', [ChurchAdmin\SlideController::class, 'update'])->whereNumber('mediaId')->name('slides.update');
+            Route::post('/settings/slides/{mediaId}/move', [ChurchAdmin\SlideController::class, 'move'])->whereNumber('mediaId')->name('slides.move');
+            Route::delete('/settings/slides/{mediaId}', [ChurchAdmin\SlideController::class, 'destroy'])->whereNumber('mediaId')->name('slides.destroy');
             Route::get('/settings/website', [ChurchAdmin\SettingsController::class, 'website'])->name('settings.website');
             Route::put('/settings/website', [ChurchAdmin\SettingsController::class, 'updateWebsite'])->name('settings.website.update');
             Route::get('/settings/integrations', [ChurchAdmin\SettingsController::class, 'integrations'])->name('settings.integrations');
@@ -370,6 +406,9 @@ Route::prefix('church/{church}/admin')->name('church-admin.')
         Route::middleware('church.can:prayer.moderate')->group(function () {
             Route::get('/prayer', [ChurchAdmin\PrayerController::class, 'index'])->name('prayer.index');
             Route::put('/prayer/{prayerRequest}', [ChurchAdmin\PrayerController::class, 'update'])->name('prayer.update');
+            Route::post('/prayer/{prayerRequest}/approve', [ChurchAdmin\PrayerController::class, 'approve'])->name('prayer.approve');
+            Route::post('/prayer/{prayerRequest}/decline', [ChurchAdmin\PrayerController::class, 'decline'])->name('prayer.decline');
+            Route::post('/prayer/{prayerRequest}/respond', [ChurchAdmin\PrayerController::class, 'respond'])->name('prayer.respond');
             Route::delete('/prayer/{prayerRequest}', [ChurchAdmin\PrayerController::class, 'destroy'])->name('prayer.destroy');
         });
         Route::middleware('church.can:community.moderate')->group(function () {
@@ -381,6 +420,16 @@ Route::prefix('church/{church}/admin')->name('church-admin.')
             Route::get('/comments', [ChurchAdmin\CommentController::class, 'index'])->name('comments.index');
             Route::put('/comments/{comment}', [ChurchAdmin\CommentController::class, 'update'])->name('comments.update');
             Route::delete('/comments/{comment}', [ChurchAdmin\CommentController::class, 'destroy'])->name('comments.destroy');
+        });
+
+        // Fun & games: live quizzes
+        Route::middleware('church.can:quizzes.manage')->group(function () {
+            Route::resource('quizzes', ChurchAdmin\QuizController::class)->except('show');
+            Route::post('/quizzes/{quiz}/host', [ChurchAdmin\QuizController::class, 'host'])->name('quizzes.host');
+            Route::get('/quiz-sessions/{quizSession}', [ChurchAdmin\QuizController::class, 'session'])->name('quizzes.session');
+            Route::get('/quiz-sessions/{quizSession}/state', [ChurchAdmin\QuizController::class, 'state'])->middleware('throttle:240,1')->name('quizzes.session.state');
+            Route::post('/quiz-sessions/{quizSession}/{action}', [ChurchAdmin\QuizController::class, 'action'])
+                ->whereIn('action', ['start', 'reveal', 'next', 'end', 'cancel'])->name('quizzes.session.action');
         });
 
         // Notification composer

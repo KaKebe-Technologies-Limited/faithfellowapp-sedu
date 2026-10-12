@@ -16,10 +16,14 @@ FaithFellows is a multi-tenant church management and engagement platform built f
 |------|-------------------------------|
 | **Church websites** | An auto-generated site at `{slug}.faithfellows.app` (or a custom domain) built from drag-and-drop blocks, plus a public page in the church directory |
 | **Content** | Sermons (audio/video, series, playlists, transcripts, offline listening), devotionals, announcements, reading plans |
+| **Bible & notes** | An in-app Bible (KJV, WEB, BBE, ASV; Swahili and Luganda with an API.Bible key) with cached chapters, reading-plan days that open the exact verses ("Matthew 3–5"), and a private autosaving note taker beside every chapter, plan day, sermon and live stream |
+| **Reading partners** | Circles of up to 4 church members joined with a code, with a shared reading time, reminders, "finished" alerts and summaries only the circle can read |
+| **Games** | Admin-written multiple-choice quizzes played live on phones, with a PIN/QR lobby, speed scoring, a live leaderboard and winners' podium |
 | **Live** | RTMP (OBS) or embedded streams, an HLS player with an audio-only mode for low bandwidth, live chat, viewer analytics and recordings |
 | **Events** | RSVPs, paid tickets, QR check-in, reminders, Q&A |
 | **Giving** | MTN MoMo, Airtel Money, Iotec, cards (Stripe), bank transfer, USSD, cash records, campaigns with milestones, pledges, recurring gifts, PDF receipts, payouts and reconciliation |
-| **Community** | A prayer wall (public / church / pastor-only, "I prayed", prayer chains), moderated testimonies, reactions and comments, small groups with leader tools, a volunteer rota |
+| **Community** | A prayer wall where pastors approve requests before the church is asked to pray, pastor-only requests with private replies, "I prayed", prayer chains, moderated testimonies, reactions and comments, small groups with leader tools, a volunteer rota |
+| **Church identity** | A square logo, a banner and a 4–8 photo home slider that takes turns between the churches a member follows (up to 3), with generated default artwork; contact details are shown to subscribers only |
 | **Care** | Service attendance (daily QR + geofence), birthdays and follow-ups, encrypted pastoral notes, welfare, home visits, a discipleship pathway, confidential counseling |
 | **Messaging** | In-app, email, web push, SMS and WhatsApp notifications, with quiet hours, a daily digest, a fallback chain and a church composer with SMS cost estimates |
 | **Insight** | Church analytics and platform analytics, CSV exports and PDF reports |

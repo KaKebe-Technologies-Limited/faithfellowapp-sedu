@@ -14,6 +14,8 @@
             @if ($prayer->visibility === 'pastor')<span class="ff-badge ff-badge-dark" title="{{ __('Only pastors can see this') }}"><i class="bi bi-lock-fill"></i> {{ __('Pastors') }}</span>@endif
             @if ($prayer->status === 'answered')<span class="ff-badge ff-badge-success"><i class="bi bi-check2-circle"></i> {{ __('Answered') }}</span>@endif
             @if ($prayer->status === 'hidden')<x-ff.status status="hidden" />@endif
+            @if ($prayer->status === 'pending')<span class="ff-badge ff-badge-warning"><i class="bi bi-hourglass-split"></i> {{ __('Awaiting approval') }}</span>@endif
+            @if ($prayer->status === 'declined')<span class="ff-badge"><i class="bi bi-lock"></i> {{ __('Kept private') }}</span>@endif
         </span>
     </div>
 
@@ -25,7 +27,7 @@
     @endif
 
     <div class="d-flex align-items-center gap-2 mt-auto pt-1">
-        @if ($prayer->status !== 'hidden')
+        @if ($prayer->isShared())
             <button type="button" class="btn btn-sm btn-ff-soft ff-pray-btn" :class="{ 'is-prayed': prayed }"
                 x-data="prayButton({ url: @js(route('prayer.pray', $prayer)), prayed: @js((bool) $prayed), count: {{ (int) $prayer->prayed_count }}, guest: @js(! auth()->check()), loginUrl: @js(route('login')) })"
                 @click="toggle()" :disabled="busy" :aria-pressed="prayed">

@@ -8,16 +8,21 @@ use App\Models\PrayerRequest;
 use App\Models\User;
 use App\Notifications\Prayer\PrayerAnswered;
 use App\Notifications\Prayer\PrayerChainRequest;
+use App\Notifications\Prayer\PrayerRequestReviewed;
+use App\Notifications\Prayer\PrayerRequestShared;
 use App\Notifications\Prayer\PrayerRequestSubmitted;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 
 /**
- * Prayer wall: requests, "I prayed for you", prayer chains, answered prayers.
+ * Prayer wall: requests (approved by a pastor before they reach the church),
+ * private requests for pastors, "I prayed for you", prayer chains, answers.
  */
 class PrayerService
 {
+    public function __construct(protected NotificationService $notifications) {}
+
     /**
      * @param  array<string, mixed>  $data
      */
@@ -30,18 +35,60 @@ class PrayerService
             'body' => strip_tags($data['body']),
             'visibility' => $data['visibility'],
             'is_anonymous' => (bool) ($data['is_anonymous'] ?? false),
-            'chain_enabled' => (bool) ($data['chain_enabled'] ?? false),
-            'status' => 'open',
+            'chain_enabled' => (bool) ($data['chain_enabled'] ?? false) && $data['visibility'] !== 'pastor',
+            // Requests for the whole church wait for a pastor; private ones go straight to the pastors.
+            'status' => $data['visibility'] === 'pastor' ? 'open' : 'pending',
         ]);
 
         // Pastors / prayer team always see new requests.
-        Notification::send($this->pastoralTeam($church), new PrayerRequestSubmitted($request));
-
-        if ($request->chain_enabled && $request->visibility !== 'pastor') {
-            $this->advanceChain($request);
-        }
+        Notification::send($this->pastoralTeam($church), new PrayerRequestSubmitted($request->loadMissing('church', 'user')));
 
         return $request;
+    }
+
+    /**
+     * A pastor approves a request: it appears on the prayer wall and every
+     * church member is invited to stand in prayer.
+     */
+    public function approve(PrayerRequest $request, User $pastor): void
+    {
+        if ($request->status !== 'pending') {
+            return;
+        }
+
+        $request->update(['status' => 'open', 'approved_by' => $pastor->id, 'approved_at' => now()]);
+        $request->loadMissing('church', 'user');
+
+        $request->user?->notify(new PrayerRequestReviewed($request, 'approved'));
+        $this->notifications->notifyChurch($request->church, new PrayerRequestShared($request), 'members', ['except_user_id' => $request->user_id]);
+
+        if ($request->chain_enabled) {
+            $this->advanceChain($request);
+        }
+    }
+
+    /**
+     * Keep a request off the wall; the pastoral team still prays privately.
+     */
+    public function decline(PrayerRequest $request, User $pastor, ?string $note = null): void
+    {
+        $request->update(array_filter([
+            'status' => 'declined',
+            'pastor_response' => $note ?: null,
+            'responded_by' => $note ? $pastor->id : null,
+            'responded_at' => $note ? now() : null,
+        ], fn ($v) => $v !== null));
+
+        $request->user?->notify(new PrayerRequestReviewed($request->loadMissing('church'), 'declined'));
+    }
+
+    /**
+     * A private reply from the pastor to the person who asked.
+     */
+    public function respond(PrayerRequest $request, User $pastor, string $response): void
+    {
+        $request->update(['pastor_response' => trim(strip_tags($response)), 'responded_by' => $pastor->id, 'responded_at' => now()]);
+        $request->user?->notify(new PrayerRequestReviewed($request->loadMissing('church'), 'responded'));
     }
 
     /**

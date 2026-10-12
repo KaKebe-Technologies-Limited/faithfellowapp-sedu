@@ -68,7 +68,9 @@ class PrayerController extends Controller
 
         $prayer = $this->prayers->submit($request->user(), Church::findOrFail($data['church_id']), $data);
 
-        return redirect()->route('prayer.show', $prayer)->with('success', __('Your request has been shared. You are not alone — people are praying with you.'));
+        return redirect()->route('prayer.show', $prayer)->with('success', $prayer->visibility === 'pastor'
+            ? __('Sent privately to your pastors. They will pray with you and may reply here.')
+            : __('Sent to your pastor for approval. Once approved, your church family will be invited to pray with you.'));
     }
 
     public function show(Request $request, PrayerRequest $prayer): View

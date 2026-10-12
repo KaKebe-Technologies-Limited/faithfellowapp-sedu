@@ -1,5 +1,39 @@
 <x-layouts.member :title="__('Reading plans')">
-    <x-ff.page-header :title="__('Bible reading plans')" :subtitle="__('Read the Word daily with your church. Build a streak!')" />
+    <x-ff.page-header :title="__('Bible reading plans')" :subtitle="__('Read the Word daily with your church. Build a streak!')">
+        <a href="{{ route('bible.index') }}" class="btn btn-ff-soft"><i class="bi bi-book"></i> {{ __('Open the Bible') }}</a>
+    </x-ff.page-header>
+
+    <div class="row g-4 mb-5">
+        <div class="col-lg-7">
+            <div class="ff-card h-100">
+                <h2 class="h5 mb-1"><i class="bi bi-people text-ff-primary"></i> {{ __('Reading partners') }}</h2>
+                <p class="small text-ff-muted">{{ __('Pair up with up to three friends from church. Agree on a time, get reminded together, tell each other when you finish and share a short summary only your circle sees.') }}</p>
+                @forelse ($circles as $circle)
+                    <a href="{{ route('reading-circles.show', $circle) }}" class="d-flex align-items-center gap-3 p-2 rounded-3 bg-ff-mist mb-2 text-decoration-none">
+                        <span class="ff-avatar-stack">@foreach ($circle->members as $m)<x-ff.avatar :user="$m" size="sm" />@endforeach</span>
+                        <span class="min-w-0 flex-grow-1">
+                            <span class="d-block fw-semibold text-ff-black text-truncate">{{ $circle->name }}</span>
+                            <span class="small text-ff-muted">{{ $circle->plan?->title }} · {{ $circle->scheduleLabel() }}</span>
+                        </span>
+                        <i class="bi bi-chevron-right text-ff-muted"></i>
+                    </a>
+                @empty
+                    <p class="small mb-0">{{ __('Start a circle from any plan below, or join a friend’s with their code.') }}</p>
+                @endforelse
+            </div>
+        </div>
+        <div class="col-lg-5">
+            <form method="POST" action="{{ route('reading-circles.join') }}" class="ff-card h-100 bg-ff-gradient border-0 text-white">@csrf
+                <h2 class="h5 text-white mb-1"><i class="bi bi-key"></i> {{ __('Got a pairing code?') }}</h2>
+                <p class="small" style="opacity:.9">{{ __('Enter the 6-character code your reading partner shared.') }}</p>
+                <div class="d-flex gap-2">
+                    <input name="code" class="form-control text-uppercase fw-bold" style="letter-spacing:.3em" maxlength="6" minlength="6" required placeholder="ABC123" aria-label="{{ __('Pairing code') }}" autocomplete="off">
+                    <button class="btn btn-ff-white fw-semibold">{{ __('Join') }}</button>
+                </div>
+                @error('code')<div class="small mt-2 bg-white text-danger rounded-3 px-2 py-1">{{ $message }}</div>@enderror
+            </form>
+        </div>
+    </div>
 
     @if ($mine->isNotEmpty())
         <h2 class="h5 mb-3">{{ __('My plans') }}</h2>

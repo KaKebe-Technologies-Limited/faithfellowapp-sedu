@@ -11,6 +11,8 @@ class ChurchResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        $contacts = $this->resource->contactsVisibleTo($request->user() ?? $request->user('sanctum'));
+
         return [
             'id' => $this->id,
             'slug' => $this->slug,
@@ -20,8 +22,9 @@ class ChurchResource extends JsonResource
             'description' => $this->description,
             'pastor' => $this->pastor_name,
             'languages' => $this->languages ?? [],
-            'location' => ['city' => $this->city, 'district' => $this->district, 'address' => $this->address, 'lat' => $this->lat ? (float) $this->lat : null, 'lng' => $this->lng ? (float) $this->lng : null],
-            'contact' => ['phone' => $this->phone, 'email' => $this->email, 'website' => $this->website],
+            'location' => ['city' => $this->city, 'district' => $this->district, 'address' => $contacts ? $this->address : null, 'lat' => $this->lat ? (float) $this->lat : null, 'lng' => $this->lng ? (float) $this->lng : null],
+            // Contact details are for subscribers only (null for everyone else).
+            'contact' => $contacts ? ['phone' => $this->phone, 'email' => $this->email, 'website' => $this->website] : null,
             'brand_color' => $this->brand_color,
             'logo_url' => $this->logo_url,
             'cover_url' => $this->cover_url,

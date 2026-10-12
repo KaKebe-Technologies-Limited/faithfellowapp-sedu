@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Member;
 
 use App\Http\Controllers\Controller;
+use App\Models\ReadingCircle;
 use App\Models\ReadingPlan;
 use App\Models\ReadingPlanProgress;
 use Illuminate\Http\RedirectResponse;
@@ -23,7 +24,10 @@ class ReadingPlanController extends Controller
             ->whereNotIn('id', $mine->pluck('reading_plan_id'))
             ->latest()->get();
 
-        return view('member.reading-plans.index', compact('mine', 'available'));
+        $circles = ReadingCircle::with(['plan', 'members.media'])
+            ->whereHas('memberships', fn ($q) => $q->where('user_id', $user->id))->get();
+
+        return view('member.reading-plans.index', compact('mine', 'available', 'circles'));
     }
 
     public function show(Request $request, ReadingPlan $readingPlan): View
@@ -41,6 +45,9 @@ class ReadingPlanController extends Controller
             'progress' => $progress,
             'day' => $day,
             'entry' => $readingPlan->entryForDay($day),
+            'circles' => ReadingCircle::with('members.media')->where('reading_plan_id', $readingPlan->id)
+                ->whereHas('memberships', fn ($q) => $q->where('user_id', $request->user()->id))->get(),
+            'canCircle' => $request->user()->isMemberOf($readingPlan->church_id),
         ]);
     }
 

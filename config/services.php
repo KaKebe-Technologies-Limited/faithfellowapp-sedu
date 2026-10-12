@@ -65,6 +65,10 @@ return [
     ],
 
     // ── Messaging ───────────────────────────────────────────────────────
+    'bible' => [
+        'api_bible_key' => env('API_BIBLE_KEY'),
+    ],
+
     'webpush' => [
         'subject' => env('VAPID_SUBJECT', 'mailto:service@kakebe.tech'),
         'public_key' => env('VAPID_PUBLIC_KEY'),

@@ -31,6 +31,8 @@ class AppShellComposer
             'pendingChurches' => $user->isSuperAdmin() ? Church::where('status', 'pending')->count() : 0,
             'openTickets' => $user->isSuperAdmin() && Schema::hasTable('support_tickets')
                 ? DB::table('support_tickets')->where('status', 'open')->count() : 0,
+            'liveGamesCount' => Schema::hasTable('quiz_sessions')
+                ? DB::table('quiz_sessions')->whereIn('status', ['lobby', 'question', 'reveal'])->whereIn('church_id', $user->memberChurchIds() ?: [0])->count() : 0,
             'liveNowCount' => Schema::hasTable('live_streams')
                 ? DB::table('live_streams')->where('status', 'live')->whereIn('church_id', $user->memberChurchIds())->count() : 0,
         ];

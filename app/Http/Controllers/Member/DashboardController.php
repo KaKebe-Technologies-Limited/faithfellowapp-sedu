@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Member;
 use App\Http\Controllers\Controller;
 use App\Models\Church;
 use App\Services\FeedService;
+use App\Services\HomeSlider;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -30,6 +31,7 @@ class DashboardController extends Controller
 
         return view('member.dashboard', [
             'user' => $user,
+            'slides' => app(HomeSlider::class)->forUser($user, $filterChurch),
             'items' => $result['items'],
             'next' => $result['next'],
             'filterChurch' => $filterChurch,

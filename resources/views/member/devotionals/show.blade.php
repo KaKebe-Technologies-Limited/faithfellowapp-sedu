@@ -9,7 +9,7 @@
         @if ($devotional->scripture_text || $devotional->scripture)
             <div class="ff-verse-card mb-4">
                 @if ($devotional->scripture_text)<blockquote>“{{ $devotional->scripture_text }}”</blockquote>@endif
-                <cite>{{ $devotional->scripture }}</cite>
+                <cite>@auth<a href="{{ route('bible.passage', ['ref' => $devotional->scripture]) }}" class="text-reset">{{ $devotional->scripture }} <i class="bi bi-book small"></i></a>@else{{ $devotional->scripture }}@endauth</cite>
                 @if ($devotional->scripture_text)
                     <div class="mt-3"><button type="button" class="btn btn-sm btn-ff-white" data-ff-verse-download data-verse="{{ $devotional->scripture_text }}" data-reference="{{ $devotional->scripture }}" data-church="{{ $devotional->church->name }}"><i class="bi bi-image"></i> {{ __('Download verse card') }}</button></div>
                 @endif
@@ -37,4 +37,5 @@
 
         <x-ff.share :url="route('devotionals.show', $devotional)" :title="$devotional->title" />
     </article>
+    @include('partials.note-taker', ['context' => 'devotional:'.$devotional->id, 'reference' => $devotional->title, 'churchId' => $devotional->church_id])
 </x-dynamic-component>

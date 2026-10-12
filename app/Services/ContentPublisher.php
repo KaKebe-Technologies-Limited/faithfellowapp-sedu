@@ -4,8 +4,10 @@ namespace App\Services;
 
 use App\Models\Announcement;
 use App\Models\Devotional;
+use App\Models\Post;
 use App\Models\Sermon;
 use App\Notifications\Content\AnnouncementPublished;
+use App\Notifications\Content\NewChurchUpdate;
 use App\Notifications\Content\NewDevotional;
 use App\Notifications\Content\NewSermonPublished;
 use Illuminate\Database\Eloquent\Model;
@@ -31,6 +33,7 @@ class ContentPublisher
         match (true) {
             $model instanceof Sermon => $this->notifications->notifyChurch($model->church, new NewSermonPublished($model)),
             $model instanceof Devotional => $this->notifications->notifyChurch($model->church, new NewDevotional($model)),
+            $model instanceof Post => $this->notifications->notifyChurch($model->church, new NewChurchUpdate($model), 'members', ['except_user_id' => $model->user_id]),
             $model instanceof Announcement => $this->notifications->notifyChurch(
                 $model->church,
                 new AnnouncementPublished($model),
@@ -55,7 +58,7 @@ class ContentPublisher
     {
         $count = 0;
 
-        foreach ([Sermon::class, Announcement::class] as $class) {
+        foreach ([Sermon::class, Announcement::class, Post::class] as $class) {
             $class::query()->with('church')->published()->whereNull('notified_at')
                 ->where('published_at', '>=', now()->subDays(2))
                 ->each(function ($model) use (&$count) {
@@ -78,6 +81,7 @@ class ContentPublisher
     {
         return match (true) {
             $model instanceof Devotional => $model->status === 'published' && $model->publish_date->isToday(),
+            $model instanceof Post => $model->status === 'published' && $model->published_at?->lte(now()) && $model->church?->isActive(),
             default => $model->isPublished() && $model->church?->isActive(),
         };
     }

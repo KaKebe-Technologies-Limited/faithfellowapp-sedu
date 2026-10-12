@@ -6,7 +6,7 @@
             <div class="flex-grow-1">
                 <input type="file" name="logo" accept="image/png,image/jpeg,image/webp" class="form-control form-control-sm @error('logo') is-invalid @enderror" aria-label="{{ __('Logo') }}">
                 @error('logo')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                <div class="form-text">{{ __('Square, at least 400×400px, max 2 MB.') }}</div>
+                <div class="form-text">{{ __('Square, at least 400×400px, max 2 MB. Other shapes are centre-cropped to a square.') }}</div>
                 @if ($church->logo_url)
                     <div class="form-check mt-1"><input type="checkbox" class="form-check-input" name="remove_logo" value="1" id="remove_logo"><label class="form-check-label small" for="remove_logo">{{ __('Remove logo') }}</label></div>
                 @endif

@@ -106,11 +106,15 @@ test('"I prayed" toggles once per person and keeps the count in sync', function 
 
 test('prayer chains ask one member at a time and move on when they pray', function () {
     Notification::fake();
-    [$church, , $author, $fellow] = communityChurch();
+    [$church, $admin, $author, $fellow] = communityChurch();
     $third = member();
     $church->subscriptions()->create(['user_id' => $third->id, 'status' => 'active', 'subscribed_at' => now()]);
 
     $prayer = app(PrayerService::class)->submit($author, $church, ['body' => 'Pray for rain', 'visibility' => 'church', 'chain_enabled' => true]);
+    expect($prayer->status)->toBe('pending')
+        ->and(PrayerInteraction::where('type', 'chain')->count())->toBe(0); // the chain waits for a pastor's approval
+
+    app(PrayerService::class)->approve($prayer, $admin);
 
     $first = PrayerInteraction::where('type', 'chain')->sole();
     expect($first->user_id)->not->toBe($author->id);

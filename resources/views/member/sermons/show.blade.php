@@ -58,7 +58,7 @@
                 <h1 class="h2">{{ $sermon->title }}</h1>
                 <p class="text-ff-muted">
                     @if ($sermon->preacher)<i class="bi bi-person"></i> {{ $sermon->preacher }} · @endif
-                    @if ($sermon->scripture)<i class="bi bi-book"></i> {{ $sermon->scripture }} · @endif
+                    @if ($sermon->scripture)<a href="{{ auth()->check() ? route('bible.passage', ['ref' => $sermon->scripture]) : '#' }}" class="text-reset"><i class="bi bi-book"></i> {{ $sermon->scripture }}</a> · @endif
                     {{ ($sermon->preached_on ?? $sermon->published_at)?->format('j F Y') }}
                 </p>
 
@@ -112,4 +112,5 @@
             </aside>
         </div>
     </div>
+    @include('partials.note-taker', ['context' => 'sermon:'.$sermon->id, 'reference' => $sermon->title, 'churchId' => $sermon->church_id])
 </x-dynamic-component>

@@ -4,10 +4,15 @@ namespace Database\Seeders;
 
 use App\Models\Church;
 use App\Models\DiscipleshipRecord;
+use App\Models\Note;
 use App\Models\NotificationDelivery;
+use App\Models\QuizAnswer;
+use App\Models\QuizSession;
 use App\Models\Reaction;
+use App\Models\ReadingCircleEntry;
 use App\Models\User;
 use App\Services\CampaignService;
+use App\Services\ChurchArtworkService;
 use App\Services\ChurchOnboardingService;
 use App\Services\ModerationService;
 use App\Services\StreamingService;
@@ -44,7 +49,7 @@ class DemoSeeder extends Seeder
         [
             'name' => 'New Life Tabernacle Kampala', 'slug' => 'new-life-kampala', 'denomination' => 'Born Again / Charismatic', 'city' => 'Kampala', 'district' => 'Kampala',
             'address' => 'Ntinda, Kigoowa Road', 'lat' => 0.3536, 'lng' => 32.6141, 'pastor_name' => 'Pastor Ruth Nakato', 'founded_year' => 2011,
-            'tagline' => 'Raising a generation on fire for God', 'languages' => ['en', 'lg'], 'brand_color' => '#8E1C37', 'is_featured' => true,
+            'tagline' => 'Raising a generation on fire for God', 'languages' => ['en', 'lg'], 'brand_color' => '#6D3BA6', 'is_featured' => true,
             'description' => 'A fast-growing church in Ntinda with three Sunday services, a thriving young adults ministry and cell groups across Kampala.',
         ],
         [
@@ -56,7 +61,7 @@ class DemoSeeder extends Seeder
         [
             'name' => 'Living Waters Church Jinja', 'slug' => 'living-waters-jinja', 'denomination' => 'Baptist', 'city' => 'Jinja', 'district' => 'Jinja',
             'address' => 'Main Street, near the Source', 'lat' => 0.4244, 'lng' => 33.2041, 'pastor_name' => 'Pastor Samuel Waiswa', 'founded_year' => 2008,
-            'tagline' => 'Rivers of living water', 'languages' => ['en', 'sw'], 'brand_color' => '#2D7FF9',
+            'tagline' => 'Rivers of living water', 'languages' => ['en', 'sw'], 'brand_color' => '#0E8A8A',
             'description' => 'A Baptist church on the banks of the Nile with a strong children’s ministry and community health outreach.',
         ],
     ];
@@ -119,6 +124,10 @@ class DemoSeeder extends Seeder
             'website_blocks' => Church::DEFAULT_BLOCKS,
         ]);
 
+        // Clean logos, banners and home-slider photos for every demo church.
+        $artwork = app(ChurchArtworkService::class);
+        Church::orderBy('id')->each(fn (Church $c) => $artwork->apply($c));
+
         // Staff for the flagship demo church.
         $grace = Church::where('slug', 'grace-lira')->first();
         $grace->staffMembers()->updateOrCreate(['user_id' => $pastor->id], ['is_admin' => true, 'status' => 'active', 'title' => 'Senior Pastor']);
@@ -140,6 +149,7 @@ class DemoSeeder extends Seeder
         $this->seedGiving($member, $pastor);
         $this->seedCommunity($member, $pastor);
         $this->seedSupportAndMessaging($member, $pastor);
+        $this->seedFellowship($member, $pastor);
     }
 
     /**
@@ -681,8 +691,155 @@ class DemoSeeder extends Seeder
                     'status' => 'published',
                     'is_pinned' => $p === 1 && $church->slug === 'grace-lira',
                     'published_at' => now()->subDays($p * 2 + $c)->subHours($c),
+                    'notified_at' => now()->subDays($p * 2 + $c)->subHours($c),
                 ]);
             }
         }
+    }
+
+    /**
+     * Sprint 10: reading circle, notes, quizzes (a finished game and a live lobby),
+     * prayer requests awaiting approval and a pastor's private reply.
+     */
+    protected function seedFellowship(User $member, User $pastor): void
+    {
+        $grace = Church::where('slug', 'grace-lira')->first();
+        if (! $grace || $grace->quizzes()->exists()) {
+            return;
+        }
+
+        $people = User::whereIn('id', $grace->subscriptions()->where('status', 'active')->select('user_id'))
+            ->whereKeyNot($member->id)->orderBy('id')->get();
+
+        // ── Reading circle on "The Gospels in 30 Days" ──────────────────
+        $gospels = $grace->readingPlans()->where('title', 'The Gospels in 30 Days')->first();
+        if ($gospels && $people->count() >= 2) {
+            $circle = $grace->readingCircles()->create([
+                'reading_plan_id' => $gospels->id, 'created_by' => $member->id, 'name' => 'Morning Readers', 'code' => 'GRACE7',
+                'reading_time' => '06:00', 'reading_days' => [0, 1, 2, 3, 4, 5, 6], 'timezone' => 'Africa/Kampala', 'max_members' => 4,
+            ]);
+            $partners = collect([$member])->merge($people->take(2));
+            $summaries = [
+                1 => [
+                    'Matthew 1 reminded me that God works through ordinary, imperfect families — even Rahab and Ruth are in Jesus’ line. There is hope for my family too.',
+                    'The angel told Joseph “do not be afraid”. I needed that today with all the uncertainty at work.',
+                    'Wise men travelled so far just to worship. Am I that eager to meet Jesus every morning?',
+                ],
+                2 => [
+                    'John the Baptist’s message was simple: repent, the kingdom is near. Praying for a humble heart this week.',
+                    'Jesus was baptised even though He had no sin — He stood with us. Grateful.',
+                ],
+            ];
+            foreach ($partners as $i => $person) {
+                $circle->memberships()->create(['user_id' => $person->id, 'role' => $i === 0 ? 'owner' : 'member', 'joined_at' => now()->subDays(3)]);
+                $done = collect($summaries)->filter(fn ($s) => isset($s[$i]))->keys()->all();
+                $gospels->progress()->firstOrCreate(['user_id' => $person->id], [
+                    'church_id' => $grace->id, 'started_on' => today()->subDays(2), 'completed_days' => $done,
+                    'current_streak' => count($done), 'longest_streak' => count($done), 'last_read_on' => $done ? today()->subDays(3 - count($done)) : null,
+                ]);
+                foreach ($summaries as $day => $texts) {
+                    if (isset($texts[$i])) {
+                        ReadingCircleEntry::create([
+                            'reading_circle_id' => $circle->id, 'user_id' => $person->id, 'day' => $day,
+                            'summary' => $texts[$i], 'completed_at' => now()->subDays(3 - $day)->setTime(6, 20 + $i * 7),
+                        ]);
+                    }
+                }
+            }
+        }
+
+        // ── Notes ───────────────────────────────────────────────────────
+        $sermon = $grace->sermons()->latest('published_at')->first();
+        $notes = [
+            ['bible:JHN.3', 'John 3', route('bible.read', ['JHN', 3]), 'Born again', "# What does it mean to be born again?\n- Not by works — by the Spirit (v5–8)\n- God *so loved* the world (v16)\n> For God so loved the world, that he gave his only begotten Son (John 3:16)\n\nPray for Uncle Okot this week.", 'rose', true],
+            ['bible:PSA.23', 'Psalms 23', route('bible.read', ['PSA', 23]), 'The Lord is my shepherd', "Read this at the hospital with Mum.\n- He leads, He restores, He walks *with* me in the valley\n- Goodness and mercy **follow** me", 'mint', false],
+            ['note:retreat2026', null, null, 'Women’s retreat ideas', "- Theme: Rooted (Colossians 2:7)\n- Venue: Ngetta hills\n- Ask Sarah about transport budget", 'sun', false],
+        ];
+        if ($sermon) {
+            $notes[] = ['sermon:'.$sermon->id, $sermon->title, route('sermons.show', $sermon), null, "# {$sermon->title}\n- Faith is shown by what we do (James 2:17)\n- Challenge: visit one person in need this week\n> Be doers of the word, and not hearers only", 'paper', false];
+        }
+        foreach ($notes as [$context, $reference, $url, $title, $body, $color, $pinned]) {
+            Note::create([
+                'user_id' => $member->id, 'church_id' => str_starts_with($context, 'sermon') ? $grace->id : null, 'context' => $context,
+                'reference' => $reference, 'url' => $url ? parse_url($url, PHP_URL_PATH) : null, 'title' => $title, 'body' => $body,
+                'color' => $color, 'is_pinned' => $pinned,
+            ]);
+        }
+
+        // ── Quizzes ─────────────────────────────────────────────────────
+        $trivia = $grace->quizzes()->create(['user_id' => $pastor->id, 'title' => 'Bible Heroes Trivia', 'description' => 'How well do you know the heroes of faith? Fast answers score more!']);
+        $questions = [
+            ['Who built the ark?', ['Moses', 'Noah', 'Abraham', 'David'], 1],
+            ['How many days and nights did it rain during the flood?', ['7', '12', '40', '100'], 2],
+            ['Who defeated Goliath?', ['Saul', 'Samson', 'David', 'Jonathan'], 2],
+            ['Which queen saved her people from Haman’s plot?', ['Esther', 'Ruth', 'Deborah', 'Jezebel'], 0],
+            ['Daniel was thrown into a den of…', ['Bears', 'Snakes', 'Lions', 'Wolves'], 2],
+            ['Who was swallowed by a great fish?', ['Jonah', 'Elijah', 'Peter', 'Paul'], 0],
+            ['What did Jesus turn water into at Cana?', ['Milk', 'Wine', 'Oil', 'Honey'], 1],
+            ['How many disciples did Jesus choose?', ['7', '10', '12', '70'], 2],
+        ];
+        foreach ($questions as $i => [$q, $options, $correct]) {
+            $trivia->questions()->create(['position' => $i, 'question' => $q, 'options' => $options, 'correct_option' => $correct, 'time_limit' => 20, 'points' => $i === 7 ? 2000 : 1000]);
+        }
+
+        $youth = $grace->quizzes()->create(['user_id' => $pastor->id, 'title' => 'Youth Night: Life of Jesus', 'description' => 'Six quick questions for Friday youth night.']);
+        foreach ([
+            ['In which town was Jesus born?', ['Nazareth', 'Bethlehem', 'Jerusalem', 'Capernaum'], 1],
+            ['Who baptised Jesus?', ['Peter', 'John the Baptist', 'Andrew', 'James'], 1],
+            ['How many loaves fed the 5,000?', ['2', '5', '7', '12'], 1],
+            ['Which disciple walked on water?', ['Peter', 'Thomas', 'Judas', 'Matthew'], 0],
+            ['Who denied Jesus three times?', ['John', 'Peter', 'Philip', 'Mark'], 1],
+            ['On which day did Jesus rise again?', ['Friday', 'Saturday', 'The first day of the week', 'The seventh day'], 2],
+        ] as $i => [$q, $options, $correct]) {
+            $youth->questions()->create(['position' => $i, 'question' => $q, 'options' => $options, 'correct_option' => $correct, 'time_limit' => 15, 'points' => 1000]);
+        }
+
+        // A finished game with a full scoreboard.
+        $finished = QuizSession::create([
+            'church_id' => $grace->id, 'quiz_id' => $trivia->id, 'host_id' => $pastor->id, 'pin' => '481920', 'status' => 'finished',
+            'current_index' => count($questions) - 1, 'question_started_at' => now()->subDays(2), 'started_at' => now()->subDays(2)->subMinutes(12), 'finished_at' => now()->subDays(2),
+        ]);
+        $players = collect([$member])->merge($people->take(11));
+        $trivia->load('questions');
+        foreach ($players as $p => $person) {
+            $player = $finished->players()->create(['user_id' => $person->id, 'nickname' => $person->name]);
+            $score = 0;
+            $right = 0;
+            foreach ($trivia->questions as $question) {
+                $skill = $p === 0 ? 85 : max(35, 80 - $p * 4);
+                $isRight = mt_rand(1, 100) <= $skill;
+                $option = $isRight ? $question->correct_option : ($question->correct_option + mt_rand(1, 3)) % count($question->options);
+                $ms = mt_rand(1800, 16000);
+                $points = $isRight ? (int) round($question->points * (1 - $ms / ($question->time_limit * 1000) / 2)) : 0;
+                QuizAnswer::create(['quiz_session_id' => $finished->id, 'quiz_player_id' => $player->id, 'quiz_question_id' => $question->id, 'option' => $option, 'is_correct' => $isRight, 'points' => $points, 'response_ms' => $ms]);
+                $score += $points;
+                $right += (int) $isRight;
+            }
+            $player->update(['score' => $score, 'correct_count' => $right]);
+        }
+
+        // A lobby waiting to start — members see "Happening now".
+        $lobby = QuizSession::create(['church_id' => $grace->id, 'quiz_id' => $youth->id, 'host_id' => $pastor->id, 'pin' => '725314', 'status' => 'lobby']);
+        foreach ($people->slice(2, 4) as $person) {
+            $lobby->players()->create(['user_id' => $person->id, 'nickname' => $person->name]);
+        }
+
+        // ── Prayer: requests waiting for the pastor, and a private reply ──
+        foreach ([
+            [$people->get(3), 'Travel mercies', 'My daughter travels to Kampala on Saturday for university interviews. Please pray for safety and favour.'],
+            [$people->get(4), null, 'Our small business has struggled since the market fire. Pray for provision and wisdom.'],
+        ] as [$author, $title, $body]) {
+            if ($author) {
+                $grace->prayerRequests()->create(['user_id' => $author->id, 'title' => $title, 'body' => $body, 'visibility' => 'church', 'status' => 'pending', 'chain_enabled' => true]);
+            }
+        }
+        $private = $grace->prayerRequests()->create([
+            'user_id' => $member->id, 'title' => 'Guidance', 'body' => 'I have a big decision to make about a job in Kampala and would value the pastors’ counsel and prayer.',
+            'visibility' => 'pastor', 'status' => 'open', 'created_at' => now()->subDays(2),
+        ]);
+        $private->update([
+            'pastor_response' => "Grace, we are praying with you. Read Proverbs 3:5–6 this week and let's talk after Sunday service — come and find me by the welcome desk.\n— Pastor Daniel",
+            'responded_by' => $pastor->id, 'responded_at' => now()->subDay(),
+        ]);
     }
 }

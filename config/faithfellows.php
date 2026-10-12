@@ -92,6 +92,7 @@ return [
             'prayer.moderate' => 'Moderate prayer wall',
             'community.moderate' => 'Moderate comments, posts & testimonies',
             'notifications.send' => 'Compose & send notifications',
+            'quizzes.manage' => 'Fun & games: create and host live quizzes',
         ],
         'Administration' => [
             'analytics.view' => 'View analytics & reports',
@@ -107,7 +108,7 @@ return [
         'Editor' => ['content.manage', 'events.manage', 'analytics.view'],
         'Finance' => ['giving.view', 'giving.manage', 'campaigns.manage', 'analytics.view'],
         'Media' => ['media.manage', 'live.manage', 'content.manage'],
-        'Events' => ['events.manage'],
+        'Events' => ['events.manage', 'quizzes.manage'],
         'Moderator' => ['prayer.moderate', 'community.moderate'],
     ],
 
@@ -161,8 +162,11 @@ return [
         'event' => 'Events & reminders',
         'giving' => 'Giving & receipts',
         'announcement' => 'Announcements',
+        'update' => 'Church updates',
         'prayer' => 'Prayer wall',
         'devotional' => 'Devotionals',
+        'reading' => 'Reading partners',
+        'games' => 'Quizzes & games',
     ],
 
     'notification_channels' => [
@@ -186,6 +190,37 @@ return [
         'admins' => (int) env('FF_DEFAULT_ADMINS', 10),
         'branches' => (int) env('FF_DEFAULT_BRANCHES', 5),
         'max_upload_mb' => (int) env('FF_MAX_UPLOAD_MB', 200),
+        // A member can follow at most this many churches at a time (staff roles don't count).
+        'subscriptions' => (int) env('FF_MAX_SUBSCRIPTIONS', 3),
+        // The member home slider shows a church once it has this many slider photos.
+        'min_slides' => 4,
+        'max_slides' => 8,
+        'reading_circle_members' => 4,
+    ],
+
+    /*
+    | Church contact details (phone, email, website, social links, street address)
+    | are only shown to people who follow the church, its staff and platform admins.
+    */
+    'privacy' => [
+        'contacts_for_subscribers_only' => (bool) env('FF_CONTACTS_FOR_SUBSCRIBERS_ONLY', true),
+    ],
+
+    /*
+    | In-app Bible. 'bible_api_com' needs no key (public-domain English texts);
+    | 'api_bible' needs API_BIBLE_KEY and the translation's API.Bible id.
+    */
+    'bible' => [
+        'default' => env('BIBLE_DEFAULT_TRANSLATION', 'kjv'),
+        'translations' => [
+            'kjv' => ['name' => 'King James Version', 'short' => 'KJV', 'language' => 'English', 'provider' => 'bible_api_com'],
+            'web' => ['name' => 'World English Bible', 'short' => 'WEB', 'language' => 'English', 'provider' => 'bible_api_com'],
+            'bbe' => ['name' => 'Bible in Basic English', 'short' => 'BBE', 'language' => 'English', 'provider' => 'bible_api_com'],
+            'asv' => ['name' => 'American Standard Version', 'short' => 'ASV', 'language' => 'English', 'provider' => 'bible_api_com'],
+            // Enabled automatically when API_BIBLE_KEY is set (ids from scripture.api.bible).
+            'swahili' => ['name' => 'Biblia Habari Njema', 'short' => 'BHN', 'language' => 'Kiswahili', 'provider' => 'api_bible', 'id' => env('API_BIBLE_SWAHILI_ID')],
+            'luganda' => ['name' => 'Bayibuli Entukuvu', 'short' => 'LUG', 'language' => 'Luganda', 'provider' => 'api_bible', 'id' => env('API_BIBLE_LUGANDA_ID')],
+        ],
     ],
 
     'payments' => [

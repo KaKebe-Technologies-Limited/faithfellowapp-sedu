@@ -95,4 +95,5 @@
             </aside>
         </div>
     </div>
+    @include('partials.note-taker', ['context' => 'live:'.$stream->id, 'reference' => $stream->title, 'churchId' => $stream->church_id])
 </x-dynamic-component>

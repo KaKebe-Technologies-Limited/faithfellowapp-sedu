@@ -23,10 +23,16 @@
             <button class="btn btn-ff-soft" title="{{ __('Cancel request') }}"><i class="bi bi-hourglass-split"></i> {{ __('Awaiting approval') }}</button>
         </form>
     @elseif ($subscription?->status !== 'blocked' && $church->isActive())
-        <form method="POST" action="{{ route('churches.subscribe', $church) }}">
-            @csrf
-            <input type="hidden" name="source" value="{{ request('ref', 'church_page') }}">
-            <button class="btn btn-ff-primary"><i class="bi bi-plus-lg"></i> {{ __('Subscribe') }}</button>
-        </form>
+        @php($limit = (int) config('faithfellows.limits.subscriptions', 3))
+        @php($atLimit = app(\App\Services\SubscriptionService::class)->activeCount(auth()->user()) >= $limit)
+        @if ($atLimit)
+            <a href="{{ route('my-churches.index') }}" class="btn btn-ff-soft text-nowrap" title="{{ __('You already follow :n churches — unsubscribe from one to follow another.', ['n' => $limit]) }}"><i class="bi bi-lock"></i> {{ __('Limit reached (:n/:n)', ['n' => $limit]) }}</a>
+        @else
+            <form method="POST" action="{{ route('churches.subscribe', $church) }}">
+                @csrf
+                <input type="hidden" name="source" value="{{ request('ref', 'church_page') }}">
+                <button class="btn btn-ff-primary"><i class="bi bi-plus-lg"></i> {{ __('Subscribe') }}</button>
+            </form>
+        @endif
     @endif
 @endguest

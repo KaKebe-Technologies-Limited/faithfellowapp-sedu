@@ -5,9 +5,22 @@
         <div class="col-lg-8 d-grid gap-4 align-content-start">
             @include('member.prayer._card', ['prayed' => $prayed, 'limit' => 5000])
 
-            <x-ff.card :title="__('Encouragement')">
-                @include('partials.engagement-bar', ['model' => $prayer, 'type' => 'prayer', 'open' => true])
-            </x-ff.card>
+            @if ($prayer->status === 'pending' && auth()->id() === $prayer->user_id)
+                <div class="ff-card ff-card-mist d-flex gap-3 align-items-center"><i class="bi bi-hourglass-split fs-3 text-ff-primary"></i><div><strong class="text-ff-black">{{ __('Waiting for your pastor') }}</strong><div class="small">{{ __('Once approved, everyone in :church is invited to stand in prayer with you.', ['church' => $prayer->church->name]) }}</div></div></div>
+            @endif
+
+            @if ($prayer->pastor_response && (auth()->id() === $prayer->user_id || auth()->user()->canInChurch($prayer->church_id, 'prayer.moderate')))
+                <div class="ff-card" style="border-left: 4px solid var(--ff-primary)">
+                    <div class="small fw-semibold text-ff-primary mb-2"><i class="bi bi-chat-quote"></i> {{ __('A private word from your pastor') }} · {{ $prayer->responded_at?->diffForHumans() }}</div>
+                    <div class="ff-scripture" style="font-size: 1.05rem; white-space: pre-line">{{ $prayer->pastor_response }}</div>
+                </div>
+            @endif
+
+            @if ($prayer->isShared())
+                <x-ff.card :title="__('Encouragement')">
+                    @include('partials.engagement-bar', ['model' => $prayer, 'type' => 'prayer', 'open' => true])
+                </x-ff.card>
+            @endif
         </div>
 
         <aside class="col-lg-4 d-grid gap-4 align-content-start">

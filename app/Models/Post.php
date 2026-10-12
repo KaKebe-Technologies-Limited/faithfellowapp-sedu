@@ -19,11 +19,11 @@ class Post extends Model implements HasMedia
 {
     use Auditable, BelongsToChurch, HasEngagement, HasFactory, InteractsWithMedia, SoftDeletes;
 
-    protected $fillable = ['church_id', 'branch_id', 'user_id', 'body', 'visibility', 'status', 'is_pinned', 'published_at'];
+    protected $fillable = ['church_id', 'branch_id', 'user_id', 'body', 'visibility', 'status', 'is_pinned', 'published_at', 'notified_at'];
 
     protected function casts(): array
     {
-        return ['is_pinned' => 'boolean', 'published_at' => 'datetime'];
+        return ['is_pinned' => 'boolean', 'published_at' => 'datetime', 'notified_at' => 'datetime'];
     }
 
     public function registerMediaCollections(): void

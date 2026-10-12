@@ -1,7 +1,18 @@
 <x-layouts.member :title="__('My churches')">
-    <x-ff.page-header :title="__('My churches')" :subtitle="__('One account, many churches. Follow as many as you like.')">
-        <a href="{{ route('churches.index') }}" class="btn btn-ff-primary"><i class="bi bi-compass"></i> {{ __('Discover churches') }}</a>
+    @php($limit = (int) config('faithfellows.limits.subscriptions', 3))
+    <x-ff.page-header :title="__('My churches')" :subtitle="trans_choice('One account — follow up to :count church at a time.|One account — follow up to :count churches at a time.', $limit)">
+        <span class="align-self-center small fw-semibold text-ff-muted d-inline-flex align-items-center gap-2">
+            <span class="ff-limit-dots" aria-hidden="true">@for ($i = 1; $i <= $limit; $i++)<span @class(['on' => $i <= $subscriptions->count()])></span>@endfor</span>
+            {{ __(':n of :max', ['n' => $subscriptions->count(), 'max' => $limit]) }}
+        </span>
+        @if ($subscriptions->count() < $limit)
+            <a href="{{ route('churches.index') }}" class="btn btn-ff-primary"><i class="bi bi-compass"></i> {{ __('Discover churches') }}</a>
+        @endif
     </x-ff.page-header>
+
+    @if ($subscriptions->count() >= $limit)
+        <div class="alert alert-info d-flex gap-2 align-items-center rounded-4"><i class="bi bi-info-circle"></i><div>{{ trans_choice('You are following the maximum of :count church. To follow another, unsubscribe from one below first.|You are following the maximum of :count churches. To follow another, unsubscribe from one below first.', $limit) }}</div></div>
+    @endif
 
     @if ($subscriptions->isEmpty())
         <x-ff.empty-state icon="bi-bookmark-heart" :title="__('You are not following any churches yet')" :message="__('Find your home church and subscribe to get sermons, live services and updates.')">

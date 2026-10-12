@@ -9,6 +9,7 @@ use App\Services\SubscriptionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class SubscriptionController extends Controller
@@ -36,7 +37,14 @@ class SubscriptionController extends Controller
 
     public function store(Request $request, Church $church): RedirectResponse|JsonResponse
     {
-        $subscription = $this->subscriptions->subscribe($request->user(), $church, $request->input('source', 'directory'));
+        try {
+            $subscription = $this->subscriptions->subscribe($request->user(), $church, $request->input('source', 'directory'));
+        } catch (ValidationException $e) {
+            // e.g. the 3-church limit: show it as a toast on the page they came from.
+            throw_if($request->expectsJson(), $e);
+
+            return back()->with('error', $e->validator->errors()->first());
+        }
 
         $message = $subscription->status === 'pending'
             ? __('Request sent — :church will approve your membership shortly.', ['church' => $church->name])

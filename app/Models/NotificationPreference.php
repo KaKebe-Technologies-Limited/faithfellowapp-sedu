@@ -14,8 +14,11 @@ class NotificationPreference extends Model
         'event' => ['database', 'webpush', 'mail'],
         'giving' => ['database', 'mail'],
         'announcement' => ['database', 'webpush', 'mail'],
-        'prayer' => ['database'],
+        'update' => ['database', 'webpush'],
+        'prayer' => ['database', 'webpush'],
         'devotional' => ['database', 'webpush'],
+        'reading' => ['database', 'webpush'],
+        'games' => ['database', 'webpush'],
     ];
 
     protected $fillable = ['user_id', 'church_id', 'category', 'channels', 'enabled'];

@@ -7,7 +7,7 @@
 
 const csrf = () => document.querySelector('meta[name="csrf-token"]')?.content ?? '';
 
-async function http(url, { method = 'GET', body = null } = {}) {
+export async function http(url, { method = 'GET', body = null } = {}) {
     const res = await fetch(url, {
         method,
         headers: {
@@ -268,7 +268,18 @@ export function registerComponents(Alpine) {
         count: opts.count ?? 0,
         init() {
             if (!opts.url) return;
-            setInterval(() => http(opts.url).then((d) => (this.count = d.unread)).catch(() => {}), 60000);
+            // New sermon / update / announcement → in-app pop-up card (once per notification).
+            const poll = () => http(opts.url).then((d) => {
+                const seen = sessionStorage.getItem('ff-notif-seen');
+                if (d.latest && d.latest.id !== seen && (d.unread > this.count || !seen)) {
+                    sessionStorage.setItem('ff-notif-seen', d.latest.id);
+                    if (seen !== null || d.latest.fresh) window.ffNotificationPop?.(d.latest);
+                }
+                this.count = d.unread;
+            }).catch(() => {});
+            poll();
+            setInterval(poll, 30000);
+            document.addEventListener('visibilitychange', () => { if (!document.hidden) poll(); });
         },
     }));
 

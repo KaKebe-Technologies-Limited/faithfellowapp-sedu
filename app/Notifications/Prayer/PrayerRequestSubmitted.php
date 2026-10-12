@@ -7,7 +7,8 @@ use App\Notifications\ChurchNotification;
 use Illuminate\Support\Str;
 
 /**
- * To pastors / prayer team when a member submits a request.
+ * To pastors / prayer team when a member submits a request: either one to
+ * approve for the whole church, or a private one for the pastors only.
  */
 class PrayerRequestSubmitted extends ChurchNotification
 {
@@ -22,8 +23,8 @@ class PrayerRequestSubmitted extends ChurchNotification
     public function title(): string
     {
         return $this->request->visibility === 'pastor'
-            ? __('🔒 Private prayer request from :name', ['name' => $this->request->author_name])
-            : __('New prayer request from :name', ['name' => $this->request->author_name]);
+            ? __('🔒 Private prayer request from :name', ['name' => $this->request->user?->name ?? __('a member')])
+            : __('Prayer request to approve from :name', ['name' => $this->request->user?->name ?? __('a member')]);
     }
 
     public function body(): ?string
@@ -33,12 +34,12 @@ class PrayerRequestSubmitted extends ChurchNotification
 
     public function url(): string
     {
-        return route('church-admin.prayer.index', $this->request->church);
+        return route('church-admin.prayer.index', [$this->request->church, 'status' => $this->request->visibility === 'pastor' ? 'private' : 'pending']);
     }
 
     public function icon(): string
     {
-        return 'bi-chat-heart';
+        return $this->request->visibility === 'pastor' ? 'bi-lock' : 'bi-hourglass-split';
     }
 
     public function churchName(): ?string

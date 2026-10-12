@@ -14,7 +14,7 @@
 
             <fieldset class="mb-3">
                 <legend class="form-label">{{ __('Who can see it?') }}</legend>
-                @foreach (['church' => [__('My church family'), __('Members of this church.'), 'bi-people'], 'public' => [__('Everyone'), __('Anyone visiting the church page.'), 'bi-globe2'], 'pastor' => [__('Pastors only'), __('Private — only the pastoral team will see it.'), 'bi-lock']] as $value => [$label, $hint, $icon])
+                @foreach (['church' => [__('My church family'), __('A pastor approves it first, then every member is invited to stand in prayer with you.'), 'bi-people'], 'public' => [__('Everyone'), __('Approved first, then also shown on the church’s public page.'), 'bi-globe2'], 'pastor' => [__('Pastors only'), __('Private — only the pastoral team sees it and can reply to you.'), 'bi-lock']] as $value => [$label, $hint, $icon])
                     <label class="d-flex gap-2 align-items-start p-2 rounded-3 border mb-2" :class="visibility === '{{ $value }}' && 'border-primary'">
                         <input type="radio" name="visibility" value="{{ $value }}" class="form-check-input mt-1" x-model="visibility" @checked(old('visibility', 'church') === $value)>
                         <span><i class="bi {{ $icon }}"></i> <strong class="text-ff-black">{{ $label }}</strong><span class="d-block small text-ff-muted">{{ $hint }}</span></span>

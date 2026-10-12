@@ -10,6 +10,7 @@ use App\Notifications\Member\WelcomeMember;
 use App\Support\Audit;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Follow / unfollow churches. Re-subscribing re-activates the same row so
@@ -26,6 +27,15 @@ class SubscriptionService
 
         if ($existing?->isActive()) {
             return $existing;
+        }
+
+        // Members follow at most N churches at a time (pending requests count too).
+        $limit = (int) config('faithfellows.limits.subscriptions', 3);
+        if ($existing?->status !== 'pending' && $this->activeCount($user) >= $limit) {
+            throw ValidationException::withMessages(['church' => trans_choice(
+                'You can follow up to :count church at a time. Unsubscribe from one in My churches to follow :church.|You can follow up to :count churches at a time. Unsubscribe from one in My churches to follow :church.',
+                $limit, ['church' => $church->name],
+            )]);
         }
 
         $status = $church->requires_member_approval ? 'pending' : 'active';
@@ -50,6 +60,12 @@ class SubscriptionService
         Notification::send($this->admins($church), new NewSubscriber($church, $user, $status === 'pending'));
 
         return $subscription;
+    }
+
+    /** Churches the user currently follows or has asked to join. */
+    public function activeCount(User $user): int
+    {
+        return Subscription::where('user_id', $user->id)->whereIn('status', ['active', 'pending'])->count();
     }
 
     public function unsubscribe(User $user, Church $church): void

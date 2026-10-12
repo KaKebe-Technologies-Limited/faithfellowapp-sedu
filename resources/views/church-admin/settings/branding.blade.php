@@ -9,4 +9,6 @@
         @include('church-admin.settings._branding-fields')
         <button class="btn btn-ff-primary px-4 mt-4">{{ __('Save branding') }}</button>
     </form>
+
+    @include('church-admin.settings._slides')
 </x-layouts.church-admin>

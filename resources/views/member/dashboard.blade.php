@@ -1,7 +1,16 @@
 <x-layouts.member :title="__('Home')">
     <div class="row g-4">
         <div class="col-xl-8">
-            @if (! $filterChurch)
+            @if (! $filterChurch && $slides->isNotEmpty())
+                <div class="d-flex align-items-end justify-content-between gap-3 mb-3">
+                    <div>
+                        <span class="small fw-semibold text-ff-muted text-uppercase">{{ now()->format('l, j F') }}</span>
+                        <h1 class="h3 mb-0">{{ __('Good :time, :name', ['time' => now()->hour < 12 ? __('morning') : (now()->hour < 17 ? __('afternoon') : __('evening')), 'name' => $user->first_name]) }}</h1>
+                    </div>
+                    <a href="{{ route('bible.index') }}" class="btn btn-ff-soft btn-sm d-none d-sm-inline-flex"><i class="bi bi-book-half"></i> {{ __('Open the Bible') }}</a>
+                </div>
+                @include('partials.home-slider', ['slides' => $slides, 'sliderId' => 'ff-home-slider'])
+            @elseif (! $filterChurch)
                 <div class="ff-card bg-ff-gradient border-0 mb-4 p-4 position-relative overflow-hidden">
                     <x-logo-mark :size="180" class="position-absolute ff-decorative" style="right:-30px;bottom:-50px;opacity:.12;color:#fff" />
                     <span class="small fw-semibold text-white-50 text-uppercase">{{ now()->format('l, j F') }}</span>
@@ -17,6 +26,7 @@
                     </div>
                     <a href="{{ route('dashboard') }}" class="btn btn-ff-ghost btn-sm"><i class="bi bi-x-lg"></i> {{ __('All churches') }}</a>
                 </div>
+                @include('partials.home-slider', ['slides' => $slides, 'sliderId' => 'ff-church-slider'])
             @endif
 
             @foreach ($widgets['top'] ?? [] as $widget)

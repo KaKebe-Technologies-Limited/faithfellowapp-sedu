@@ -7,13 +7,18 @@ use App\Models\User;
 
 class PrayerRequestPolicy
 {
+    /**
+     * The author and the church's pastoral team always see a request.
+     * Everyone else only sees approved (open/answered) requests their
+     * visibility allows; pastor-only requests are never shown to members.
+     */
     public function view(?User $user, PrayerRequest $request): bool
     {
-        if ($user && ($request->user_id === $user->id || $user->canInChurch($request->church_id, 'prayer.moderate') || $user->canInChurch($request->church_id, 'care.manage'))) {
+        if ($user && ($request->user_id === $user->id || $this->pastoral($user, $request))) {
             return true;
         }
 
-        if ($request->status === 'hidden' || ! $request->church?->isActive()) {
+        if (! $request->isShared() || ! $request->church?->isActive()) {
             return false;
         }
 
@@ -26,7 +31,7 @@ class PrayerRequestPolicy
 
     public function pray(User $user, PrayerRequest $request): bool
     {
-        return $this->view($user, $request) && $request->status !== 'hidden';
+        return $request->isShared() && $this->view($user, $request);
     }
 
     public function update(User $user, PrayerRequest $request): bool
@@ -37,5 +42,10 @@ class PrayerRequestPolicy
     public function moderate(User $user, PrayerRequest $request): bool
     {
         return $user->canInChurch($request->church_id, 'prayer.moderate');
+    }
+
+    protected function pastoral(User $user, PrayerRequest $request): bool
+    {
+        return $user->canInChurch($request->church_id, 'prayer.moderate') || $user->canInChurch($request->church_id, 'care.manage');
     }
 }

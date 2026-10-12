@@ -29,7 +29,7 @@
     <a href="{{ ff_church_url($church) }}" class="small" target="_blank" rel="noopener"><i class="bi bi-globe"></i> {{ Str::after(ff_church_url($church), '://') }}</a>
 </div>
 
-@if ($church->socialLinks->isNotEmpty())
+@if ($church->socialLinks->isNotEmpty() && $church->contactsVisibleTo(auth()->user()))
     <div class="ff-card">
         <h2 class="h6 mb-3">{{ __('Follow') }}</h2>
         <div class="d-flex flex-wrap gap-2">

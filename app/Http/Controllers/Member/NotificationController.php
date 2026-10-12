@@ -31,7 +31,21 @@ class NotificationController extends Controller
 
     public function count(Request $request): JsonResponse
     {
-        return response()->json(['unread' => $request->user()->unreadNotifications()->count()]);
+        $latest = $request->user()->unreadNotifications()->latest()->first();
+
+        return response()->json([
+            'unread' => $request->user()->unreadNotifications()->count(),
+            // The newest unread item, for the in-app pop-up card.
+            'latest' => $latest ? [
+                'id' => $latest->id,
+                'title' => $latest->data['title'] ?? null,
+                'body' => $latest->data['body'] ?? null,
+                'church' => $latest->data['church'] ?? null,
+                'icon' => $latest->data['icon'] ?? 'bi-bell',
+                'url' => route('notifications.open', $latest->id),
+                'fresh' => $latest->created_at?->gt(now()->subMinutes(2)) ?? false,
+            ] : null,
+        ]);
     }
 
     /**

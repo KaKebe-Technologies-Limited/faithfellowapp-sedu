@@ -1,13 +1,16 @@
 <?php
 
+use App\Models\Church;
 use App\Models\NotificationDelivery;
 use App\Services\BillingService;
 use App\Services\CareService;
+use App\Services\ChurchArtworkService;
 use App\Services\ContentPublisher;
 use App\Services\EventService;
 use App\Services\GivingScheduler;
 use App\Services\Notifications\BroadcastService;
 use App\Services\Notifications\DigestService;
+use App\Services\ReadingCircleService;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -122,3 +125,20 @@ Artisan::command('ff:vapid {--write : Write the keys into .env}', function () {
 Schedule::command('ff:send-broadcasts')->everyMinute()->withoutOverlapping();
 Schedule::command('ff:send-digests')->dailyAt('18:00');
 Schedule::command('model:prune', ['--model' => [NotificationDelivery::class]])->daily();
+
+Artisan::command('ff:reading-reminders', function (ReadingCircleService $circles) {
+    $this->info('Reminded '.$circles->sendReminders().' reading circle(s).');
+})->purpose('Notify reading circles at their agreed reading time');
+
+Schedule::command('ff:reading-reminders')->everyMinute()->withoutOverlapping();
+
+Artisan::command('ff:church-artwork {church? : Church slug (all churches when omitted)} {--force : Replace existing logo, banner and slides}', function (ChurchArtworkService $artwork) {
+    $churches = $this->argument('church')
+        ? Church::where('slug', $this->argument('church'))->get()
+        : Church::orderBy('id')->get();
+
+    foreach ($churches as $church) {
+        $artwork->apply($church, (bool) $this->option('force'));
+        $this->line("✓ {$church->name}");
+    }
+})->purpose('Generate a clean default logo, banner and home-slider photos for churches that have none');

@@ -14,8 +14,9 @@
     @push('head')
         <script type="application/ld+json">{!! json_encode(array_filter([
             '@@context' => 'https://schema.org', '@@type' => 'Church', 'name' => $church->name, 'url' => route('churches.show', $church),
-            'description' => $church->description, 'logo' => $church->logo_url, 'image' => $church->cover_url, 'telephone' => $church->phone, 'email' => $church->email,
-            'address' => ['@@type' => 'PostalAddress', 'streetAddress' => $church->address, 'addressLocality' => $church->city, 'addressRegion' => $church->district, 'addressCountry' => $church->country],
+            'description' => $church->description, 'logo' => $church->logo_url, 'image' => $church->cover_url,
+            // No phone/email/street address: contact details are for subscribers only.
+            'address' => ['@@type' => 'PostalAddress', 'addressLocality' => $church->city, 'addressRegion' => $church->district, 'addressCountry' => $church->country],
             'geo' => $church->lat ? ['@@type' => 'GeoCoordinates', 'latitude' => (float) $church->lat, 'longitude' => (float) $church->lng] : null,
         ]), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG) !!}</script>
     @endpush

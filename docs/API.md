@@ -54,7 +54,7 @@ This endpoint is public and lists active churches. Optional filters: `q` (name o
 
 ### `GET /churches/{slug}`
 
-This endpoint is public. It returns church details, service times, accepted giving methods and the subscriber count.
+This endpoint is public. It returns church details, service times, accepted giving methods and the subscriber count. `contact` (phone, email, street address and social links) is filled in only for subscribers and the church's staff; for everyone else it is `null`.
 
 ```json
 { "data": { "id": 1, "slug": "grace-lira", "name": "Grace Community Church Lira", "denomination": "Pentecostal",
@@ -65,7 +65,7 @@ This endpoint is public. It returns church details, service times, accepted givi
 
 ### `POST /churches/{slug}/subscription` 🔒
 
-Follows a church. The response is `201` with `{"status": "active" | "pending"}`. The status is `pending` when the church approves new members.
+Follows a church. The response is `201` with `{"status": "active" | "pending"}`. The status is `pending` when the church approves new members. A member can follow at most 3 churches at a time (pending requests count). A fourth returns `422` with an error on `church`.
 
 ### `DELETE /churches/{slug}/subscription` 🔒
 
@@ -146,7 +146,7 @@ Lists requests the member may see. Pastor-only requests appear only to their aut
 { "church_id": 1, "title": "Healing", "body": "Please pray for my mother…", "visibility": "church", "is_anonymous": false, "chain_enabled": true }
 ```
 
-`visibility` is `public`, `church` or `pastor`.
+`visibility` is `public`, `church` or `pastor`. Public and church requests are created with `status: "pending"` and appear on the wall only after a pastor approves them. Until then only the author and the pastoral team can see them, and nobody can pray on them yet. Pastor-only requests are never shared; the pastor's private reply is shown to the author in the app.
 
 ### `POST /prayer/{id}/pray`
 

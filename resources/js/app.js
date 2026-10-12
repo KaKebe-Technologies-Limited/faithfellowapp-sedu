@@ -8,15 +8,18 @@ import '@fontsource/space-grotesk/600.css';
 import '@fontsource/space-grotesk/700.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import '../css/community.css';
+import '../css/fellowship.css';
 
 import * as bootstrap from 'bootstrap';
 import Alpine from 'alpinejs';
 import { registerComponents, boot } from './faithfellows';
+import { registerFellowship } from './fellowship';
 
 window.bootstrap = bootstrap;
 window.Alpine = Alpine;
 
 registerComponents(Alpine);
+registerFellowship(Alpine);
 Alpine.start();
 
 boot();

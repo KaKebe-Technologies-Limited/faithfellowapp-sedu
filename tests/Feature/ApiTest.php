@@ -6,6 +6,7 @@ use App\Models\PrayerRequest;
 use App\Models\User;
 use App\Notifications\Care\CommunityUpdate;
 use App\Services\PaymentService;
+use App\Services\PrayerService;
 use Illuminate\Support\Facades\Notification;
 
 beforeEach(function () {
@@ -113,6 +114,10 @@ test('prayer wall works over the API and respects visibility', function () {
         ->assertCreated()->json('data.id');
 
     $friendToken = $friend->createToken('t')->plainTextToken;
+    app('auth')->forgetGuards();
+    $this->withToken($friendToken)->postJson(route('api.v1.prayer.pray', $id))->assertForbidden(); // awaiting pastor approval
+
+    app(PrayerService::class)->approve(PrayerRequest::find($id), member());
     app('auth')->forgetGuards();
     $this->withToken($friendToken)->postJson(route('api.v1.prayer.pray', $id))->assertOk()->assertJson(['prayed' => true, 'count' => 1]);
 

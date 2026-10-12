@@ -1,4 +1,8 @@
 <div class="d-grid gap-4">
+    @if ($church->hasSlider())
+        @include('partials.home-slider', ['slides' => app(\App\Services\HomeSlider::class)->forUser(auth()->user() ?? new \App\Models\User, $church), 'sliderId' => 'ff-church-page-slider'])
+    @endif
+
     <section class="ff-card">
         <h2 class="h5">{{ __('About :church', ['church' => $church->name]) }}</h2>
         @if ($church->tagline)<p class="fw-semibold text-ff-primary">{{ $church->tagline }}</p>@endif

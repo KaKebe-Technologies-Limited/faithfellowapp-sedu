@@ -10,7 +10,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
+use Spatie\Image\Enums\Fit;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media as SpatieMedia;
@@ -96,14 +98,36 @@ class Church extends Model implements HasMedia
         $this->addMediaCollection('logo')->singleFile()->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml']);
         $this->addMediaCollection('cover')->singleFile()->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp']);
         $this->addMediaCollection('gallery');
+        // Home-screen slider (members see these interleaved with their other churches).
+        $this->addMediaCollection('slides')->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp']);
         // General-purpose media library uploads (images, audio, documents).
         $this->addMediaCollection('library');
     }
 
     public function registerMediaConversions(?SpatieMedia $media = null): void
     {
-        $this->addMediaConversion('thumb')->width(240)->height(240)->nonQueued()->performOnCollections('logo', 'gallery', 'library');
-        $this->addMediaConversion('banner')->width(1600)->height(600)->nonQueued()->performOnCollections('cover');
+        // Logos are always shown square: centre-crop whatever was uploaded.
+        $this->addMediaConversion('thumb')->fit(Fit::Crop, 400, 400)->nonQueued()->performOnCollections('logo', 'gallery', 'library');
+        $this->addMediaConversion('banner')->fit(Fit::Crop, 1600, 600)->nonQueued()->performOnCollections('cover');
+        $this->addMediaConversion('slide')->fit(Fit::Crop, 1600, 700)->format('jpg')->quality(82)->nonQueued()->performOnCollections('slides');
+        $this->addMediaConversion('slide-sm')->fit(Fit::Crop, 800, 600)->format('jpg')->quality(78)->nonQueued()->performOnCollections('slides');
+    }
+
+    /**
+     * Slider photos in display order.
+     *
+     * @return Collection<int, SpatieMedia>
+     */
+    public function slides()
+    {
+        return ($this->relationLoaded('media') ? $this->media : $this->media()->get())
+            ->where('collection_name', 'slides')->sortBy('order_column')->values();
+    }
+
+    /** The church appears in members' home slider once it has enough photos. */
+    public function hasSlider(): bool
+    {
+        return $this->slides()->count() >= (int) config('faithfellows.limits.min_slides', 4);
     }
 
     public function getLogoUrlAttribute(): ?string
@@ -111,6 +135,19 @@ class Church extends Model implements HasMedia
         $media = $this->relationLoaded('media') ? $this->media->firstWhere('collection_name', 'logo') : $this->getFirstMedia('logo');
 
         return $media ? ($media->mime_type === 'image/svg+xml' ? $media->getUrl() : $media->getUrl('thumb')) : null;
+    }
+
+    /**
+     * Phone, email, website, street address and social links are only shown to
+     * people who follow the church, its staff and platform admins.
+     */
+    public function contactsVisibleTo(?User $user): bool
+    {
+        if (! config('faithfellows.privacy.contacts_for_subscribers_only', true)) {
+            return true;
+        }
+
+        return $user !== null && ($user->isSubscribedTo($this->id) || $user->isStaffOf($this));
     }
 
     public function getCoverUrlAttribute(): ?string
@@ -317,6 +354,21 @@ class Church extends Model implements HasMedia
     public function comments(): HasMany
     {
         return $this->hasMany(Comment::class);
+    }
+
+    public function quizzes(): HasMany
+    {
+        return $this->hasMany(Quiz::class);
+    }
+
+    public function quizSessions(): HasMany
+    {
+        return $this->hasMany(QuizSession::class);
+    }
+
+    public function readingCircles(): HasMany
+    {
+        return $this->hasMany(ReadingCircle::class);
     }
 
     public function churchBroadcasts(): HasMany

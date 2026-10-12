@@ -5,6 +5,7 @@ namespace App\Http\Controllers\ChurchAdmin;
 use App\Http\Controllers\Controller;
 use App\Models\Church;
 use App\Models\Post;
+use App\Services\ContentPublisher;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -47,6 +48,9 @@ class PostController extends Controller
         foreach ($request->file('images', []) as $image) {
             $post->addMedia($image)->toMediaCollection('images');
         }
+
+        // Followers get an in-app (and push, per their settings) alert; scheduled posts alert when they go live.
+        app(ContentPublisher::class)->announceIfLive($post->load('church'));
 
         return back()->with('success', $post->published_at->isFuture() ? __('Post scheduled.') : __('Posted to your members’ feeds.'));
     }
