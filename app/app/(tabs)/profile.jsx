@@ -111,6 +111,19 @@ export default function ProfileScreen() {
           </Card>
         )}
 
+        {me?.staff_of?.length ? (
+          <Pressable onPress={() => router.push('/admin')} style={styles.admin} accessibilityRole="button" accessibilityLabel="Manage your church">
+            <View style={styles.adminIcon}>
+              <Ionicons name="shield-checkmark" size={22} color={COLORS.white} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <AppText style={styles.adminTitle}>Manage {me.staff_of.length === 1 ? me.staff_of[0].name : 'your churches'}</AppText>
+              <AppText variant="caption">Announcements, events, prayer, quizzes, live and more</AppText>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={COLORS.primary} />
+          </Pressable>
+        ) : null}
+
         <AppText variant="label" style={styles.section}>
           My things
         </AppText>
@@ -159,6 +172,9 @@ const styles = StyleSheet.create({
   section: { marginTop: SPACING.md, color: COLORS.gray700, textTransform: 'uppercase', letterSpacing: 0.6 },
   list: { gap: SPACING.sm },
   church: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md },
+  admin: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: COLORS.primaryMist, borderRadius: RADIUS.lg + 2, padding: 14, marginTop: SPACING.md },
+  adminIcon: { width: 44, height: 44, borderRadius: 15, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center' },
+  adminTitle: { fontFamily: FONTS.bold, fontSize: 15.5, color: COLORS.primaryDark },
   menu: { paddingVertical: 4 },
   menuRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
   menuBorder: { borderTopWidth: 1, borderTopColor: COLORS.gray100 },

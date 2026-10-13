@@ -348,6 +348,27 @@ Notifications for requests carry `kind` (`connection_request`, `connection_accep
 
 Marks everything as read, or only the given notifications when you pass `{"ids": ["9b1e…"]}`. Returns the new unread count.
 
+## Church staff 🔒
+
+Everything a pastor or church worker does in the app. The rules are the website's: the same permissions (`church.staff` for any staff role, then `church.can:<permission>` per tool), the same validation and the same notifications. A user who is not staff of that church gets `403`, and so does a role that may not use the tool. `{church}` is the church's slug, and every record is looked up inside that church (another church's id is a `404`).
+
+- `GET /admin/churches` → the churches the signed-in user is staff of, each with `title`, `is_admin` and `permissions`. `GET /me` also returns `staff_of`, which is what makes the app show "Manage …" on the Me tab.
+- `GET /admin/{church}/dashboard` → `stats` (members, new this month, pending members, pending and private prayers, open reports, upcoming events, giving this month), the live service, the next event and the latest pending prayers. A figure the role may not see is `null`.
+
+| Permission | Endpoints |
+|---|---|
+| `content.manage` | `GET/POST /announcements`, `DELETE /announcements/{id}`; `GET/POST /devotionals`, `DELETE …/{id}`; `GET/POST /sermons`, `DELETE …/{id}`. Publishing notifies followers, as on the website. |
+| `events.manage` | `GET/POST /events`, `GET/PUT/DELETE /events/{id}` (`show` adds the stats and the guest list), `POST /events/{id}/check-in` `{ code }` — a ticket code, or the whole URL a QR ticket holds (120 a minute). |
+| `prayer.moderate` | `GET /prayer?status=pending\|private\|wall\|declined\|hidden`, `POST /prayer/{id}/approve`, `…/decline` `{ note? }`, `…/respond` `{ response }`, `…/hide`. |
+| `members.manage` | `GET /members?status=&stage=&q=` (default: active and waiting), `PUT /members/{subscriptionId}` `{ action?: approve\|block\|unblock, stage? }`. |
+| `notifications.send` | `GET /broadcasts` (the last 30 and the categories), `GET /broadcasts/estimate?audience=&stages[]=` (how many phones), `POST /broadcasts` `{ title, body, category, is_urgent?, send: now\|later, scheduled_at?, audience: members\|staff\|group\|stage, stages?, small_group_id? }` (10 a minute). |
+| `community.moderate` | `GET /reports?status=open\|actioned\|dismissed`, `POST /reports/{id}/hide`, `…/dismiss`. |
+| `quizzes.manage` | `GET/POST /quizzes` `{ title, questions: [{ question, options[], correct }] }`, `GET/DELETE /quizzes/{id}`, `POST /quizzes/{id}/host` `{ notify? }`, `GET /quiz-sessions/{id}` (host view: PIN, players, the question and answers per option, leaderboard; poll once a second), `POST /quiz-sessions/{id}/start\|reveal\|next\|end\|cancel`. |
+| `live.manage` | `GET/POST /live` `{ title, scheduled_at, source_type, external_url?, chat_enabled }`, `POST /live/{id}/start`, `…/stop`. |
+| `giving.view` | `GET /giving/summary` (today, week, month, year, by category and method, pending), `GET /giving` (latest gifts). |
+
+Left on the website on purpose: recording cash gifts, refunds and payouts, roles and billing, the church profile and slider photos, the payout set-up, and bulk imports and exports.
+
 ---
 
 ## Versioning

@@ -49,7 +49,9 @@
       "expo-asset",
       "expo-web-browser",
       "expo-image",
-      "expo-video"
+      "expo-video",
+      ["expo-camera", { "cameraPermission": "FaithFellows uses the camera to scan guests' QR tickets at your events." }],
+      ["expo-image-picker", { "photosPermission": "FaithFellows needs your photos so you can choose a profile or event picture." }]
     ],
     "experiments": {
       "typedRoutes": true

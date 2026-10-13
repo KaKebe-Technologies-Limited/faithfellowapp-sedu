@@ -147,6 +147,79 @@ Route::prefix('v1')->name('api.v1.')->middleware('throttle:api')->group(function
         Route::get('/messages/{user}', [V1\MessageController::class, 'thread'])->middleware('throttle:300,1')->name('messages.thread');
         Route::post('/messages/{user}', [V1\MessageController::class, 'send'])->middleware('throttle:60,1')->name('messages.send');
 
+        // Church staff: running the church from the app (the same permissions as the website's admin area).
+        Route::get('/admin/churches', [V1\Admin\DashboardController::class, 'churches'])->name('admin.churches');
+        Route::prefix('admin/{church}')->name('admin.')->middleware('church.staff')->scopeBindings()->group(function () {
+            Route::get('/dashboard', [V1\Admin\DashboardController::class, 'dashboard'])->name('dashboard');
+
+            Route::middleware('church.can:content.manage')->group(function () {
+                Route::get('/announcements', [V1\Admin\ContentController::class, 'announcements'])->name('announcements.index');
+                Route::post('/announcements', [V1\Admin\ContentController::class, 'storeAnnouncement'])->name('announcements.store');
+                Route::delete('/announcements/{announcement}', [V1\Admin\ContentController::class, 'destroyAnnouncement'])->name('announcements.destroy');
+                Route::get('/devotionals', [V1\Admin\ContentController::class, 'devotionals'])->name('devotionals.index');
+                Route::post('/devotionals', [V1\Admin\ContentController::class, 'storeDevotional'])->name('devotionals.store');
+                Route::delete('/devotionals/{devotional}', [V1\Admin\ContentController::class, 'destroyDevotional'])->name('devotionals.destroy');
+                Route::get('/sermons', [V1\Admin\ContentController::class, 'sermons'])->name('sermons.index');
+                Route::post('/sermons', [V1\Admin\ContentController::class, 'storeSermon'])->name('sermons.store');
+                Route::delete('/sermons/{sermon}', [V1\Admin\ContentController::class, 'destroySermon'])->name('sermons.destroy');
+            });
+
+            Route::middleware('church.can:events.manage')->group(function () {
+                Route::get('/events', [V1\Admin\EventController::class, 'index'])->name('events.index');
+                Route::post('/events', [V1\Admin\EventController::class, 'store'])->name('events.store');
+                Route::get('/events/{event}', [V1\Admin\EventController::class, 'show'])->name('events.show');
+                Route::put('/events/{event}', [V1\Admin\EventController::class, 'update'])->name('events.update');
+                Route::delete('/events/{event}', [V1\Admin\EventController::class, 'destroy'])->name('events.destroy');
+                Route::post('/events/{event}/check-in', [V1\Admin\EventController::class, 'checkIn'])->middleware('throttle:120,1')->name('events.check-in');
+            });
+
+            Route::middleware('church.can:prayer.moderate')->group(function () {
+                Route::get('/prayer', [V1\Admin\CommunityController::class, 'prayers'])->name('prayer.index');
+                Route::post('/prayer/{prayerRequest}/approve', [V1\Admin\CommunityController::class, 'approvePrayer'])->name('prayer.approve');
+                Route::post('/prayer/{prayerRequest}/decline', [V1\Admin\CommunityController::class, 'declinePrayer'])->name('prayer.decline');
+                Route::post('/prayer/{prayerRequest}/respond', [V1\Admin\CommunityController::class, 'respondPrayer'])->name('prayer.respond');
+                Route::post('/prayer/{prayerRequest}/hide', [V1\Admin\CommunityController::class, 'hidePrayer'])->name('prayer.hide');
+            });
+
+            Route::middleware('church.can:members.manage')->group(function () {
+                Route::get('/members', [V1\Admin\CommunityController::class, 'members'])->name('members.index');
+                Route::put('/members/{subscription}', [V1\Admin\CommunityController::class, 'updateMember'])->name('members.update');
+            });
+
+            Route::middleware('church.can:notifications.send')->group(function () {
+                Route::get('/broadcasts', [V1\Admin\CommunityController::class, 'broadcasts'])->name('broadcasts.index');
+                Route::get('/broadcasts/estimate', [V1\Admin\CommunityController::class, 'estimate'])->name('broadcasts.estimate');
+                Route::post('/broadcasts', [V1\Admin\CommunityController::class, 'sendBroadcast'])->middleware('throttle:10,1')->name('broadcasts.store');
+            });
+
+            Route::middleware('church.can:community.moderate')->group(function () {
+                Route::get('/reports', [V1\Admin\CommunityController::class, 'reports'])->name('reports.index');
+                Route::post('/reports/{contentReport}/hide', [V1\Admin\CommunityController::class, 'hideReported'])->name('reports.hide');
+                Route::post('/reports/{contentReport}/dismiss', [V1\Admin\CommunityController::class, 'dismissReport'])->name('reports.dismiss');
+            });
+
+            Route::middleware('church.can:quizzes.manage')->group(function () {
+                Route::get('/quizzes', [V1\Admin\GamesController::class, 'index'])->name('quizzes.index');
+                Route::post('/quizzes', [V1\Admin\GamesController::class, 'store'])->name('quizzes.store');
+                Route::get('/quizzes/{quiz}', [V1\Admin\GamesController::class, 'show'])->name('quizzes.show');
+                Route::delete('/quizzes/{quiz}', [V1\Admin\GamesController::class, 'destroy'])->name('quizzes.destroy');
+                Route::post('/quizzes/{quiz}/host', [V1\Admin\GamesController::class, 'host'])->name('quizzes.host');
+                Route::get('/quiz-sessions/{quizSession}', [V1\Admin\GamesController::class, 'state'])->middleware('throttle:300,1')->name('quiz-sessions.state');
+                Route::post('/quiz-sessions/{quizSession}/{action}', [V1\Admin\GamesController::class, 'action'])->name('quiz-sessions.action');
+            });
+
+            Route::middleware('church.can:live.manage')->group(function () {
+                Route::get('/live', [V1\Admin\LiveController::class, 'index'])->name('live.index');
+                Route::post('/live', [V1\Admin\LiveController::class, 'store'])->name('live.store');
+                Route::post('/live/{liveStream}/start', [V1\Admin\LiveController::class, 'start'])->name('live.start');
+                Route::post('/live/{liveStream}/stop', [V1\Admin\LiveController::class, 'stop'])->name('live.stop');
+            });
+
+            Route::middleware('church.can:giving.view')->group(function () {
+                Route::get('/giving/summary', [V1\Admin\GivingController::class, 'summary'])->name('giving.summary');
+                Route::get('/giving', [V1\Admin\GivingController::class, 'index'])->name('giving.index');
+            });
+        });
         Route::get('/notifications', [V1\CommunityController::class, 'notifications'])->name('notifications.index');
         Route::post('/notifications/read', [V1\CommunityController::class, 'readNotifications'])->name('notifications.read');
     });

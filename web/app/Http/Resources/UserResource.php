@@ -40,6 +40,7 @@ class UserResource extends JsonResource
                 'low_bandwidth' => (bool) $this->low_bandwidth,
             ],
             'churches' => ChurchSummaryResource::collection($this->whenLoaded('subscribedChurches')),
+            'staff_of' => $this->staffMemberships()->where('status', 'active')->with('church')->get()->filter(fn ($s) => $s->church && $s->church->status !== 'archived')->map(fn ($s) => ['id' => $s->church->id, 'slug' => $s->church->slug, 'name' => $s->church->name])->values(),
             'unread_notifications' => $this->unreadNotifications()->count(),
             'unread_messages' => DirectMessage::where('recipient_id', $this->id)->whereNull('read_at')->count(),
             'connection_requests' => Connection::where('addressee_id', $this->id)->where('status', 'pending')->count(),
