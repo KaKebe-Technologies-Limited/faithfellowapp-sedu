@@ -22,7 +22,7 @@ npx expo export --platform android --output-dir dist   # build a JS bundle to ca
   outside it: `components/`, `lib/`, `constants/`.
 - JavaScript only (`.js` / `.jsx`) for now. Every file starts with a short comment saying what it is for.
 - Every screen handles loading, error and empty states — use `components/StateView.jsx`.
-- Brand: `COLORS.primary` is `#BC2649`; fonts are Space Grotesk via `AppText`. Take colours and spacing from `constants/theme.js`.
+- Brand: `COLORS.primary` is `#BC2649`; fonts are Clarity City (the website font) via `AppText`. Take colours and spacing from `constants/theme.js`.
 - All API calls go through `lib/api.js` (Bearer token from secure storage, friendly `errorMessage()`); use `lib/useFetch.js` for GETs.
 - Only `EXPO_PUBLIC_*` environment variables reach the app. Keep `app/.env` out of git (use `.env.example`).
 - Do not edit `ios/` or `android/` by hand; configure native behaviour in `app.json` and config plugins.

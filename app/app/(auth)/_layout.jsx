@@ -1,4 +1,4 @@
-// Layout for the signed-out screens (sign in, create account): a plain magenta header, and a
+// Layout for the signed-out screens (welcome, sign in, create account, forgot password): a plain magenta header, and a
 // redirect into the app if the user is already signed in.
 import { Redirect, Stack } from 'expo-router';
 import { COLORS } from '../../constants/theme';
@@ -19,6 +19,8 @@ export default function AuthLayout() {
         headerShadowVisible: false,
         contentStyle: { backgroundColor: COLORS.white },
       }}
-    />
+    >
+      <Stack.Screen name="welcome" options={{ headerShown: false }} />
+    </Stack>
   );
 }

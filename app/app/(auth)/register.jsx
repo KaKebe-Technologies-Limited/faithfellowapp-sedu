@@ -2,14 +2,14 @@
 // POST /api/v1/auth/register → signed in and taken to the feed. Server validation errors show under
 // each field. States: loading (button spinner), error (inline message), empty (n/a for a form).
 import { useState } from 'react';
-import { KeyboardAvoidingView, Linking, Platform, ScrollView, StyleSheet, Switch, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Switch, View } from 'react-native';
 import { Link, router } from 'expo-router';
 import AppText from '../../components/AppText';
 import Button from '../../components/Button';
 import GoogleButton from '../../components/GoogleButton';
 import TextField from '../../components/TextField';
 import { COLORS, RADIUS, SPACING } from '../../constants/theme';
-import { SITE_URL, errorMessage, fieldErrors } from '../../lib/api';
+import { errorMessage, fieldErrors } from '../../lib/api';
 import { useAuth } from '../../lib/auth';
 import { GOOGLE_ENABLED } from '../../lib/google';
 
@@ -113,11 +113,11 @@ export default function Register() {
             />
             <AppText variant="caption" style={styles.termsText}>
               I agree to the{' '}
-              <AppText variant="caption" style={styles.link} onPress={() => Linking.openURL(`${SITE_URL}/terms`)}>
+              <AppText variant="caption" style={styles.link} onPress={() => router.push('/legal/terms')}>
                 Terms of Service
               </AppText>{' '}
               and{' '}
-              <AppText variant="caption" style={styles.link} onPress={() => Linking.openURL(`${SITE_URL}/privacy`)}>
+              <AppText variant="caption" style={styles.link} onPress={() => router.push('/legal/privacy')}>
                 Privacy Policy
               </AppText>
               .

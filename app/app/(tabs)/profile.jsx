@@ -1,7 +1,8 @@
 // Profile tab: your details (GET /api/v1/me), a server health check (GET /api/ping) and sign out.
 // Shows loading, error and (no followed churches) empty states.
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Image, Linking, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Image, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import AppText from '../../components/AppText';
 import Button from '../../components/Button';
@@ -9,10 +10,20 @@ import Card from '../../components/Card';
 import ChurchAvatar from '../../components/ChurchAvatar';
 import StateView from '../../components/StateView';
 import { COLORS, FONTS, RADIUS, SPACING } from '../../constants/theme';
-import { API_ROOT, SITE_URL, mediaUrl, ping } from '../../lib/api';
+import { API_ROOT, mediaUrl, ping } from '../../lib/api';
 import { useAuth } from '../../lib/auth';
 import { initials } from '../../lib/format';
 import { useFetch } from '../../lib/useFetch';
+
+const MENU = [
+  { icon: 'ticket-outline', label: 'My tickets', path: '/tickets' },
+  { icon: 'calendar-outline', label: 'Events', path: '/events' },
+  { icon: 'hand-left-outline', label: 'Prayer wall', path: '/prayer' },
+  { icon: 'book-outline', label: 'Devotionals', path: '/devotionals' },
+  { icon: 'flag-outline', label: 'Giving campaigns', path: '/campaigns' },
+  { icon: 'document-text-outline', label: 'Terms of Service', path: '/legal/terms' },
+  { icon: 'shield-checkmark-outline', label: 'Privacy Policy', path: '/legal/privacy' },
+];
 
 export default function ProfileScreen() {
   const { signOut } = useAuth();
@@ -42,7 +53,7 @@ export default function ProfileScreen() {
         style: 'destructive',
         onPress: async () => {
           await signOut();
-          router.replace('/(auth)/login');
+          router.replace('/(auth)/welcome');
         },
       },
     ]);
@@ -99,6 +110,21 @@ export default function ProfileScreen() {
         )}
 
         <AppText variant="label" style={styles.section}>
+          My things
+        </AppText>
+        <Card style={styles.menu}>
+          {MENU.map((item, i) => (
+            <Pressable key={item.path} onPress={() => router.push(item.path)} style={[styles.menuRow, i > 0 && styles.menuBorder]} accessibilityRole="button">
+              <View style={styles.menuIcon}>
+                <Ionicons name={item.icon} size={18} color={COLORS.primary} />
+              </View>
+              <AppText style={{ flex: 1, fontFamily: FONTS.medium, color: COLORS.black }}>{item.label}</AppText>
+              <Ionicons name="chevron-forward" size={16} color={COLORS.gray500} />
+            </Pressable>
+          ))}
+        </Card>
+
+        <AppText variant="label" style={styles.section}>
           Connection
         </AppText>
         <Card style={styles.server}>
@@ -113,7 +139,6 @@ export default function ProfileScreen() {
         </Card>
 
         <View style={styles.actions}>
-          <Button title="Open the website" variant="outline" onPress={() => Linking.openURL(SITE_URL)} />
           <Button title="Sign out" onPress={confirmSignOut} />
         </View>
       </ScrollView>
@@ -131,6 +156,10 @@ const styles = StyleSheet.create({
   section: { marginTop: SPACING.md, color: COLORS.gray700, textTransform: 'uppercase', letterSpacing: 0.6 },
   list: { gap: SPACING.sm },
   church: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md },
+  menu: { paddingVertical: 4 },
+  menuRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
+  menuBorder: { borderTopWidth: 1, borderTopColor: COLORS.gray100 },
+  menuIcon: { width: 34, height: 34, borderRadius: 11, backgroundColor: COLORS.primaryMist, alignItems: 'center', justifyContent: 'center' },
   server: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md },
   dot: { width: 10, height: 10, borderRadius: 5 },
   actions: { gap: SPACING.sm, marginTop: SPACING.lg, marginBottom: SPACING.lg },

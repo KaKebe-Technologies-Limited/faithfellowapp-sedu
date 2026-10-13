@@ -1,5 +1,5 @@
 // FaithFellows brand tokens for the mobile app: colours, fonts, spacing, radii and shadow.
-// Mirrors the web design system (Viva Magenta #BC2649, Space Grotesk) and its mobile look:
+// Mirrors the web design system (Viva Magenta #BC2649, Clarity City) and its mobile look:
 // a soft light canvas with white rounded cards and pink accents.
 
 export const COLORS = {
@@ -28,10 +28,10 @@ export const COLORS = {
 };
 
 export const FONTS = {
-  regular: 'SpaceGrotesk_400Regular',
-  medium: 'SpaceGrotesk_500Medium',
-  semibold: 'SpaceGrotesk_600SemiBold',
-  bold: 'SpaceGrotesk_700Bold',
+  regular: 'ClarityCity_400Regular',
+  medium: 'ClarityCity_500Medium',
+  semibold: 'ClarityCity_600SemiBold',
+  bold: 'ClarityCity_700Bold',
 };
 
 export const SPACING = { xs: 4, sm: 8, md: 16, lg: 24, xl: 32, xxl: 48 };

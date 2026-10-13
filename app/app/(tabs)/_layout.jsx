@@ -15,7 +15,7 @@ export default function TabsLayout() {
   const { ready, token } = useAuth();
   const insets = useSafeAreaInsets();
 
-  if (ready && !token) return <Redirect href="/(auth)/login" />;
+  if (ready && !token) return <Redirect href="/(auth)/welcome" />;
 
   return (
     <Tabs

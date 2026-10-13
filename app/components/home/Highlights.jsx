@@ -1,7 +1,7 @@
 // "Highlights" rail on the home screen: swipeable cards for what matters now in your churches —
 // urgent notices first, then upcoming events, today's devotional, giving campaigns and the latest
 // sermons. Built from the one GET /api/v1/home response.
-import { Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -15,7 +15,7 @@ import SectionHeader from '../SectionHeader';
 
 const CARD_W = 284;
 const CARD_H = 184;
-const open = (url) => url && Linking.openURL(mediaUrl(url));
+const go = (pathname, id) => router.push({ pathname, params: { id } });
 
 /** Photo (or brand gradient) backdrop with a dark fade, for the image-led cards. */
 function Backdrop({ uri, colors = [COLORS.primaryDark, COLORS.primary] }) {
@@ -38,7 +38,7 @@ function Frame({ onPress, style, label, children }) {
 
 function AnnouncementCard({ a }) {
   return (
-    <Frame label={`Announcement: ${a.title}`} style={[styles.light, a.urgent && styles.urgent]}>
+    <Frame onPress={() => go('/announcement/[id]', a.id)} label={`Announcement: ${a.title}`} style={[styles.light, a.urgent && styles.urgent]}>
       <Pill label={a.urgent ? 'Urgent' : 'Announcement'} icon="megaphone-outline" tone={a.urgent ? 'urgent' : 'soft'} />
       <AppText style={styles.cardTitle} numberOfLines={2}>
         {a.title}
@@ -56,7 +56,7 @@ function AnnouncementCard({ a }) {
 function EventCard({ e }) {
   const tile = e.starts_at ? dateTile(e.starts_at) : null;
   return (
-    <Frame onPress={() => open(e.web_url)} label={`Event: ${e.title}`}>
+    <Frame onPress={() => go('/event/[id]', e.id)} label={`Event: ${e.title}`}>
       <Backdrop uri={e.cover_url} />
       <View style={styles.topRow}>
         {tile ? (
@@ -84,7 +84,7 @@ function EventCard({ e }) {
 
 function DevotionalCard({ d }) {
   return (
-    <Frame onPress={() => open(d.web_url)} label={`Devotional: ${d.title}`} style={styles.pinkCard}>
+    <Frame onPress={() => go('/devotional/[id]', d.id)} label={`Devotional: ${d.title}`} style={styles.pinkCard}>
       <Pill label="Devotional of the day" icon="book-outline" tone="white" />
       <AppText style={styles.quote} numberOfLines={4}>
         {d.scripture_text ? `“${d.scripture_text}”` : d.excerpt}
@@ -102,7 +102,7 @@ function DevotionalCard({ d }) {
 function CampaignCard({ c }) {
   const pct = Math.max(0, Math.min(100, Math.round(c.percent)));
   return (
-    <Frame onPress={() => open(c.web_url)} label={`Campaign: ${c.title}`} style={styles.light}>
+    <Frame onPress={() => go('/campaign/[id]', c.id)} label={`Campaign: ${c.title}`} style={styles.light}>
       <View style={styles.topRow}>
         <Pill label="Campaign" icon="flag-outline" />
         <View style={styles.give}>
@@ -127,7 +127,7 @@ function CampaignCard({ c }) {
 
 function SermonCard({ s }) {
   return (
-    <Frame onPress={() => router.push('/(tabs)/sermons')} label={`Sermon: ${s.title}`}>
+    <Frame onPress={() => go('/sermon/[id]', s.id)} label={`Sermon: ${s.title}`}>
       <Backdrop uri={s.thumbnail_url} colors={['#2A0A14', COLORS.primaryDark]} />
       <View style={styles.topRow}>
         <Pill label="Sermon" icon="mic-outline" tone="dark" />
@@ -152,7 +152,7 @@ function SermonCard({ s }) {
 
 function SoonCard({ stream }) {
   return (
-    <Frame onPress={() => open(stream.watch_url)} label={`Upcoming live service: ${stream.title}`}>
+    <Frame onPress={() => go('/live/[id]', stream.id)} label={`Upcoming live service: ${stream.title}`}>
       <Backdrop colors={['#2A0A14', '#5B1229']} />
       <View style={styles.topRow}>
         <Pill label="Live service" icon="radio-outline" tone="dark" />

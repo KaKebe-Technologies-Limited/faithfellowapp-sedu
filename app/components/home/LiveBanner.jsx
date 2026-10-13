@@ -1,9 +1,9 @@
 // "Live now" card shown above the highlights when a church you follow is streaming. Tap opens the stream.
 import { useEffect, useRef } from 'react';
-import { Animated, Linking, Pressable, StyleSheet, View } from 'react-native';
+import { Animated, Pressable, StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
 import { COLORS, FONTS, RADIUS, SHADOW, SPACING } from '../../constants/theme';
-import { mediaUrl } from '../../lib/api';
 import AppText from '../AppText';
 import ChurchAvatar from '../ChurchAvatar';
 
@@ -25,7 +25,7 @@ export default function LiveBanner({ stream }) {
 
   return (
     <Pressable
-      onPress={() => Linking.openURL(mediaUrl(stream.watch_url))}
+      onPress={() => router.push({ pathname: '/live/[id]', params: { id: stream.id } })}
       accessibilityRole="button"
       accessibilityLabel={`${stream.church?.name} is live: ${stream.title}. Watch now`}
       style={styles.wrap}

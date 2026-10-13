@@ -1,16 +1,16 @@
-// Root layout: loads the Space Grotesk fonts, keeps the splash screen up until the app is ready,
+// Root layout: loads the Clarity City fonts (the website's typeface), keeps the splash screen up until the app is ready,
 // provides authentication to every screen and defines the top-level navigation stack.
 import { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import {
-  SpaceGrotesk_400Regular,
-  SpaceGrotesk_500Medium,
-  SpaceGrotesk_600SemiBold,
-  SpaceGrotesk_700Bold,
+  ClarityCity_400Regular,
+  ClarityCity_500Medium,
+  ClarityCity_600SemiBold,
+  ClarityCity_700Bold,
   useFonts,
-} from '@expo-google-fonts/space-grotesk';
+} from '@expo-google-fonts/clarity-city';
 import { COLORS } from '../constants/theme';
 import { AuthProvider, useAuth } from '../lib/auth';
 
@@ -43,10 +43,10 @@ function Navigator({ fontsLoaded }) {
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
-    SpaceGrotesk_400Regular,
-    SpaceGrotesk_500Medium,
-    SpaceGrotesk_600SemiBold,
-    SpaceGrotesk_700Bold,
+    ClarityCity_400Regular,
+    ClarityCity_500Medium,
+    ClarityCity_600SemiBold,
+    ClarityCity_700Bold,
   });
 
   return (

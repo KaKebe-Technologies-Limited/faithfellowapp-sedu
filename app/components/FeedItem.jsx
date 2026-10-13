@@ -3,13 +3,13 @@
 // for sermons, pink quote card for devotionals, red-bordered urgent notices, and prayer cards with a
 // working "I prayed" button. Unknown types fall back to a plain title + text card.
 import { useState } from 'react';
-import { Linking, Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { COLORS, FONTS, RADIUS, SHADOW, SPACING } from '../constants/theme';
-import api, { SITE_URL, mediaUrl } from '../lib/api';
+import api, { mediaUrl } from '../lib/api';
 import { dateTile, dayAndTime, excerpt, formatDuration, initials, timeAgo } from '../lib/format';
 import AppText from './AppText';
 import ChurchAvatar from './ChurchAvatar';
@@ -26,7 +26,7 @@ const TYPES = {
   testimony: { icon: 'sparkles-outline', label: 'Testimony' },
 };
 
-const open = (url) => url && Linking.openURL(mediaUrl(url));
+const go = (pathname, id) => router.push({ pathname, params: { id } });
 
 /** Initials on a pink circle, for people (prayer and testimony authors) rather than churches. */
 function PersonAvatar({ name, anonymous }) {
@@ -72,7 +72,7 @@ function EventBody({ item }) {
   const action = item.is_paid ? 'Tickets' : item.rsvp_enabled ? 'RSVP' : 'View';
 
   return (
-    <Pressable onPress={() => open(item.web_url)} style={styles.eventRow} accessibilityRole="button" accessibilityLabel={`${item.title}, ${action}`}>
+    <Pressable onPress={() => go('/event/[id]', item.id)} style={styles.eventRow} accessibilityRole="button" accessibilityLabel={`${item.title}, ${action}`}>
       {tile ? (
         <View style={styles.tile}>
           <AppText style={styles.tileMonth}>{tile.month}</AppText>
@@ -98,7 +98,7 @@ function SermonBody({ item }) {
   const meta = [item.preacher, item.scripture, item.duration_seconds ? `${Math.round(item.duration_seconds / 60)} min` : null].filter(Boolean).join(' · ');
 
   return (
-    <Pressable onPress={() => router.push('/(tabs)/sermons')} style={styles.sermonRow} accessibilityRole="button" accessibilityLabel={`Open sermon ${item.title}`}>
+    <Pressable onPress={() => go('/sermon/[id]', item.id)} style={styles.sermonRow} accessibilityRole="button" accessibilityLabel={`Open sermon ${item.title}`}>
       <View style={styles.thumb}>
         {item.thumbnail_url ? <Image source={{ uri: mediaUrl(item.thumbnail_url) }} style={StyleSheet.absoluteFill} contentFit="cover" /> : null}
         {!item.thumbnail_url ? <LinearGradient colors={[COLORS.primaryLight, COLORS.primaryDark]} style={StyleSheet.absoluteFill} /> : null}
@@ -152,7 +152,7 @@ function PrayerBody({ item }) {
           <AppText style={styles.prayedEmoji}>🙏</AppText>
           <AppText style={[styles.prayedText, prayed && { color: COLORS.white }]}>I prayed {count}</AppText>
         </Pressable>
-        <Pressable onPress={() => open(`${SITE_URL}/prayer/${item.id}`)} style={styles.openLink} accessibilityRole="link" hitSlop={8}>
+        <Pressable onPress={() => go('/prayer/[id]', item.id)} style={styles.openLink} accessibilityRole="link" hitSlop={8}>
           <AppText variant="label" style={{ color: COLORS.primary }}>
             Open
           </AppText>
@@ -175,7 +175,7 @@ function Body({ entry }) {
       return <PrayerBody item={item} />;
     case 'devotional':
       return (
-        <Pressable onPress={() => open(item.web_url)} accessibilityRole="button" accessibilityLabel={`Devotional: ${item.title}`}>
+        <Pressable onPress={() => go('/devotional/[id]', item.id)} accessibilityRole="button" accessibilityLabel={`Devotional: ${item.title}`}>
           <AppText style={[styles.title, styles.devotionalTitle]}>{item.title}</AppText>
           {item.scripture_text ? <AppText style={styles.quote}>“{item.scripture_text}”</AppText> : <AppText style={styles.body}>{excerpt(item.body, 200)}</AppText>}
           {item.scripture ? <AppText style={styles.scripture}>{item.scripture}</AppText> : null}
@@ -183,7 +183,7 @@ function Body({ entry }) {
       );
     case 'live':
       return (
-        <Pressable onPress={() => open(item.watch_url)} style={styles.eventRow} accessibilityRole="button" accessibilityLabel={`Watch ${item.title}`}>
+        <Pressable onPress={() => go('/live/[id]', item.id)} style={styles.eventRow} accessibilityRole="button" accessibilityLabel={`Watch ${item.title}`}>
           <View style={{ flex: 1 }}>
             <AppText style={styles.title}>{item.title}</AppText>
           </View>
@@ -194,10 +194,10 @@ function Body({ entry }) {
       );
     case 'announcement':
       return (
-        <>
+        <Pressable onPress={() => go('/announcement/[id]', item.id)} accessibilityRole="button" accessibilityLabel={`Announcement: ${item.title}`}>
           {item.title ? <AppText style={[styles.title, { fontSize: 16 }]}>{item.title}</AppText> : null}
           <AppText style={styles.noticeBody}>{excerpt(item.body, 280)}</AppText>
-        </>
+        </Pressable>
       );
     case 'post':
       return (

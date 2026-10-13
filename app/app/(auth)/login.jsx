@@ -2,7 +2,7 @@
 // "Continue with Google" appears above the form only when Google sign-in is switched on
 // (EXPO_PUBLIC_GOOGLE_SIGNIN=1). States: loading (button spinner), error (inline message).
 import { useState } from 'react';
-import { KeyboardAvoidingView, Linking, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { Link, router } from 'expo-router';
 import AppText from '../../components/AppText';
 import Button from '../../components/Button';
@@ -10,7 +10,7 @@ import GoogleButton from '../../components/GoogleButton';
 import Logo from '../../components/Logo';
 import TextField from '../../components/TextField';
 import { COLORS, RADIUS, SPACING } from '../../constants/theme';
-import { API_ROOT, SITE_URL, errorMessage, fieldErrors } from '../../lib/api';
+import { API_ROOT, errorMessage, fieldErrors } from '../../lib/api';
 import { useAuth } from '../../lib/auth';
 import { GOOGLE_ENABLED } from '../../lib/google';
 
@@ -105,7 +105,7 @@ export default function Login() {
           <AppText
             variant="label"
             style={styles.forgot}
-            onPress={() => Linking.openURL(`${SITE_URL}/forgot-password`)}
+            onPress={() => router.push('/(auth)/forgot')}
             accessibilityRole="link"
           >
             Forgot your password?

@@ -180,7 +180,7 @@ export default function ChurchScreen() {
             {upcoming.map((e) => {
               const tile = dateTile(e.starts_at);
               return (
-                <Pressable key={e.id} onPress={() => open(e.web_url)} style={[styles.card, styles.listCard]} accessibilityRole="button">
+                <Pressable key={e.id} onPress={() => router.push({ pathname: '/event/[id]', params: { id: e.id } })} style={[styles.card, styles.listCard]} accessibilityRole="button">
                   <View style={styles.tile}>
                     <AppText style={styles.tileMonth}>{tile.month}</AppText>
                     <AppText style={styles.tileDay}>{tile.day}</AppText>
@@ -204,7 +204,7 @@ export default function ChurchScreen() {
           <View style={{ marginTop: SPACING.md }}>
             <SectionHeader title="Recent sermons" actionLabel="All sermons" onAction={() => router.push('/(tabs)/sermons')} />
             {recent.map((s) => (
-              <Pressable key={s.id} onPress={() => router.push('/(tabs)/sermons')} style={[styles.card, styles.listCard]} accessibilityRole="button">
+              <Pressable key={s.id} onPress={() => router.push({ pathname: '/sermon/[id]', params: { id: s.id } })} style={[styles.card, styles.listCard]} accessibilityRole="button">
                 <View style={styles.play}>
                   <Ionicons name="play" size={16} color={COLORS.white} style={{ marginLeft: 2 }} />
                 </View>
@@ -239,7 +239,10 @@ export default function ChurchScreen() {
             )}
           </View>
 
-          <Button title="Open full page on the website" variant="outline" onPress={() => open(info.web_url)} style={{ marginTop: SPACING.md }} />
+          <View style={styles.actions}>
+            <Button title="Give to this church" onPress={() => router.push({ pathname: '/give/[slug]', params: { slug: info.slug } })} style={{ flex: 1 }} />
+            {info.is_subscribed ? <Button title="Prayer wall" variant="outline" onPress={() => router.push('/prayer')} style={{ flex: 1 }} /> : null}
+          </View>
         </View>
       </ScrollView>
     </View>
@@ -266,5 +269,6 @@ const styles = StyleSheet.create({
   play: { width: 40, height: 40, borderRadius: 20, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center' },
   contactRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 8 },
   contactIcon: { width: 36, height: 36, borderRadius: 12, backgroundColor: COLORS.primaryMist, alignItems: 'center', justifyContent: 'center' },
+  actions: { flexDirection: 'row', gap: 10, marginTop: SPACING.md },
   locked: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: COLORS.primaryMist, borderRadius: RADIUS.md, padding: SPACING.md },
 });
