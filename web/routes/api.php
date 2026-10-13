@@ -60,6 +60,7 @@ Route::prefix('v1')->name('api.v1.')->middleware('throttle:api')->group(function
         Route::get('/devotionals', [V1\ReadingController::class, 'devotionals'])->name('devotionals.index');
         Route::get('/devotionals/{devotional}', [V1\ReadingController::class, 'devotional'])->name('devotionals.show');
         Route::get('/announcements', [V1\ReadingController::class, 'announcements'])->name('announcements.index');
+        Route::get('/radio', [V1\RadioController::class, 'show'])->middleware('throttle:120,1')->name('radio');
         Route::get('/posts/{post}', [V1\ContentController::class, 'post'])->name('posts.show');
         Route::get('/announcements/{announcement}', [V1\ReadingController::class, 'announcement'])->name('announcements.show');
         Route::get('/campaigns', [V1\ReadingController::class, 'campaigns'])->name('campaigns.index');

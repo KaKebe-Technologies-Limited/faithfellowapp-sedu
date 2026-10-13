@@ -1,7 +1,9 @@
 // Root layout: loads the Clarity City fonts (the website's typeface), keeps the splash screen up until the app is ready,
 // provides authentication to every screen and defines the top-level navigation stack.
 import { useEffect } from 'react';
-import { Stack } from 'expo-router';
+import { View } from 'react-native';
+import { Stack, useSegments } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import {
@@ -11,11 +13,13 @@ import {
   ClarityCity_700Bold,
   useFonts,
 } from '@expo-google-fonts/clarity-city';
+import RadioMiniPlayer from '../components/radio/RadioMiniPlayer';
 import { COLORS } from '../constants/theme';
 import { AuthProvider, useAuth } from '../lib/auth';
 import { useOfflineSync } from '../lib/outbox';
 import { syncNotes } from '../lib/notesSync';
 import { usePushSetup } from '../lib/push';
+import { useRadioLifecycle } from '../lib/radio';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -23,6 +27,11 @@ function Navigator({ fontsLoaded }) {
   const { ready, user } = useAuth();
   usePushSetup(user);
   useOfflineSync(user, syncNotes);
+  useRadioLifecycle();
+  const segments = useSegments();
+  const insets = useSafeAreaInsets();
+  // The tab screens carry the radio bar inside their own tab bar; every other screen gets it here, at the bottom.
+  const showBar = !!user && !['(tabs)', '(auth)', 'onboarding', 'radio'].includes(segments[0]);
 
   useEffect(() => {
     if (fontsLoaded && ready) SplashScreen.hideAsync().catch(() => {});
@@ -31,7 +40,7 @@ function Navigator({ fontsLoaded }) {
   if (!fontsLoaded) return null;
 
   return (
-    <>
+    <View style={{ flex: 1 }}>
       <StatusBar style="light" />
       <Stack
         screenOptions={{
@@ -42,7 +51,8 @@ function Navigator({ fontsLoaded }) {
           headerShown: false,
         }}
       />
-    </>
+      {showBar ? <RadioMiniPlayer bottomInset={insets.bottom} /> : null}
+    </View>
   );
 }
 

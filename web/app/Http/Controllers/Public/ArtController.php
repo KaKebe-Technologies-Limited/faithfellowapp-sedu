@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Campaign;
 use App\Models\Devotional;
 use App\Models\Event;
+use App\Models\RadioTrack;
 use App\Models\Sermon;
 use App\Models\SmallGroup;
 use App\Support\ContentArtwork;
@@ -17,12 +18,12 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
  */
 class ArtController extends Controller
 {
-    private const KINDS = ['event' => Event::class, 'sermon' => Sermon::class, 'devotional' => Devotional::class, 'campaign' => Campaign::class, 'group' => SmallGroup::class];
+    private const KINDS = ['event' => Event::class, 'sermon' => Sermon::class, 'devotional' => Devotional::class, 'campaign' => Campaign::class, 'group' => SmallGroup::class, 'radio' => RadioTrack::class];
 
     public function show(string $kind, int $id): BinaryFileResponse
     {
         abort_unless(isset(self::KINDS[$kind]), 404);
-        $model = self::KINDS[$kind]::with('church')->findOrFail($id);
+        $model = $kind === 'radio' ? RadioTrack::findOrFail($id) : self::KINDS[$kind]::with('church')->findOrFail($id);
 
         // The address changes with the title and colour, so a long cache is safe.
         return response()->file(ContentArtwork::file($kind, $model), [

@@ -7,6 +7,7 @@ import { signInWithGoogleBrowser } from './google';
 import { readJson, removeFile, writeJson } from './localFiles';
 import { flush, forgetEverything } from './outbox';
 import { disablePush } from './push';
+import { stopRadio } from './radio';
 import { clearToken, getToken, onSessionExpired, setToken } from './session';
 
 const AuthContext = createContext(null);
@@ -108,6 +109,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   const signOut = useCallback(async () => {
+    stopRadio();
     await disablePush();
     // Send what was written offline, then forget this member's notes and highlight colours on the phone.
     await Promise.race([flush(), new Promise((resolve) => setTimeout(resolve, 4000))]).catch(() => {});

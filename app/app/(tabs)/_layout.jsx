@@ -3,6 +3,7 @@
 import { Redirect, Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import AppTabBar from '../../components/AppTabBar';
 import { COLORS, FONTS } from '../../constants/theme';
 import { useAuth } from '../../lib/auth';
 
@@ -19,6 +20,7 @@ export default function TabsLayout() {
 
   return (
     <Tabs
+      tabBar={(props) => <AppTabBar {...props} />}
       screenOptions={{
         headerStyle: { backgroundColor: COLORS.primary },
         headerTintColor: COLORS.white,

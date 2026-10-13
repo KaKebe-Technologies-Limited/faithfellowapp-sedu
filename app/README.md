@@ -84,6 +84,15 @@ Highlights, and notes you write, pin or delete, are saved on the phone first and
 signed-in profile is kept on the phone too, so the app starts with no internet. Signing out clears the notes and anything
 not yet sent (it warns first); a different member signing in on the same phone clears them as well.
 
+## Gospel radio
+
+A 24-hour station for the whole app (`lib/radio.js`): the super admin adds songs at `/super-admin/radio` on the website and
+the app plays them in a loop. The big round button on Home (`components/radio/RadioHero.jsx`) joins the live radio; a bar
+(`RadioMiniPlayer.jsx`) stays above the tabs, and at the bottom of every other screen, while it plays; tapping it opens the
+full player (`app/radio.jsx`). It keeps playing with the phone locked or the app in the background (iOS and Android
+background audio, with lock screen controls). On a real phone this needs a development or store build for Android; in Expo
+Go on iPhone background audio works but lock screen controls can be limited.
+
 ## Notes
 
 - This is **Expo SDK 57**. APIs change between SDKs, so check the versioned docs (`https://docs.expo.dev/versions/v57.0.0/`)

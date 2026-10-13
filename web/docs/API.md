@@ -388,6 +388,14 @@ Messages sent from the app (`POST /broadcasts`) go out as push and email, as eac
 
 Left on the website on purpose: recording cash gifts, refunds and payouts, roles and billing, the church profile and slider photos, the payout set-up, and bulk imports and exports.
 
+## Gospel radio 🔒
+
+One station for the whole app. The super admin adds the songs at `/super-admin/radio` on the website (the title, artist, length and cover are read from each file); the app plays them round the clock in a loop, and everyone hears the same song at the same moment because "now playing" is worked out from the clock.
+
+- `GET /radio` → `{ enabled, name, tagline, songs, server_time, now }`. `now` is `null` when the radio is off or has no songs; otherwise `{ track, offset, started_at, ends_at, upcoming: [4 songs with starts_at], recent: [5 songs with played_at] }`. A song is `{ id, title, artist, duration, cover_url, stream_url }`. The app plays `track` from `offset` seconds, moves on through `upcoming` by itself, and compares with the clock each time a song starts.
+- `GET /radio/stream/{id}` (not under `/api`, no sign-in) streams a song with byte-range support, so a phone can start part-way into it. `GET /radio/cover/{id}` is the cover picture; a song without one gets a drawn worship scene (`/art/radio/{id}`).
+- Website (super admin): `GET/POST /super-admin/radio` (upload, one song per request), `PUT /super-admin/radio/{song}` (title, artist, on or off), `POST /super-admin/radio/{song}/move` `{ direction: up|down }`, `DELETE /super-admin/radio/{song}`, `PUT /super-admin/radio/settings` `{ name, enabled }`. From the command line: `php artisan radio:add "song.mp3" --title= --artist=`.
+
 ---
 
 ## Versioning

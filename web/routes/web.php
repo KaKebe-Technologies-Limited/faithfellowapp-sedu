@@ -38,7 +38,9 @@ Route::get('/privacy', [Public\PageController::class, 'privacy'])->name('privacy
 Route::get('/pay/return/{reference}', function (Request $request, string $reference) {
     return view('pay.return', ['reference' => $reference, 'cancelled' => $request->boolean('cancelled')]);
 })->where('reference', '[A-Za-z0-9_-]+')->name('pay.return');
-Route::get('/art/{kind}/{id}', [Public\ArtController::class, 'show'])->whereIn('kind', ['event', 'sermon', 'devotional', 'campaign', 'group'])->whereNumber('id')->middleware('throttle:240,1')->name('art');
+Route::get('/radio/stream/{track}', [Public\RadioFileController::class, 'stream'])->whereNumber('track')->middleware('throttle:1200,1')->name('radio.stream');
+Route::get('/radio/cover/{track}', [Public\RadioFileController::class, 'cover'])->whereNumber('track')->middleware('throttle:240,1')->name('radio.cover');
+Route::get('/art/{kind}/{id}', [Public\ArtController::class, 'show'])->whereIn('kind', ['event', 'sermon', 'devotional', 'campaign', 'group', 'radio'])->whereNumber('id')->middleware('throttle:240,1')->name('art');
 Route::get('/terms', [Public\PageController::class, 'terms'])->name('terms');
 Route::get('/offline', [Public\PageController::class, 'offline'])->name('offline');
 Route::get('/sitemap.xml', [Public\SeoController::class, 'sitemap'])->name('sitemap');
@@ -542,6 +544,14 @@ Route::prefix('super-admin')->name('super-admin.')
         Route::delete('/messages/{message}', [SuperAdmin\MessageController::class, 'destroy'])->name('messages.destroy');
         Route::get('/audit-logs', [SuperAdmin\AuditLogController::class, 'index'])->name('audit-logs');
         Route::get('/audit-logs/export', [SuperAdmin\AuditLogController::class, 'export'])->name('audit-logs.export');
+
+        // Gospel radio (songs played round the clock in the app)
+        Route::get('/radio', [SuperAdmin\RadioController::class, 'index'])->name('radio.index');
+        Route::post('/radio', [SuperAdmin\RadioController::class, 'store'])->name('radio.store');
+        Route::put('/radio/settings', [SuperAdmin\RadioController::class, 'settings'])->name('radio.settings');
+        Route::put('/radio/{track}', [SuperAdmin\RadioController::class, 'update'])->name('radio.update');
+        Route::post('/radio/{track}/move', [SuperAdmin\RadioController::class, 'move'])->name('radio.move');
+        Route::delete('/radio/{track}', [SuperAdmin\RadioController::class, 'destroy'])->name('radio.destroy');
 
         // Platform settings & gateways
         Route::get('/settings', [SuperAdmin\SettingsController::class, 'edit'])->name('settings');
