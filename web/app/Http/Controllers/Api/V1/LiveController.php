@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\LiveStreamResource;
 use App\Models\LiveChatMessage;
 use App\Models\LiveStream;
+use App\Rules\NoContactDetails;
 use App\Services\StreamingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -57,7 +58,7 @@ class LiveController extends Controller
     {
         $this->authorize('view', $liveStream);
         abort_unless($liveStream->chat_enabled && $liveStream->isLive(), 422, __('Chat is closed.'));
-        $data = $request->validate(['body' => ['required', 'string', 'max:500']]);
+        $data = $request->validate(['body' => ['required', 'string', 'max:500', new NoContactDetails]]);
 
         $message = LiveChatMessage::create([
             'church_id' => $liveStream->church_id,

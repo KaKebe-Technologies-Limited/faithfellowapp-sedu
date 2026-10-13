@@ -10,6 +10,7 @@
             ['label' => __('Bible'), 'icon' => 'bi-book-half', 'route' => 'bible.index', 'active' => 'bible.*'],
             ['label' => __('My notes'), 'icon' => 'bi-journal-text', 'route' => 'notes.index', 'active' => 'notes.*'],
             ['label' => __('Sermons'), 'icon' => 'bi-mic', 'route' => 'sermons.index', 'active' => 'sermons.*'],
+            ['label' => __('My podcasts'), 'icon' => 'bi-broadcast-pin', 'route' => 'podcasts.index', 'active' => 'podcasts.*'],
             ['label' => __('Live'), 'icon' => 'bi-broadcast', 'route' => 'live.index', 'active' => 'live.*', 'badge' => ($liveNowCount ?? 0) ?: null],
             ['label' => __('Devotionals'), 'icon' => 'bi-book', 'route' => 'devotionals.index', 'active' => 'devotionals.*'],
             ['label' => __('Reading plans'), 'icon' => 'bi-journal-check', 'route' => 'reading-plans.index', 'active' => ['reading-plans.*', 'reading-circles.*']],

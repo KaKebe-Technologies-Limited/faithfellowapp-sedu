@@ -34,6 +34,7 @@ class ContentArtwork extends ChurchArtwork
         'campaign' => ['sunrise', 'waves', 'cross', 'worship'],
         'group' => ['book', 'waves', 'bokeh', 'sunrise'],
         'radio' => ['worship', 'bokeh', 'sunrise', 'waves'],
+        'podcast' => ['sunrise', 'book', 'bokeh', 'worship', 'waves'],
     ];
 
     /** A campaign's type decides its scene when the title alone does not. */

@@ -4,6 +4,7 @@ namespace App\Http\Requests\Giving;
 
 use App\Models\GivingChannel;
 use App\Services\PaymentService;
+use App\Support\MobileMoneyPhone;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -36,7 +37,7 @@ class GiveRequest extends FormRequest
                     $fail(__('This payment method is temporarily unavailable. Please choose another.'));
                 }
             }],
-            'phone' => ['nullable', 'required_if:method,iotec,mtn_momo,airtel_money', 'regex:/^(\+?256|0)?7\d{8}$/'],
+            'phone' => ['nullable', 'required_if:method,iotec,mtn_momo,airtel_money', MobileMoneyPhone::rule()],
             'campaign_id' => ['nullable', Rule::exists('campaigns', 'id')->where('church_id', $church->id)],
             'campaign_team_id' => ['nullable', Rule::exists('campaign_teams', 'id')->where('church_id', $church->id)],
             'pledge_id' => ['nullable', Rule::exists('pledges', 'id')->where('church_id', $church->id)->where('user_id', $this->user()->id)],

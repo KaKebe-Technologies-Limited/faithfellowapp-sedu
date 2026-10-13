@@ -7,6 +7,7 @@ use App\Models\Concerns\HasSubscriptions;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -164,6 +165,18 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         }
 
         return $end->setTimezone(config('app.timezone'));
+    }
+
+    /** Podcasts this member makes. */
+    public function podcasts(): HasMany
+    {
+        return $this->hasMany(Podcast::class);
+    }
+
+    /** Podcasts this member follows. */
+    public function followedPodcasts(): BelongsToMany
+    {
+        return $this->belongsToMany(Podcast::class, 'podcast_follows')->withTimestamps();
     }
 
     /** Phones running the app that can receive push notifications. */

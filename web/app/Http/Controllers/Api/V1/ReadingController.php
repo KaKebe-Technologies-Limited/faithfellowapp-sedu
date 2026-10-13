@@ -10,6 +10,7 @@ use App\Models\Announcement;
 use App\Models\Campaign;
 use App\Models\Comment;
 use App\Models\Devotional;
+use App\Rules\NoContactDetails;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -77,7 +78,7 @@ class ReadingController extends Controller
     public function comment(Request $request, Campaign $campaign): JsonResponse
     {
         $this->authorize('view', $campaign);
-        $data = $request->validate(['body' => ['required', 'string', 'max:1000']]);
+        $data = $request->validate(['body' => ['required', 'string', 'max:1000', new NoContactDetails]]);
 
         $comment = Comment::create([
             'church_id' => $campaign->church_id,

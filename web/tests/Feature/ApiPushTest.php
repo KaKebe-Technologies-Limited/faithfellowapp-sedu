@@ -198,11 +198,12 @@ test('a chat message is pushed once a minute per conversation and never in quiet
     pushActing($ann);
 
     $this->postJson(route('api.v1.messages.send', $bob), ['body' => 'Peace be with you'])->assertCreated();
+    DirectMessage::create(['sender_id' => $bob->id, 'recipient_id' => $ann->id, 'body' => 'And with you']); // Bob answers, so the chat is open
     $this->postJson(route('api.v1.messages.send', $bob), ['body' => 'Are you there?'])->assertCreated();
 
     Http::assertSentCount(1);
     Http::assertSent(fn ($r) => $r[0]['title'] === 'Ann Akello' && $r[0]['body'] === 'Peace be with you' && $r[0]['channelId'] === 'messages' && $r[0]['data']['ref'] === $ann->id);
-    expect(DirectMessage::count())->toBe(2);
+    expect(DirectMessage::count())->toBe(3);
 
     // In quiet hours the message is kept, the buzz is not.
     Cache::flush();

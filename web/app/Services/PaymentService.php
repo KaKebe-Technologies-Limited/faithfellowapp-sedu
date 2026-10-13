@@ -56,7 +56,16 @@ class PaymentService
             return new ManualDriver($method);
         }
 
-        if (config('faithfellows.payments.sandbox') || ! $class::configured()) {
+        if (config('faithfellows.payments.sandbox')) {
+            return new SandboxDriver($method);
+        }
+
+        // MTN and Airtel mobile money are collected through ioTec when their own gateways are not set up.
+        if (in_array($method, ['mtn_momo', 'airtel_money'], true) && ! $class::configured() && IotecDriver::configured()) {
+            return app(IotecDriver::class);
+        }
+
+        if (! $class::configured()) {
             return new SandboxDriver($method);
         }
 

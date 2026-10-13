@@ -40,7 +40,7 @@ Route::get('/pay/return/{reference}', function (Request $request, string $refere
 })->where('reference', '[A-Za-z0-9_-]+')->name('pay.return');
 Route::get('/radio/stream/{track}', [Public\RadioFileController::class, 'stream'])->whereNumber('track')->middleware('throttle:1200,1')->name('radio.stream');
 Route::get('/radio/cover/{track}', [Public\RadioFileController::class, 'cover'])->whereNumber('track')->middleware('throttle:240,1')->name('radio.cover');
-Route::get('/art/{kind}/{id}', [Public\ArtController::class, 'show'])->whereIn('kind', ['event', 'sermon', 'devotional', 'campaign', 'group', 'radio'])->whereNumber('id')->middleware('throttle:240,1')->name('art');
+Route::get('/art/{kind}/{id}', [Public\ArtController::class, 'show'])->whereIn('kind', ['event', 'sermon', 'devotional', 'campaign', 'group', 'radio', 'podcast'])->whereNumber('id')->middleware('throttle:240,1')->name('art');
 Route::get('/terms', [Public\PageController::class, 'terms'])->name('terms');
 Route::get('/offline', [Public\PageController::class, 'offline'])->name('offline');
 Route::get('/sitemap.xml', [Public\SeoController::class, 'sitemap'])->name('sitemap');
@@ -84,6 +84,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/notifications/read-all', [Member\NotificationController::class, 'markAllRead'])->name('notifications.read-all');
     Route::get('/notifications/{id}', [Member\NotificationController::class, 'open'])->name('notifications.open');
     Route::delete('/notifications/{id}', [Member\NotificationController::class, 'destroy'])->name('notifications.destroy');
+
+    // Podcast studio: members make faith-based podcasts and add their episodes as links to audio on a host site
+    Route::get('/podcast-studio', [Member\PodcastController::class, 'index'])->name('podcasts.index');
+    Route::get('/podcast-studio/new', [Member\PodcastController::class, 'create'])->name('podcasts.create');
+    Route::post('/podcast-studio', [Member\PodcastController::class, 'store'])->middleware('throttle:10,1')->name('podcasts.store');
+    Route::get('/podcast-studio/{podcast}', [Member\PodcastController::class, 'show'])->name('podcasts.show');
+    Route::get('/podcast-studio/{podcast}/edit', [Member\PodcastController::class, 'edit'])->name('podcasts.edit');
+    Route::put('/podcast-studio/{podcast}', [Member\PodcastController::class, 'update'])->name('podcasts.update');
+    Route::delete('/podcast-studio/{podcast}', [Member\PodcastController::class, 'destroy'])->name('podcasts.destroy');
+    Route::get('/podcast-studio/{podcast}/episodes/new', [Member\PodcastEpisodeController::class, 'create'])->name('podcasts.episodes.create');
+    Route::post('/podcast-studio/{podcast}/episodes', [Member\PodcastEpisodeController::class, 'store'])->middleware('throttle:60,1')->name('podcasts.episodes.store');
+    Route::get('/podcast-studio/{podcast}/episodes/{episode}/edit', [Member\PodcastEpisodeController::class, 'edit'])->name('podcasts.episodes.edit');
+    Route::put('/podcast-studio/{podcast}/episodes/{episode}', [Member\PodcastEpisodeController::class, 'update'])->name('podcasts.episodes.update');
+    Route::delete('/podcast-studio/{podcast}/episodes/{episode}', [Member\PodcastEpisodeController::class, 'destroy'])->name('podcasts.episodes.destroy');
 
     // Opt-in member directory
     Route::get('/directory', [Member\DirectoryController::class, 'index'])->name('directory.index');
@@ -552,6 +566,14 @@ Route::prefix('super-admin')->name('super-admin.')
         Route::put('/radio/{track}', [SuperAdmin\RadioController::class, 'update'])->name('radio.update');
         Route::post('/radio/{track}/move', [SuperAdmin\RadioController::class, 'move'])->name('radio.move');
         Route::delete('/radio/{track}', [SuperAdmin\RadioController::class, 'destroy'])->name('radio.destroy');
+
+        // Podcasts made by members: review before they show in the app
+        Route::get('/podcasts', [SuperAdmin\PodcastController::class, 'index'])->name('podcasts.index');
+        Route::put('/podcasts/hosts', [SuperAdmin\PodcastController::class, 'hosts'])->name('podcasts.hosts');
+        Route::get('/podcasts/{podcast}', [SuperAdmin\PodcastController::class, 'show'])->name('podcasts.show');
+        Route::post('/podcasts/{podcast}/approve', [SuperAdmin\PodcastController::class, 'approve'])->name('podcasts.approve');
+        Route::post('/podcasts/{podcast}/reject', [SuperAdmin\PodcastController::class, 'reject'])->name('podcasts.reject');
+        Route::post('/podcasts/{podcast}/hide', [SuperAdmin\PodcastController::class, 'hide'])->name('podcasts.hide');
 
         // Platform settings & gateways
         Route::get('/settings', [SuperAdmin\SettingsController::class, 'edit'])->name('settings');

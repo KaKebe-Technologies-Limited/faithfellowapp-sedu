@@ -14,6 +14,7 @@ use App\Models\SmallGroup;
 use App\Services\DonationService;
 use App\Services\Payments\Drivers\SandboxDriver;
 use App\Services\PaymentService;
+use App\Support\MobileMoneyPhone;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -135,7 +136,7 @@ class GiveController extends Controller
         if ($request->isMethod('post')) {
             $data = $request->validate([
                 'method' => ['required', 'in:'.implode(',', GivingChannel::ONLINE)],
-                'phone' => ['nullable', 'required_if:method,iotec,mtn_momo,airtel_money', 'regex:/^(\+?256|0)?7\d{8}$/'],
+                'phone' => ['nullable', 'required_if:method,iotec,mtn_momo,airtel_money', MobileMoneyPhone::rule()],
             ]);
             $result = $this->donations->initiate($request->user(), $rsvp->event->church, [
                 ...$data, 'amount' => $rsvp->amount, 'category' => 'event', 'event_rsvp_id' => $rsvp->id, 'country' => $this->country($request),

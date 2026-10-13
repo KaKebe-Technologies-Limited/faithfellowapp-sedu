@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\UserResource;
+use App\Rules\NoContactDetails;
 use App\Services\PeopleService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -29,7 +30,7 @@ class ProfileController extends Controller
             'city' => ['sometimes', 'nullable', 'string', 'max:120'],
             'gender' => ['sometimes', 'nullable', Rule::in(['male', 'female'])],
             'date_of_birth' => ['sometimes', 'nullable', 'date', 'before:today'],
-            'bio' => ['sometimes', 'nullable', 'string', 'max:500'],
+            'bio' => ['sometimes', 'nullable', 'string', 'max:500', new NoContactDetails],
             'interests' => ['sometimes', 'nullable', 'array', 'max:8'],
             'interests.*' => ['string', 'max:30'],
             'directory_opt_in' => ['sometimes', 'boolean'],
@@ -52,6 +53,22 @@ class ProfileController extends Controller
         $user->save();
 
         return new UserResource($user->fresh()->load('subscribedChurches.media'));
+    }
+
+    /** The member's approximate place (rounded to about 1 km), used only to find believers nearby. */
+    public function location(Request $request): UserResource
+    {
+        $data = $request->validate(['latitude' => ['required', 'numeric', 'between:-90,90'], 'longitude' => ['required', 'numeric', 'between:-180,180']]);
+        $request->user()->forceFill(['latitude' => round((float) $data['latitude'], 2), 'longitude' => round((float) $data['longitude'], 2), 'location_updated_at' => now()])->save();
+
+        return new UserResource($request->user()->fresh()->load('subscribedChurches.media'));
+    }
+
+    public function removeLocation(Request $request): UserResource
+    {
+        $request->user()->forceFill(['latitude' => null, 'longitude' => null, 'location_updated_at' => null])->save();
+
+        return new UserResource($request->user()->fresh()->load('subscribedChurches.media'));
     }
 
     public function avatar(Request $request): UserResource

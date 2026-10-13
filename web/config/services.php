@@ -35,7 +35,11 @@ return [
         'auth_url' => env('IOTEC_AUTH_URL', 'https://id.iotec.io/connect/token'),
         'client_id' => env('IOTEC_CLIENT_ID'),
         'client_secret' => env('IOTEC_CLIENT_SECRET'),
-        'wallet_id' => env('IOTEC_WALLET_ID'),
+        // The live wallet and the test wallet (used when IOTEC_SANDBOX=true on a local machine).
+        'wallet_id' => env('IOTEC_LIVE_WALLET_ID', env('IOTEC_WALLET_ID')),
+        'test_wallet_id' => env('IOTEC_TEST_WALLET_ID'),
+        'sandbox' => filter_var(env('IOTEC_SANDBOX', false), FILTER_VALIDATE_BOOLEAN),
+        'ipn_secret' => env('IOTEC_IPN_SECRET'),
         'webhook_secret' => env('IOTEC_WEBHOOK_SECRET'),
     ],
 

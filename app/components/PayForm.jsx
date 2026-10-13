@@ -22,7 +22,8 @@ export default function PayForm({ methods = [], savedPhone = '', submitLabel = '
   const [touched, setTouched] = useState(false);
 
   const chosen = methods.find((m) => m.type === method);
-  const phoneBad = chosen?.needs_phone && !/^(\+?256|0)?7\d{8}$/.test(phone.replace(/[\s-]/g, ''));
+  // The server sends the pattern, so while ioTec's test mode is on its test numbers are accepted too.
+  const phoneBad = chosen?.needs_phone && !new RegExp(chosen.phone_pattern || String.raw`^(\+?256|0)?7\d{8}$`).test(phone.replace(/[\s-]/g, ''));
 
   if (!methods.length) {
     return (

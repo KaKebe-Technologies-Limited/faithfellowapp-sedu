@@ -6,13 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Models\Connection;
 use App\Models\User;
 use App\Models\UserBlock;
+use App\Rules\NoContactDetails;
 use App\Services\PeopleService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
 /**
- * Meeting people of the same faith: discover members (filters for country, city, age, interests), see a profile,
+ * Meeting people of the same faith: discover members (in your churches, near you by distance, or everyone; filters for country, city, age, interests), see a profile,
  * ask to connect, answer requests, disconnect and block. Chatting is in MessageController.
  */
 class PeopleController extends Controller
@@ -22,7 +23,8 @@ class PeopleController extends Controller
     public function index(Request $request): JsonResponse
     {
         $filters = $request->validate([
-            'scope' => ['nullable', Rule::in(['church', 'everyone'])],
+            'scope' => ['nullable', Rule::in(['church', 'nearby', 'everyone'])],
+            'radius' => ['nullable', Rule::in([5, 10, 25, 50, 100, 200])],
             'church' => ['nullable', 'integer'],
             'q' => ['nullable', 'string', 'max:80'],
             'country' => ['nullable', 'string', 'size:2'],
@@ -38,7 +40,7 @@ class PeopleController extends Controller
         return response()->json([
             'data' => collect($page->items())->map(fn (User $u) => $this->people->person($request->user(), $u))->values(),
             'meta' => ['current_page' => $page->currentPage(), 'last_page' => $page->lastPage(), 'total' => $page->total()],
-            'viewer' => ['can_connect' => $this->people->isAdult($request->user()), 'discoverable' => (bool) ($request->user()->directory_opt_in || $request->user()->open_to_connect)],
+            'viewer' => ['can_connect' => $this->people->isAdult($request->user()), 'has_location' => $request->user()->latitude !== null, 'discoverable' => (bool) ($request->user()->directory_opt_in || $request->user()->open_to_connect)],
         ]);
     }
 
@@ -51,7 +53,7 @@ class PeopleController extends Controller
 
     public function connect(Request $request, User $user): JsonResponse
     {
-        $data = $request->validate(['message' => ['nullable', 'string', 'max:280']]);
+        $data = $request->validate(['message' => ['nullable', 'string', 'max:280', new NoContactDetails]]);
         $connection = $this->people->request($request->user(), $user, $data['message'] ?? null);
 
         return response()->json(['data' => $this->people->person($request->user(), $user), 'status' => $connection->status], 201);

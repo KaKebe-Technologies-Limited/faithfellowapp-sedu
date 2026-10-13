@@ -225,7 +225,7 @@ Every event, sermon, devotional and campaign has a `cover_url` (sermons: `thumbn
 
 - `method` is one of the church's `giving_methods`: `mtn_momo`, `airtel_money`, `iotec` or `stripe`.
 - `category` is one of `tithe`, `offering`, `project`, `building_fund`, `missions`, `welfare` or `special`. Omit it when you pass `campaign_id`.
-- `phone` is required for mobile money.
+- `phone` is required for mobile money. `GET /churches/{slug}/giving` sends each method's `phone_pattern` (a regular expression) so the app checks the number the same way the server does; while ioTec's test mode is on (`IOTEC_SANDBOX=true`, local machines only) it also accepts ioTec's test numbers such as `0111777771`.
 
 **201**
 
@@ -316,15 +316,23 @@ One note per thing being read (`context`: `bible:JHN.3`, `sermon:12`, `devotiona
 Only adults with a birth date can be found or connect. A member is found by people of their own churches when `directory_opt_in` is on, and by every other adult on the
 app when `open_to_connect` is on. Cards carry an `age_range` bracket (`18–24`, `25–34`…), never a birthday, and no email or phone.
 
-- `GET /people?scope=church|everyone&church=&q=&country=UG&city=&gender=&interest=&age_min=&age_max=` → paged `data` of `{ id, name, avatar_url, bio, city, country, gender, age_range, interests, shared_churches, relation }` (`relation`: `none`, `pending_sent`, `pending_received`, `connected`) and `viewer: { can_connect, discoverable }`.
+- `GET /people?scope=church|nearby|everyone&radius=5|10|25|50|100|200&church=&q=&country=UG&city=&gender=&interest=&age_min=&age_max=` → `nearby` lists people closest to you first (needs your location, see below) and each card then carries `distance_label` (`Within 5 km`, `About 10 km away`… never exact); the other scopes leave it `null`.  paged `data` of `{ id, name, avatar_url, bio, city, country, gender, age_range, interests, shared_churches, relation }` (`relation`: `none`, `pending_sent`, `pending_received`, `connected`) and `viewer: { can_connect, discoverable, has_location }`.
 - `GET /people/{id}` the same card for one person (`404` when they cannot be found by you).
 - `POST /people/{id}/connect` `{ message? }` ("Say Hey"); asking someone who already asked you connects you. At most 25 requests wait at a time.
 - `GET /connections` → `{ friends, incoming, outgoing }`; `POST /connections/{id}/respond` `{ action: accept|decline }`; `DELETE /people/{id}/connection` cancels a request or disconnects.
 - `POST /people/{id}/block`, `DELETE /people/{id}/block`, `GET /people/blocked`: blocking works both ways, removes the connection and hides each from the other.
 
+### Near me
+
+`PUT /me/location` `{ latitude, longitude }` saves the member's approximate area; the server rounds it to about a kilometre (two decimals) and never shows it to anyone, other members only see the bucketed distance. `DELETE /me/location` forgets it. `GET /me` returns `has_location`. A member who has not shared a location gets `422` on `scope=nearby`.
+
+### Keeping talk inside the app
+
+Phone numbers, email addresses and links that open WhatsApp, Telegram, Signal or Messenger (also written with spaces, dots, words such as "zero seven seven", or `+256…`) are refused with `422` on the field that carried them (`body`, `message`, `bio`, `title`, comments, group posts, prayer requests…). Church admins see a member's contact in the admin area; members never see each other's. A gift's phone number goes to the payment network and the church's admin screens only.
+
 ### Messages
 
-Only between connected members. `GET /messages` (conversations with `unread`), `GET /messages/unread` → `{ unread }`, `GET /messages/{userId}?after=<id>|before=<id>` (a thread, oldest first; polling with `after`; marks theirs as read), `POST /messages/{userId}` `{ body }`.
+Only between connected members. **One message until they reply:** after you send the first message to someone who has never written to you, `POST /messages/{userId}` answers `422` on `body` ("Wait for … to reply…") until they answer once; after that you can talk freely. The thread's `partner.waiting_for_reply` says which state you are in. `GET /messages` (conversations with `unread`), `GET /messages/unread` → `{ unread }`, `GET /messages/{userId}?after=<id>|before=<id>` (a thread, oldest first; polling with `after`; marks theirs as read), `POST /messages/{userId}` `{ body }`.
 Notifications for requests carry `kind` (`connection_request`, `connection_accepted`) and `ref` (the person's id).
 
 ### Study groups
@@ -397,6 +405,20 @@ One station for the whole app. The super admin adds the songs at `/super-admin/r
 - Website (super admin): `GET/POST /super-admin/radio` (upload, one song per request), `PUT /super-admin/radio/{song}` (title, artist, on or off), `POST /super-admin/radio/{song}/move` `{ direction: up|down }`, `DELETE /super-admin/radio/{song}`, `PUT /super-admin/radio/settings` `{ name, enabled }`. From the command line: `php artisan radio:add "song.mp3" --title= --artist=`.
 
 ---
+
+## Podcasts 🔒
+
+Faith-based podcasts made by members on the website (`/podcast-studio`). A podcast is listed in the app only after the super admin approves it; episodes are links to audio kept on a host site. Everything below lists only approved podcasts and episodes that are published and already out; anything else is `404`.
+
+- `GET /podcasts/overview` → `{ categories: [{ key, label, count }], following: [card], new_episodes: [episode], podcasts: [card] }`.
+- `GET /podcasts?q=&category=&following=1&page=` → paged `data` of cards, `q` searches name, host and summary. A card is `{ id, name, host, summary, category, category_label, cover_url, episodes, followers, latest_at, following }`.
+- `GET /podcasts/{id}` → a card plus `description`, `website_url`, `language`, `episodes_count`, `episodes` (the first 30, newest first) and `episodes_last_page`. `GET /podcasts/{id}/episodes?page=` the rest.
+- An episode is `{ id, title, summary, audio_url, duration, season, number, published_at, podcast: { id, name, host, cover_url } }`. The app plays `audio_url` directly.
+- `POST /podcasts/{id}/follow`, `DELETE /podcasts/{id}/follow` → `{ following, followers }`.
+- `POST /podcast-episodes/{id}/played` → `{ plays }`, called when an episode starts.
+- Notes while listening use the context `podcast:{episodeId}` (`kind: "podcast"`).
+- Website, podcaster: `GET/POST /podcast-studio`, `…/{podcast}` (show, edit, update, delete), `…/{podcast}/episodes` (create, edit, update, delete). The link is checked when it is added: `https` only, no private or local addresses, not a web page, and on one of the super admin's host sites when any are set.
+- Website, super admin: `GET /super-admin/podcasts?status=`, `…/{podcast}`, `POST …/approve`, `POST …/reject` `{ reason }`, `POST …/hide`, `PUT /super-admin/podcasts/hosts` `{ hosts }` (comma separated host sites; empty allows any `https` site). The podcaster gets a notification of each decision.
 
 ## Versioning
 

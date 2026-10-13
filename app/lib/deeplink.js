@@ -12,6 +12,7 @@ const ROUTES = [
   [/^\/groups\/(\d+)/, (id) => ({ pathname: '/group/[id]', params: { id } })],
   [/^\/reading-circles\/(\d+)/, (id) => ({ pathname: '/circle/[id]', params: { id } })],
   [/^\/reading-plans\/(\d+)/, (id) => ({ pathname: '/plan/[id]', params: { id } })],
+  [/^\/podcasts\/(\d+)/, (id) => ({ pathname: '/podcast/[id]', params: { id } })],
   [/^\/campaigns/, () => '/campaigns'],
   [/^\/games/, () => '/games'],
   [/^\/giving/, () => '/(tabs)/give'],

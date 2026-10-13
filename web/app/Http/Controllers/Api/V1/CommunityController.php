@@ -7,6 +7,7 @@ use App\Http\Resources\PrayerRequestResource;
 use App\Models\Church;
 use App\Models\PrayerInteraction;
 use App\Models\PrayerRequest;
+use App\Rules\NoContactDetails;
 use App\Services\PrayerService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -44,7 +45,7 @@ class CommunityController extends Controller
         $data = $request->validate([
             'church_id' => ['required', Rule::in($request->user()->memberChurchIds())],
             'title' => ['nullable', 'string', 'max:160'],
-            'body' => ['required', 'string', 'min:5', 'max:2000'],
+            'body' => ['required', 'string', 'min:5', 'max:2000', new NoContactDetails],
             'visibility' => ['required', Rule::in(['public', 'church', 'pastor'])],
             'is_anonymous' => ['boolean'],
             'chain_enabled' => ['boolean'],

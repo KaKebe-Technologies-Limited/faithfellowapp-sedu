@@ -94,6 +94,29 @@ the full player (`app/radio.jsx`). It keeps playing with the phone locked or the
 background audio, with lock screen controls). On a real phone this needs a development or store build for Android; in Expo
 Go on iPhone background audio works but lock screen controls can be limited.
 
+## Scripture sharing
+
+"Share scripture" (Bible chapter selection bar, passages, devotionals) builds one tidy message with `scriptureMessage()` in
+`lib/bible.js`: the verses, the reference with the translation and a short "from FaithFellows" line. It is copied to the
+clipboard and the phone's share sheet opens, so the same text pastes into any social app.
+
+## People, near me and chat
+
+`app/people.jsx` has three tabs: **My church**, **Near me** and **Everyone**. Near me asks for your location once
+(`lib/location.js`, `expo-location`, approximate only) and lists people by distance bucket ("Within 5 km"). Chat (`app/chat/[id].jsx`)
+only works between connected members; you can send one message until the other person replies, and phone numbers, emails and
+chat links are refused (the server does the checking, the app shows its message).
+
+## Podcasts
+
+Faith-based podcasts created on the website (`/podcast-studio`) and approved by the super admin. `app/podcasts.jsx` browses,
+searches by name, host or topic and filters by category; `app/podcast/[id].jsx` is one podcast (follow, play latest, episodes);
+`app/listen.jsx` is the full player (progress bar, back 15 / forward 30, speed, next, "Take notes", Bible and Groups shortcuts).
+The player module is `lib/podcastPlayer.js` (one player for the whole app, remembers where you stopped in
+`offline/podcasts/progress.json`). It shares `lib/audioFocus.js` with the radio so only one plays; `components/NowPlayingBar.jsx`
+shows whichever is on, above the tabs and at the bottom of other screens. Audio is played straight from the link the podcaster
+added, so the host must support byte ranges for seeking (all normal audio hosts do).
+
 ## Notes
 
 - This is **Expo SDK 57**. APIs change between SDKs, so check the versioned docs (`https://docs.expo.dev/versions/v57.0.0/`)

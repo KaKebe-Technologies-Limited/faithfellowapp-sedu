@@ -20,6 +20,7 @@ const KINDS = [
   { key: 'plan', label: 'Plans' },
   { key: 'sermon', label: 'Sermons' },
   { key: 'devotional', label: 'Devotionals' },
+  { key: 'podcast', label: 'Podcasts' },
   { key: 'note', label: 'My notes' },
 ];
 

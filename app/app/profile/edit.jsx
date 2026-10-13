@@ -14,6 +14,7 @@ import TextField from '../../components/TextField';
 import { COLORS, FONTS, RADIUS, SHADOW, SPACING } from '../../constants/theme';
 import api, { errorMessage, fieldErrors } from '../../lib/api';
 import { useAuth } from '../../lib/auth';
+import { shareMyLocation, stopSharingLocation } from '../../lib/location';
 import { COUNTRIES, INTERESTS } from '../../lib/people';
 import { useFetch } from '../../lib/useFetch';
 import StateView from '../../components/StateView';
@@ -44,6 +45,8 @@ export default function EditProfile() {
   const me = useFetch('/me');
   const user = me.data?.data;
   const [form, setForm] = useState(null);
+  const [placeBusy, setPlaceBusy] = useState(false);
+  const [placeError, setPlaceError] = useState(null);
 
   // Start from the freshest copy of your profile from the server.
   useEffect(() => {
@@ -177,6 +180,28 @@ export default function EditProfile() {
                 <AppText variant="caption">Let any adult on FaithFellows find me and ask to connect.</AppText>
               </View>
               <Switch value={form.open_to_connect} onValueChange={(v) => set('open_to_connect', v)} trackColor={{ true: COLORS.primaryLight, false: COLORS.gray300 }} thumbColor={COLORS.white} />
+            </View>
+            <View style={styles.switchRow}>
+              <View style={{ flex: 1 }}>
+                <AppText style={styles.switchTitle}>My area, for believers near me</AppText>
+                <AppText variant="caption">{user?.has_location ? 'Your approximate area is shared. Others see only how far away you are.' : 'Share your approximate area so people can find you by distance. Others never see where you are.'}</AppText>
+                {placeError ? <AppText variant="caption" style={{ color: COLORS.danger }}>{placeError}</AppText> : null}
+              </View>
+              <Button
+                title={user?.has_location ? 'Stop' : 'Share'}
+                small
+                variant={user?.has_location ? 'outline' : 'primary'}
+                loading={placeBusy}
+                onPress={async () => {
+                  setPlaceBusy(true);
+                  setPlaceError(null);
+                  const result = user?.has_location ? await stopSharingLocation() : await shareMyLocation();
+                  setPlaceBusy(false);
+                  if (!result.ok) return setPlaceError(result.message);
+                  setUser(result.user);
+                  me.reload();
+                }}
+              />
             </View>
             <AppText variant="caption" style={{ lineHeight: 18 }}>
               Only your name, photo, city, age range (never your birthday), about line and interests are shown. Your email and phone stay private. Being found needs your birth date, and is for members aged 18 and over. You can switch this off any time.

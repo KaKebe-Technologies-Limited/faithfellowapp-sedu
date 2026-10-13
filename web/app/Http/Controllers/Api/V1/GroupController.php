@@ -13,6 +13,7 @@ use App\Models\SmallGroupPost;
 use App\Models\Subscription;
 use App\Models\User;
 use App\Notifications\Care\CommunityUpdate;
+use App\Rules\NoContactDetails;
 use App\Services\ContentPublisher;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -118,7 +119,7 @@ class GroupController extends Controller
     public function storePost(Request $request, SmallGroup $group): JsonResponse
     {
         $this->mayTalk($request, $group);
-        $data = $request->validate(['body' => ['required', 'string', 'max:2000']]);
+        $data = $request->validate(['body' => ['required', 'string', 'max:2000', new NoContactDetails]]);
         $post = SmallGroupPost::create(['church_id' => $group->church_id, 'small_group_id' => $group->id, 'user_id' => $request->user()->id, 'body' => trim(strip_tags($data['body']))]);
 
         return response()->json(['data' => $this->post($post->load('user.media'), $request->user(), $group)], 201);
@@ -216,7 +217,7 @@ class GroupController extends Controller
     public function storeAnnouncement(Request $request, SmallGroup $group, ContentPublisher $publisher): JsonResponse
     {
         $this->authorize('lead', $group);
-        $data = $request->validate(['title' => ['required', 'string', 'max:200'], 'body' => ['required', 'string', 'max:3000']]);
+        $data = $request->validate(['title' => ['required', 'string', 'max:200'], 'body' => ['required', 'string', 'max:3000', new NoContactDetails]]);
 
         $announcement = Announcement::create([
             'church_id' => $group->church_id, 'small_group_id' => $group->id, 'user_id' => $request->user()->id,

@@ -94,6 +94,8 @@ export default function ChatScreen() {
       last.current = Math.max(last.current, data.data.id);
       setMessages((m) => [...m, data.data]);
       setDraft('');
+      // Until they answer once, only one message can be sent (the server decides; this just shows it straight away).
+      if (!messages.some((x) => !x.mine) && !more) setPartner((p) => (p ? { ...p, waiting_for_reply: true } : p));
     } catch (e) {
       setProblem(errorMessage(e));
     } finally {
@@ -142,9 +144,15 @@ export default function ChatScreen() {
             <View style={[styles.closed, { paddingBottom: insets.bottom + 12 }]}>
               <AppText style={styles.closedText}>You are no longer connected, so you cannot send new messages.</AppText>
             </View>
+          ) : partner?.waiting_for_reply ? (
+            <View style={[styles.closed, { paddingBottom: insets.bottom + 12 }]}>
+              <Ionicons name="hourglass-outline" size={20} color={COLORS.primary} style={{ alignSelf: 'center', marginBottom: 4 }} />
+              <AppText style={styles.closedText}>Your message is sent. You can write more once {String(partner.name).split(' ')[0]} replies.</AppText>
+            </View>
           ) : (
             <View style={[styles.compose, { paddingBottom: Math.max(insets.bottom, 10) }]}>
               {problem ? <AppText style={styles.problem}>{problem}</AppText> : null}
+              {messages.length === 0 ? <AppText variant="caption" style={styles.safety}>Keep chatting here in the app. Phone numbers and emails cannot be shared.</AppText> : null}
               <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 10 }}>
                 <TextInput value={draft} onChangeText={setDraft} placeholder="Write a message…" placeholderTextColor={COLORS.gray500} multiline maxLength={2000} style={styles.input} />
                 <Pressable onPress={send} disabled={!draft.trim() || sending} style={[styles.send, (!draft.trim() || sending) && { opacity: 0.45 }]} accessibilityRole="button" accessibilityLabel="Send message">
@@ -175,6 +183,7 @@ const styles = StyleSheet.create({
   text: { fontFamily: FONTS.regular, fontSize: 15.5, lineHeight: 21, color: COLORS.black },
   time: { fontFamily: FONTS.regular, fontSize: 10.5, color: COLORS.gray500, alignSelf: 'flex-end', marginTop: 2 },
   compose: { backgroundColor: COLORS.white, borderTopWidth: 1, borderTopColor: COLORS.gray100, paddingHorizontal: SPACING.md, paddingTop: 10 },
+  safety: { color: COLORS.gray700, textAlign: 'center', marginBottom: 6 },
   problem: { color: COLORS.danger, fontFamily: FONTS.medium, fontSize: 13, marginBottom: 6 },
   input: { flex: 1, maxHeight: 120, minHeight: 42, borderRadius: 21, backgroundColor: COLORS.canvas, paddingHorizontal: 16, paddingTop: 11, paddingBottom: 10, fontFamily: FONTS.regular, fontSize: 15.5, color: COLORS.black, ...Platform.select({ web: { outlineStyle: 'none' } }) },
   send: { width: 42, height: 42, borderRadius: 21, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center' },

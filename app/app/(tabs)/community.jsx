@@ -21,6 +21,8 @@ const TILES = [
   { icon: 'hand-left-outline', label: 'Prayer wall', text: 'Pray together', path: '/prayer', colors: ['#F57C00', '#BF360C'] },
   { icon: 'calendar-outline', label: 'Events', text: 'Youth, conferences, outreach', path: '/events', colors: ['#D34268', '#8E1C37'] },
   { icon: 'mic-outline', label: 'Sermons', text: 'Watch and listen', path: '/sermons', colors: ['#1E88E5', '#0D47A1'] },
+  { icon: 'headset-outline', label: 'Podcasts', text: 'Faith-based, to listen to', path: '/podcasts', colors: ['#5E35B1', '#311B92'] },
+  { icon: 'radio-outline', label: 'Gospel radio', text: 'Soft music, day and night', path: '/radio', colors: ['#EF6C00', '#C2185B'] },
   { icon: 'sunny-outline', label: 'Devotionals', text: 'A word for every day', path: '/devotionals', colors: ['#EC407A', '#AD1457'] },
   { icon: 'flag-outline', label: 'Campaigns', text: 'Give towards projects', path: '/campaigns', colors: ['#43A047', '#1B5E20'] },
   { icon: 'business-outline', label: 'Churches', text: 'Find and follow', path: '/churches', colors: ['#6D4C41', '#3E2723'] },

@@ -60,6 +60,13 @@ Route::prefix('v1')->name('api.v1.')->middleware('throttle:api')->group(function
         Route::get('/devotionals', [V1\ReadingController::class, 'devotionals'])->name('devotionals.index');
         Route::get('/devotionals/{devotional}', [V1\ReadingController::class, 'devotional'])->name('devotionals.show');
         Route::get('/announcements', [V1\ReadingController::class, 'announcements'])->name('announcements.index');
+        Route::get('/podcasts/overview', [V1\PodcastController::class, 'overview'])->name('podcasts.overview');
+        Route::get('/podcasts', [V1\PodcastController::class, 'index'])->name('podcasts.index');
+        Route::get('/podcasts/{podcast}', [V1\PodcastController::class, 'show'])->whereNumber('podcast')->name('podcasts.show');
+        Route::get('/podcasts/{podcast}/episodes', [V1\PodcastController::class, 'episodes'])->whereNumber('podcast')->name('podcasts.episodes');
+        Route::post('/podcasts/{podcast}/follow', [V1\PodcastController::class, 'follow'])->whereNumber('podcast')->middleware('throttle:engagement')->name('podcasts.follow');
+        Route::delete('/podcasts/{podcast}/follow', [V1\PodcastController::class, 'unfollow'])->whereNumber('podcast')->name('podcasts.unfollow');
+        Route::post('/podcast-episodes/{episode}/played', [V1\PodcastController::class, 'played'])->middleware('throttle:120,1')->name('podcasts.played');
         Route::get('/radio', [V1\RadioController::class, 'show'])->middleware('throttle:120,1')->name('radio');
         Route::get('/posts/{post}', [V1\ContentController::class, 'post'])->name('posts.show');
         Route::get('/announcements/{announcement}', [V1\ReadingController::class, 'announcement'])->name('announcements.show');
@@ -113,6 +120,8 @@ Route::prefix('v1')->name('api.v1.')->middleware('throttle:api')->group(function
         Route::delete('/reading-circles/{readingCircle}/leave', [V1\StudyController::class, 'leaveCircle'])->name('circles.leave');
 
         Route::patch('/me', [V1\ProfileController::class, 'update'])->name('me.update');
+        Route::put('/me/location', [V1\ProfileController::class, 'location'])->middleware('throttle:20,1')->name('me.location');
+        Route::delete('/me/location', [V1\ProfileController::class, 'removeLocation'])->name('me.location.remove');
         Route::post('/me/avatar', [V1\ProfileController::class, 'avatar'])->middleware('throttle:10,1')->name('me.avatar');
         Route::delete('/me/avatar', [V1\ProfileController::class, 'removeAvatar'])->name('me.avatar.remove');
         Route::put('/me/password', [V1\ProfileController::class, 'password'])->middleware('throttle:6,1')->name('me.password');

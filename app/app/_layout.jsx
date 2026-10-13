@@ -13,7 +13,7 @@ import {
   ClarityCity_700Bold,
   useFonts,
 } from '@expo-google-fonts/clarity-city';
-import RadioMiniPlayer from '../components/radio/RadioMiniPlayer';
+import NowPlayingBar from '../components/NowPlayingBar';
 import { COLORS } from '../constants/theme';
 import { AuthProvider, useAuth } from '../lib/auth';
 import { useOfflineSync } from '../lib/outbox';
@@ -30,8 +30,8 @@ function Navigator({ fontsLoaded }) {
   useRadioLifecycle();
   const segments = useSegments();
   const insets = useSafeAreaInsets();
-  // The tab screens carry the radio bar inside their own tab bar; every other screen gets it here, at the bottom.
-  const showBar = !!user && !['(tabs)', '(auth)', 'onboarding', 'radio'].includes(segments[0]);
+  // The tab screens carry the player bar inside their own tab bar; every other screen gets it here, at the bottom.
+  const showBar = !!user && !['(tabs)', '(auth)', 'onboarding', 'radio', 'listen'].includes(segments[0]);
 
   useEffect(() => {
     if (fontsLoaded && ready) SplashScreen.hideAsync().catch(() => {});
@@ -51,7 +51,7 @@ function Navigator({ fontsLoaded }) {
           headerShown: false,
         }}
       />
-      {showBar ? <RadioMiniPlayer bottomInset={insets.bottom} /> : null}
+      {showBar ? <NowPlayingBar bottomInset={insets.bottom} /> : null}
     </View>
   );
 }

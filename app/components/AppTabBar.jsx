@@ -1,17 +1,17 @@
-// The bottom tab bar, with the radio bar sitting on top of it while the music plays, so the player stays in view on
+// The bottom tab bar, with the radio / podcast bar sitting on top of it while something plays, so the player stays in view on
 // every main screen. It draws the same Home / Bible / Community / Give / Me tabs the navigator describes.
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, FONTS } from '../constants/theme';
 import AppText from './AppText';
-import RadioMiniPlayer from './radio/RadioMiniPlayer';
+import NowPlayingBar from './NowPlayingBar';
 
 export default function AppTabBar({ state, descriptors, navigation }) {
   const insets = useSafeAreaInsets();
 
   return (
     <View>
-      <RadioMiniPlayer />
+      <NowPlayingBar />
       <View style={[styles.bar, { height: 72 + insets.bottom, paddingBottom: 10 + insets.bottom }]}>
         {state.routes.map((route, index) => {
           const { options } = descriptors[route.key];

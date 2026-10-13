@@ -7,6 +7,7 @@ import { useEffect, useSyncExternalStore } from 'react';
 import { AppState, Platform } from 'react-native';
 import { createAudioPlayer, setAudioModeAsync } from 'expo-audio';
 import api, { errorMessage, mediaUrl } from './api';
+import { claimAudio, registerAudio } from './audioFocus';
 
 let snapshot = {
   phase: 'idle', // idle | loading | playing | paused
@@ -139,6 +140,7 @@ async function resync() {
 /** Joins the live radio and plays. */
 export async function playRadio() {
   if (snapshot.phase === 'loading') return;
+  claimAudio('radio'); // a podcast that is playing stops
   userStopped = false;
   set({ phase: 'loading', error: null });
   clearTimeout(watchdog);
@@ -178,6 +180,10 @@ export function stopRadio() {
   }
   set({ phase: 'idle' });
 }
+
+registerAudio('radio', () => {
+  if (snapshot.phase !== 'idle') stopRadio();
+});
 
 export const toggleRadio = () => (snapshot.phase === 'idle' || snapshot.phase === 'paused' ? playRadio() : stopRadio());
 

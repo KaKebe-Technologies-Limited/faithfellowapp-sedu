@@ -7,7 +7,7 @@ import { readJson, removeFile, serial, writeJson } from './localFiles';
 const FILE = 'notes/notes.json';
 
 export const PAPER = { paper: '#FFFDF7', rose: '#FDF0F3', sky: '#EEF5FF', mint: '#EDF9F2', sun: '#FFF8E6' };
-export const KINDS = { bible: 'Bible', plan: 'Reading plan', sermon: 'Sermon', devotional: 'Devotional', live: 'Live service', note: 'Note' };
+export const KINDS = { bible: 'Bible', plan: 'Reading plan', sermon: 'Sermon', devotional: 'Devotional', podcast: 'Podcast', live: 'Live service', note: 'Note' };
 
 let state = null; // { notes: { [context]: record }, syncedAt }
 let version = 0;

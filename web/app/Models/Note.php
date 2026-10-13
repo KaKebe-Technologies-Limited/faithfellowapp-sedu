@@ -24,6 +24,7 @@ class Note extends Model
         'plan' => ['Reading plan', 'bi-journal-check'],
         'sermon' => ['Sermon', 'bi-mic'],
         'devotional' => ['Devotional', 'bi-sun'],
+        'podcast' => ['Podcast', 'bi-headset'],
         'live' => ['Live service', 'bi-broadcast'],
         'note' => ['Note', 'bi-pencil'],
     ];

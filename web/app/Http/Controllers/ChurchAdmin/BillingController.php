@@ -8,6 +8,7 @@ use App\Models\Plan;
 use App\Models\SubscriptionInvoice;
 use App\Services\BillingService;
 use App\Services\StreamingService;
+use App\Support\MobileMoneyPhone;
 use App\Support\StorageQuota;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -42,7 +43,7 @@ class BillingController extends Controller
     {
         $data = $request->validate([
             'method' => ['required', Rule::in(['mtn_momo', 'airtel_money', 'iotec', 'stripe'])],
-            'phone' => ['nullable', 'required_if:method,iotec,mtn_momo,airtel_money', 'regex:/^(\+?256|0)?7\d{8}$/'],
+            'phone' => ['nullable', 'required_if:method,iotec,mtn_momo,airtel_money', MobileMoneyPhone::rule()],
         ]);
 
         $result = $this->billing->payInvoice($invoice, $data['method'], $data['phone'] ?? null);

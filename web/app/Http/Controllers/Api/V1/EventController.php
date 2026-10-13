@@ -9,9 +9,11 @@ use App\Models\Event;
 use App\Models\EventRsvp;
 use App\Models\EventTicket;
 use App\Models\GivingChannel;
+use App\Rules\NoContactDetails;
 use App\Services\DonationService;
 use App\Services\EventService;
 use App\Services\PaymentService;
+use App\Support\MobileMoneyPhone;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -73,7 +75,7 @@ class EventController extends Controller
                     $fail(__('This payment method is temporarily unavailable. Please choose another.'));
                 }
             }],
-            'phone' => ['nullable', 'required_if:method,iotec,mtn_momo,airtel_money', 'regex:/^(\+?256|0)?7\d{8}$/'],
+            'phone' => ['nullable', 'required_if:method,iotec,mtn_momo,airtel_money', MobileMoneyPhone::rule()],
         ]);
 
         ['donation' => $donation, 'result' => $result] = $this->donations->initiate($request->user(), $rsvp->event->church, [
@@ -88,7 +90,7 @@ class EventController extends Controller
     {
         $this->authorize('view', $event);
         abort_unless($event->qa_enabled, 404);
-        $data = $request->validate(['body' => ['required', 'string', 'max:500']]);
+        $data = $request->validate(['body' => ['required', 'string', 'max:500', new NoContactDetails]]);
 
         $question = $event->questions()->create(['church_id' => $event->church_id, 'user_id' => $request->user()->id, 'body' => $data['body']]);
 

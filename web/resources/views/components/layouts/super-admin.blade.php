@@ -15,6 +15,7 @@
         ['heading' => __('Operations'), 'items' => [
             ['label' => __('Support tickets'), 'icon' => 'bi-life-preserver', 'route' => 'super-admin.support.index', 'active' => 'super-admin.support.*', 'badge' => ($openTickets ?? 0) ?: null],
             ['label' => __('Moderation'), 'icon' => 'bi-shield-exclamation', 'route' => 'super-admin.moderation.index', 'active' => 'super-admin.moderation.*'],
+            ['label' => __('Podcasts'), 'icon' => 'bi-broadcast-pin', 'route' => 'super-admin.podcasts.index', 'active' => 'super-admin.podcasts.*', 'badge' => \App\Models\Podcast::where('status', 'pending')->count() ?: null],
             ['label' => __('Gospel radio'), 'icon' => 'bi-music-note-beamed', 'route' => 'super-admin.radio.index', 'active' => 'super-admin.radio.*'],
             ['label' => __('Blog'), 'icon' => 'bi-journal-richtext', 'route' => 'super-admin.blog.index', 'active' => 'super-admin.blog.*'],
             ['label' => __('Contact inbox'), 'icon' => 'bi-inbox', 'route' => 'super-admin.messages.index', 'active' => 'super-admin.messages.*'],

@@ -80,7 +80,7 @@ sudo -u www-data php /var/www/faithfellows/current/artisan db:seed --force   # r
 | `SESSION_SECURE_COOKIE` | `true` |
 | `MAIL_*` | SMTP / SES / Mailgun credentials, with `MAIL_FROM_ADDRESS=service@kakebe.tech` |
 | `PAYMENTS_SANDBOX` | `false` once gateways are live |
-| `MTN_MOMO_*`, `AIRTEL_*`, `IOTEC_*`, `STRIPE_*` | gateway credentials. A gateway without credentials stays in sandbox |
+| `MTN_MOMO_*`, `AIRTEL_*`, `IOTEC_*`, `STRIPE_*` | gateway credentials. A gateway without credentials stays in sandbox. ioTec Pay (`IOTEC_CLIENT_ID`, `IOTEC_CLIENT_SECRET`, `IOTEC_LIVE_WALLET_ID`, `IOTEC_IPN_SECRET`) can take both MTN and Airtel payments from the app; keep `IOTEC_SANDBOX=false` in production, `true` only with ioTec's test numbers |
 | `AFRICASTALKING_*`, `SMS_ENABLED`, `WHATSAPP_ENABLED`, `SMS_COST_UGX` | messaging |
 | `USSD_SECRET` | random string; register the USSD callback as `https://faithfellows.app/webhooks/ussd?secret=…` |
 | `VAPID_*` | `php artisan ff:vapid` (generate once; changing the keys invalidates every browser subscription) |

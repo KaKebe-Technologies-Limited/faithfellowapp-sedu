@@ -34,9 +34,10 @@ class PeopleService
         $mine = $viewer->memberChurchIds() ?: [0];
         $church = isset($filters['church']) && in_array((int) $filters['church'], $mine, true) ? [(int) $filters['church']] : $mine;
         $sameChurch = fn (Builder $q) => $q->whereHas('subscriptions', fn ($s) => $s->whereIn('church_id', $church)->where('status', 'active'));
-        $everyone = ($filters['scope'] ?? 'church') === 'everyone' && ! isset($filters['church']);
+        $nearby = ($filters['scope'] ?? 'church') === 'nearby';
+        $everyone = (in_array($filters['scope'] ?? 'church', ['everyone', 'nearby'], true)) && ! isset($filters['church']);
 
-        return User::query()->with('media')
+        $query = User::query()->with('media')
             ->where('status', 'active')->whereKeyNot($viewer->id)->whereNotIn('id', UserBlock::idsAround($viewer->id) ?: [0])
             ->whereNotNull('date_of_birth')->where('date_of_birth', '<=', now()->subYears(18)->toDateString())
             ->where(fn ($q) => $q
@@ -48,8 +49,42 @@ class PeopleService
             ->when($filters['gender'] ?? null, fn ($q, $v) => $q->where('gender', $v))
             ->when($filters['interest'] ?? null, fn ($q, $v) => $q->whereJsonContains('interests', $v))
             ->when($filters['age_min'] ?? null, fn ($q, $v) => $q->where('date_of_birth', '<=', now()->subYears((int) $v)->toDateString()))
-            ->when($filters['age_max'] ?? null, fn ($q, $v) => $q->where('date_of_birth', '>', now()->subYears((int) $v + 1)->toDateString()))
-            ->orderBy('name');
+            ->when($filters['age_max'] ?? null, fn ($q, $v) => $q->where('date_of_birth', '>', now()->subYears((int) $v + 1)->toDateString()));
+
+        return $nearby ? $this->near($query, $viewer, (int) ($filters['radius'] ?? 50)) : $query->orderBy('name');
+    }
+
+    /** Only people who shared a place within `$radius` km of the viewer's, nearest first (nobody if the viewer shared none). */
+    protected function near(Builder $query, User $viewer, int $radius): Builder
+    {
+        if ($viewer->latitude === null) {
+            return $query->whereRaw('1 = 0');
+        }
+        $lat = (float) $viewer->latitude;
+        $lng = (float) $viewer->longitude;
+        $box = $radius / 111.0; // one degree of latitude is about 111 km
+        $distance = '(6371 * acos(least(1, cos(radians(?)) * cos(radians(latitude)) * cos(radians(longitude) - radians(?)) + sin(radians(?)) * sin(radians(latitude)))))';
+
+        return $query->whereNotNull('latitude')->whereBetween('latitude', [$lat - $box, $lat + $box])
+            ->whereRaw("{$distance} <= ?", [$lat, $lng, $lat, $radius])
+            ->orderByRaw($distance, [$lat, $lng, $lat])->orderBy('name');
+    }
+
+    /** About how far apart two members are, as a rough label ("About 10 km away"), or null when either did not share a place. */
+    public function distanceLabel(User $viewer, User $other): ?string
+    {
+        if ($viewer->latitude === null || $other->latitude === null) {
+            return null;
+        }
+        [$a, $b, $c, $d] = [deg2rad((float) $viewer->latitude), deg2rad((float) $other->latitude), deg2rad((float) $viewer->longitude), deg2rad((float) $other->longitude)];
+        $km = 6371 * acos(min(1, cos($a) * cos($b) * cos($d - $c) + sin($a) * sin($b)));
+
+        return match (true) {
+            $km < 5 => __('Less than 5 km away'),
+            $km <= 50 => __('About :km km away', ['km' => (int) (round($km / 5) * 5)]),
+            $km <= 200 => __('About :km km away', ['km' => (int) (round($km / 10) * 10)]),
+            default => __('More than 200 km away'),
+        };
     }
 
     /** May the viewer see this person's profile at all? (found by the rules above, or already in touch) */
@@ -114,6 +149,7 @@ class PeopleService
             'gender' => $other->gender,
             'age_range' => $this->ageBracket($other),
             'interests' => $other->interests ?? [],
+            'distance_label' => $this->distanceLabel($viewer, $other),
             'shared_churches' => $shared->map(fn ($c) => ['id' => $c->id, 'slug' => $c->slug, 'name' => $c->name])->values()->all(),
             'relation' => $this->relation($viewer, $other),
         ];

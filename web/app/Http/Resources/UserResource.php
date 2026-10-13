@@ -31,6 +31,7 @@ class UserResource extends JsonResource
             'interests' => $this->interests ?? [],
             'directory_opt_in' => (bool) $this->directory_opt_in,
             'open_to_connect' => (bool) $this->open_to_connect,
+            'has_location' => $this->latitude !== null,
             'avatar_url' => $this->avatar_url,
             'language' => $this->language,
             'timezone' => $this->timezone,

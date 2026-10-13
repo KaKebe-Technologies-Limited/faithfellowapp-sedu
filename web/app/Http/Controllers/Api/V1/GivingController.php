@@ -14,6 +14,7 @@ use App\Models\RecurringGift;
 use App\Services\CampaignService;
 use App\Services\DonationService;
 use App\Services\PaymentService;
+use App\Support\MobileMoneyPhone;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -68,7 +69,7 @@ class GivingController extends Controller
             'currency' => config('faithfellows.currency'),
             'methods' => $church->givingChannels()->where('is_active', true)->orderBy('sort')->get()
                 ->filter(fn (GivingChannel $c) => $c->isOnline() && PaymentService::enabled($c->type))
-                ->map(fn (GivingChannel $c) => ['type' => $c->type, 'label' => $c->display_name, 'needs_phone' => in_array($c->type, GivingChannel::PHONE_METHODS, true)])->values(),
+                ->map(fn (GivingChannel $c) => ['type' => $c->type, 'label' => $c->display_name, 'needs_phone' => in_array($c->type, GivingChannel::PHONE_METHODS, true), 'phone_pattern' => MobileMoneyPhone::pattern()])->values(),
             'offline' => $church->givingChannels()->where('is_active', true)->whereIn('type', ['bank', 'cash', 'ussd'])->orderBy('sort')->get()
                 ->map(fn (GivingChannel $c) => ['type' => $c->type, 'label' => $c->display_name, 'instructions' => $c->instructions])->values(),
             'categories' => collect(config('faithfellows.giving_categories'))->except(['event', 'pledge', 'campaign'])->map(fn ($label, $key) => ['key' => $key, 'label' => $label])->values(),

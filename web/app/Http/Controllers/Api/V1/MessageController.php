@@ -6,10 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\DirectMessage;
 use App\Models\User;
 use App\Models\UserBlock;
+use App\Rules\NoContactDetails;
 use App\Services\DevicePushService;
 use App\Services\PeopleService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Private chat between connected members. The app polls a thread every few seconds with `after=<last id>`.
@@ -61,7 +63,7 @@ class MessageController extends Controller
 
         return response()->json([
             'data' => $messages->map(fn (DirectMessage $m) => $this->payload($m, $me))->values(),
-            'partner' => ['id' => $user->id, 'name' => $user->name, 'avatar_url' => $user->avatar_url, 'can_message' => $this->people->mayMessage($me, $user)],
+            'partner' => ['id' => $user->id, 'name' => $user->name, 'avatar_url' => $user->avatar_url, 'can_message' => $this->people->mayMessage($me, $user), 'waiting_for_reply' => $this->awaitingReply($me, $user)],
             'has_more' => ! $request->filled('after') && $messages->count() === 40,
         ]);
     }
@@ -69,13 +71,30 @@ class MessageController extends Controller
     public function send(Request $request, User $user): JsonResponse
     {
         $me = $request->user();
-        $data = $request->validate(['body' => ['required', 'string', 'max:2000']]);
+        $data = $request->validate(['body' => ['required', 'string', 'max:2000', new NoContactDetails]]);
         abort_unless($this->people->mayMessage($me, $user), 403, __('You can only message people you are connected to.'));
+        if ($this->awaitingReply($me, $user)) {
+            throw ValidationException::withMessages(['body' => __('Wait for :name to reply before you send another message.', ['name' => $user->first_name ?? $user->name])]);
+        }
 
         $message = DirectMessage::create(['sender_id' => $me->id, 'recipient_id' => $user->id, 'body' => trim(strip_tags($data['body']))]);
         app(DevicePushService::class)->newMessage($message);
 
         return response()->json(['data' => $this->payload($message, $me)], 201);
+    }
+
+    /**
+     * You can send one message to someone until they answer; once they have replied, the chat is open and both of you
+     * can write freely. This keeps new chats polite and private: nobody can be flooded by someone they have only just
+     * connected with.
+     */
+    protected function awaitingReply(User $me, User $other): bool
+    {
+        if (DirectMessage::where('sender_id', $other->id)->where('recipient_id', $me->id)->exists()) {
+            return false;
+        }
+
+        return DirectMessage::where('sender_id', $me->id)->where('recipient_id', $other->id)->exists();
     }
 
     /** @return array<string, mixed> */

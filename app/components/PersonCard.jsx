@@ -47,7 +47,7 @@ export function PersonTile({ person, onChange }) {
         {person.name}
       </AppText>
       <AppText variant="caption" numberOfLines={1} style={{ textAlign: 'center' }}>
-        {place(person) || 'Fellow believer'}
+        {person.distance_label ?? (place(person) || 'Fellow believer')}
       </AppText>
       <Pressable onPress={act} disabled={busy || relation === 'pending_sent'} style={[styles.hey, (relation === 'pending_sent' || relation === 'connected') && styles.heyQuiet]} accessibilityRole="button" accessibilityLabel={label}>
         <AppText style={[styles.heyText, (relation === 'pending_sent' || relation === 'connected') && { color: COLORS.primary }]}>{busy ? '…' : label}</AppText>
@@ -68,6 +68,14 @@ export function PersonRow({ person, onChange, children }) {
         <AppText variant="caption" numberOfLines={1}>
           {place(person) || 'Fellow believer'}
         </AppText>
+        {person.distance_label ? (
+          <View style={styles.shared}>
+            <Ionicons name="location-outline" size={12} color={COLORS.gray700} />
+            <AppText style={[styles.sharedText, { color: COLORS.gray700 }]} numberOfLines={1}>
+              {person.distance_label}
+            </AppText>
+          </View>
+        ) : null}
         {person.shared_churches?.length ? (
           <View style={styles.shared}>
             <Ionicons name="business-outline" size={12} color={COLORS.primary} />
