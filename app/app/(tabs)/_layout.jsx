@@ -1,4 +1,4 @@
-// Bottom tab bar for the signed-in app: Feed, Churches, Sermons, Give, Profile.
+// Bottom tab bar for the signed-in app: Home, Bible, Community, Give, Me.
 // Sends signed-out visitors (or an expired session) back to the login screen.
 import { Redirect, Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -32,11 +32,11 @@ export default function TabsLayout() {
         sceneStyle: { backgroundColor: COLORS.canvas },
       }}
     >
-      <Tabs.Screen name="index" options={{ title: 'Feed', headerShown: false, tabBarIcon: icon('home-outline', 'home') }} />
-      <Tabs.Screen name="churches" options={{ title: 'Churches', tabBarIcon: icon('people-outline', 'people') }} />
-      <Tabs.Screen name="sermons" options={{ title: 'Sermons', tabBarIcon: icon('mic-outline', 'mic') }} />
-      <Tabs.Screen name="give" options={{ title: 'Give', tabBarIcon: icon('heart-outline', 'heart') }} />
-      <Tabs.Screen name="profile" options={{ title: 'Profile', tabBarIcon: icon('person-outline', 'person') }} />
+      <Tabs.Screen name="index" options={{ title: 'Home', headerShown: false, tabBarIcon: icon('home-outline', 'home') }} />
+      <Tabs.Screen name="bible" options={{ title: 'Bible', headerShown: false, tabBarIcon: icon('book-outline', 'book') }} />
+      <Tabs.Screen name="community" options={{ title: 'Community', headerShown: false, tabBarIcon: icon('people-outline', 'people') }} />
+      <Tabs.Screen name="give" options={{ title: 'Give', headerShown: false, tabBarIcon: icon('heart-outline', 'heart') }} />
+      <Tabs.Screen name="profile" options={{ title: 'Me', headerShown: false, tabBarIcon: icon('person-outline', 'person') }} />
     </Tabs>
   );
 }

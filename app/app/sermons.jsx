@@ -1,12 +1,13 @@
-// Sermons tab: search and browse the sermons of the churches you follow (GET /api/v1/sermons). Each card
+// Sermons: search and browse the sermons of the churches you follow (GET /api/v1/sermons). Each card
 // opens the sermon in the app, where the video or audio plays right on the page.
 import { useState } from 'react';
 import { FlatList, RefreshControl, StyleSheet, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { SermonListCard } from '../../components/ListCards';
-import StateView from '../../components/StateView';
-import { COLORS, FONTS, RADIUS, SPACING } from '../../constants/theme';
-import { useFetch } from '../../lib/useFetch';
+import { SermonListCard } from '../components/ListCards';
+import ScreenHeader from '../components/ScreenHeader';
+import StateView from '../components/StateView';
+import { COLORS, FONTS, RADIUS, SPACING } from '../constants/theme';
+import { useFetch } from '../lib/useFetch';
 
 export default function SermonsScreen() {
   const [query, setQuery] = useState('');
@@ -16,6 +17,7 @@ export default function SermonsScreen() {
 
   return (
     <View style={styles.flex}>
+      <ScreenHeader title="Sermons" subtitle="From the churches you follow" />
       <View style={styles.search}>
         <Ionicons name="search" size={18} color={COLORS.gray700} />
         <TextInput
@@ -51,7 +53,7 @@ export default function SermonsScreen() {
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1 },
+  flex: { flex: 1, backgroundColor: COLORS.canvas },
   search: { flexDirection: 'row', alignItems: 'center', gap: 8, margin: SPACING.md, marginBottom: SPACING.sm, paddingHorizontal: SPACING.md, borderRadius: RADIUS.full, backgroundColor: COLORS.white },
   searchInput: { flex: 1, minHeight: 44, fontFamily: FONTS.regular, fontSize: 15, color: COLORS.black },
 });

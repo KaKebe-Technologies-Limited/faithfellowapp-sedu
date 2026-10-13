@@ -49,7 +49,7 @@ export default function ChurchStories({ churches }) {
       {churches.map((church) => (
         <Tile key={church.id} church={church} />
       ))}
-      <Pressable onPress={() => router.push('/(tabs)/churches')} style={styles.item} accessibilityRole="button" accessibilityLabel="Find more churches">
+      <Pressable onPress={() => router.push('/churches')} style={styles.item} accessibilityRole="button" accessibilityLabel="Find more churches">
         <View style={[styles.ring, styles.addRing]}>
           <View style={[styles.inner, styles.add]}>
             <Ionicons name="add" size={26} color={COLORS.primary} />

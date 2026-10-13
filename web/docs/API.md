@@ -281,6 +281,25 @@ Toggles "I prayed" and returns `{"prayed": true, "count": 15}`.
 
 ---
 
+## Bible, notes and reading plans 🔒
+
+### The Bible
+
+- `GET /bible` → `translations` (`key`, `name`, `short`, `language`), the member's `translation`, the 66 `books` (`code`, `name`, `chapters`, `testament`), highlight `colors` and the latest `highlights`.
+- `GET /bible/{book}/{chapter}?t=<translation>` (book is the 3-letter code, e.g. `JHN`) → `verses` as `[ { v, t, color } ]` (`color` is the member's highlight: `yellow|green|blue|pink|null`), `previous` / `next` chapter. `503` with a friendly message when the Bible text service is unreachable (chapters are cached after the first read).
+- `GET /bible/passage?ref=Matthew 3-5` (also `John 3:16`, `Genesis 1-2; Psalm 1`) → `sections` per chapter. `404` when the reference is not understood.
+- `POST /bible/highlights` `{ verses: ["JHN.3.16", …], color: "yellow" | null }` (null clears), `GET /bible/highlights` lists them with verse text where the chapter is cached.
+- `PUT /bible/translation` `{ translation }` saves the member's choice.
+
+### Notes
+
+One note per thing being read (`context`: `bible:JHN.3`, `sermon:12`, `devotional:7`, `plan:4:2`, or a free `note:…`). `GET /notes?q=&kind=` (pinned first, paged), `GET /notes/context?context=`, `POST /notes` (creates or continues the note of that `context`; without one, a new free note), `GET|PATCH|DELETE /notes/{id}`, `POST /notes/{id}/pin`. Notes are private; another member gets `404`.
+
+### Reading plans and circles
+
+- `GET /reading-plans` → `mine` (with `progress`: `percent`, `next_day`, `streak`…), `available` (published plans of the member's churches) and `circles`.
+- `GET /reading-plans/{id}?day=` → the day (`passages`, `reflection`, `done`), the `days` strip and the member's circles for the plan. `POST …/start`, `POST …/complete` `{ day }`, `DELETE …` (leave).
+- Reading circles (up to four partners from one church): `POST /reading-plans/{id}/circles` `{ name, reading_time: "06:00", reading_days: [0-6] }`, `POST /reading-circles/join` `{ code }`, `GET /reading-circles/{id}?day=` (members, who has read, their private summaries), `POST /reading-circles/{id}/days/{day}` `{ summary? }`, `PUT /reading-circles/{id}` (owner), `DELETE /reading-circles/{id}/leave`.
 ## Notifications 🔒
 
 ### `GET /notifications?unread=1`

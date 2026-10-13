@@ -1,18 +1,19 @@
-// Churches tab: churches you follow (GET /me) and a searchable directory to discover more
+// Churches: churches you follow (GET /me) and a searchable directory to discover more
 // (GET /churches). Follow / unfollow with POST / DELETE /churches/{slug}/subscription.
 // A member can follow at most 3 churches; the server's message is shown if the limit is hit.
 import { useState } from 'react';
 import { Alert, FlatList, Pressable, RefreshControl, StyleSheet, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import AppText from '../../components/AppText';
-import Button from '../../components/Button';
-import Card from '../../components/Card';
-import ChurchAvatar from '../../components/ChurchAvatar';
-import StateView from '../../components/StateView';
-import { COLORS, FONTS, RADIUS, SPACING } from '../../constants/theme';
-import api, { errorMessage } from '../../lib/api';
-import { useFetch } from '../../lib/useFetch';
+import AppText from '../components/AppText';
+import Button from '../components/Button';
+import Card from '../components/Card';
+import ChurchAvatar from '../components/ChurchAvatar';
+import ScreenHeader from '../components/ScreenHeader';
+import StateView from '../components/StateView';
+import { COLORS, FONTS, RADIUS, SPACING } from '../constants/theme';
+import api, { errorMessage } from '../lib/api';
+import { useFetch } from '../lib/useFetch';
 
 const TABS = [
   { key: 'mine', label: 'Following' },
@@ -56,6 +57,7 @@ export default function ChurchesScreen() {
 
   return (
     <View style={styles.flex}>
+      <ScreenHeader title="Churches" subtitle="Follow up to three" />
       <View style={styles.tabs}>
         {TABS.map((t) => (
           <Pressable key={t.key} onPress={() => setTab(t.key)} style={[styles.tab, tab === t.key && styles.tabActive]} accessibilityRole="tab" accessibilityState={{ selected: tab === t.key }}>
@@ -103,7 +105,7 @@ export default function ChurchesScreen() {
             const following = followedSlugs.has(church.slug);
             const place = [church.location?.city ?? church.city, church.denomination].filter(Boolean).join(' · ');
             return (
-              <Pressable onPress={() => router.push({ pathname: '/church/[slug]', params: { slug: church.slug } })} accessibilityLabel={"Open " + church.name}>
+              <Pressable onPress={() => router.push({ pathname: '/church/[slug]', params: { slug: church.slug } })} accessibilityLabel={`Open ${church.name}`}>
               <Card style={styles.row}>
                 <ChurchAvatar church={church} size={48} />
                 <View style={styles.rowText}>
@@ -128,7 +130,7 @@ export default function ChurchesScreen() {
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1 },
+  flex: { flex: 1, backgroundColor: COLORS.canvas },
   tabs: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, padding: SPACING.md, paddingBottom: SPACING.sm },
   tab: { paddingHorizontal: SPACING.md, paddingVertical: 8, borderRadius: RADIUS.full, backgroundColor: COLORS.primaryMist },
   tabActive: { backgroundColor: COLORS.primary },

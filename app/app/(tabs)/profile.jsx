@@ -9,6 +9,7 @@ import Button from '../../components/Button';
 import Card from '../../components/Card';
 import ChurchAvatar from '../../components/ChurchAvatar';
 import StateView from '../../components/StateView';
+import TabTitle from '../../components/TabTitle';
 import { COLORS, FONTS, RADIUS, SPACING } from '../../constants/theme';
 import { API_ROOT, mediaUrl, ping } from '../../lib/api';
 import { useAuth } from '../../lib/auth';
@@ -60,6 +61,8 @@ export default function ProfileScreen() {
   }
 
   return (
+    <View style={{ flex: 1, backgroundColor: COLORS.canvas }}>
+    <TabTitle title="Me" />
     <StateView loading={loading} error={error} onRetry={retry} empty={!loading && !error && !me} emptyIcon="person-outline" emptyTitle="No profile found">
       <ScrollView
         contentContainerStyle={styles.scroll}
@@ -105,7 +108,7 @@ export default function ProfileScreen() {
           </Card>
         ) : (
           <Card>
-            <AppText style={{ color: COLORS.gray700 }}>You are not following a church yet. Open the Churches tab to find one.</AppText>
+            <AppText style={{ color: COLORS.gray700 }}>You are not following a church yet. Tap "Find churches" in the Community tab.</AppText>
           </Card>
         )}
 
@@ -143,6 +146,7 @@ export default function ProfileScreen() {
         </View>
       </ScrollView>
     </StateView>
+    </View>
   );
 }
 

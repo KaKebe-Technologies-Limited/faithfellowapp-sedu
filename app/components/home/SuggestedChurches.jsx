@@ -33,7 +33,7 @@ export default function SuggestedChurches({ onFollowed }) {
 
   return (
     <View style={styles.section}>
-      <SectionHeader title="Churches to follow" actionLabel="See all" onAction={() => router.push('/(tabs)/churches')} />
+      <SectionHeader title="Churches to follow" actionLabel="See all" onAction={() => router.push('/churches')} />
       <View style={styles.list}>
         {loading
           ? [0, 1, 2].map((i) => <Skeleton key={i} height={76} radius={RADIUS.lg} />)

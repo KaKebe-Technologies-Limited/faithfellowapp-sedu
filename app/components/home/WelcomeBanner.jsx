@@ -15,7 +15,7 @@ export default function WelcomeBanner() {
         <Logo size={58} />
         <AppText style={styles.title}>Welcome to FaithFellows</AppText>
         <AppText style={styles.text}>Follow up to three churches and their sermons, events, prayers and updates all arrive right here.</AppText>
-        <Pressable onPress={() => router.push('/(tabs)/churches')} accessibilityRole="button" style={styles.button}>
+        <Pressable onPress={() => router.push('/churches')} accessibilityRole="button" style={styles.button}>
           <AppText style={styles.buttonText}>Find churches</AppText>
         </Pressable>
       </LinearGradient>

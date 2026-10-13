@@ -82,6 +82,33 @@ Route::prefix('v1')->name('api.v1.')->middleware('throttle:api')->group(function
         Route::post('/prayer/{prayer}/answered', [V1\CommunityController::class, 'answered'])->name('prayer.answered');
         Route::delete('/prayer/{prayer}', [V1\CommunityController::class, 'destroyPrayer'])->name('prayer.destroy');
 
+        Route::get('/bible', [V1\BibleController::class, 'index'])->name('bible.index');
+        Route::get('/bible/passage', [V1\BibleController::class, 'passage'])->name('bible.passage');
+        Route::get('/bible/highlights', [V1\BibleController::class, 'highlights'])->name('bible.highlights');
+        Route::post('/bible/highlights', [V1\BibleController::class, 'highlight'])->middleware('throttle:engagement')->name('bible.highlight');
+        Route::put('/bible/translation', [V1\BibleController::class, 'setTranslation'])->name('bible.translation');
+        Route::get('/bible/{book}/{chapter}', [V1\BibleController::class, 'read'])->whereNumber('chapter')->name('bible.read');
+
+        Route::get('/notes', [V1\NoteController::class, 'index'])->name('notes.index');
+        Route::get('/notes/context', [V1\NoteController::class, 'context'])->name('notes.context');
+        Route::post('/notes', [V1\NoteController::class, 'store'])->middleware('throttle:engagement')->name('notes.store');
+        Route::get('/notes/{note}', [V1\NoteController::class, 'show'])->name('notes.show');
+        Route::patch('/notes/{note}', [V1\NoteController::class, 'update'])->name('notes.update');
+        Route::post('/notes/{note}/pin', [V1\NoteController::class, 'pin'])->name('notes.pin');
+        Route::delete('/notes/{note}', [V1\NoteController::class, 'destroy'])->name('notes.destroy');
+
+        Route::get('/reading-plans', [V1\StudyController::class, 'plans'])->name('plans.index');
+        Route::get('/reading-plans/{readingPlan}', [V1\StudyController::class, 'showPlan'])->name('plans.show');
+        Route::post('/reading-plans/{readingPlan}/start', [V1\StudyController::class, 'start'])->name('plans.start');
+        Route::post('/reading-plans/{readingPlan}/complete', [V1\StudyController::class, 'complete'])->name('plans.complete');
+        Route::delete('/reading-plans/{readingPlan}', [V1\StudyController::class, 'leave'])->name('plans.leave');
+        Route::post('/reading-plans/{readingPlan}/circles', [V1\StudyController::class, 'createCircle'])->middleware('throttle:engagement')->name('circles.store');
+        Route::post('/reading-circles/join', [V1\StudyController::class, 'joinCircle'])->middleware('throttle:10,1')->name('circles.join');
+        Route::get('/reading-circles/{readingCircle}', [V1\StudyController::class, 'showCircle'])->name('circles.show');
+        Route::put('/reading-circles/{readingCircle}', [V1\StudyController::class, 'updateCircle'])->name('circles.update');
+        Route::post('/reading-circles/{readingCircle}/days/{day}', [V1\StudyController::class, 'completeCircleDay'])->whereNumber('day')->name('circles.complete');
+        Route::delete('/reading-circles/{readingCircle}/leave', [V1\StudyController::class, 'leaveCircle'])->name('circles.leave');
+
         Route::get('/notifications', [V1\CommunityController::class, 'notifications'])->name('notifications.index');
         Route::post('/notifications/read', [V1\CommunityController::class, 'readNotifications'])->name('notifications.read');
     });

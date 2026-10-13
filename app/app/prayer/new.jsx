@@ -60,7 +60,7 @@ export default function NewPrayer() {
           <Ionicons name="home-outline" size={34} color={COLORS.primary} />
           <AppText style={styles.noneTitle}>Follow a church first</AppText>
           <AppText style={styles.noneText}>Prayer requests go to your church family and pastors. Find a church to follow, then come back.</AppText>
-          <Button title="Find a church" onPress={() => router.replace('/(tabs)/churches')} />
+          <Button title="Find a church" onPress={() => router.replace('/churches')} />
         </View>
       </View>
     );

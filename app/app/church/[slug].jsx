@@ -202,7 +202,7 @@ export default function ChurchScreen() {
 
         {recent.length ? (
           <View style={{ marginTop: SPACING.md }}>
-            <SectionHeader title="Recent sermons" actionLabel="All sermons" onAction={() => router.push('/(tabs)/sermons')} />
+            <SectionHeader title="Recent sermons" actionLabel="All sermons" onAction={() => router.push('/sermons')} />
             {recent.map((s) => (
               <Pressable key={s.id} onPress={() => router.push({ pathname: '/sermon/[id]', params: { id: s.id } })} style={[styles.card, styles.listCard]} accessibilityRole="button">
                 <View style={styles.play}>

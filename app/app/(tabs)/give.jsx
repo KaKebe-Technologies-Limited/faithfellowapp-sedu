@@ -10,6 +10,7 @@ import AppText from '../../components/AppText';
 import ChurchAvatar from '../../components/ChurchAvatar';
 import SectionHeader from '../../components/SectionHeader';
 import StateView from '../../components/StateView';
+import TabTitle from '../../components/TabTitle';
 import { COLORS, FONTS, RADIUS, SHADOW, SPACING } from '../../constants/theme';
 import api, { errorMessage, mediaUrl } from '../../lib/api';
 import { useAuth } from '../../lib/auth';
@@ -98,7 +99,7 @@ export default function GiveTab() {
           ))}
         </ScrollView>
       ) : (
-        <Pressable onPress={() => router.push('/(tabs)/churches')} style={styles.empty} accessibilityRole="button">
+        <Pressable onPress={() => router.push('/churches')} style={styles.empty} accessibilityRole="button">
           <Ionicons name="search-outline" size={22} color={COLORS.primary} />
           <AppText style={{ flex: 1, color: COLORS.gray900 }}>Follow a church to give to it. Tap to find one.</AppText>
         </Pressable>
@@ -189,6 +190,8 @@ export default function GiveTab() {
   );
 
   return (
+    <View style={{ flex: 1, backgroundColor: COLORS.canvas }}>
+      <TabTitle title="Give" subtitle="Tithes, offerings and campaigns" />
     <StateView loading={gifts.loading && summary.loading} error={gifts.error && summary.error ? gifts.error : null} onRetry={() => { gifts.retry(); summary.retry(); campaigns.retry(); }}>
       <FlatList
         data={list}
@@ -226,6 +229,7 @@ export default function GiveTab() {
         }}
       />
     </StateView>
+    </View>
   );
 }
 

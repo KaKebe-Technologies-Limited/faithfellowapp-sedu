@@ -135,7 +135,7 @@ export default function HomeScreen() {
           title={hasChurches ? 'Nothing new yet' : 'Your feed is empty'}
           message={hasChurches ? 'When your churches share sermons, events or updates, they will appear here.' : 'Follow a church to see its sermons, events and updates here.'}
           actionTitle={hasChurches ? undefined : 'Find churches'}
-          onAction={() => router.push('/(tabs)/churches')}
+          onAction={() => router.push('/churches')}
         />
       </View>
     )
