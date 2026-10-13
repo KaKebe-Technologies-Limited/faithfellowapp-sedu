@@ -24,6 +24,9 @@ const ROUTES = [
 /** Where a notification should go inside the app, or null when it has no place to open. */
 export function routeFor(notification) {
   if (notification.kind === 'connection_request') return '/connections';
+  if (notification.kind === 'message' && notification.ref) return { pathname: '/chat/[id]', params: { id: String(notification.ref) } };
+  if (notification.kind === 'post' && notification.ref) return { pathname: '/post/[id]', params: { id: String(notification.ref) } };
+  if (notification.kind === 'test') return '/settings/notifications';
   if (notification.kind === 'connection_accepted' && notification.ref) return { pathname: '/person/[id]', params: { id: String(notification.ref) } };
 
   let path = '';

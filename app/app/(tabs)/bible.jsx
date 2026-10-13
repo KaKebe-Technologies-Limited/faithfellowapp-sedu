@@ -11,14 +11,13 @@ import SectionHeader from '../../components/SectionHeader';
 import StateView from '../../components/StateView';
 import { COLORS, FONTS, RADIUS, SHADOW, SPACING } from '../../constants/theme';
 import { HIGHLIGHTS, getLastRead } from '../../lib/bible';
-import { useFetch } from '../../lib/useFetch';
+import { useBibleIndex } from '../../lib/bibleOffline';
 
 const open = (book, chapter, v) => router.push({ pathname: '/bible/[book]/[chapter]', params: { book, chapter: String(chapter), ...(v ? { v: String(v) } : {}) } });
 
 export default function BibleTab() {
   const insets = useSafeAreaInsets();
-  const { data, loading, refreshing, error, reload, retry } = useFetch('/bible');
-  const bible = data?.data;
+  const { bible, loading, refreshing, error, reload, retry, offline } = useBibleIndex();
   const [testament, setTestament] = useState('NT');
   const [picked, setPicked] = useState(null);
   const [query, setQuery] = useState('');
@@ -46,8 +45,11 @@ export default function BibleTab() {
           <View style={styles.head}>
             <View style={{ flex: 1 }}>
               <AppText style={styles.title}>Bible</AppText>
-              <AppText variant="caption">{bible?.translations?.find((t) => t.key === bible.translation)?.name ?? ''}</AppText>
+              <AppText variant="caption">{bible?.translations?.find((t) => t.key === bible.translation)?.name ?? ''}{offline ? ' · offline' : ''}</AppText>
             </View>
+            <Pressable onPress={() => router.push('/bible/offline')} style={styles.offlineBtn} accessibilityRole="button" accessibilityLabel="Offline Bible">
+              <Ionicons name="cloud-download-outline" size={20} color={COLORS.primary} />
+            </Pressable>
           </View>
 
           <View style={styles.search}>
@@ -146,6 +148,7 @@ export default function BibleTab() {
 }
 
 const styles = StyleSheet.create({
+  offlineBtn: { width: 42, height: 42, borderRadius: 21, backgroundColor: COLORS.primaryMist, alignItems: 'center', justifyContent: 'center' },
   screen: { flex: 1, backgroundColor: COLORS.canvas },
   head: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.md, paddingTop: 10 },
   title: { fontFamily: FONTS.bold, fontSize: 30, lineHeight: 36, color: COLORS.black },

@@ -13,11 +13,13 @@ import {
 } from '@expo-google-fonts/clarity-city';
 import { COLORS } from '../constants/theme';
 import { AuthProvider, useAuth } from '../lib/auth';
+import { usePushSetup } from '../lib/push';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 function Navigator({ fontsLoaded }) {
-  const { ready } = useAuth();
+  const { ready, user } = useAuth();
+  usePushSetup(user);
 
   useEffect(() => {
     if (fontsLoaded && ready) SplashScreen.hideAsync().catch(() => {});

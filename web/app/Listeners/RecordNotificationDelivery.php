@@ -25,7 +25,7 @@ class RecordNotificationDelivery
         $response = $event->response;
         [$status, $cost, $ref, $error] = match (true) {
             is_array($response) => [($response['ok'] ?? false) ? 'sent' : 'failed', (float) ($response['cost'] ?? 0), $response['ref'] ?? null, $response['error'] ?? null],
-            $event->channel === 'webpush' => [$response > 0 ? 'sent' : 'failed', 0, null, $response > 0 ? null : 'No active device'],
+            in_array($event->channel, ['webpush', 'expo'], true) => [$response > 0 ? 'sent' : 'failed', 0, null, $response > 0 ? null : 'No active device'],
             $response === null && in_array($event->channel, ['sms', 'whatsapp'], true) => ['failed', 0, null, 'No phone number'],
             default => ['sent', 0, null, null],
         };

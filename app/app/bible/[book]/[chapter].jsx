@@ -15,6 +15,8 @@ import VerseList from '../../../components/VerseList';
 import { COLORS, FONTS, RADIUS, SHADOW, SPACING } from '../../../constants/theme';
 import api, { errorMessage } from '../../../lib/api';
 import { HIGHLIGHTS, getFontSize, referenceLabel, setFontSize, setLastRead, shareText, verseKey } from '../../../lib/bible';
+import { isOffline, useChapter } from '../../../lib/bibleOffline';
+import { saveChapter } from '../../../lib/bibleStore';
 import { useFetch } from '../../../lib/useFetch';
 
 function Sheet({ visible, onClose, title, children }) {
@@ -39,8 +41,7 @@ export default function ReaderScreen() {
   const insets = useSafeAreaInsets();
 
   const [t, setT] = useState(undefined); // undefined = the member's own translation
-  const { data, loading, error, retry } = useFetch(`/bible/${book}/${chapter}`, { params: { t } });
-  const chapterInfo = data?.data;
+  const { chapterInfo, loading, error, offline, retry } = useChapter(book, chapter, t);
 
   const [verses, setVerses] = useState([]);
   const [selected, setSelected] = useState(new Set());
@@ -55,12 +56,19 @@ export default function ReaderScreen() {
     getFontSize().then(setSize);
   }, []);
 
+  // A new chapter or translation starts at the top; the same chapter refreshing (a copy from the phone replaced by the
+  // server's answer, with your highlights) only updates the verses, so the page does not jump while you read.
+  const chapterKey = chapterInfo ? `${chapterInfo.translation}/${chapterInfo.book}/${chapterInfo.chapter}` : null;
   useEffect(() => {
     if (!chapterInfo) return;
-    setVerses(chapterInfo.verses);
     setSelected(new Set());
     setLastRead(chapterInfo.book, chapterInfo.chapter, chapterInfo.book_name);
     scroller.current?.scrollTo({ y: 0, animated: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chapterKey]);
+
+  useEffect(() => {
+    if (chapterInfo) setVerses(chapterInfo.verses);
   }, [chapterInfo]);
 
   function toggle(v) {
@@ -88,10 +96,12 @@ export default function ReaderScreen() {
     setBusy(true);
     try {
       await api.post('/bible/highlights', { verses: chosen.map((v) => verseKey(book, chapter, v.v)), color });
-      setVerses((all) => all.map((v) => (selected.has(v.v) ? { ...v, color } : v)));
+      const next = verses.map((v) => (selected.has(v.v) ? { ...v, color } : v));
+      setVerses(next);
+      saveChapter(chapterInfo.translation, book, chapter, next); // keep the colours for reading offline
       setSelected(new Set());
     } catch (e) {
-      Alert.alert('Could not highlight', errorMessage(e));
+      Alert.alert(isOffline(e) ? 'You are offline' : 'Could not highlight', isOffline(e) ? 'Highlighting needs a connection. You can still read, copy and share.' : errorMessage(e));
     } finally {
       setBusy(false);
     }
@@ -138,6 +148,12 @@ export default function ReaderScreen() {
       <StateView loading={loading} error={error} onRetry={retry}>
         {chapterInfo ? (
           <ScrollView ref={scroller} contentContainerStyle={{ padding: SPACING.md, paddingBottom: 140 + insets.bottom }} showsVerticalScrollIndicator={false}>
+            {offline ? (
+              <View style={styles.offline}>
+                <Ionicons name="cloud-offline-outline" size={15} color={COLORS.primaryDark} />
+                <AppText style={styles.offlineText}>Offline copy · highlights and notes need a connection</AppText>
+              </View>
+            ) : null}
             <AppText style={styles.hint}>Tap a verse to copy, highlight, note or share it.</AppText>
             <View onLayout={(e) => { listTop.current = e.nativeEvent.layout.y; }}>
               <VerseList verses={verses} selected={selected} onToggle={toggle} fontSize={fontSize} target={target} onTargetLayout={(y) => setTimeout(() => scroller.current?.scrollTo({ y: Math.max(0, listTop.current + y - 90), animated: true }), 150)} />
@@ -246,6 +262,8 @@ export default function ReaderScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: COLORS.canvas },
   hint: { fontFamily: FONTS.regular, fontSize: 12.5, color: COLORS.gray700, textAlign: 'center', marginBottom: 10 },
+  offline: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, alignSelf: 'center', backgroundColor: COLORS.primaryMist, borderRadius: RADIUS.full, paddingHorizontal: 12, paddingVertical: 6, marginBottom: 10 },
+  offlineText: { fontFamily: FONTS.semibold, fontSize: 12, color: COLORS.primaryDark },
   pager: { flexDirection: 'row', gap: 12, marginTop: 22 },
   pageBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: COLORS.primaryMist, borderRadius: RADIUS.full, paddingHorizontal: 14, paddingVertical: 11 },
   pageText: { flexShrink: 1, fontFamily: FONTS.semibold, fontSize: 13, color: COLORS.primary },

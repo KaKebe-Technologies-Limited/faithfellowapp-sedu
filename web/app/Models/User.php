@@ -166,6 +166,12 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         return $end->setTimezone(config('app.timezone'));
     }
 
+    /** Phones running the app that can receive push notifications. */
+    public function deviceTokens(): HasMany
+    {
+        return $this->hasMany(DeviceToken::class);
+    }
+
     public function pushSubscriptions(): HasMany
     {
         return $this->hasMany(PushSubscription::class);

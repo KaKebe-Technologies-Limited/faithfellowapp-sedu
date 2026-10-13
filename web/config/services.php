@@ -80,6 +80,12 @@ return [
         'api_bible_key' => env('API_BIBLE_KEY'),
     ],
 
+    // Push to the phone app goes through Expo. The access token is optional (it adds protection if you turn on
+    // "enhanced push security" in your Expo account).
+    'expo' => [
+        'access_token' => env('EXPO_ACCESS_TOKEN'),
+    ],
+
     'webpush' => [
         'subject' => env('VAPID_SUBJECT', 'mailto:service@kakebe.tech'),
         'public_key' => env('VAPID_PUBLIC_KEY'),

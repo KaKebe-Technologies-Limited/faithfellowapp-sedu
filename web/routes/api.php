@@ -60,6 +60,7 @@ Route::prefix('v1')->name('api.v1.')->middleware('throttle:api')->group(function
         Route::get('/devotionals', [V1\ReadingController::class, 'devotionals'])->name('devotionals.index');
         Route::get('/devotionals/{devotional}', [V1\ReadingController::class, 'devotional'])->name('devotionals.show');
         Route::get('/announcements', [V1\ReadingController::class, 'announcements'])->name('announcements.index');
+        Route::get('/posts/{post}', [V1\ContentController::class, 'post'])->name('posts.show');
         Route::get('/announcements/{announcement}', [V1\ReadingController::class, 'announcement'])->name('announcements.show');
         Route::get('/campaigns', [V1\ReadingController::class, 'campaigns'])->name('campaigns.index');
         Route::get('/campaigns/{campaign:id}', [V1\ReadingController::class, 'campaign'])->name('campaigns.show');
@@ -87,6 +88,7 @@ Route::prefix('v1')->name('api.v1.')->middleware('throttle:api')->group(function
         Route::get('/bible/highlights', [V1\BibleController::class, 'highlights'])->name('bible.highlights');
         Route::post('/bible/highlights', [V1\BibleController::class, 'highlight'])->middleware('throttle:engagement')->name('bible.highlight');
         Route::put('/bible/translation', [V1\BibleController::class, 'setTranslation'])->name('bible.translation');
+        Route::get('/bible/download/{book}', [V1\BibleController::class, 'download'])->middleware('throttle:120,1')->name('bible.download');
         Route::get('/bible/{book}/{chapter}', [V1\BibleController::class, 'read'])->whereNumber('chapter')->name('bible.read');
 
         Route::get('/notes', [V1\NoteController::class, 'index'])->name('notes.index');
@@ -156,6 +158,10 @@ Route::prefix('v1')->name('api.v1.')->middleware('throttle:api')->group(function
                 Route::get('/announcements', [V1\Admin\ContentController::class, 'announcements'])->name('announcements.index');
                 Route::post('/announcements', [V1\Admin\ContentController::class, 'storeAnnouncement'])->name('announcements.store');
                 Route::delete('/announcements/{announcement}', [V1\Admin\ContentController::class, 'destroyAnnouncement'])->name('announcements.destroy');
+                Route::get('/posts', [V1\Admin\PostController::class, 'index'])->name('posts.index');
+                Route::post('/posts', [V1\Admin\PostController::class, 'store'])->middleware('throttle:20,1')->name('posts.store');
+                Route::put('/posts/{post}', [V1\Admin\PostController::class, 'update'])->name('posts.update');
+                Route::delete('/posts/{post}', [V1\Admin\PostController::class, 'destroy'])->name('posts.destroy');
                 Route::get('/devotionals', [V1\Admin\ContentController::class, 'devotionals'])->name('devotionals.index');
                 Route::post('/devotionals', [V1\Admin\ContentController::class, 'storeDevotional'])->name('devotionals.store');
                 Route::delete('/devotionals/{devotional}', [V1\Admin\ContentController::class, 'destroyDevotional'])->name('devotionals.destroy');
@@ -202,6 +208,7 @@ Route::prefix('v1')->name('api.v1.')->middleware('throttle:api')->group(function
                 Route::get('/quizzes', [V1\Admin\GamesController::class, 'index'])->name('quizzes.index');
                 Route::post('/quizzes', [V1\Admin\GamesController::class, 'store'])->name('quizzes.store');
                 Route::get('/quizzes/{quiz}', [V1\Admin\GamesController::class, 'show'])->name('quizzes.show');
+                Route::put('/quizzes/{quiz}', [V1\Admin\GamesController::class, 'update'])->name('quizzes.update');
                 Route::delete('/quizzes/{quiz}', [V1\Admin\GamesController::class, 'destroy'])->name('quizzes.destroy');
                 Route::post('/quizzes/{quiz}/host', [V1\Admin\GamesController::class, 'host'])->name('quizzes.host');
                 Route::get('/quiz-sessions/{quizSession}', [V1\Admin\GamesController::class, 'state'])->middleware('throttle:300,1')->name('quiz-sessions.state');
@@ -222,5 +229,12 @@ Route::prefix('v1')->name('api.v1.')->middleware('throttle:api')->group(function
         });
         Route::get('/notifications', [V1\CommunityController::class, 'notifications'])->name('notifications.index');
         Route::post('/notifications/read', [V1\CommunityController::class, 'readNotifications'])->name('notifications.read');
+        Route::get('/notification-settings', [V1\NotificationSettingsController::class, 'show'])->name('notification-settings.show');
+        Route::put('/notification-settings', [V1\NotificationSettingsController::class, 'update'])->name('notification-settings.update');
+
+        // Push notifications to the phone app (Expo push tokens).
+        Route::post('/devices', [V1\DeviceController::class, 'store'])->middleware('throttle:30,1')->name('devices.store');
+        Route::delete('/devices', [V1\DeviceController::class, 'destroy'])->name('devices.destroy');
+        Route::post('/devices/test', [V1\DeviceController::class, 'test'])->middleware('throttle:5,1')->name('devices.test');
     });
 });

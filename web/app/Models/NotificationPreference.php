@@ -19,6 +19,7 @@ class NotificationPreference extends Model
         'devotional' => ['database', 'webpush'],
         'reading' => ['database', 'webpush'],
         'games' => ['database', 'webpush'],
+        'social' => ['database', 'webpush'],
     ];
 
     protected $fillable = ['user_id', 'church_id', 'category', 'channels', 'enabled'];

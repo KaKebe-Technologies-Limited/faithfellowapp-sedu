@@ -8,10 +8,13 @@ use App\Models\Quiz;
 use App\Models\User;
 use App\Notifications\Church\ChurchMessage;
 use App\Notifications\Content\AnnouncementPublished;
+use App\Notifications\Content\NewChurchUpdate;
 use App\Notifications\Live\LiveStreamStarted;
 use App\Notifications\Prayer\PrayerRequestShared;
 use App\Services\ModerationService;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
 
 /*
@@ -286,4 +289,125 @@ test('moderators hide or dismiss what members reported', function () {
     $this->postJson(route('api.v1.admin.reports.dismiss', [$church->slug, $keep->id]))->assertOk()->assertJsonPath('status', 'dismissed');
     expect($comment->fresh()->status)->toBe('hidden')->and(ContentReport::where('status', 'open')->count())->toBe(0);
     expect($this->getJson(route('api.v1.admin.reports.index', $church->slug))->json('data'))->toBe([]);
+});
+
+test('staff can edit an event without losing its tickets, and cancel it', function () {
+    Notification::fake();
+    [$church, $admin] = adminChurch();
+    actAs($admin);
+    $event = $this->postJson(route('api.v1.admin.events.store', $church->slug), [
+        'title' => 'Youth Camp', 'description' => 'Three days', 'starts_at' => '2030-08-01 09:00:00', 'ends_at' => '2030-08-01 17:30:00', 'status' => 'published', 'visibility' => 'public',
+        'is_online' => true, 'online_url' => 'https://example.com/camp', 'is_paid' => true, 'tickets' => [['name' => 'Standard', 'price' => 20000, 'quantity' => 30]],
+    ])->assertCreated()->json('data');
+
+    // Everything the edit form needs to start from.
+    $show = $this->getJson(route('api.v1.admin.events.show', [$church->slug, $event['id']]))->assertOk()->json('data');
+    expect($show['starts_local'])->toBe('2030-08-01 09:00')->and($show['ends_local'])->toBe('2030-08-01 17:30')->and($show['online_url'])->toBe('https://example.com/camp')
+        ->and($show['tickets'][0]['name'])->toBe('Standard')->and($show['description'])->toBe('Three days');
+
+    // Changing the title and time (no tickets sent) keeps the ticket.
+    $this->putJson(route('api.v1.admin.events.update', [$church->slug, $event['id']]), ['title' => 'Youth Camp 2030', 'starts_at' => '2030-08-02 08:00', 'status' => 'published', 'visibility' => 'members'])
+        ->assertOk()->assertJsonPath('data.title', 'Youth Camp 2030')->assertJsonPath('data.visibility', 'members');
+    $show = $this->getJson(route('api.v1.admin.events.show', [$church->slug, $event['id']]))->json('data');
+    expect($show['tickets'])->toHaveCount(1)->and($show['starts_local'])->toBe('2030-08-02 08:00');
+
+    $this->putJson(route('api.v1.admin.events.update', [$church->slug, $event['id']]), ['title' => 'Youth Camp 2030', 'starts_at' => '2030-08-02 08:00', 'status' => 'cancelled', 'visibility' => 'members'])
+        ->assertOk()->assertJsonPath('data.status', 'cancelled');
+});
+
+test('staff edit a quiz in place, but not while a game is being played with it', function () {
+    [$church, $admin] = adminChurch();
+    actAs($admin);
+    $quiz = $this->postJson(route('api.v1.admin.quizzes.store', $church->slug), ['title' => 'Bible Basics', 'questions' => [
+        ['question' => 'Who built the ark?', 'options' => ['Moses', 'Noah'], 'correct' => 1],
+        ['question' => 'How many disciples?', 'options' => ['Ten', 'Twelve'], 'correct' => 1],
+        ['question' => 'Third?', 'options' => ['A', 'B'], 'correct' => 0],
+    ]])->assertCreated()->json('data');
+    $firstId = Quiz::sole()->questions[0]->id;
+
+    $shown = $this->getJson(route('api.v1.admin.quizzes.show', [$church->slug, $quiz['id']]))->assertOk()->json('data');
+    expect($shown['questions'])->toHaveCount(3)->and($shown['questions'][0]['correct'])->toBe(1);
+
+    $this->putJson(route('api.v1.admin.quizzes.update', [$church->slug, $quiz['id']]), ['title' => 'Bible Heroes', 'questions' => [
+        ['question' => 'Who built the great ark?', 'options' => ['Moses', 'Noah', 'Abraham'], 'correct' => 1],
+        ['question' => 'Who led Israel out of Egypt?', 'options' => ['Moses', 'Joshua'], 'correct' => 0],
+    ]])->assertOk()->assertJsonPath('data.questions', 2);
+
+    $fresh = Quiz::sole()->fresh('questions');
+    expect($fresh->title)->toBe('Bible Heroes')->and($fresh->questions)->toHaveCount(2)
+        ->and($fresh->questions[0]->id)->toBe($firstId)->and($fresh->questions[0]->question)->toBe('Who built the great ark?')
+        ->and($fresh->questions[1]->correct_option)->toBe(0);
+
+    // An invalid edit is refused.
+    $this->putJson(route('api.v1.admin.quizzes.update', [$church->slug, $quiz['id']]), ['title' => 'Broken', 'questions' => [['question' => 'x', 'options' => ['Only one', ''], 'correct' => 0]]])->assertUnprocessable();
+
+    $session = $this->postJson(route('api.v1.admin.quizzes.host', [$church->slug, $quiz['id']]))->assertCreated()->json('data');
+    $this->putJson(route('api.v1.admin.quizzes.update', [$church->slug, $quiz['id']]), ['title' => 'Mid-game', 'questions' => [['question' => 'x?', 'options' => ['a', 'b'], 'correct' => 0]]])->assertUnprocessable();
+
+    $this->postJson(route('api.v1.admin.quiz-sessions.action', [$church->slug, $session['id'], 'cancel']))->assertOk();
+    $this->putJson(route('api.v1.admin.quizzes.update', [$church->slug, $quiz['id']]), ['title' => 'After the game', 'questions' => [['question' => 'x?', 'options' => ['a', 'b'], 'correct' => 0]]])->assertOk();
+    expect(Quiz::sole()->fresh()->title)->toBe('After the game');
+});
+
+test('staff post updates with photos that members see, and can pin, hide or delete them', function () {
+    Notification::fake();
+    Storage::fake('public');
+    [$church, $admin, $follower] = adminChurch();
+    $outsider = member();
+
+    actAs($admin);
+    $this->postJson(route('api.v1.admin.posts.store', $church->slug), ['visibility' => 'public'])->assertUnprocessable();
+    $post = $this->postJson(route('api.v1.admin.posts.store', $church->slug), [
+        'body' => 'Baptism Sunday at the lake', 'visibility' => 'public',
+        'images' => [UploadedFile::fake()->image('a.jpg', 1600, 900), UploadedFile::fake()->image('b.jpg', 1600, 900)],
+    ])->assertCreated()->json('data');
+    expect($post['images'])->toHaveCount(2)->and($post['status'])->toBe('published');
+    Notification::assertSentTo($follower, NewChurchUpdate::class);
+
+    // A photo alone is enough; more than six is not.
+    $this->postJson(route('api.v1.admin.posts.store', $church->slug), ['visibility' => 'members', 'images' => [UploadedFile::fake()->image('c.jpg', 800, 800)]])->assertCreated();
+    $this->postJson(route('api.v1.admin.posts.store', $church->slug), ['body' => 'Too many', 'visibility' => 'public', 'images' => array_map(fn ($i) => UploadedFile::fake()->image("{$i}.jpg"), range(1, 7))])->assertUnprocessable();
+    expect($this->getJson(route('api.v1.admin.posts.index', $church->slug))->json('data'))->toHaveCount(2);
+
+    // Members open the update and see every photo.
+    actAs($follower);
+    $seen = $this->getJson(route('api.v1.posts.show', $post['id']))->assertOk()->json('data');
+    expect($seen['body'])->toBe('Baptism Sunday at the lake')->and($seen['images'])->toHaveCount(2)->and($seen['church']['slug'])->toBe('grace-lira');
+
+    actAs($admin);
+    $this->putJson(route('api.v1.admin.posts.update', [$church->slug, $post['id']]), ['is_pinned' => true, 'body' => 'Baptism Sunday at the lake, all welcome'])->assertOk()->assertJsonPath('data.is_pinned', true);
+    $this->putJson(route('api.v1.admin.posts.update', [$church->slug, $post['id']]), ['status' => 'hidden'])->assertOk();
+    actAs($follower);
+    $this->getJson(route('api.v1.posts.show', $post['id']))->assertNotFound();
+
+    // Members-only updates stay with the church's members.
+    $membersOnly = $church->posts()->where('visibility', 'members')->first();
+    actAs($outsider);
+    $this->getJson(route('api.v1.posts.show', $membersOnly->id))->assertNotFound();
+    actAs($follower);
+    $this->getJson(route('api.v1.posts.show', $membersOnly->id))->assertOk();
+
+    actAs($admin);
+    $this->deleteJson(route('api.v1.admin.posts.destroy', [$church->slug, $post['id']]))->assertOk();
+    actAs(staffWith($church, ['prayer.moderate']));
+    $this->postJson(route('api.v1.admin.posts.store', $church->slug), ['body' => 'No', 'visibility' => 'public'])->assertForbidden();
+});
+
+test('a scheduled update tells nobody until it goes live', function () {
+    Notification::fake();
+    [$church, $admin] = adminChurch();
+    actAs($admin);
+
+    $this->postJson(route('api.v1.admin.posts.store', $church->slug), ['body' => 'Next week', 'visibility' => 'public', 'published_at' => now()->addWeek()->toDateTimeString()])
+        ->assertCreated()->assertJsonPath('data.scheduled', true);
+    Notification::assertNothingSent();
+});
+
+test('messages sent from the app go out as push and email, as members prefer', function () {
+    Notification::fake();
+    [$church, $admin, $follower] = adminChurch();
+    actAs($admin);
+
+    $this->postJson(route('api.v1.admin.broadcasts.store', $church->slug), ['title' => 'Prayer tonight', 'body' => 'Join us at 7.', 'audience' => 'members', 'category' => 'announcement', 'send' => 'now'])->assertCreated();
+    Notification::assertSentTo($follower, ChurchMessage::class, fn ($n) => $n->onlyChannels === ['webpush', 'mail']);
 });

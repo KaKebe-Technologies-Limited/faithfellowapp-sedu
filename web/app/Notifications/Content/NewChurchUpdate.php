@@ -33,6 +33,20 @@ class NewChurchUpdate extends ChurchNotification
         return route('dashboard', ['church' => $this->post->church?->slug]);
     }
 
+    /** The app opens the update itself (with all its photos) instead of a website page. */
+    public function toArray(object $notifiable): array
+    {
+        return [...parent::toArray($notifiable), 'kind' => 'post', 'ref' => $this->post->id];
+    }
+
+    public function toPush(object $notifiable): array
+    {
+        $push = parent::toPush($notifiable);
+        $push['data'] = [...$push['data'], 'kind' => 'post', 'ref' => $this->post->id];
+
+        return $push;
+    }
+
     public function icon(): string
     {
         return 'bi-postcard-heart';

@@ -50,6 +50,7 @@
       "expo-web-browser",
       "expo-image",
       "expo-video",
+      ["expo-notifications", { "icon": "./assets/android-icon-monochrome.png", "color": "#BC2649", "defaultChannel": "default" }],
       ["expo-camera", { "cameraPermission": "FaithFellows uses the camera to scan guests' QR tickets at your events." }],
       ["expo-image-picker", { "photosPermission": "FaithFellows needs your photos so you can choose a profile or event picture." }]
     ],

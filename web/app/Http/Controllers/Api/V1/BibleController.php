@@ -29,7 +29,7 @@ class BibleController extends Controller
         return response()->json(['data' => [
             'translations' => $this->translations(),
             'translation' => $this->bible->defaultTranslation($user),
-            'books' => collect(Books::ALL)->map(fn ($b, $code) => ['code' => $code, 'name' => $b[0], 'chapters' => $b[1], 'testament' => $b[2]])->values(),
+            'books' => collect(Books::ALL)->map(fn ($b, $code) => ['code' => $code, 'name' => $b[0], 'chapters' => $b[1], 'testament' => $b[2], 'aliases' => $b[3]])->values(),
             'colors' => collect(BibleHighlight::COLORS)->map(fn ($c, $key) => ['key' => $key, 'label' => $c[0], 'hex' => $c[1]])->values(),
             'highlights' => $this->recentHighlights($request),
         ]]);
@@ -60,6 +60,52 @@ class BibleController extends Controller
             'verses' => $this->withColors($verses, $book, $chapter, $colors),
             'previous' => $previous ? ['book' => $previous[0], 'chapter' => $previous[1], 'label' => Books::name($previous[0]).' '.$previous[1]] : null,
             'next' => $next ? ['book' => $next[0], 'chapter' => $next[1], 'label' => Books::name($next[0]).' '.$next[1]] : null,
+        ]]);
+    }
+
+    /**
+     * A whole book's text for reading offline. The app asks again and again until nothing is missing: each answer
+     * holds the chapters it does not have yet (`have` lists the ones it already stores), and the server fetches a few
+     * more from the Bible provider each time, so a big book is ready after some requests instead of one very long one.
+     */
+    public function download(Request $request, string $book): JsonResponse
+    {
+        $book = strtoupper($book);
+        abort_unless(Books::exists($book), 404);
+        if (PHP_SAPI !== 'cli') {
+            set_time_limit(60); // a slow Bible provider can take a while; never touch the limit of the test runner or console
+        }
+        $translation = $this->translation($request);
+        $total = Books::chapters($book);
+        $have = collect(explode(',', (string) $request->query('have')))->map(fn ($n) => (int) $n)->filter()->flip();
+
+        $cached = BibleChapter::where('translation', $translation)->where('book', $book)->pluck('verses', 'chapter');
+        $out = $cached->reject(fn ($verses, $chapter) => $have->has((int) $chapter))->all();
+
+        // Top up what the server does not hold yet, a few chapters per request and no longer than about 20 seconds.
+        $held = $cached->keys()->map(fn ($c) => (int) $c)->all();
+        $fetched = 0;
+        $deadline = microtime(true) + 20;
+        foreach (array_diff(range(1, $total), $held) as $chapter) {
+            if ($fetched >= 5 || microtime(true) > $deadline) {
+                break;
+            }
+            try {
+                $out[$chapter] = $this->bible->chapter($translation, $book, $chapter);
+                $held[] = $chapter;
+                $fetched++;
+            } catch (BibleUnavailable) {
+                break;
+            }
+        }
+
+        return response()->json(['data' => [
+            'translation' => $translation,
+            'book' => $book,
+            'total' => $total,
+            'chapters' => (object) collect($out)->map(fn ($verses) => array_map(fn ($v) => ['v' => $v['v'], 't' => $v['t']], $verses))->all(),
+            'missing' => array_values(array_diff(range(1, $total), $held)),
+            'fetched' => $fetched,
         ]]);
     }
 

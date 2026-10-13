@@ -114,6 +114,22 @@ abstract class ChurchNotification extends Notification implements ShouldQueue
     }
 
     /**
+     * The message for the phone app. `data` is what the app opens when the member taps it.
+     *
+     * @return array<string, mixed>
+     */
+    public function toPush(object $notifiable): array
+    {
+        return [
+            'title' => $this->title(),
+            'body' => Str::limit(strip_tags((string) $this->body()), 160),
+            'subtitle' => $this->churchName(),
+            'data' => array_filter(['url' => $this->url(), 'category' => $this->category, 'church_id' => $this->churchId]),
+            'channelId' => $this->urgent ? 'urgent' : ($this->category === 'live' ? 'live' : 'default'),
+        ];
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function toWebPush(object $notifiable): array

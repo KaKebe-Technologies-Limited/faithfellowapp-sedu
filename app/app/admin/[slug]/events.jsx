@@ -1,27 +1,18 @@
-// Events: your church's events (past and future) and a form to create one — title, when, where, how many seats, free or
-// ticketed, a cover picture. Publishing an event tells your followers. Tap an event for its guest list and door check-in.
+// Events: your church's events (past and future) and a form to create one (see components/EventForm). Publishing an event tells your followers. Tap an event for its guest list and door check-in.
 // Data: /api/v1/admin/{church}/events.
 import { useState } from 'react';
-import { Alert, FlatList, Platform, Pressable, StyleSheet, Switch, View } from 'react-native';
+import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
-import * as ImagePicker from 'expo-image-picker';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback } from 'react';
 import AppText from '../../../components/AppText';
-import Button from '../../../components/Button';
-import Chip from '../../../components/Chip';
+import EventForm from '../../../components/EventForm';
 import ScreenHeader from '../../../components/ScreenHeader';
-import Sheet from '../../../components/Sheet';
 import StateView from '../../../components/StateView';
-import TextField from '../../../components/TextField';
 import { COLORS, FONTS, RADIUS, SHADOW, SPACING } from '../../../constants/theme';
-import { adminApi, joinDateTime, today } from '../../../lib/admin';
-import api, { errorMessage, fieldErrors, mediaUrl } from '../../../lib/api';
+import { adminApi } from '../../../lib/admin';
 import { dateTile, dayAndTime } from '../../../lib/format';
 import { useFetch } from '../../../lib/useFetch';
-
-const blank = () => ({ title: '', description: '', date: today(), time: '10:00', endTime: '', location: '', capacity: '', rsvp: true, qa: false, paid: false, ticketName: 'Standard', ticketPrice: '', draft: false, cover: null });
 
 export default function AdminEvents() {
   const { slug } = useLocalSearchParams();
@@ -29,9 +20,6 @@ export default function AdminEvents() {
   const { data, loading, error, retry, reload } = useFetch(admin.path('/events'));
   const events = data?.data ?? [];
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState(blank());
-  const [busy, setBusy] = useState(false);
-  const [errors, setErrors] = useState({});
 
   useFocusEffect(
     useCallback(() => {
@@ -39,48 +27,6 @@ export default function AdminEvents() {
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []),
   );
-
-  const set = (k) => (v) => setForm((f) => ({ ...f, [k]: v }));
-
-  async function pickCover() {
-    const r = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [16, 9], quality: 0.7 });
-    if (!r.canceled && r.assets?.length) setForm((f) => ({ ...f, cover: r.assets[0] }));
-  }
-
-  async function save() {
-    setBusy(true);
-    setErrors({});
-    try {
-      const body = {
-        title: form.title.trim(), description: form.description.trim() || null,
-        starts_at: joinDateTime(form.date, form.time), ends_at: form.endTime ? joinDateTime(form.date, form.endTime) : null,
-        location_name: form.location.trim() || null, capacity: form.capacity ? Number(form.capacity) : null,
-        rsvp_enabled: form.rsvp, qa_enabled: form.qa, is_paid: form.paid, status: form.draft ? 'draft' : 'published', visibility: 'public',
-        ...(form.paid ? { tickets: [{ name: form.ticketName || 'Ticket', price: Number(form.ticketPrice) || 0 }] } : {}),
-      };
-      const { data: res } = await admin.post('/events', body);
-      if (form.cover) {
-        const f = new FormData();
-        if (Platform.OS === 'web') f.append('cover', await (await fetch(form.cover.uri)).blob(), 'cover.jpg');
-        else f.append('cover', { uri: form.cover.uri, name: 'cover.jpg', type: form.cover.mimeType || 'image/jpeg' });
-        f.append('title', body.title);
-        f.append('starts_at', body.starts_at);
-        f.append('status', body.status);
-        f.append('visibility', 'public');
-        f.append('_method', 'PUT');
-        await api.post(admin.path(`/events/${res.data.id}`), f, { headers: { 'Content-Type': 'multipart/form-data' }, transformRequest: (d) => d }).catch(() => {});
-      }
-      setOpen(false);
-      setForm(blank());
-      await reload();
-    } catch (e) {
-      const f = fieldErrors(e);
-      setErrors(f);
-      if (!Object.keys(f).length) Alert.alert('Could not save', errorMessage(e));
-    } finally {
-      setBusy(false);
-    }
-  }
 
   return (
     <View style={styles.screen}>
@@ -119,39 +65,7 @@ export default function AdminEvents() {
         />
       </StateView>
 
-      <Sheet visible={open} onClose={() => setOpen(false)} title="New event" tall>
-        <Pressable onPress={pickCover} style={styles.cover} accessibilityRole="button" accessibilityLabel="Choose a cover picture">
-          {form.cover ? <Image source={{ uri: form.cover.uri }} style={StyleSheet.absoluteFill} contentFit="cover" /> : (
-            <View style={{ alignItems: 'center', gap: 4 }}>
-              <Ionicons name="image-outline" size={26} color={COLORS.primary} />
-              <AppText style={{ fontFamily: FONTS.semibold, fontSize: 13, color: COLORS.primary }}>Add a cover picture (optional)</AppText>
-              <AppText variant="caption">Without one, a picture is made for you.</AppText>
-            </View>
-          )}
-        </Pressable>
-        <TextField label="Title" value={form.title} onChangeText={set('title')} error={errors.title} />
-        <TextField label="About" value={form.description} onChangeText={set('description')} multiline numberOfLines={3} style={{ minHeight: 80 }} />
-        <TextField label="Date (YYYY-MM-DD)" value={form.date} onChangeText={set('date')} error={errors.starts_at} />
-        <View style={{ flexDirection: 'row', gap: 10 }}>
-          <View style={{ flex: 1 }}><TextField label="Starts (HH:MM)" value={form.time} onChangeText={set('time')} placeholder="10:00" /></View>
-          <View style={{ flex: 1 }}><TextField label="Ends (optional)" value={form.endTime} onChangeText={set('endTime')} placeholder="13:00" error={errors.ends_at} /></View>
-        </View>
-        <TextField label="Where" value={form.location} onChangeText={set('location')} placeholder="Main sanctuary" />
-        <TextField label="Seats (leave empty for unlimited)" value={form.capacity} onChangeText={(t) => set('capacity')(t.replace(/\D/g, ''))} keyboardType="number-pad" />
-        {[['rsvp', 'Let people reserve a seat'], ['qa', 'Questions for the speakers'], ['paid', 'Ticketed event'], ['draft', 'Save as a draft']].map(([key, label]) => (
-          <View key={key} style={styles.switch}>
-            <AppText style={styles.switchTitle}>{label}</AppText>
-            <Switch value={form[key]} onValueChange={set(key)} trackColor={{ true: COLORS.primaryLight, false: COLORS.gray300 }} thumbColor={COLORS.white} />
-          </View>
-        ))}
-        {form.paid ? (
-          <View style={{ flexDirection: 'row', gap: 10, marginTop: 6 }}>
-            <View style={{ flex: 1.4 }}><TextField label="Ticket name" value={form.ticketName} onChangeText={set('ticketName')} /></View>
-            <View style={{ flex: 1 }}><TextField label="Price (UGX)" value={form.ticketPrice} onChangeText={(t) => set('ticketPrice')(t.replace(/\D/g, ''))} keyboardType="number-pad" /></View>
-          </View>
-        ) : null}
-        <Button title={form.draft ? 'Save draft' : 'Publish event'} onPress={save} loading={busy} disabled={!form.title.trim()} style={{ marginTop: 8 }} />
-      </Sheet>
+      <EventForm visible={open} onClose={() => setOpen(false)} slug={slug} onSaved={reload} />
     </View>
   );
 }
@@ -165,7 +79,4 @@ const styles = StyleSheet.create({
   tileMonth: { fontFamily: FONTS.bold, fontSize: 11, letterSpacing: 0.8, color: COLORS.primary },
   tileDay: { fontFamily: FONTS.bold, fontSize: 22, lineHeight: 25, color: COLORS.black },
   title: { fontFamily: FONTS.bold, fontSize: 15.5, color: COLORS.black },
-  cover: { height: 130, borderRadius: RADIUS.lg, backgroundColor: COLORS.primaryMist, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', marginBottom: 14 },
-  switch: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 7 },
-  switchTitle: { fontFamily: FONTS.semibold, fontSize: 15, color: COLORS.black },
 });

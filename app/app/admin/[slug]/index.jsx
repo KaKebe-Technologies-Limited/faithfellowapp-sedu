@@ -17,6 +17,7 @@ import { useFetch } from '../../../lib/useFetch';
 
 const TOOLS = [
   { key: 'announcements', icon: 'megaphone-outline', label: 'Announcements', perm: 'content.manage', colors: ['#D34268', '#8E1C37'] },
+  { key: 'posts', icon: 'images-outline', label: 'Updates & photos', perm: 'content.manage', colors: ['#26A69A', '#00695C'] },
   { key: 'events', icon: 'calendar-outline', label: 'Events & check-in', perm: 'events.manage', colors: ['#7C4DFF', '#4527A0'] },
   { key: 'prayer', icon: 'hand-left-outline', label: 'Prayer queue', perm: 'prayer.moderate', colors: ['#F57C00', '#BF360C'] },
   { key: 'members', icon: 'people-outline', label: 'Members', perm: 'members.manage', colors: ['#00A896', '#00695C'] },

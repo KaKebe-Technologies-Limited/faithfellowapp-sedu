@@ -10,6 +10,7 @@ use App\Http\Resources\PrayerRequestResource;
 use App\Http\Resources\SermonResource;
 use App\Models\Event;
 use App\Models\LiveStream;
+use App\Models\Post;
 use App\Models\Sermon;
 use App\Services\FeedService;
 use Illuminate\Database\Eloquent\Model;
@@ -64,6 +65,22 @@ class ContentController extends Controller
             'testimony' => $base + ['author' => $model->is_anonymous ? null : $model->user?->name],
             default => $base,
         };
+    }
+
+    /** One update from a church with all its photos (the feed shows only the first few). */
+    public function post(Request $request, Post $post): JsonResponse
+    {
+        $memberIds = $request->user()->memberChurchIds();
+        abort_unless($post->status === 'published' && $post->published_at?->isPast() && ($post->visibility === 'public' || in_array($post->church_id, $memberIds, true)), 404);
+        $post->loadMissing('church.media');
+
+        return response()->json(['data' => [
+            'id' => $post->id,
+            'body' => strip_tags((string) $post->body),
+            'published_at' => $post->published_at->toIso8601String(),
+            'church' => new ChurchSummaryResource($post->church),
+            'images' => $post->getMedia('images')->map(fn ($media) => $media->getUrl('feed'))->values()->all(),
+        ]]);
     }
 
     public function sermons(Request $request): AnonymousResourceCollection

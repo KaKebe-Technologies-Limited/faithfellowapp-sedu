@@ -27,10 +27,10 @@ use Illuminate\Support\Facades\Notification;
 class NotificationService
 {
     /** Channels with a transport in this application. */
-    public const SUPPORTED_CHANNELS = ['database', 'mail', 'webpush', 'sms', 'whatsapp', 'broadcast'];
+    public const SUPPORTED_CHANNELS = ['database', 'mail', 'webpush', 'expo', 'sms', 'whatsapp', 'broadcast'];
 
     /** Channels that buzz a phone — held back during quiet hours. */
-    public const INTRUSIVE_CHANNELS = ['webpush', 'sms', 'whatsapp'];
+    public const INTRUSIVE_CHANNELS = ['webpush', 'expo', 'sms', 'whatsapp'];
 
     /** Channels that cost the church money per message. */
     public const PAID_CHANNELS = ['sms', 'whatsapp'];
@@ -40,6 +40,9 @@ class NotificationService
 
     /** @var array<int, bool> */
     protected array $pushCache = [];
+
+    /** @var array<int, bool> */
+    protected array $deviceCache = [];
 
     public function __construct(protected PreferenceResolver $preferences, protected WebPushSender $push) {}
 
@@ -139,6 +142,16 @@ class NotificationService
             $channels[] = $fallback;
         }
 
+        // "Push" reaches the browser (web push) and the phone app (device tokens), whichever the member has.
+        if (in_array('webpush', $channels, true)) {
+            if (! $this->hasBrowserPush($notifiable)) {
+                $channels = array_values(array_diff($channels, ['webpush']));
+            }
+            if ($this->hasDevice($notifiable)) {
+                $channels[] = 'expo';
+            }
+        }
+
         if ($this->broadcastingEnabled()) {
             $channels[] = 'broadcast';
         }
@@ -154,10 +167,21 @@ class NotificationService
         return match ($channel) {
             'database' => true,
             'mail' => $user->hasVerifiedEmail(),
-            'webpush' => $this->push->configured() && ($this->pushCache[$user->id] ??= $user->pushSubscriptions()->exists()),
+            'webpush' => $this->hasBrowserPush($user) || $this->hasDevice($user),
             'sms', 'whatsapp' => filled($user->phone),
             default => false,
         };
+    }
+
+    protected function hasBrowserPush(User $user): bool
+    {
+        return $this->push->configured() && ($this->pushCache[$user->id] ??= $user->pushSubscriptions()->exists());
+    }
+
+    /** Whether the member has the phone app set up for notifications. */
+    public function hasDevice(User $user): bool
+    {
+        return $this->deviceCache[$user->id] ??= $user->deviceTokens()->exists();
     }
 
     /**

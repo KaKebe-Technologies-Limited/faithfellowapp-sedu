@@ -11,6 +11,7 @@ import { BackButton } from '../../components/ScreenHeader';
 import StateView from '../../components/StateView';
 import { COLORS, FONTS, RADIUS, SPACING } from '../../constants/theme';
 import api, { errorMessage } from '../../lib/api';
+import { setActiveChat } from '../../lib/push';
 
 const clock = (iso) => new Date(iso).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
 const day = (iso) => new Date(iso).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' });
@@ -47,6 +48,12 @@ export default function ChatScreen() {
   useEffect(() => {
     load();
   }, [load]);
+
+  // A push for the chat that is open would only repeat what is on screen.
+  useEffect(() => {
+    setActiveChat(id);
+    return () => setActiveChat(null);
+  }, [id]);
 
   // New messages, every 3 seconds.
   useEffect(() => {

@@ -10,6 +10,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AppText from '../../../../components/AppText';
 import Avatar from '../../../../components/Avatar';
 import Button from '../../../../components/Button';
+import EventForm from '../../../../components/EventForm';
 import ScreenHeader from '../../../../components/ScreenHeader';
 import StateView from '../../../../components/StateView';
 import { COLORS, FONTS, RADIUS, SHADOW, SPACING } from '../../../../constants/theme';
@@ -27,6 +28,7 @@ export default function AdminEvent() {
   const [code, setCode] = useState('');
   const [result, setResult] = useState(null);
   const [scanning, setScanning] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [permission, requestPermission] = useCameraPermissions();
   const lastScan = useRef({ value: '', at: 0 });
 
@@ -71,7 +73,13 @@ export default function AdminEvent() {
 
   return (
     <View style={styles.screen}>
-      <ScreenHeader title={e?.title ?? 'Event'} subtitle={e ? dayAndTime(e.starts_at) : undefined} right={e ? <Pressable onPress={remove} hitSlop={8} accessibilityLabel="Delete event"><Ionicons name="trash-outline" size={22} color={COLORS.gray700} /></Pressable> : null} />
+      <ScreenHeader title={e?.title ?? 'Event'} subtitle={e ? dayAndTime(e.starts_at) : undefined} right={e ? (
+        <View style={{ flexDirection: 'row', gap: 16, alignItems: 'center' }}>
+          <Pressable onPress={() => setEditing(true)} hitSlop={8} accessibilityLabel="Edit event"><Ionicons name="create-outline" size={23} color={COLORS.primary} /></Pressable>
+          <Pressable onPress={remove} hitSlop={8} accessibilityLabel="Delete event"><Ionicons name="trash-outline" size={22} color={COLORS.gray700} /></Pressable>
+        </View>
+      ) : null} />
+      {e ? <EventForm visible={editing} onClose={() => setEditing(false)} slug={slug} event={e} onSaved={reload} /> : null}
       <StateView loading={loading && !e} error={!e ? error : null} onRetry={retry}>
         {e ? (
           <ScrollView contentContainerStyle={{ padding: SPACING.md, paddingBottom: 48 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>

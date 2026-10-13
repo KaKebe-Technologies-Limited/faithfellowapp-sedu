@@ -30,6 +30,7 @@ export default function AdminGames() {
   const [questions, setQuestions] = useState([blankQuestion()]);
   const [notify, setNotify] = useState(true);
   const [busy, setBusy] = useState(null);
+  const [editId, setEditId] = useState(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -42,16 +43,41 @@ export default function AdminGames() {
   const setOption = (i, k, text) => setQ(i, { options: questions[i].options.map((o, j) => (j === k ? text : o)) });
   const valid = title.trim() && questions.every((q) => q.question.trim() && q.options.filter((o) => o.trim()).length >= 2 && q.options[q.correct]?.trim());
 
+  function openNew() {
+    setEditId(null);
+    setTitle('');
+    setQuestions([blankQuestion()]);
+    setOpen(true);
+  }
+
+  async function openEdit(quiz) {
+    setBusy(`edit${quiz.id}`);
+    try {
+      const { data: res } = await admin.get(`/quizzes/${quiz.id}`);
+      setEditId(quiz.id);
+      setTitle(res.data.title);
+      setQuestions(res.data.questions.map((q) => ({ question: q.question, options: [...q.options, '', '', '', ''].slice(0, 4), correct: q.correct })));
+      setOpen(true);
+    } catch (e) {
+      Alert.alert('Could not open the quiz', errorMessage(e));
+    } finally {
+      setBusy(null);
+    }
+  }
+
   async function save() {
     setBusy('save');
     try {
-      await admin.post('/quizzes', { title: title.trim(), questions: questions.map((q) => ({ question: q.question.trim(), options: q.options, correct: q.correct })) });
+      const body = { title: title.trim(), questions: questions.map((q) => ({ question: q.question.trim(), options: q.options, correct: q.correct })) };
+      if (editId) await admin.put(`/quizzes/${editId}`, body);
+      else await admin.post('/quizzes', body);
       setOpen(false);
+      setEditId(null);
       setTitle('');
       setQuestions([blankQuestion()]);
       await reload();
     } catch (e) {
-      Alert.alert('Could not save the quiz', errorMessage(e));
+      Alert.alert(editId ? 'Could not save your changes' : 'Could not save the quiz', errorMessage(e));
     } finally {
       setBusy(null);
     }
@@ -84,7 +110,7 @@ export default function AdminGames() {
         title="Host a quiz"
         subtitle="Play Bible quizzes with your church"
         right={
-          <Pressable onPress={() => setOpen(true)} style={styles.add} accessibilityRole="button" accessibilityLabel="Write a new quiz">
+          <Pressable onPress={openNew} style={styles.add} accessibilityRole="button" accessibilityLabel="Write a new quiz">
             <Ionicons name="add" size={20} color={COLORS.white} />
             <AppText style={styles.addText}>New</AppText>
           </Pressable>
@@ -119,6 +145,9 @@ export default function AdminGames() {
                 <AppText variant="caption">{q.questions} {q.questions === 1 ? 'question' : 'questions'}</AppText>
               </View>
               <Button title="Host" small onPress={() => host(q)} loading={busy === `host${q.id}`} />
+              <Pressable onPress={() => openEdit(q)} hitSlop={8} accessibilityLabel={`Edit ${q.title}`}>
+                <Ionicons name="create-outline" size={21} color={busy === `edit${q.id}` ? COLORS.gray300 : COLORS.primary} />
+              </Pressable>
               <Pressable onPress={() => remove(q)} hitSlop={8} accessibilityLabel={`Delete ${q.title}`}>
                 <Ionicons name="trash-outline" size={20} color={COLORS.gray500} />
               </Pressable>
@@ -127,7 +156,7 @@ export default function AdminGames() {
         </ScrollView>
       </StateView>
 
-      <Sheet visible={open} onClose={() => setOpen(false)} title="New quiz" tall>
+      <Sheet visible={open} onClose={() => setOpen(false)} title={editId ? 'Edit quiz' : 'New quiz'} tall>
         <TextField label="Quiz name" value={title} onChangeText={setTitle} placeholder="Bible Heroes" maxLength={160} />
         {questions.map((q, i) => (
           <View key={i} style={styles.qCard}>
@@ -154,7 +183,7 @@ export default function AdminGames() {
           </View>
         ))}
         <Button title="Add another question" variant="outline" small onPress={() => setQuestions((qs) => [...qs, blankQuestion()])} style={{ alignSelf: 'flex-start', marginVertical: 10 }} />
-        <Button title="Save quiz" onPress={save} loading={busy === 'save'} disabled={!valid} />
+        <Button title={editId ? 'Save changes' : 'Save quiz'} onPress={save} loading={busy === 'save'} disabled={!valid} />
       </Sheet>
     </View>
   );

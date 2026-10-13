@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Notifications\Channels\ExpoPushChannel;
 use App\Notifications\Channels\SmsChannel;
 use App\Notifications\Channels\TenantDatabaseChannel;
 use App\Notifications\Channels\WebPushChannel;
@@ -54,6 +55,7 @@ class AppServiceProvider extends ServiceProvider
         Notification::extend('sms', fn ($app) => $app->make(SmsChannel::class));
         Notification::extend('whatsapp', fn ($app) => $app->make(WhatsAppChannel::class));
         Notification::extend('webpush', fn ($app) => $app->make(WebPushChannel::class));
+        Notification::extend('expo', fn ($app) => $app->make(ExpoPushChannel::class));
 
         Blade::directive('money', fn ($expr) => "<?php echo e(ff_money($expr)); ?>");
 

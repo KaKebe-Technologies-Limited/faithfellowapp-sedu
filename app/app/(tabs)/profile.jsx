@@ -19,6 +19,7 @@ import { useFetch } from '../../lib/useFetch';
 
 const MENU = [
   { icon: 'notifications-outline', label: 'Notifications', path: '/notifications' },
+  { icon: 'options-outline', label: 'Notification settings', path: '/settings/notifications' },
   { icon: 'chatbubble-ellipses-outline', label: 'Messages', path: '/chats' },
   { icon: 'people-circle-outline', label: 'My connections', path: '/connections' },
   { icon: 'ticket-outline', label: 'My tickets', path: '/tickets' },

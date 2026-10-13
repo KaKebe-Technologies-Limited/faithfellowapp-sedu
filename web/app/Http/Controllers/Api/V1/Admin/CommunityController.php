@@ -155,7 +155,7 @@ class CommunityController extends Controller
 
         $broadcast = $church->churchBroadcasts()->create([
             'user_id' => $request->user()->id, 'title' => $data['title'], 'body' => strip_tags($data['body']), 'audience' => $audience,
-            'audience_options' => $options ?: null, 'channels' => [], 'category' => $data['category'], 'is_urgent' => $request->boolean('is_urgent'),
+            'audience_options' => $options ?: null, 'channels' => ['webpush', 'mail'], 'category' => $data['category'], 'is_urgent' => $request->boolean('is_urgent'),
             'status' => $data['send'] === 'later' ? 'scheduled' : 'draft', 'scheduled_at' => $data['send'] === 'later' ? Carbon::parse($data['scheduled_at']) : null,
         ]);
         if ($data['send'] === 'now') {

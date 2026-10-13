@@ -48,6 +48,19 @@ class GamesController extends Controller
         return response()->json(['data' => ['id' => $quiz->id, 'questions' => $quiz->questions()->count()]], 201);
     }
 
+    /** Edit a quiz: its name and questions. Not while a game is being played with it. */
+    public function update(Request $request, Church $church, Quiz $quiz): JsonResponse
+    {
+        abort_if($quiz->sessions()->active()->exists(), 422, __('A game is being played with this quiz. Finish it first, then edit.'));
+
+        DB::transaction(function () use ($request, $quiz) {
+            $quiz->update($this->validated($request));
+            $this->saveQuestions($quiz, $request);
+        });
+
+        return response()->json(['data' => ['id' => $quiz->id, 'questions' => $quiz->questions()->count()]]);
+    }
+
     public function destroy(Church $church, Quiz $quiz): JsonResponse
     {
         $quiz->delete();
@@ -105,8 +118,12 @@ class GamesController extends Controller
         return $request->only(['title', 'description']);
     }
 
+    /** Writes the questions in order: existing ones are updated in place (so past games keep their answers), extras are removed. */
     protected function saveQuestions(Quiz $quiz, Request $request): void
     {
+        $existing = $quiz->questions()->get()->values();
+        $count = count($request->input('questions', []));
+
         foreach (array_values($request->input('questions', [])) as $i => $q) {
             // Drop empty answers but keep the correct one pointing at the right text.
             $options = collect($q['options'])->map(fn ($o) => trim((string) $o));
@@ -116,10 +133,13 @@ class GamesController extends Controller
 
             abort_if($options->count() < 2 || $correct === false, 422, __('Question :n needs at least two answers and a correct answer.', ['n' => $i + 1]));
 
-            $quiz->questions()->create([
+            $row = [
                 'position' => $i, 'question' => trim($q['question']), 'options' => $options->all(), 'correct_option' => $correct,
                 'time_limit' => QuizService::questionSeconds(), 'points' => (int) ($q['points'] ?? 1000),
-            ]);
+            ];
+            $existing->has($i) ? $existing[$i]->update($row) : $quiz->questions()->create($row);
         }
+
+        $existing->slice($count)->each->delete();
     }
 }

@@ -31,6 +31,9 @@ class EventController extends Controller
 
         return response()->json(['data' => $this->card($event) + [
             'description' => plain_text($event->description),
+            'online_url' => $event->online_url,
+            'starts_local' => $event->starts_at?->format('Y-m-d H:i'),
+            'ends_local' => $event->ends_at?->format('Y-m-d H:i'),
             'tickets' => $event->tickets->map(fn ($t) => ['id' => $t->id, 'name' => $t->name, 'price' => (float) $t->price, 'quantity' => $t->quantity, 'sold' => (int) $t->sold_count])->values(),
             'stats' => [
                 'going' => (int) $event->rsvps()->where('status', 'going')->sum('quantity'),
@@ -62,7 +65,10 @@ class EventController extends Controller
     {
         DB::transaction(function () use ($request, $event) {
             $event->update($this->attributes($request));
-            $this->syncTickets($event, $request->input('tickets', []));
+            // Tickets are only touched when the app sends them, so changing a title never removes a ticket.
+            if ($request->has('tickets')) {
+                $this->syncTickets($event, $request->input('tickets', []));
+            }
         });
         if ($request->hasFile('cover')) {
             $event->addMediaFromRequest('cover')->toMediaCollection('cover');

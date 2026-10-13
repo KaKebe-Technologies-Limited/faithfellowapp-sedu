@@ -167,6 +167,7 @@ return [
         'devotional' => 'Devotionals',
         'reading' => 'Reading partners',
         'games' => 'Quizzes & games',
+        'social' => 'People & messages',
     ],
 
     'notification_channels' => [

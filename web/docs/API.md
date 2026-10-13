@@ -205,6 +205,7 @@ Every event, sermon, devotional and campaign has a `cover_url` (sermons: `thumbn
 ### Devotionals, announcements and campaigns
 
 - `GET /devotionals` (newest first, paged) and `GET /devotionals/{id}` (`body` and `prayer` as plain text, `audio_url`, `cover_url`).
+- `GET /posts/{id}` → one church update with **all** its photos (`images`), `body`, `church`. `404` unless it is published and the member may see it (members-only updates stay with the church's members). The feed carries the first few photos of each update.
 - `GET /announcements` and `GET /announcements/{id}` (`body` in full, `urgent`, `image_url`).
 - `GET /campaigns?church=<id>` and `GET /campaigns/{id}`: `goal`, `raised`, `percent`, `givers`, `days_left`, `is_open`, and on the detail `milestones`, `updates`, `leaderboard` (opted-in, never anonymous), `recent_givers` and `comments`.
 - `POST /campaigns/{id}/comments` `{ body }` adds a word of encouragement.
@@ -285,11 +286,12 @@ Toggles "I prayed" and returns `{"prayed": true, "count": 15}`.
 
 ### The Bible
 
-- `GET /bible` → `translations` (`key`, `name`, `short`, `language`), the member's `translation`, the 66 `books` (`code`, `name`, `chapters`, `testament`), highlight `colors` and the latest `highlights`.
+- `GET /bible` → `translations` (`key`, `name`, `short`, `language`), the member's `translation`, the 66 `books` (`code`, `name`, `chapters`, `testament`, `aliases` — the abbreviations people type, so the app can read references offline), highlight `colors` and the latest `highlights`.
 - `GET /bible/{book}/{chapter}?t=<translation>` (book is the 3-letter code, e.g. `JHN`) → `verses` as `[ { v, t, color } ]` (`color` is the member's highlight: `yellow|green|blue|pink|null`), `previous` / `next` chapter. `503` with a friendly message when the Bible text service is unreachable (chapters are cached after the first read).
 - `GET /bible/passage?ref=Matthew 3-5` (also `John 3:16`, `Genesis 1-2; Psalm 1`) → `sections` per chapter. `404` when the reference is not understood.
 - `POST /bible/highlights` `{ verses: ["JHN.3.16", …], color: "yellow" | null }` (null clears), `GET /bible/highlights` lists them with verse text where the chapter is cached.
 - `PUT /bible/translation` `{ translation }` saves the member's choice.
+- `GET /bible/download/{book}?t=<translation>&have=1,2,3` → a whole book for reading offline: `chapters` as `{ "4": [ { v, t } ] }` (only those not in `have`), `missing` (chapters the server does not hold yet), `total` and `fetched`. The server answers at once with what it has and fetches up to five more chapters from the Bible provider each time, so the app asks again until `missing` is empty (throttled to 120 a minute). The app keeps what it receives on the phone; `php artisan bible:warm kjv` fills the server's cache in advance (about 45 minutes per translation).
 
 ### Notes
 
@@ -337,6 +339,21 @@ Notifications for requests carry `kind` (`connection_request`, `connection_accep
 `GET /games` → `{ live, recent, mine }`, `POST /games/join` `{ pin }` → `{ data: { id } }`, `GET /games/{id}` the game's state (poll about once a second: `status` `lobby|question|reveal|finished`, the question and its time left, the live `leaderboard`, `me` with score and rank, and — only after the reveal — which option was right), `POST /games/{id}/answer` `{ option, question }`.
 ## Notifications 🔒
 
+### Push to the phone
+
+The app asks permission, gets an Expo push token and registers it; the server then pushes church news, connection requests and chat messages to every phone the member has the app on (up to eight), through Expo's push service. "Push" in a member's settings covers the browser and the phone alike.
+
+- `POST /devices` `{ token: "ExponentPushToken[…]", platform: "ios|android", name?, app_version? }` → `{ registered: true }` (`201` new, `200` known). A token belongs to one phone: signing in as someone else on it moves it.
+- `DELETE /devices` `{ token }` when the member signs out or turns notifications off on the phone.
+- `POST /devices/test` → `{ devices, sent }`: a test notification to the member's own phones (5 a minute); `422` when no phone is registered.
+- What a push carries: `title`, `body`, `subtitle` (the church), the app badge (unread notifications plus unread messages) and `data` the app opens when tapped: `url` (a website address the app maps to its own screen), or `kind` + `ref` for `post`, `message` (`ref` = the sender), `connection_request` and `connection_accepted`. Android channels: `default`, `messages`, `live`, `urgent`.
+- Chat pushes are sent at most once a minute per conversation, never in quiet hours, and only when the member keeps "People & messages" on push.
+
+### Settings
+
+- `GET /notification-settings` → `categories` (`key`, `label`, `push`, `email`), `quiet_hours` (`{ start, end }` or null), `digest_mode`, `churches` (`id`, `name`, `muted`) and `devices` (phones registered).
+- `PUT /notification-settings` `{ categories?: { announcement: { push, email } }, quiet_hours?: { start: "22:00", end: "06:00" } | null, digest_mode?, muted_churches?: [ids] }` → the new settings. These are the member's choices for every church (the website's "all churches" row); a church-specific choice made on the website still wins for that church.
+
 ### `GET /notifications?unread=1`
 
 ```json
@@ -357,15 +374,17 @@ Everything a pastor or church worker does in the app. The rules are the website'
 
 | Permission | Endpoints |
 |---|---|
-| `content.manage` | `GET/POST /announcements`, `DELETE /announcements/{id}`; `GET/POST /devotionals`, `DELETE …/{id}`; `GET/POST /sermons`, `DELETE …/{id}`. Publishing notifies followers, as on the website. |
-| `events.manage` | `GET/POST /events`, `GET/PUT/DELETE /events/{id}` (`show` adds the stats and the guest list), `POST /events/{id}/check-in` `{ code }` — a ticket code, or the whole URL a QR ticket holds (120 a minute). |
+| `content.manage` | `GET/POST /announcements`, `DELETE /announcements/{id}`; `GET /posts`, `POST /posts` (multipart: `body?`, `visibility: public|members`, `images[]` up to six, `published_at?` to schedule; a photo alone is enough), `PUT /posts/{id}` `{ body?, visibility?, is_pinned?, status?: published|hidden }`, `DELETE /posts/{id}`; `GET/POST /devotionals`, `DELETE …/{id}`; `GET/POST /sermons`, `DELETE …/{id}`. Publishing notifies followers, as on the website. |
+| `events.manage` | `GET/POST /events`, `GET/PUT/DELETE /events/{id}` (`show` adds the stats, the guest list and everything the edit form starts from: `starts_local` / `ends_local` as `Y-m-d H:i`, `online_url`, `tickets`; a `PUT` leaves tickets alone unless `tickets` is sent, and a cover picture goes in a multipart `PUT` with `_method=PUT`), `POST /events/{id}/check-in` `{ code }` — a ticket code, or the whole URL a QR ticket holds (120 a minute). |
 | `prayer.moderate` | `GET /prayer?status=pending\|private\|wall\|declined\|hidden`, `POST /prayer/{id}/approve`, `…/decline` `{ note? }`, `…/respond` `{ response }`, `…/hide`. |
 | `members.manage` | `GET /members?status=&stage=&q=` (default: active and waiting), `PUT /members/{subscriptionId}` `{ action?: approve\|block\|unblock, stage? }`. |
 | `notifications.send` | `GET /broadcasts` (the last 30 and the categories), `GET /broadcasts/estimate?audience=&stages[]=` (how many phones), `POST /broadcasts` `{ title, body, category, is_urgent?, send: now\|later, scheduled_at?, audience: members\|staff\|group\|stage, stages?, small_group_id? }` (10 a minute). |
 | `community.moderate` | `GET /reports?status=open\|actioned\|dismissed`, `POST /reports/{id}/hide`, `…/dismiss`. |
-| `quizzes.manage` | `GET/POST /quizzes` `{ title, questions: [{ question, options[], correct }] }`, `GET/DELETE /quizzes/{id}`, `POST /quizzes/{id}/host` `{ notify? }`, `GET /quiz-sessions/{id}` (host view: PIN, players, the question and answers per option, leaderboard; poll once a second), `POST /quiz-sessions/{id}/start\|reveal\|next\|end\|cancel`. |
+| `quizzes.manage` | `GET/POST /quizzes` `{ title, questions: [{ question, options[], correct }] }`, `GET/PUT/DELETE /quizzes/{id}` (`PUT` takes the same body and updates questions in place so finished games keep their answers; `422` while a game is being played with the quiz), `POST /quizzes/{id}/host` `{ notify? }`, `GET /quiz-sessions/{id}` (host view: PIN, players, the question and answers per option, leaderboard; poll once a second), `POST /quiz-sessions/{id}/start\|reveal\|next\|end\|cancel`. |
 | `live.manage` | `GET/POST /live` `{ title, scheduled_at, source_type, external_url?, chat_enabled }`, `POST /live/{id}/start`, `…/stop`. |
 | `giving.view` | `GET /giving/summary` (today, week, month, year, by category and method, pending), `GET /giving` (latest gifts). |
+
+Messages sent from the app (`POST /broadcasts`) go out as push and email, as each member prefers (never SMS or WhatsApp, which cost money).
 
 Left on the website on purpose: recording cash gifts, refunds and payouts, roles and billing, the church profile and slider photos, the payout set-up, and bulk imports and exports.
 

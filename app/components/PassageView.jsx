@@ -4,14 +4,13 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { COLORS, FONTS, RADIUS } from '../constants/theme';
-import { useFetch } from '../lib/useFetch';
+import { usePassage } from '../lib/bibleOffline';
 import AppText from './AppText';
 import StateView from './StateView';
 import VerseList from './VerseList';
 
 export default function PassageView({ reference, fontSize = 17 }) {
-  const { data, loading, error, retry } = useFetch('/bible/passage', { params: { ref: reference }, enabled: !!reference });
-  const passage = data?.data;
+  const { passage, loading, error, offline, retry } = usePassage(reference);
 
   return (
     <StateView loading={loading} error={error} onRetry={retry}>
@@ -30,7 +29,7 @@ export default function PassageView({ reference, fontSize = 17 }) {
             </View>
           ))}
           <AppText variant="caption" style={{ textAlign: 'center' }}>
-            {passage.translation.toUpperCase()}
+            {passage.translation.toUpperCase()}{offline ? ' · offline copy' : ''}
           </AppText>
         </View>
       ) : null}

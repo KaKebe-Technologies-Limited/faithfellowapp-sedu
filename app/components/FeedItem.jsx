@@ -201,7 +201,7 @@ function Body({ entry }) {
       );
     case 'post':
       return (
-        <>
+        <Pressable onPress={() => go('/post/[id]', item.id)} accessibilityRole="button" accessibilityLabel={item.images?.length ? 'Open update with photos' : 'Open update'}>
           {item.title ? <AppText style={styles.title}>{item.title}</AppText> : null}
           {item.body ? <AppText style={styles.body}>{excerpt(item.body, 420)}</AppText> : null}
           {item.images?.length ? (
@@ -214,7 +214,7 @@ function Body({ entry }) {
               ) : null}
             </View>
           ) : null}
-        </>
+        </Pressable>
       );
     default:
       return (

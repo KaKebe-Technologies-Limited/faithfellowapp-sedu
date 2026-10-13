@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\DirectMessage;
 use App\Models\User;
 use App\Models\UserBlock;
+use App\Services\DevicePushService;
 use App\Services\PeopleService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -72,6 +73,7 @@ class MessageController extends Controller
         abort_unless($this->people->mayMessage($me, $user), 403, __('You can only message people you are connected to.'));
 
         $message = DirectMessage::create(['sender_id' => $me->id, 'recipient_id' => $user->id, 'body' => trim(strip_tags($data['body']))]);
+        app(DevicePushService::class)->newMessage($message);
 
         return response()->json(['data' => $this->payload($message, $me)], 201);
     }

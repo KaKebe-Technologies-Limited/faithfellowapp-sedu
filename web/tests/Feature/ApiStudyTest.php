@@ -43,7 +43,7 @@ test('the Bible home lists translations, the 66 books and highlight colours', fu
     $data = $this->getJson(route('api.v1.bible.index'))->assertOk()->json('data');
 
     expect($data['books'])->toHaveCount(66)
-        ->and($data['books'][0])->toBe(['code' => 'GEN', 'name' => 'Genesis', 'chapters' => 50, 'testament' => 'OT'])
+        ->and($data['books'][0])->toBe(['code' => 'GEN', 'name' => 'Genesis', 'chapters' => 50, 'testament' => 'OT', 'aliases' => ['gen', 'ge', 'gn']])
         ->and(collect($data['translations'])->pluck('key')->all())->toContain('kjv', 'web')
         ->and($data['translation'])->toBe('kjv')
         ->and(collect($data['colors'])->pluck('key')->all())->toBe(['yellow', 'green', 'blue', 'pink'])

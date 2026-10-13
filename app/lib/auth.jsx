@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import { Platform } from 'react-native';
 import api from './api';
 import { signInWithGoogleBrowser } from './google';
+import { disablePush } from './push';
 import { clearToken, getToken, onSessionExpired, setToken } from './session';
 
 const AuthContext = createContext(null);
@@ -80,6 +81,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   const signOut = useCallback(async () => {
+    await disablePush();
     try {
       await api.delete('/auth/token');
     } catch {

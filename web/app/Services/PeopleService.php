@@ -148,6 +148,12 @@ class PeopleService
         $connection = $existing ?? new Connection(['requester_id' => $from->id, 'addressee_id' => $to->id]);
         $connection->fill(['requester_id' => $from->id, 'addressee_id' => $to->id, 'status' => 'pending', 'message' => $message ? mb_substr(strip_tags($message), 0, 280) : null, 'responded_at' => null])->save();
         $to->notify(new ConnectionRequested($from, $connection));
+        app(DevicePushService::class)->toUser($to, 'social', [
+            'title' => __(':name wants to connect with you', ['name' => $from->name]),
+            'body' => $connection->message,
+            'data' => ['kind' => 'connection_request', 'ref' => $from->id],
+            'channelId' => 'messages',
+        ]);
 
         return $connection;
     }
@@ -158,6 +164,12 @@ class PeopleService
         $connection->update(['status' => $accept ? 'accepted' : 'declined', 'responded_at' => now()]);
         if ($accept) {
             $connection->requester->notify(new ConnectionAccepted($user));
+            app(DevicePushService::class)->toUser($connection->requester, 'social', [
+                'title' => __(':name accepted your request', ['name' => $user->name]),
+                'body' => __('You can now send each other messages.'),
+                'data' => ['kind' => 'connection_accepted', 'ref' => $user->id],
+                'channelId' => 'messages',
+            ]);
         }
 
         return $connection;
