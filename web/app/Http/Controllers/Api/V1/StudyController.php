@@ -14,7 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
 /**
- * Reading plans (a passage a day, with streaks) and reading circles (up to four partners reading the same
+ * Reading plans (a passage a day, with streaks) and reading circles (up to six members reading the same
  * plan together, sharing a private summary after each day).
  */
 class StudyController extends Controller

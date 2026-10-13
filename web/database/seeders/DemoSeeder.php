@@ -719,7 +719,7 @@ class DemoSeeder extends Seeder
         if ($gospels && $people->count() >= 2) {
             $circle = $grace->readingCircles()->create([
                 'reading_plan_id' => $gospels->id, 'created_by' => $member->id, 'name' => 'Morning Readers', 'code' => 'GRACE7',
-                'reading_time' => '06:00', 'reading_days' => [0, 1, 2, 3, 4, 5, 6], 'timezone' => 'Africa/Kampala', 'max_members' => 4,
+                'reading_time' => '06:00', 'reading_days' => [0, 1, 2, 3, 4, 5, 6], 'timezone' => 'Africa/Kampala', 'max_members' => 6,
             ]);
             $partners = collect([$member])->merge($people->take(2));
             $summaries = [

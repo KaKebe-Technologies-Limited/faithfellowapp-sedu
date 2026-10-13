@@ -177,7 +177,7 @@ export default function PlanScreen() {
         <View style={[styles.sheet, { paddingBottom: insets.bottom + 16 }]}>
           <View style={styles.grab} />
           <AppText style={styles.sheetTitle}>Start a reading circle</AppText>
-          <AppText variant="caption" style={{ textAlign: 'center', marginBottom: 14 }}>Up to 4 partners from your church read the same plan and remind each other.</AppText>
+          <AppText variant="caption" style={{ textAlign: 'center', marginBottom: 14 }}>Up to 6 people from your church read the same plan and remind each other.</AppText>
           <TextField label="Circle name" value={name} onChangeText={setName} placeholder="For example: Morning readers" maxLength={80} />
           <AppText style={styles.label}>Reading time</AppText>
           <View style={styles.wrap}>

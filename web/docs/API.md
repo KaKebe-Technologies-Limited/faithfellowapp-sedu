@@ -301,7 +301,7 @@ One note per thing being read (`context`: `bible:JHN.3`, `sermon:12`, `devotiona
 
 - `GET /reading-plans` → `mine` (with `progress`: `percent`, `next_day`, `streak`…), `available` (published plans of the member's churches) and `circles`.
 - `GET /reading-plans/{id}?day=` → the day (`passages`, `reflection`, `done`), the `days` strip and the member's circles for the plan. `POST …/start`, `POST …/complete` `{ day }`, `DELETE …` (leave).
-- Reading circles (up to four partners from one church): `POST /reading-plans/{id}/circles` `{ name, reading_time: "06:00", reading_days: [0-6] }`, `POST /reading-circles/join` `{ code }`, `GET /reading-circles/{id}?day=` (members, who has read, their private summaries), `POST /reading-circles/{id}/days/{day}` `{ summary? }`, `PUT /reading-circles/{id}` (owner), `DELETE /reading-circles/{id}/leave`.
+- Reading circles (up to six members from one church: the owner and five partners): `POST /reading-plans/{id}/circles` `{ name, reading_time: "06:00", reading_days: [0-6] }`, `POST /reading-circles/join` `{ code }`, `GET /reading-circles/{id}?day=` (members, who has read, their private summaries), `POST /reading-circles/{id}/days/{day}` `{ summary? }`, `PUT /reading-circles/{id}` (owner), `DELETE /reading-circles/{id}/leave`.
 ## People, groups, games and messages 🔒
 
 ### My profile

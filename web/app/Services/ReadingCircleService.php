@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Reading circles: pair up (max 4) with a code, get reminded together,
+ * Reading circles: pair up (max 6) with a code, get reminded together,
  * tell each other when you've read, share private summaries.
  */
 class ReadingCircleService
@@ -34,7 +34,7 @@ class ReadingCircleService
                 'reading_time' => $data['reading_time'],
                 'reading_days' => array_values(array_map('intval', $data['reading_days'])),
                 'timezone' => $owner->timezone ?: config('app.timezone'),
-                'max_members' => (int) config('faithfellows.limits.reading_circle_members', 4),
+                'max_members' => (int) config('faithfellows.limits.reading_circle_members', 6),
             ]);
             $circle->memberships()->create(['user_id' => $owner->id, 'role' => 'owner', 'joined_at' => now()]);
             $this->startPlan($owner, $plan);

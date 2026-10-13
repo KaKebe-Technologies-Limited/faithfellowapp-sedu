@@ -196,7 +196,7 @@ return [
         // The member home slider shows a church once it has this many slider photos.
         'min_slides' => 4,
         'max_slides' => 8,
-        'reading_circle_members' => 4,
+        'reading_circle_members' => 6,
     ],
 
     /*

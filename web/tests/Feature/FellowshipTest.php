@@ -226,24 +226,27 @@ test('members pair up with a code, read together and see each other’s summarie
     expect(ReadingPlanProgress::where('user_id', $owner->id)->where('reading_plan_id', $plan->id)->first()->completed_days)->toContain(1);
 });
 
-test('reading circles hold at most four members of the same church', function () {
+test('reading circles hold at most six members of the same church', function () {
     Notification::fake();
     [$church, , $owner, $second] = fellowshipChurch();
-    $circle = app(ReadingCircleService::class)->create($owner, fellowshipPlan($church), ['name' => 'Four', 'reading_time' => '06:00', 'reading_days' => [1]]);
+    $circle = app(ReadingCircleService::class)->create($owner, fellowshipPlan($church), ['name' => 'Six', 'reading_time' => '06:00', 'reading_days' => [1]]);
 
     $notInChurch = member();
     $this->actingAs($notInChurch)->post(route('reading-circles.join'), ['code' => $circle->code])->assertSessionHasErrors('code');
 
     app(ReadingCircleService::class)->join($second, $circle->code);
-    foreach ([member(), member()] as $user) {
+    foreach (range(1, 4) as $i) {
+        $user = member();
         joinChurch($church, $user);
         app(ReadingCircleService::class)->join($user, $circle->code);
     }
-    $fifth = member();
-    joinChurch($church, $fifth);
-    $this->actingAs($fifth)->post(route('reading-circles.join'), ['code' => $circle->code])->assertSessionHasErrors('code');
+    expect($circle->memberships()->count())->toBe(6);
 
-    expect($circle->memberships()->count())->toBe(4);
+    $seventh = member();
+    joinChurch($church, $seventh);
+    $this->actingAs($seventh)->post(route('reading-circles.join'), ['code' => $circle->code])->assertSessionHasErrors('code');
+
+    expect($circle->memberships()->count())->toBe(6);
 });
 
 test('everyone in a circle is reminded once at the agreed reading time', function () {

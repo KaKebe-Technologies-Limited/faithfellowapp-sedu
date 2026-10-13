@@ -1,4 +1,4 @@
-// A reading circle: up to four partners reading the same plan together. See who has read today, read the passage
+// A reading circle: up to six people reading the same plan together. See who has read today, read the passage
 // in place, tell your partners you have read (with an optional private summary only the circle sees), and share
 // the code to invite someone. The owner can change the reading time for everyone.
 import { useState } from 'react';

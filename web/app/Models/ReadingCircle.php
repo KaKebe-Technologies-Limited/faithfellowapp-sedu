@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 /**
- * Accountability partners: up to four members of the same church reading a
+ * Accountability partners: up to six members of the same church reading a
  * plan together at an agreed time. Joined with a 6-character pairing code.
  */
 class ReadingCircle extends Model
