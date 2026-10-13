@@ -87,9 +87,10 @@ not yet sent (it warns first); a different member signing in on the same phone c
 ## Gospel radio
 
 A 24-hour station for the whole app (`lib/radio.js`): the super admin adds songs at `/super-admin/radio` on the website and
-the app plays them in a loop. The big round button on Home (`components/radio/RadioHero.jsx`) joins the live radio; a bar
-(`RadioMiniPlayer.jsx`) stays above the tabs, and at the bottom of every other screen, while it plays; tapping it opens the
-full player (`app/radio.jsx`). It keeps playing with the phone locked or the app in the background (iOS and Android
+the app plays them in a loop. On Home there is only a round play button (`components/radio/RadioButton.jsx`), the first tile
+in the row of churches, with no picture; it joins the live radio. While it plays, a bar (`RadioMiniPlayer.jsx`) with the
+song's picture, name and a stop button stays above the tabs, and at the bottom of every other screen; tapping the bar opens
+the full player (`app/radio.jsx`). It keeps playing with the phone locked or the app in the background (iOS and Android
 background audio, with lock screen controls). On a real phone this needs a development or store build for Android; in Expo
 Go on iPhone background audio works but lock screen controls can be limited.
 

@@ -15,7 +15,6 @@ import HomeHeader from '../../components/home/HomeHeader';
 import LiveBanner from '../../components/home/LiveBanner';
 import SuggestedChurches from '../../components/home/SuggestedChurches';
 import WelcomeBanner from '../../components/home/WelcomeBanner';
-import RadioHero from '../../components/radio/RadioHero';
 import SectionHeader from '../../components/SectionHeader';
 import Skeleton from '../../components/Skeleton';
 import { COLORS, RADIUS, SHADOW, SPACING } from '../../constants/theme';
@@ -118,7 +117,6 @@ export default function HomeScreen() {
           ) : null}
           <ChurchStories churches={data.churches} />
           <LiveBanner stream={liveNow} />
-          <RadioHero />
           <Highlights home={data} />
           {items.length || status.loading ? <SectionHeader title="Latest from your churches" /> : null}
         </>

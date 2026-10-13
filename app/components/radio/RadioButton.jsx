@@ -6,6 +6,15 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { COLORS } from '../../constants/theme';
 import { toggleRadio, useRadio } from '../../lib/radio';
 
+/** A small dark round button with an icon, for the full player. */
+export function RoundIconButton({ icon, label, onPress }) {
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label} style={styles.round}>
+      <Ionicons name={icon} size={22} color="#fff" />
+    </Pressable>
+  );
+}
+
 export default function RadioButton({ size = 76, style }) {
   const { phase } = useRadio();
   const ring = Math.max(3, Math.round(size * 0.055));
@@ -36,5 +45,6 @@ export default function RadioButton({ size = 76, style }) {
 
 const styles = StyleSheet.create({
   glow: { shadowColor: '#FF7A59', shadowOpacity: 0.65, shadowRadius: 14, shadowOffset: { width: 0, height: 0 }, elevation: 10 },
+  round: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#2E2E36', alignItems: 'center', justifyContent: 'center' },
   face: { backgroundColor: COLORS.white, alignItems: 'center', justifyContent: 'center' },
 });
