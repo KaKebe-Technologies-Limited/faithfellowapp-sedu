@@ -50,6 +50,7 @@ export default function ReaderScreen() {
   const [fontSize, setSize] = useState(18);
   const [sheet, setSheet] = useState(null); // 'chapters' | 'translations' | 'size'
   const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState(null);
   const scroller = useRef(null);
   const listTop = useRef(0);
   const translations = useFetch('/bible', { enabled: sheet === 'translations' });
@@ -90,8 +91,14 @@ export default function ReaderScreen() {
     if (Platform.OS !== 'web') Alert.alert('Copied', `${referenceLabel(chapterInfo.book_name, chapter, chosen.map((v) => v.v))} is on your clipboard.`);
   }
 
-  function share() {
-    Share.share({ message: shareText({ bookName: chapterInfo.book_name, chapter, verses: chosen, translation: chapterInfo.translation }) }).catch(() => {});
+  // Copies the neat scripture card first (so it can be pasted anywhere), then opens the phone's share sheet.
+  async function share() {
+    const message = shareText({ bookName: chapterInfo.book_name, chapter, verses: chosen, translation: chapterInfo.translation });
+    await Clipboard.setStringAsync(message).catch(() => {});
+    setNotice('Copied. Paste it anywhere.');
+    setTimeout(() => setNotice(null), 2600);
+    if (Platform.OS !== 'web') await Share.share({ message }).catch(() => {});
+    setSelected(new Set());
   }
 
   // The colour shows at once and is kept on the phone; with no connection it is sent when you are back online.
@@ -186,6 +193,12 @@ export default function ReaderScreen() {
         ) : null}
       </StateView>
 
+      {notice ? (
+        <View style={styles.toast} pointerEvents="none">
+          <AppText style={styles.toastText}>{notice}</AppText>
+        </View>
+      ) : null}
+
       {chosen.length ? (
         <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 10) + 6 }]}>
           <AppText style={styles.barTitle}>{referenceLabel(chapterInfo.book_name, chapter, chosen.map((v) => v.v))}</AppText>
@@ -199,6 +212,10 @@ export default function ReaderScreen() {
               </Pressable>
             </View>
             <View style={styles.actions}>
+              <Pressable onPress={share} style={[styles.action, styles.shareBtn]} accessibilityRole="button" accessibilityLabel="Share scripture">
+                <Ionicons name="share-social" size={20} color={COLORS.white} />
+                <AppText style={[styles.actionText, { color: COLORS.white }]}>Share</AppText>
+              </Pressable>
               <Pressable onPress={copy} style={styles.action} accessibilityRole="button" accessibilityLabel="Copy">
                 <Ionicons name="copy-outline" size={20} color={COLORS.primary} />
                 <AppText style={styles.actionText}>Copy</AppText>
@@ -206,10 +223,6 @@ export default function ReaderScreen() {
               <Pressable onPress={note} style={styles.action} accessibilityRole="button" accessibilityLabel="Note">
                 <Ionicons name="create-outline" size={20} color={COLORS.primary} />
                 <AppText style={styles.actionText}>Note</AppText>
-              </Pressable>
-              <Pressable onPress={share} style={styles.action} accessibilityRole="button" accessibilityLabel="Share">
-                <Ionicons name="share-social-outline" size={20} color={COLORS.primary} />
-                <AppText style={styles.actionText}>Share</AppText>
               </Pressable>
               <Pressable onPress={() => setSelected(new Set())} style={styles.action} accessibilityRole="button" accessibilityLabel="Clear selection">
                 <Ionicons name="close-circle-outline" size={20} color={COLORS.gray700} />
@@ -283,6 +296,9 @@ const styles = StyleSheet.create({
   swatch: { width: 32, height: 32, borderRadius: 16, borderWidth: 2, borderColor: 'rgba(0,0,0,0.06)' },
   clear: { backgroundColor: COLORS.gray100, alignItems: 'center', justifyContent: 'center' },
   actions: { flexDirection: 'row', justifyContent: 'space-between' },
+  shareBtn: { backgroundColor: COLORS.primary, borderRadius: RADIUS.full, paddingVertical: 8, paddingHorizontal: 16, flexDirection: 'row', gap: 6, alignItems: 'center', minWidth: 0 },
+  toast: { position: 'absolute', alignSelf: 'center', bottom: 180, backgroundColor: 'rgba(26,26,26,0.92)', borderRadius: RADIUS.full, paddingHorizontal: 16, paddingVertical: 9 },
+  toastText: { fontFamily: FONTS.semibold, fontSize: 13, color: COLORS.white },
   action: { alignItems: 'center', gap: 2, paddingHorizontal: 8, minWidth: 64 },
   actionText: { fontFamily: FONTS.semibold, fontSize: 12, color: COLORS.primary },
   backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(20,6,12,0.5)' },

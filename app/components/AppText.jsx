@@ -1,5 +1,7 @@
-// Text with the FaithFellows typography (Space Grotesk) applied through simple variants.
-import { Text } from 'react-native';
+// Text with the FaithFellows typography (Clarity City) applied through simple variants.
+// A screen can pass a bigger fontSize (an amount, initials in a circle). The variant's own line height would then be
+// too short for the letters and iPhones cut them off, so the line height grows with the text unless one is given.
+import { StyleSheet, Text } from 'react-native';
 import { COLORS, FONTS } from '../constants/theme';
 
 const VARIANTS = {
@@ -11,8 +13,13 @@ const VARIANTS = {
 };
 
 export default function AppText({ variant = 'body', style, children, ...rest }) {
+  const base = VARIANTS[variant] ?? VARIANTS.body;
+  const own = StyleSheet.flatten(style) ?? {};
+  const grown = own.fontSize && own.lineHeight === undefined && base.lineHeight < own.fontSize * 1.25 ? { lineHeight: Math.ceil(own.fontSize * 1.3) } : null;
+
   return (
-    <Text style={[VARIANTS[variant], style]} {...rest}>
+    // A phone set to very large text still grows the words, but not so much that amounts and buttons are cut off.
+    <Text style={[base, style, grown]} maxFontSizeMultiplier={1.25} {...rest}>
       {children}
     </Text>
   );

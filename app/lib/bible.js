@@ -32,10 +32,27 @@ export function referenceLabel(bookName, chapter, numbers) {
   return `${bookName} ${chapter}:${verseRanges(numbers)}`;
 }
 
-/** The text a member copies or shares: the verses, then the reference and translation. */
+/**
+ * A neat, ready-to-paste scripture card for WhatsApp, Facebook, Instagram, X, SMS or email: the reference and
+ * translation on top, the words (one verse in quotation marks; several verses numbered on their own lines), and a
+ * quiet line saying where it came from. Plain text, so it looks the same wherever it is pasted.
+ *
+ *   📖 John 3:16–17 (KJV)
+ *
+ *   16  For God so loved the world…
+ *   17  For God sent not his Son…
+ *
+ *   ✝️ Shared from FaithFellows
+ */
+export function scriptureMessage({ reference, translation, verses }) {
+  const tag = translation ? ` (${String(translation).toUpperCase()})` : '';
+  const words = verses.length === 1 ? `“${String(verses[0].t).trim()}”` : verses.map((v) => `${v.v}  ${String(v.t).trim()}`).join('\n');
+  return `📖 ${reference}${tag}\n\n${words}\n\n✝️ Shared from FaithFellows`;
+}
+
+/** The scripture card for verses picked in a chapter. */
 export function shareText({ bookName, chapter, verses, translation }) {
-  const body = verses.map((v) => v.t).join(' ');
-  return `“${body}”\n— ${referenceLabel(bookName, chapter, verses.map((v) => v.v))} (${String(translation).toUpperCase()})`;
+  return scriptureMessage({ reference: referenceLabel(bookName, chapter, verses.map((v) => v.v)), translation, verses });
 }
 
 /** "JHN.3.16" keys for the highlight API. */

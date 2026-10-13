@@ -1,7 +1,8 @@
 // A devotional, made for reading: the scripture first in a soft pink card, the message in comfortable type,
 // then a closing prayer. If the church recorded an audio version it plays right on the page.
-import { ScrollView, Share, StyleSheet, View } from 'react-native';
+import { Platform, ScrollView, Share, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as Clipboard from 'expo-clipboard';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Pressable } from 'react-native';
 import AppText from '../../components/AppText';
@@ -12,6 +13,7 @@ import Pill from '../../components/Pill';
 import { HeaderAction } from '../../components/ScreenHeader';
 import StateView from '../../components/StateView';
 import { COLORS, FONTS, RADIUS, SPACING } from '../../constants/theme';
+import { scriptureMessage } from '../../lib/bible';
 import { formatDate } from '../../lib/format';
 import { useFetch } from '../../lib/useFetch';
 
@@ -20,7 +22,14 @@ export default function DevotionalScreen() {
   const { data, loading, error, retry } = useFetch(`/devotionals/${id}`);
   const d = data?.data;
 
-  const share = () => Share.share({ message: `${d.title}${d.scripture ? ` — ${d.scripture}` : ''}\n\n${d.scripture_text ? `“${d.scripture_text}”` : ''}` }).catch(() => {});
+  // The day's scripture as a neat card (copied too, so it can be pasted anywhere), then the share sheet.
+  const share = async () => {
+    const message = d.scripture_text
+      ? scriptureMessage({ reference: d.scripture || d.title, verses: [{ v: 1, t: d.scripture_text }] })
+      : `📖 ${d.title}${d.scripture ? ` — ${d.scripture}` : ''}\n\n✝️ Shared from FaithFellows`;
+    await Clipboard.setStringAsync(message).catch(() => {});
+    if (Platform.OS !== 'web') await Share.share({ message }).catch(() => {});
+  };
 
   return (
     <View style={styles.screen}>
