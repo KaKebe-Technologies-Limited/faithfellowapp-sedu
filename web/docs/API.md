@@ -300,6 +300,41 @@ One note per thing being read (`context`: `bible:JHN.3`, `sermon:12`, `devotiona
 - `GET /reading-plans` → `mine` (with `progress`: `percent`, `next_day`, `streak`…), `available` (published plans of the member's churches) and `circles`.
 - `GET /reading-plans/{id}?day=` → the day (`passages`, `reflection`, `done`), the `days` strip and the member's circles for the plan. `POST …/start`, `POST …/complete` `{ day }`, `DELETE …` (leave).
 - Reading circles (up to four partners from one church): `POST /reading-plans/{id}/circles` `{ name, reading_time: "06:00", reading_days: [0-6] }`, `POST /reading-circles/join` `{ code }`, `GET /reading-circles/{id}?day=` (members, who has read, their private summaries), `POST /reading-circles/{id}/days/{day}` `{ summary? }`, `PUT /reading-circles/{id}` (owner), `DELETE /reading-circles/{id}/leave`.
+## People, groups, games and messages 🔒
+
+### My profile
+
+`GET /me` also returns `bio`, `city`, `country`, `gender`, `date_of_birth`, `interests`, `directory_opt_in`, `open_to_connect`, `unread_messages` and `connection_requests`.
+`PATCH /me` `{ name?, phone?, country?, city?, gender?, date_of_birth?, bio?, interests?: [..8 words], directory_opt_in?, open_to_connect? }` saves them — turning either
+"find me" switch on needs a birth date of someone aged 18 or over (`422` on `date_of_birth` otherwise). `POST /me/avatar` (multipart `avatar`), `DELETE /me/avatar`,
+`PUT /me/password` `{ current_password, password, password_confirmation }` (other phones are signed out).
+
+### Finding and connecting with people
+
+Only adults with a birth date can be found or connect. A member is found by people of their own churches when `directory_opt_in` is on, and by every other adult on the
+app when `open_to_connect` is on. Cards carry an `age_range` bracket (`18–24`, `25–34`…), never a birthday, and no email or phone.
+
+- `GET /people?scope=church|everyone&church=&q=&country=UG&city=&gender=&interest=&age_min=&age_max=` → paged `data` of `{ id, name, avatar_url, bio, city, country, gender, age_range, interests, shared_churches, relation }` (`relation`: `none`, `pending_sent`, `pending_received`, `connected`) and `viewer: { can_connect, discoverable }`.
+- `GET /people/{id}` the same card for one person (`404` when they cannot be found by you).
+- `POST /people/{id}/connect` `{ message? }` ("Say Hey"); asking someone who already asked you connects you. At most 25 requests wait at a time.
+- `GET /connections` → `{ friends, incoming, outgoing }`; `POST /connections/{id}/respond` `{ action: accept|decline }`; `DELETE /people/{id}/connection` cancels a request or disconnects.
+- `POST /people/{id}/block`, `DELETE /people/{id}/block`, `GET /people/blocked`: blocking works both ways, removes the connection and hides each from the other.
+
+### Messages
+
+Only between connected members. `GET /messages` (conversations with `unread`), `GET /messages/unread` → `{ unread }`, `GET /messages/{userId}?after=<id>|before=<id>` (a thread, oldest first; polling with `after`; marks theirs as read), `POST /messages/{userId}` `{ body }`.
+Notifications for requests carry `kind` (`connection_request`, `connection_accepted`) and `ref` (the person's id).
+
+### Study groups
+
+- `GET /groups?type=&q=` → `{ mine, pending, discover, types }` (cards with `cover_url`, `schedule`, `members_count`, `my_status`, `my_role`). `GET /groups/{id}` adds `members`, `announcements`, `meetings`, `can_lead`, `pending_members`.
+- `POST /groups/{id}/join` (a request the leader approves), `DELETE /groups/{id}/leave`.
+- The group's conversation: `GET /groups/{id}/posts?after=|before=`, `POST …/posts` `{ body }`, `DELETE …/posts/{postId}` (author or leader). Only active members and leaders may read and write.
+- Leader tools: `GET …/candidates?q=`, `POST …/members` `{ user_id }`, `PUT …/members/{membershipId}` `{ action: approve|remove|member|assistant|leader }`, `POST …/meetings` `{ meeting_date, topic?, visitors?, present: [userIds] }`, `POST …/announcements` `{ title, body }`.
+
+### Quiz games
+
+`GET /games` → `{ live, recent, mine }`, `POST /games/join` `{ pin }` → `{ data: { id } }`, `GET /games/{id}` the game's state (poll about once a second: `status` `lobby|question|reveal|finished`, the question and its time left, the live `leaderboard`, `me` with score and rank, and — only after the reveal — which option was right), `POST /games/{id}/answer` `{ option, question }`.
 ## Notifications 🔒
 
 ### `GET /notifications?unread=1`

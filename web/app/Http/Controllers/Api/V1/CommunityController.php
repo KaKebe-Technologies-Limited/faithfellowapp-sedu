@@ -102,6 +102,8 @@ class CommunityController extends Controller
                 'title' => $n->data['title'] ?? null,
                 'body' => $n->data['body'] ?? null,
                 'url' => $n->data['url'] ?? null,
+                'kind' => $n->data['kind'] ?? null,
+                'ref' => $n->data['ref'] ?? null,
                 'read' => $n->read_at !== null,
                 'created_at' => $n->created_at?->toIso8601String(),
             ]),

@@ -26,9 +26,9 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
 
     protected $fillable = [
         'name', 'email', 'password', 'phone', 'country', 'city', 'language', 'timezone',
-        'gender', 'date_of_birth', 'wedding_anniversary', 'bio', 'status',
+        'gender', 'date_of_birth', 'wedding_anniversary', 'bio', 'interests', 'status',
         'quiet_hours_start', 'quiet_hours_end', 'digest_mode',
-        'email_consent', 'terms_accepted_at', 'directory_opt_in', 'low_bandwidth',
+        'email_consent', 'terms_accepted_at', 'directory_opt_in', 'open_to_connect', 'low_bandwidth',
         'two_factor_enabled',
     ];
 
@@ -43,6 +43,7 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         'digest_mode' => false,
         'email_consent' => false,
         'directory_opt_in' => false,
+        'open_to_connect' => false,
         'low_bandwidth' => false,
         'two_factor_enabled' => false,
     ];
@@ -61,6 +62,8 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
             'digest_mode' => 'boolean',
             'email_consent' => 'boolean',
             'directory_opt_in' => 'boolean',
+            'open_to_connect' => 'boolean',
+            'interests' => 'array',
             'low_bandwidth' => 'boolean',
             'two_factor_enabled' => 'boolean',
         ];

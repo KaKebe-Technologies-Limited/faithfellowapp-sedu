@@ -109,6 +109,44 @@ Route::prefix('v1')->name('api.v1.')->middleware('throttle:api')->group(function
         Route::post('/reading-circles/{readingCircle}/days/{day}', [V1\StudyController::class, 'completeCircleDay'])->whereNumber('day')->name('circles.complete');
         Route::delete('/reading-circles/{readingCircle}/leave', [V1\StudyController::class, 'leaveCircle'])->name('circles.leave');
 
+        Route::patch('/me', [V1\ProfileController::class, 'update'])->name('me.update');
+        Route::post('/me/avatar', [V1\ProfileController::class, 'avatar'])->middleware('throttle:10,1')->name('me.avatar');
+        Route::delete('/me/avatar', [V1\ProfileController::class, 'removeAvatar'])->name('me.avatar.remove');
+        Route::put('/me/password', [V1\ProfileController::class, 'password'])->middleware('throttle:6,1')->name('me.password');
+
+        Route::get('/games', [V1\GameController::class, 'index'])->name('games.index');
+        Route::post('/games/join', [V1\GameController::class, 'join'])->middleware('throttle:20,1')->name('games.join');
+        Route::get('/games/{quizSession}', [V1\GameController::class, 'state'])->middleware('throttle:300,1')->name('games.state');
+        Route::post('/games/{quizSession}/answer', [V1\GameController::class, 'answer'])->middleware('throttle:60,1')->name('games.answer');
+
+        Route::get('/groups', [V1\GroupController::class, 'index'])->name('groups.index');
+        Route::get('/groups/{group}', [V1\GroupController::class, 'show'])->name('groups.show');
+        Route::post('/groups/{group}/join', [V1\GroupController::class, 'join'])->middleware('throttle:engagement')->name('groups.join');
+        Route::delete('/groups/{group}/leave', [V1\GroupController::class, 'leave'])->name('groups.leave');
+        Route::get('/groups/{group}/posts', [V1\GroupController::class, 'posts'])->middleware('throttle:240,1')->name('groups.posts');
+        Route::post('/groups/{group}/posts', [V1\GroupController::class, 'storePost'])->middleware('throttle:30,1')->name('groups.posts.store');
+        Route::delete('/groups/{group}/posts/{post}', [V1\GroupController::class, 'destroyPost'])->name('groups.posts.destroy');
+        Route::get('/groups/{group}/candidates', [V1\GroupController::class, 'candidates'])->name('groups.candidates');
+        Route::post('/groups/{group}/members', [V1\GroupController::class, 'addMember'])->name('groups.members.add');
+        Route::put('/groups/{group}/members/{membership}', [V1\GroupController::class, 'updateMember'])->name('groups.members.update');
+        Route::post('/groups/{group}/meetings', [V1\GroupController::class, 'storeMeeting'])->name('groups.meetings.store');
+        Route::post('/groups/{group}/announcements', [V1\GroupController::class, 'storeAnnouncement'])->name('groups.announcements.store');
+
+        Route::get('/people', [V1\PeopleController::class, 'index'])->name('people.index');
+        Route::get('/people/blocked', [V1\PeopleController::class, 'blocked'])->name('people.blocked');
+        Route::get('/people/{user}', [V1\PeopleController::class, 'show'])->name('people.show');
+        Route::post('/people/{user}/connect', [V1\PeopleController::class, 'connect'])->middleware('throttle:30,1')->name('people.connect');
+        Route::delete('/people/{user}/connection', [V1\PeopleController::class, 'disconnect'])->name('people.disconnect');
+        Route::post('/people/{user}/block', [V1\PeopleController::class, 'block'])->name('people.block');
+        Route::delete('/people/{user}/block', [V1\PeopleController::class, 'unblock'])->name('people.unblock');
+        Route::get('/connections', [V1\PeopleController::class, 'connections'])->name('connections.index');
+        Route::post('/connections/{connection}/respond', [V1\PeopleController::class, 'respond'])->name('connections.respond');
+
+        Route::get('/messages', [V1\MessageController::class, 'index'])->name('messages.index');
+        Route::get('/messages/unread', [V1\MessageController::class, 'unread'])->name('messages.unread');
+        Route::get('/messages/{user}', [V1\MessageController::class, 'thread'])->middleware('throttle:300,1')->name('messages.thread');
+        Route::post('/messages/{user}', [V1\MessageController::class, 'send'])->middleware('throttle:60,1')->name('messages.send');
+
         Route::get('/notifications', [V1\CommunityController::class, 'notifications'])->name('notifications.index');
         Route::post('/notifications/read', [V1\CommunityController::class, 'readNotifications'])->name('notifications.read');
     });

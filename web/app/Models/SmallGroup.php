@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\Auditable;
 use App\Models\Concerns\BelongsToChurch;
+use App\Models\Concerns\HasArtwork;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -14,7 +15,7 @@ use Illuminate\Support\Str;
 
 class SmallGroup extends Model
 {
-    use Auditable, BelongsToChurch, SoftDeletes;
+    use Auditable, BelongsToChurch, HasArtwork, SoftDeletes;
 
     public const TYPES = ['cell' => 'Cell', 'home_fellowship' => 'Home fellowship', 'bible_study' => 'Bible study', 'youth' => 'Youth', 'women' => 'Women', 'men' => 'Men', 'ministry' => 'Ministry team'];
 
@@ -22,6 +23,22 @@ class SmallGroup extends Model
         'church_id', 'branch_id', 'name', 'slug', 'type', 'description', 'leader_id', 'meeting_day', 'meeting_time',
         'location', 'lat', 'lng', 'capacity', 'is_open', 'status',
     ];
+
+    public function artworkKind(): string
+    {
+        return 'group';
+    }
+
+    public function uploadedPicture(): ?string
+    {
+        return null;
+    }
+
+    /** The group's name, under the same name every other kind of content uses for its heading. */
+    public function getTitleAttribute(): string
+    {
+        return (string) $this->name;
+    }
 
     protected function casts(): array
     {

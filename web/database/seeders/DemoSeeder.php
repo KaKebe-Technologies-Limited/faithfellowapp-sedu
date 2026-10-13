@@ -152,6 +152,7 @@ class DemoSeeder extends Seeder
         $this->seedCommunity($member, $pastor);
         $this->seedSupportAndMessaging($member, $pastor);
         $this->seedFellowship($member, $pastor);
+        $this->call(DemoSocialSeeder::class);
     }
 
     /**

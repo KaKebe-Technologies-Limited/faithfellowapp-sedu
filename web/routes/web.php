@@ -38,7 +38,7 @@ Route::get('/privacy', [Public\PageController::class, 'privacy'])->name('privacy
 Route::get('/pay/return/{reference}', function (Request $request, string $reference) {
     return view('pay.return', ['reference' => $reference, 'cancelled' => $request->boolean('cancelled')]);
 })->where('reference', '[A-Za-z0-9_-]+')->name('pay.return');
-Route::get('/art/{kind}/{id}', [Public\ArtController::class, 'show'])->whereIn('kind', ['event', 'sermon', 'devotional', 'campaign'])->whereNumber('id')->middleware('throttle:240,1')->name('art');
+Route::get('/art/{kind}/{id}', [Public\ArtController::class, 'show'])->whereIn('kind', ['event', 'sermon', 'devotional', 'campaign', 'group'])->whereNumber('id')->middleware('throttle:240,1')->name('art');
 Route::get('/terms', [Public\PageController::class, 'terms'])->name('terms');
 Route::get('/offline', [Public\PageController::class, 'offline'])->name('offline');
 Route::get('/sitemap.xml', [Public\SeoController::class, 'sitemap'])->name('sitemap');

@@ -1,10 +1,11 @@
 // Profile tab: your details (GET /api/v1/me), a server health check (GET /api/ping) and sign out.
 // Shows loading, error and (no followed churches) empty states.
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Image, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import AppText from '../../components/AppText';
+import Avatar from '../../components/Avatar';
 import Button from '../../components/Button';
 import Card from '../../components/Card';
 import ChurchAvatar from '../../components/ChurchAvatar';
@@ -17,11 +18,14 @@ import { initials } from '../../lib/format';
 import { useFetch } from '../../lib/useFetch';
 
 const MENU = [
+  { icon: 'notifications-outline', label: 'Notifications', path: '/notifications' },
+  { icon: 'chatbubble-ellipses-outline', label: 'Messages', path: '/chats' },
+  { icon: 'people-circle-outline', label: 'My connections', path: '/connections' },
   { icon: 'ticket-outline', label: 'My tickets', path: '/tickets' },
-  { icon: 'calendar-outline', label: 'Events', path: '/events' },
-  { icon: 'hand-left-outline', label: 'Prayer wall', path: '/prayer' },
-  { icon: 'book-outline', label: 'Devotionals', path: '/devotionals' },
-  { icon: 'flag-outline', label: 'Giving campaigns', path: '/campaigns' },
+  { icon: 'create-outline', label: 'My notes', path: '/notes' },
+  { icon: 'journal-outline', label: 'Reading plans', path: '/plans' },
+  { icon: 'ban-outline', label: 'Blocked people', path: '/blocked' },
+  { icon: 'key-outline', label: 'Change password', path: '/password' },
   { icon: 'document-text-outline', label: 'Terms of Service', path: '/legal/terms' },
   { icon: 'shield-checkmark-outline', label: 'Privacy Policy', path: '/legal/privacy' },
 ];
@@ -69,13 +73,7 @@ export default function ProfileScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { reload(); checkServer(); }} tintColor={COLORS.primary} colors={[COLORS.primary]} />}
       >
         <Card style={styles.identity}>
-          {me?.avatar_url ? (
-            <Image source={{ uri: mediaUrl(me.avatar_url) }} style={styles.avatar} accessibilityLabel={me.name} />
-          ) : (
-            <View style={[styles.avatar, styles.avatarFallback]}>
-              <AppText style={{ fontFamily: FONTS.bold, fontSize: 26, color: COLORS.white }}>{initials(me?.name)}</AppText>
-            </View>
-          )}
+          <Avatar person={me} size={84} />
           <AppText variant="title" style={{ fontSize: 22 }}>
             {me?.name}
           </AppText>
@@ -90,6 +88,7 @@ export default function ProfileScreen() {
               <AppText variant="caption">Unread alerts</AppText>
             </View>
           </View>
+          <Button title="Edit profile" variant="outline" small onPress={() => router.push('/profile/edit')} style={{ marginTop: SPACING.md }} />
         </Card>
 
         <AppText variant="label" style={styles.section}>

@@ -2,6 +2,8 @@
 
 namespace App\Http\Resources;
 
+use App\Models\Connection;
+use App\Models\DirectMessage;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -21,6 +23,14 @@ class UserResource extends JsonResource
             'email' => $this->email,
             'email_verified' => $this->email_verified_at !== null,
             'phone' => $this->phone,
+            'bio' => $this->bio,
+            'city' => $this->city,
+            'country' => $this->country,
+            'gender' => $this->gender,
+            'date_of_birth' => $this->date_of_birth?->toDateString(),
+            'interests' => $this->interests ?? [],
+            'directory_opt_in' => (bool) $this->directory_opt_in,
+            'open_to_connect' => (bool) $this->open_to_connect,
             'avatar_url' => $this->avatar_url,
             'language' => $this->language,
             'timezone' => $this->timezone,
@@ -31,6 +41,8 @@ class UserResource extends JsonResource
             ],
             'churches' => ChurchSummaryResource::collection($this->whenLoaded('subscribedChurches')),
             'unread_notifications' => $this->unreadNotifications()->count(),
+            'unread_messages' => DirectMessage::where('recipient_id', $this->id)->whereNull('read_at')->count(),
+            'connection_requests' => Connection::where('addressee_id', $this->id)->where('status', 'pending')->count(),
         ];
     }
 }
