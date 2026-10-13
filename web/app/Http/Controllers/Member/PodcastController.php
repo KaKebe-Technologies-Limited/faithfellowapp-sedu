@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Member;
 use App\Http\Controllers\Controller;
 use App\Models\Podcast;
 use App\Rules\NoContactDetails;
+use App\Services\PodcastFeedException;
+use App\Services\PodcastFeedService;
 use App\Services\PodcastService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,7 +20,7 @@ use Illuminate\View\View;
  */
 class PodcastController extends Controller
 {
-    public function __construct(protected PodcastService $podcasts) {}
+    public function __construct(protected PodcastService $podcasts, protected PodcastFeedService $feeds) {}
 
     public function index(Request $request): View
     {
@@ -42,6 +44,58 @@ class PodcastController extends Controller
         }
 
         return redirect()->route('podcasts.show', $podcast)->with('success', __('Your podcast was sent for review. Add your first episodes now: they appear in the app once it is approved.'));
+    }
+
+    /** Bring a podcast over from the RSS feed of the host it already uses. */
+    public function importForm(Request $request): View
+    {
+        return view('member.podcasts.import', ['hostName' => $request->user()->name]);
+    }
+
+    public function import(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'feed_url' => ['required', 'url:https', 'max:500'],
+            'host_name' => ['required', 'string', 'max:120', new NoContactDetails],
+            'category' => ['nullable', Rule::in(array_keys(Podcast::CATEGORIES))],
+            'faith_based' => ['accepted'],
+        ], [
+            'feed_url.url' => __('Use the full https link of your podcast RSS feed.'),
+            'faith_based.accepted' => __('Please confirm that your podcast is faith-based and that you have the right to share the audio.'),
+        ]);
+
+        if (Podcast::withTrashed()->where('feed_url', $data['feed_url'])->exists()) {
+            return back()->withInput()->withErrors(['feed_url' => __('This feed is already on FaithFellows.')]);
+        }
+
+        try {
+            $podcast = $this->feeds->import($request->user(), $data['feed_url'], array_filter(['host_name' => $data['host_name'], 'category' => $data['category'] ?? null]));
+        } catch (PodcastFeedException $e) {
+            return back()->withInput()->withErrors(['feed_url' => $e->getMessage()]);
+        }
+
+        return redirect()->route('podcasts.show', $podcast)->with('success', $podcast->isListed()
+            ? __('Imported :count episode(s). Your podcast is live in the app.', ['count' => $podcast->episodes()->count()])
+            : __('Imported :count episode(s). Your podcast was sent for review and appears in the app once it is approved.', ['count' => $podcast->episodes()->count()]));
+    }
+
+    /** Check the feed again now instead of waiting for the next automatic check. */
+    public function sync(Request $request, Podcast $podcast): RedirectResponse
+    {
+        $this->own($request, $podcast);
+        abort_unless($podcast->feed_url, 404);
+        $result = $this->feeds->sync($podcast);
+
+        return back()->with($result['error'] ? 'error' : 'success', $result['error'] ?: __(':new new, :changed updated, :removed removed.', ['new' => $result['added'], 'changed' => $result['updated'], 'removed' => $result['removed']]));
+    }
+
+    /** Stop following the feed; the episodes stay and can be edited by hand. */
+    public function disconnect(Request $request, Podcast $podcast): RedirectResponse
+    {
+        $this->own($request, $podcast);
+        $podcast->update(['feed_url' => null, 'feed_error' => null, 'feed_synced_at' => null]);
+
+        return back()->with('success', __('The feed is disconnected. Your episodes stay; change them here from now on.'));
     }
 
     public function show(Request $request, Podcast $podcast): View

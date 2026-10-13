@@ -38,6 +38,9 @@ Route::get('/privacy', [Public\PageController::class, 'privacy'])->name('privacy
 Route::get('/pay/return/{reference}', function (Request $request, string $reference) {
     return view('pay.return', ['reference' => $reference, 'cancelled' => $request->boolean('cancelled')]);
 })->where('reference', '[A-Za-z0-9_-]+')->name('pay.return');
+Route::get('/podcasts', [Public\PodcastController::class, 'index'])->name('podcasts.listen');
+Route::get('/podcasts/{slug}', [Public\PodcastController::class, 'show'])->where('slug', '[a-z0-9-]+')->name('podcasts.listen.show');
+Route::get('/podcasts/{slug}/embed', [Public\PodcastController::class, 'embed'])->where('slug', '[a-z0-9-]+')->middleware('throttle:240,1')->name('podcasts.embed');
 Route::get('/radio/stream/{track}', [Public\RadioFileController::class, 'stream'])->whereNumber('track')->middleware('throttle:1200,1')->name('radio.stream');
 Route::get('/radio/cover/{track}', [Public\RadioFileController::class, 'cover'])->whereNumber('track')->middleware('throttle:240,1')->name('radio.cover');
 Route::get('/art/{kind}/{id}', [Public\ArtController::class, 'show'])->whereIn('kind', ['event', 'sermon', 'devotional', 'campaign', 'group', 'radio', 'podcast'])->whereNumber('id')->middleware('throttle:240,1')->name('art');
@@ -89,10 +92,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/podcast-studio', [Member\PodcastController::class, 'index'])->name('podcasts.index');
     Route::get('/podcast-studio/new', [Member\PodcastController::class, 'create'])->name('podcasts.create');
     Route::post('/podcast-studio', [Member\PodcastController::class, 'store'])->middleware('throttle:10,1')->name('podcasts.store');
+    Route::get('/podcast-studio/import', [Member\PodcastController::class, 'importForm'])->name('podcasts.import');
+    Route::post('/podcast-studio/import', [Member\PodcastController::class, 'import'])->middleware('throttle:6,1')->name('podcasts.import.store');
     Route::get('/podcast-studio/{podcast}', [Member\PodcastController::class, 'show'])->name('podcasts.show');
     Route::get('/podcast-studio/{podcast}/edit', [Member\PodcastController::class, 'edit'])->name('podcasts.edit');
     Route::put('/podcast-studio/{podcast}', [Member\PodcastController::class, 'update'])->name('podcasts.update');
     Route::delete('/podcast-studio/{podcast}', [Member\PodcastController::class, 'destroy'])->name('podcasts.destroy');
+    Route::post('/podcast-studio/{podcast}/sync', [Member\PodcastController::class, 'sync'])->middleware('throttle:6,1')->name('podcasts.sync');
+    Route::delete('/podcast-studio/{podcast}/feed', [Member\PodcastController::class, 'disconnect'])->name('podcasts.feed.disconnect');
     Route::get('/podcast-studio/{podcast}/episodes/new', [Member\PodcastEpisodeController::class, 'create'])->name('podcasts.episodes.create');
     Route::post('/podcast-studio/{podcast}/episodes', [Member\PodcastEpisodeController::class, 'store'])->middleware('throttle:60,1')->name('podcasts.episodes.store');
     Route::get('/podcast-studio/{podcast}/episodes/{episode}/edit', [Member\PodcastEpisodeController::class, 'edit'])->name('podcasts.episodes.edit');

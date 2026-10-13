@@ -29,11 +29,11 @@ class Podcast extends Model implements HasMedia
         'kids' => 'Kids', 'leadership' => 'Leadership', 'missions' => 'Missions & outreach', 'interviews' => 'Interviews',
     ];
 
-    protected $fillable = ['user_id', 'name', 'slug', 'host_name', 'summary', 'description', 'category', 'language', 'website_url', 'status', 'review_note', 'approved_at', 'episodes_count', 'followers_count', 'latest_episode_at'];
+    protected $fillable = ['user_id', 'name', 'slug', 'host_name', 'summary', 'description', 'category', 'language', 'website_url', 'feed_url', 'feed_synced_at', 'feed_error', 'status', 'review_note', 'approved_at', 'episodes_count', 'followers_count', 'latest_episode_at'];
 
     protected function casts(): array
     {
-        return ['approved_at' => 'datetime', 'latest_episode_at' => 'datetime'];
+        return ['approved_at' => 'datetime', 'latest_episode_at' => 'datetime', 'feed_synced_at' => 'datetime'];
     }
 
     protected static function booted(): void

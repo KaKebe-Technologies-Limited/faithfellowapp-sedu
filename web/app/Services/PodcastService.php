@@ -33,18 +33,8 @@ class PodcastService
      */
     public function problemWithLink(string $url): ?string
     {
-        $parts = parse_url($url);
-        $host = strtolower((string) ($parts['host'] ?? ''));
-        if (($parts['scheme'] ?? '') !== 'https' || $host === '') {
-            return __('Use the full https link to the audio file.');
-        }
-
-        $allowed = $this->allowedHosts();
-        if ($allowed !== [] && ! collect($allowed)->contains(fn ($h) => $host === $h || str_ends_with($host, '.'.$h))) {
-            return __('Audio must be hosted on one of these sites: :sites.', ['sites' => implode(', ', $allowed)]);
-        }
-        if ($this->isPrivateHost($host)) {
-            return __('That link cannot be used.');
+        if ($problem = $this->problemWithAddress($url)) {
+            return $problem;
         }
 
         try {
@@ -61,8 +51,28 @@ class PodcastService
         };
     }
 
+    /** The checks that need no network call: https, one of the allowed host sites, and not a private address. */
+    public function problemWithAddress(string $url): ?string
+    {
+        $parts = parse_url($url);
+        $host = strtolower((string) ($parts['host'] ?? ''));
+        if (($parts['scheme'] ?? '') !== 'https' || $host === '') {
+            return __('Use the full https link to the audio file.');
+        }
+
+        $allowed = $this->allowedHosts();
+        if ($allowed !== [] && ! collect($allowed)->contains(fn ($h) => $host === $h || str_ends_with($host, '.'.$h))) {
+            return __('Audio must be hosted on one of these sites: :sites.', ['sites' => implode(', ', $allowed)]);
+        }
+        if ($this->isPrivateHost($host)) {
+            return __('That link cannot be used.');
+        }
+
+        return null;
+    }
+
     /** Localhost and private networks are never fetched, so a pasted link cannot be used to look inside our servers. */
-    protected function isPrivateHost(string $host): bool
+    public function isPrivateHost(string $host): bool
     {
         if (in_array($host, ['localhost', '0.0.0.0'], true) || str_ends_with($host, '.local') || str_ends_with($host, '.internal')) {
             return true;

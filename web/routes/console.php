@@ -10,6 +10,7 @@ use App\Services\EventService;
 use App\Services\GivingScheduler;
 use App\Services\Notifications\BroadcastService;
 use App\Services\Notifications\DigestService;
+use App\Services\PodcastFeedService;
 use App\Services\ReadingCircleService;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
@@ -32,6 +33,13 @@ Artisan::command('ff:publish-scheduled', function (ContentPublisher $publisher) 
 })->purpose('Publish scheduled sermons, devotionals and announcements and notify subscribers');
 
 Schedule::command('ff:publish-scheduled')->everyMinute()->withoutOverlapping();
+
+Artisan::command('podcasts:sync-feeds', function (PodcastFeedService $feeds) {
+    $result = $feeds->syncDue();
+    $this->info("Checked {$result['podcasts']} podcast feed(s): {$result['added']} new episode(s), {$result['errors']} problem(s).");
+})->purpose('Add new episodes from the RSS feeds of connected podcasts');
+
+Schedule::command('podcasts:sync-feeds')->hourly()->withoutOverlapping();
 
 Artisan::command('ff:event-reminders', function (EventService $events) {
     $this->info('Sent '.$events->sendReminders().' event reminder(s).');

@@ -27,7 +27,8 @@ class SecurityHeaders
         $headers->set('Permissions-Policy', 'geolocation=(self), camera=(self), microphone=(), payment=(self), usb=(), interest-cohort=()');
         $headers->set('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
 
-        if (! $headers->has('X-Frame-Options')) {
+        // The podcast player is meant to be embedded on other websites; every other page may only be framed by this site.
+        if (! $headers->has('X-Frame-Options') && ! $request->routeIs('podcasts.embed')) {
             $headers->set('X-Frame-Options', 'SAMEORIGIN');
         }
 

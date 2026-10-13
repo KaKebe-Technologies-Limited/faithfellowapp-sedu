@@ -12,6 +12,7 @@
                 <dl class="small mb-0">
                     <dt>{{ __('Podcaster') }}</dt><dd>{{ $podcast->owner?->name }} <span class="text-ff-muted">({{ $podcast->owner?->email }})</span></dd>
                     <dt>{{ __('Language') }}</dt><dd>{{ config('faithfellows.languages')[$podcast->language] ?? $podcast->language }}</dd>
+                    @if ($podcast->feed_url)<dt>{{ __('RSS feed') }}</dt><dd class="text-break"><a href="{{ $podcast->feed_url }}" target="_blank" rel="noopener">{{ $podcast->feed_url }}</a> <span class="text-ff-muted">({{ $podcast->feed_synced_at ? __('checked :when', ['when' => $podcast->feed_synced_at->diffForHumans()]) : __('not checked yet') }})</span></dd>@endif
                     @if ($podcast->website_url)<dt>{{ __('Website') }}</dt><dd><a href="{{ $podcast->website_url }}" target="_blank" rel="noopener">{{ $podcast->website_url }}</a></dd>@endif
                     @if ($podcast->review_note)<dt>{{ __('Note given') }}</dt><dd>{{ $podcast->review_note }}</dd>@endif
                 </dl>

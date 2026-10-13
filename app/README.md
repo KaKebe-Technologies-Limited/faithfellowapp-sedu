@@ -114,7 +114,8 @@ searches by name, host or topic and filters by category; `app/podcast/[id].jsx` 
 `app/listen.jsx` is the full player (progress bar, back 15 / forward 30, speed, next, "Take notes", Bible and Groups shortcuts).
 The player module is `lib/podcastPlayer.js` (one player for the whole app, remembers where you stopped in
 `offline/podcasts/progress.json`). It shares `lib/audioFocus.js` with the radio so only one plays; `components/NowPlayingBar.jsx`
-shows whichever is on, above the tabs and at the bottom of other screens. Audio is played straight from the link the podcaster
+shows whichever is on, above the tabs and at the bottom of other screens. Podcasters can import a podcast from its RSS feed on the website (Podbean, Buzzsprout…) and new episodes then appear here by
+themselves. Audio is played straight from the link the podcaster
 added, so the host must support byte ranges for seeking (all normal audio hosts do).
 
 ## Notes

@@ -12,7 +12,7 @@ class PodcastEpisode extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = ['podcast_id', 'title', 'summary', 'audio_url', 'duration_seconds', 'season', 'number', 'status', 'published_at', 'plays_count'];
+    protected $fillable = ['podcast_id', 'guid', 'title', 'summary', 'audio_url', 'duration_seconds', 'season', 'number', 'status', 'published_at', 'plays_count'];
 
     protected function casts(): array
     {

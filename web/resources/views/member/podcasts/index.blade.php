@@ -1,11 +1,13 @@
 <x-layouts.member :title="__('My podcasts')">
     <x-ff.page-header :title="__('My podcasts')" :subtitle="__('Make a faith-based podcast and reach listeners in the FaithFellows app. You keep your audio on a host site and add the link to each episode.')">
+        <a href="{{ route('podcasts.import') }}" class="btn btn-ff-soft"><i class="bi bi-rss"></i> {{ __('Import from RSS') }}</a>
         <a href="{{ route('podcasts.create') }}" class="btn btn-ff-primary"><i class="bi bi-plus-lg"></i> {{ __('New podcast') }}</a>
     </x-ff.page-header>
 
     @if ($podcasts->isEmpty())
         <x-ff.empty-state icon="bi-mic" :title="__('You have no podcast yet')" :message="__('Give it a name and a short summary, then add your episodes. We review every podcast so the app stays faith-based.')">
             <a href="{{ route('podcasts.create') }}" class="btn btn-ff-primary mt-2"><i class="bi bi-plus-lg"></i> {{ __('Start your podcast') }}</a>
+            <a href="{{ route('podcasts.import') }}" class="btn btn-ff-soft mt-2"><i class="bi bi-rss"></i> {{ __('Import from RSS') }}</a>
         </x-ff.empty-state>
     @else
         <div class="row g-3">

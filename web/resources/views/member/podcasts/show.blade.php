@@ -28,6 +28,28 @@
                     <span><i class="bi bi-heart"></i> {{ $podcast->followers_count }} {{ __('followers') }}</span>
                 </div>
             </div>
+            @if ($podcast->feed_url)
+                <div class="ff-card mt-3 small">
+                    <h2 class="h6"><i class="bi bi-rss text-ff-primary"></i> {{ __('Synced from your RSS feed') }}</h2>
+                    <p class="mb-2 text-ff-muted text-break">{{ $podcast->feed_url }}</p>
+                    @if ($podcast->feed_error)
+                        <div class="alert alert-warning py-2 small">{{ $podcast->feed_error }}</div>
+                    @endif
+                    <p class="mb-2">{{ $podcast->feed_synced_at ? __('Last checked :when.', ['when' => $podcast->feed_synced_at->diffForHumans()]) : __('Not checked yet.') }} {{ __('New episodes from your host are added automatically; change episodes on your host, not here.') }}</p>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <form method="POST" action="{{ route('podcasts.sync', $podcast) }}">@csrf<button class="btn btn-sm btn-ff-soft"><i class="bi bi-arrow-repeat"></i> {{ __('Check now') }}</button></form>
+                        <form method="POST" action="{{ route('podcasts.feed.disconnect', $podcast) }}" data-ff-confirm="{{ __('Stop syncing with the feed? Your episodes stay.') }}">@csrf @method('DELETE')<button class="btn btn-sm btn-ff-ghost text-danger">{{ __('Disconnect') }}</button></form>
+                    </div>
+                </div>
+            @endif
+            @if ($podcast->isListed())
+                <div class="ff-card mt-3 small">
+                    <h2 class="h6"><i class="bi bi-globe text-ff-primary"></i> {{ __('On the website') }}</h2>
+                    <p class="mb-2">{{ __('Your podcast has its own page:') }} <a href="{{ route('podcasts.listen.show', $podcast->slug) }}" target="_blank" rel="noopener">{{ route('podcasts.listen.show', $podcast->slug) }}</a></p>
+                    <label class="form-label small mb-1" for="embed-code">{{ __('Player to put on another website') }}</label>
+                    <textarea id="embed-code" class="form-control form-control-sm font-monospace" rows="3" readonly onclick="this.select()">&lt;iframe src="{{ route('podcasts.embed', $podcast->slug) }}" width="100%" height="420" style="border:0;border-radius:12px" title="{{ $podcast->name }}" loading="lazy"&gt;&lt;/iframe&gt;</textarea>
+                </div>
+            @endif
             <div class="ff-card mt-3 small">
                 <h2 class="h6">{{ __('Where to keep your audio') }}</h2>
                 @if ($hosts)
