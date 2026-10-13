@@ -15,6 +15,7 @@ import { COLORS, FONTS, RADIUS, SPACING } from '../../constants/theme';
 import { API_ROOT, mediaUrl, ping } from '../../lib/api';
 import { useAuth } from '../../lib/auth';
 import { initials } from '../../lib/format';
+import { useOutbox } from '../../lib/outbox';
 import { useFetch } from '../../lib/useFetch';
 
 const MENU = [
@@ -33,6 +34,7 @@ const MENU = [
 
 export default function ProfileScreen() {
   const { signOut } = useAuth();
+  const { pending } = useOutbox();
   const { data, loading, refreshing, error, reload, retry } = useFetch('/me');
   const [server, setServer] = useState({ state: 'checking' });
   const me = data?.data ?? data;
@@ -52,7 +54,9 @@ export default function ProfileScreen() {
   }, [checkServer]);
 
   function confirmSignOut() {
-    Alert.alert('Sign out?', 'You will need your email and password to sign in again.', [
+    const lose = pending === 1 ? 'it' : 'them';
+    const note = pending ? `\n\nYou have ${pending} change${pending === 1 ? '' : 's'} (notes or highlights) that could not be sent yet. Signing out now will lose ${lose}.` : '';
+    Alert.alert('Sign out?', `You will need your email and password to sign in again.${note}`, [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Sign out',

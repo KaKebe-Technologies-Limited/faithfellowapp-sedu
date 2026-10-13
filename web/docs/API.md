@@ -289,13 +289,13 @@ Toggles "I prayed" and returns `{"prayed": true, "count": 15}`.
 - `GET /bible` → `translations` (`key`, `name`, `short`, `language`), the member's `translation`, the 66 `books` (`code`, `name`, `chapters`, `testament`, `aliases` — the abbreviations people type, so the app can read references offline), highlight `colors` and the latest `highlights`.
 - `GET /bible/{book}/{chapter}?t=<translation>` (book is the 3-letter code, e.g. `JHN`) → `verses` as `[ { v, t, color } ]` (`color` is the member's highlight: `yellow|green|blue|pink|null`), `previous` / `next` chapter. `503` with a friendly message when the Bible text service is unreachable (chapters are cached after the first read).
 - `GET /bible/passage?ref=Matthew 3-5` (also `John 3:16`, `Genesis 1-2; Psalm 1`) → `sections` per chapter. `404` when the reference is not understood.
-- `POST /bible/highlights` `{ verses: ["JHN.3.16", …], color: "yellow" | null }` (null clears), `GET /bible/highlights` lists them with verse text where the chapter is cached.
+- `POST /bible/highlights` `{ verses: ["JHN.3.16", …], color: "yellow" | null }` (null clears), `GET /bible/highlights` lists them with verse text where the chapter is cached. Sending the same highlight again is harmless (the app replays highlights made offline).
 - `PUT /bible/translation` `{ translation }` saves the member's choice.
 - `GET /bible/download/{book}?t=<translation>&have=1,2,3` → a whole book for reading offline: `chapters` as `{ "4": [ { v, t } ] }` (only those not in `have`), `missing` (chapters the server does not hold yet), `total` and `fetched`. The server answers at once with what it has and fetches up to five more chapters from the Bible provider each time, so the app asks again until `missing` is empty (throttled to 120 a minute). The app keeps what it receives on the phone; `php artisan bible:warm kjv` fills the server's cache in advance (about 45 minutes per translation).
 
 ### Notes
 
-One note per thing being read (`context`: `bible:JHN.3`, `sermon:12`, `devotional:7`, `plan:4:2`, or a free `note:…`). `GET /notes?q=&kind=` (pinned first, paged), `GET /notes/context?context=`, `POST /notes` (creates or continues the note of that `context`; without one, a new free note), `GET|PATCH|DELETE /notes/{id}`, `POST /notes/{id}/pin`. Notes are private; another member gets `404`.
+One note per thing being read (`context`: `bible:JHN.3`, `sermon:12`, `devotional:7`, `plan:4:2`, or a free `note:…`). `POST /notes` with a `context` is create-or-update, and the app makes up the `context` of a free note itself (`note:` + random letters), so a note written offline can be sent again safely and keeps its identity. `GET /notes?q=&kind=` (pinned first, paged), `GET /notes/context?context=`, `POST /notes` (creates or continues the note of that `context`; without one, a new free note), `GET|PATCH|DELETE /notes/{id}`, `POST /notes/{id}/pin`. Notes are private; another member gets `404`.
 
 ### Reading plans and circles
 

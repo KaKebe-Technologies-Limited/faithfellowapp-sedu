@@ -1,4 +1,5 @@
 // Every verse you have highlighted, newest first. Tap one to open it in the reader (GET /api/v1/bible/highlights).
+// The list is kept on the phone, so it opens offline, with highlights made offline already in it.
 import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
 import AppText from '../components/AppText';
@@ -6,15 +7,14 @@ import ScreenHeader from '../components/ScreenHeader';
 import StateView from '../components/StateView';
 import { COLORS, FONTS, RADIUS, SPACING } from '../constants/theme';
 import { HIGHLIGHTS } from '../lib/bible';
-import { useFetch } from '../lib/useFetch';
+import { useHighlights } from '../lib/bibleOffline';
 
 export default function HighlightsScreen() {
-  const { data, loading, error, retry } = useFetch('/bible/highlights');
-  const list = data?.data ?? [];
+  const { list, loading, error, offline, retry } = useHighlights();
 
   return (
     <View style={styles.screen}>
-      <ScreenHeader title="Highlights" subtitle="Verses you marked" />
+      <ScreenHeader title="Highlights" subtitle={offline ? 'Verses you marked · offline' : 'Verses you marked'} />
       <StateView loading={loading} error={error} onRetry={retry} empty={!loading && !error && !list.length} emptyIcon="color-wand-outline" emptyTitle="No highlights yet" emptyMessage="Open a chapter, tap a verse and choose a colour — it will be kept here." emptyAction={{ title: 'Open the Bible', onPress: () => router.replace('/(tabs)/bible') }}>
         <FlatList
           data={list}

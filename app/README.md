@@ -76,6 +76,14 @@ whole Bible per translation (about 4 MB) as one small file per book (`lib/bibleS
 connection the reader, the Bible tab and passages in reading plans use those copies. To make downloads instant for members,
 fill the server's cache once with `php artisan bible:warm kjv` (about 45 minutes).
 
+## Offline notes and highlights
+
+Highlights, and notes you write, pin or delete, are saved on the phone first and sent to the server when there is internet
+(`lib/outbox.js`: when the connection returns, when the app opens, every 15 seconds while something waits). The notebook
+(`lib/notesStore.js`, `lib/notesSync.js`) and the highlights list open from the phone and refresh in the background. The
+signed-in profile is kept on the phone too, so the app starts with no internet. Signing out clears the notes and anything
+not yet sent (it warns first); a different member signing in on the same phone clears them as well.
+
 ## Notes
 
 - This is **Expo SDK 57**. APIs change between SDKs, so check the versioned docs (`https://docs.expo.dev/versions/v57.0.0/`)

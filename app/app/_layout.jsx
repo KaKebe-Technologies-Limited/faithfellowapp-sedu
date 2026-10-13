@@ -13,6 +13,8 @@ import {
 } from '@expo-google-fonts/clarity-city';
 import { COLORS } from '../constants/theme';
 import { AuthProvider, useAuth } from '../lib/auth';
+import { useOfflineSync } from '../lib/outbox';
+import { syncNotes } from '../lib/notesSync';
 import { usePushSetup } from '../lib/push';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -20,6 +22,7 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 function Navigator({ fontsLoaded }) {
   const { ready, user } = useAuth();
   usePushSetup(user);
+  useOfflineSync(user, syncNotes);
 
   useEffect(() => {
     if (fontsLoaded && ready) SplashScreen.hideAsync().catch(() => {});

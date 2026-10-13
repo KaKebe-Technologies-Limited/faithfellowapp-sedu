@@ -3,11 +3,13 @@
 // Downloading fetches whole books through GET /api/v1/bible/download/{book} and saves them with lib/bibleStore.
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import api, { errorMessage } from './api';
+import { verseKey } from './bible';
 import { parseReference, referenceTitle, segmentLabel } from './bibleRef';
 import * as store from './bibleStore';
+import { isOffline } from './net';
+import { submit, useOutbox, waiting } from './outbox';
 
-/** True when a request failed for lack of a connection (no answer at all), not because the server said no. */
-export const isOffline = (e) => !!e && !e.response && e.code !== 'ERR_CANCELED';
+export { isOffline };
 
 const OFFLINE_CHAPTER = 'You are offline, and this chapter is not on your phone yet. Download the Bible under “Offline Bible” to read without internet.';
 
@@ -98,6 +100,63 @@ export function useChapter(book, chapter, t) {
   }, [run]);
 
   return { chapterInfo: state.info, loading: state.loading, error: state.error, offline: state.offline, retry: run };
+}
+
+// ── Highlights ──────────────────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Highlights (or clears, with `color: null`) verses of one chapter. It is applied on the phone at once and sent to the
+ * server; with no connection it waits and is sent later. Resolves `{ queued }`, throws when the server refuses.
+ */
+export async function setHighlight({ book, chapter, verses, color }) {
+  await store.setVerseColors(book, chapter, Object.fromEntries(verses.map((v) => [v, color])));
+  return submit('highlight', { verses: verses.map((v) => verseKey(book, chapter, v)), color });
+}
+
+/** Every verse you highlighted: the server's list (kept for offline) with changes still waiting to be sent laid over it. */
+export function useHighlights() {
+  const { pending } = useOutbox();
+  const [state, setState] = useState({ list: [], loading: true, error: null, offline: false });
+  const server = useRef(null);
+
+  const overlay = useCallback(async (base) => {
+    const meta = await store.getMeta();
+    const entries = new Map(base.map((h) => [h.key, h]));
+    for (const op of await waiting('highlight')) {
+      for (const key of op.payload.verses) {
+        if (!op.payload.color) entries.delete(key);
+        else {
+          const [book, chapter, verse] = key.split('.');
+          const name = meta?.books?.find((b) => b.code === book)?.name ?? book;
+          const text = meta?.translation ? (await store.getChapter(meta.translation, book, Number(chapter)))?.find((v) => v.v === Number(verse))?.t ?? null : null;
+          entries.delete(key);
+          entries.set(key, { key, label: `${name} ${chapter}:${verse}`, book, chapter: Number(chapter), verse: Number(verse), color: op.payload.color, text });
+        }
+      }
+    }
+    // Changes waiting to be sent come first, like the newest highlights do on the server.
+    const waitingKeys = new Set((await waiting('highlight')).flatMap((op) => op.payload.verses));
+    return [...[...entries.values()].filter((h) => waitingKeys.has(h.key)).reverse(), ...[...entries.values()].filter((h) => !waitingKeys.has(h.key))];
+  }, []);
+
+  const load = useCallback(async () => {
+    try {
+      const { data } = await api.get('/bible/highlights');
+      server.current = data.data;
+      store.saveHighlightsCache(data.data);
+      setState({ list: await overlay(data.data), loading: false, error: null, offline: false });
+    } catch (e) {
+      // With no connection show the last list the phone saw (or none yet) with the waiting changes on top.
+      if (isOffline(e)) setState({ list: await overlay(server.current ?? (await store.getHighlightsCache()) ?? []), loading: false, error: null, offline: true });
+      else setState((s) => ({ ...s, loading: false, error: errorMessage(e) }));
+    }
+  }, [overlay]);
+
+  useEffect(() => {
+    load();
+  }, [load, pending]);
+
+  return { ...state, retry: load };
 }
 
 // ── Passages (reading plans, sermons, search) ───────────────────────────────────────────────────────────

@@ -1,116 +1,144 @@
-// A note, written in the app and saved as you type. Opened from the notebook, from a Bible chapter (one note per
-// chapter, with the verses you selected as its reference), or fresh (id "new"). Colours, pinning and delete are
+// A note, written in the app and saved as you type — on the phone first, so it works with no internet; it is sent to
+// the server as soon as there is a connection. Opened from the notebook, from a Bible chapter (one note per chapter,
+// with the verses you selected as its reference), a sermon, a reading plan, or fresh. Colours, pinning and delete are
 // in the header. Notes are private to you.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import AppText from '../../components/AppText';
-import ScreenHeader, { HeaderAction } from '../../components/ScreenHeader';
+import ScreenHeader, { HeaderAction, goBack } from '../../components/ScreenHeader';
 import StateView from '../../components/StateView';
 import { COLORS, FONTS, RADIUS, SPACING } from '../../constants/theme';
 import api, { errorMessage } from '../../lib/api';
-
-const PAPER = { paper: '#FFFDF7', rose: '#FDF0F3', sky: '#EEF5FF', mint: '#EDF9F2', sun: '#FFF8E6' };
+import { isOffline } from '../../lib/net';
+import { PAPER, getNote, getNoteById, markDeleted, mergeFromServer, newContext, putNote } from '../../lib/notesStore';
+import { submit } from '../../lib/outbox';
 
 export default function NoteScreen() {
-  const { id: idParam, context, reference } = useLocalSearchParams();
-  const [id, setId] = useState(idParam === 'new' ? null : Number(idParam));
+  const { id: idParam, context: contextParam, reference } = useLocalSearchParams();
+  const [context, setContext] = useState(contextParam ? String(contextParam) : null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [color, setColor] = useState('paper');
   const [pinned, setPinned] = useState(false);
-  const [state, setState] = useState('idle'); // idle | dirty | saving | saved
+  const [state, setState] = useState('idle'); // idle | dirty | saving | saved | queued
   const refText = useRef(reference ? String(reference) : null);
-  const creating = useRef(false);
   const timer = useRef(null);
+  const touched = useRef(false);
   const latest = useRef({});
-  latest.current = { id, title, body, color };
+  latest.current = { context, title, body, color };
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      let note = null;
-      if (idParam !== 'new') note = (await api.get(`/notes/${idParam}`)).data.data;
-      else if (context) note = (await api.get('/notes/context', { params: { context: String(context) } })).data.data;
-      if (note) {
-        setId(note.id);
-        setTitle(note.title ?? '');
-        setBody(note.body ?? '');
-        setColor(note.color);
-        setPinned(note.pinned);
-        if (!refText.current) refText.current = note.reference;
-      }
-    } catch (e) {
-      setError(errorMessage(e));
-    } finally {
-      setLoading(false);
-    }
-  }, [idParam, context]);
+  const fill = useCallback((note) => {
+    setTitle(note.title ?? '');
+    setBody(note.body ?? '');
+    setColor(note.color || 'paper');
+    setPinned(!!note.pinned);
+    if (!refText.current) refText.current = note.reference ?? null;
+  }, []);
 
+  // Start from what is on the phone, then look at the server for anything newer (never over your own typing).
   useEffect(() => {
-    load();
-  }, [load]);
+    let alive = true;
+    (async () => {
+      let ctx = contextParam ? String(contextParam) : null;
+      let local = ctx ? await getNote(ctx) : null;
 
+      if (!ctx && idParam && idParam !== 'new') {
+        local = await getNoteById(idParam);
+        ctx = local?.context ?? null;
+        if (!ctx) {
+          try {
+            const { data } = await api.get(`/notes/${idParam}`);
+            await mergeFromServer([data.data], false);
+            ctx = data.data.context;
+            local = await getNote(ctx);
+          } catch (e) {
+            if (alive) {
+              setError(isOffline(e) ? 'This note is not on your phone yet. Open it once with a connection.' : errorMessage(e));
+              setLoading(false);
+            }
+            return;
+          }
+        }
+      }
+      ctx ??= newContext();
+      if (!alive) return;
+      setContext(ctx);
+      if (local) fill(local);
+      setLoading(false);
+
+      try {
+        const { data } = await api.get('/notes/context', { params: { context: ctx } });
+        if (data.data && alive && !touched.current && !(await getNote(ctx))?.dirty) {
+          await mergeFromServer([data.data], false);
+          fill((await getNote(ctx)) ?? data.data);
+        }
+      } catch {
+        // No connection: the copy on the phone is what you see.
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [idParam, contextParam, fill]);
+
+  /** Writes the note on the phone, then sends it (or leaves it waiting when there is no connection). */
   const save = useCallback(async () => {
-    const { id: noteId, title: t, body: b, color: c } = latest.current;
-    if (!noteId && !t.trim() && !b.trim()) {
+    clearTimeout(timer.current);
+    timer.current = null;
+    const { context: ctx, title: t, body: b, color: c } = latest.current;
+    if (!ctx || (!t.trim() && !b.trim() && !(await getNote(ctx)))) {
       setState('idle');
       return;
     }
-    if (creating.current) return;
     setState('saving');
     try {
-      if (noteId) {
-        await api.patch(`/notes/${noteId}`, { title: t || null, body: b, color: c });
-      } else {
-        creating.current = true;
-        const { data } = await api.post('/notes', { ...(context ? { context: String(context) } : {}), reference: refText.current, title: t || null, body: b, color: c });
-        setId(data.data.id);
-      }
-      setState('saved');
+      await putNote(ctx, { title: t, body: b, color: c, ...(refText.current ? { reference: refText.current } : {}) });
+      const { queued } = await submit('note.save', {}, ctx);
+      setState(queued ? 'queued' : 'saved');
+      setError(null);
     } catch (e) {
       setState('dirty');
       setError(errorMessage(e));
-    } finally {
-      creating.current = false;
     }
-  }, [context]);
+  }, []);
 
   // Save shortly after the last keystroke, and when leaving.
   function changed() {
+    touched.current = true;
     setState('dirty');
     clearTimeout(timer.current);
     timer.current = setTimeout(save, 800);
   }
   useEffect(
     () => () => {
-      clearTimeout(timer.current);
+      if (timer.current) save();
     },
-    [],
+    [save],
   );
 
   async function togglePin() {
-    if (!id) return;
-    try {
-      const { data } = await api.post(`/notes/${id}/pin`);
-      setPinned(data.data.pinned);
-    } catch (e) {
-      Alert.alert('Could not pin', errorMessage(e));
-    }
+    if (!context) return;
+    if (!title.trim() && !body.trim()) return;
+    const next = !pinned;
+    setPinned(next);
+    await save();
+    await putNote(context, { pinned: next });
+    submit('note.pin', { pinned: next }, context).catch((e) => Alert.alert('Could not pin', errorMessage(e)));
   }
 
   function remove() {
     const run = async () => {
-      try {
-        if (id) await api.delete(`/notes/${id}`);
-        router.back();
-      } catch (e) {
-        Alert.alert('Could not delete', errorMessage(e));
+      clearTimeout(timer.current);
+      timer.current = null;
+      if (context) {
+        await markDeleted(context);
+        submit('note.delete', {}, context).catch(() => {});
       }
+      goBack();
     };
     if (Platform.OS === 'web') return run();
     Alert.alert('Delete this note?', 'This cannot be undone.', [
@@ -120,16 +148,17 @@ export default function NoteScreen() {
   }
 
   async function leave() {
-    clearTimeout(timer.current);
-    if (state === 'dirty') await save();
-    router.back();
+    if (timer.current || state === 'dirty') await save();
+    goBack();
   }
+
+  const subtitle = { saving: 'Saving…', saved: 'Saved ✓', queued: 'Saved on your phone · will sync', dirty: 'Unsaved changes' }[state];
 
   return (
     <View style={[styles.screen, { backgroundColor: PAPER[color] ?? PAPER.paper }]}>
       <ScreenHeader
         title={refText.current || 'Note'}
-        subtitle={state === 'saving' ? 'Saving…' : state === 'saved' ? 'Saved ✓' : state === 'dirty' ? 'Unsaved changes' : undefined}
+        subtitle={subtitle}
         right={
           <View style={{ flexDirection: 'row', gap: 8 }}>
             <HeaderAction icon={pinned ? 'pin' : 'pin-outline'} label={pinned ? 'Unpin' : 'Pin'} onPress={togglePin} />
@@ -137,7 +166,7 @@ export default function NoteScreen() {
           </View>
         }
       />
-      <StateView loading={loading} error={error && loading ? error : null} onRetry={load}>
+      <StateView loading={loading} error={error && !context ? error : null} onRetry={() => router.replace({ pathname: '/note/[id]', params: { id: String(idParam) } })}>
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
             {refText.current ? (
@@ -153,7 +182,7 @@ export default function NoteScreen() {
                 <Pressable key={key} onPress={() => { setColor(key); changed(); }} accessibilityRole="button" accessibilityLabel={`${key} paper`} style={[styles.dot, { backgroundColor: hex }, color === key && styles.dotOn]} />
               ))}
             </View>
-            {error && !loading ? <AppText style={{ color: COLORS.danger, textAlign: 'center', marginTop: 10 }}>{error}</AppText> : null}
+            {error && context ? <AppText style={{ color: COLORS.danger, textAlign: 'center', marginTop: 10 }}>{error}</AppText> : null}
           </ScrollView>
         </KeyboardAvoidingView>
       </StateView>

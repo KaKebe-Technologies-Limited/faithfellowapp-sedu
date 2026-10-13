@@ -1,97 +1,18 @@
 // The Bible on the phone, for reading without internet. Chapters are kept in one small file per book and translation
-// (phones: expo-file-system; the web preview: localStorage). Every chapter you read online is kept automatically, and
-// the Offline Bible screen can download whole books or the whole Bible. Highlights come along as the last known colours.
+// (see lib/localFiles.js). Every chapter you read online is kept automatically, and the Offline Bible screen can
+// download whole books or the whole Bible. Highlights come along as the last known colours.
 //
-//   bible-offline/meta.json            the book list, translations and the member's translation (from GET /api/v1/bible)
-//   bible-offline/passages.json        the last few passages (plans, sermons, search) as the server answered them
-//   bible-offline/{translation}/{BOOK}.json   { chapters: { "3": { v: [[1, "text"], …], c: { "16": "yellow" } } } }
-//   bible-offline/{translation}/_index.json   { books: { JHN: { c: [1, 2, 3], b: bytes } } }
-import { Platform } from 'react-native';
-
-const ROOT = 'bible-offline';
-const native = Platform.OS !== 'web';
-
-let fsModule = null;
-const fs = () => (fsModule ??= require('expo-file-system'));
-
-// ── A tiny JSON file layer ──────────────────────────────────────────────────────────────────────────────
-
-function fileFor(name) {
-  const { File, Paths } = fs();
-  return new File(Paths.document, ROOT, ...name.split('/'));
-}
-
-async function readJson(name) {
-  try {
-    if (!native) {
-      const raw = globalThis.localStorage?.getItem(`${ROOT}/${name}`);
-      return raw ? JSON.parse(raw) : null;
-    }
-    const file = fileFor(name);
-    return file.exists ? JSON.parse(await file.text()) : null;
-  } catch {
-    return null;
-  }
-}
-
-/** Resolves true when written. A full disk or storage quota is reported as false, never thrown. */
-async function writeJson(name, value) {
-  const raw = JSON.stringify(value);
-  try {
-    if (!native) {
-      globalThis.localStorage?.setItem(`${ROOT}/${name}`, raw);
-      return true;
-    }
-    const file = fileFor(name);
-    file.parentDirectory.create({ intermediates: true, idempotent: true });
-    if (!file.exists) file.create({ intermediates: true });
-    file.write(raw);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-function removeFile(name) {
-  try {
-    if (!native) return globalThis.localStorage?.removeItem(`${ROOT}/${name}`);
-    const file = fileFor(name);
-    if (file.exists) file.delete();
-  } catch {
-    // Already gone.
-  }
-}
-
-function removeDir(name) {
-  try {
-    if (!native) {
-      const prefix = `${ROOT}/${name}/`;
-      Object.keys(globalThis.localStorage ?? {}).filter((k) => k.startsWith(prefix)).forEach((k) => globalThis.localStorage.removeItem(k));
-      return;
-    }
-    const { Directory, Paths } = fs();
-    const dir = new Directory(Paths.document, ROOT, name);
-    if (dir.exists) dir.delete();
-  } catch {
-    // Already gone.
-  }
-}
-
-// Writes to the same file wait for each other, so reading a chapter while a download saves a book cannot lose either.
-const chains = new Map();
-function serial(key, task) {
-  const next = (chains.get(key) ?? Promise.resolve()).then(task, task);
-  chains.set(key, next.catch(() => {}));
-  return next;
-}
-
-// ── Books and the index of what is stored ───────────────────────────────────────────────────────────────
+//   bible/meta.json                  the book list, translations and the member's translation (from GET /api/v1/bible)
+//   bible/passages.json              the last few passages (plans, sermons, search) as the server answered them
+//   bible/{translation}/{BOOK}.json  { chapters: { "3": { v: [[1, "text"], …], c: { "16": "yellow" } } } }
+//   bible/{translation}/_index.json  { books: { JHN: { c: [1, 2, 3], b: bytes, h: true } } }   (h: has highlight colours)
+import { readJson, removeDir, removeFile, serial, writeJson } from './localFiles';
 
 const bookCache = new Map(); // "kjv/JHN" → { chapters: {…} }
 const indexCache = new Map(); // "kjv" → { books: {…} }
 
 async function indexOf(translation) {
-  if (!indexCache.has(translation)) indexCache.set(translation, (await readJson(`${translation}/_index.json`)) ?? { books: {} });
+  if (!indexCache.has(translation)) indexCache.set(translation, (await readJson(`bible/${translation}/_index.json`)) ?? { books: {} });
   return indexCache.get(translation);
 }
 
@@ -99,7 +20,7 @@ async function bookOf(translation, book) {
   const key = `${translation}/${book}`;
   if (!bookCache.has(key)) {
     if (bookCache.size > 6) bookCache.delete(bookCache.keys().next().value);
-    bookCache.set(key, (await readJson(`${key}.json`)) ?? { chapters: {} });
+    bookCache.set(key, (await readJson(`bible/${key}.json`)) ?? { chapters: {} });
   }
   return bookCache.get(key);
 }
@@ -114,11 +35,11 @@ const fromRecord = (record) => record.v.map(([v, t]) => ({ v, t, color: record.c
 
 async function persist(translation, book, data) {
   const raw = JSON.stringify(data);
-  const ok = await writeJson(`${translation}/${book}.json`, data);
+  const ok = await writeJson(`bible/${translation}/${book}.json`, data);
   if (!ok) return false;
   const index = await indexOf(translation);
-  index.books[book] = { c: Object.keys(data.chapters).map(Number).sort((a, b) => a - b), b: raw.length };
-  await writeJson(`${translation}/_index.json`, index);
+  index.books[book] = { c: Object.keys(data.chapters).map(Number).sort((a, b) => a - b), b: raw.length, ...(Object.values(data.chapters).some((r) => r.c) ? { h: true } : {}) };
+  await writeJson(`bible/${translation}/_index.json`, index);
   return true;
 }
 
@@ -130,7 +51,7 @@ export async function getChapter(translation, book, chapter) {
 
 /** Keeps a chapter you just read (verses are `{ v, t, color }`). */
 export function saveChapter(translation, book, chapter, verses) {
-  return serial(`${translation}/${book}`, async () => {
+  return serial(`bible/${translation}/${book}`, async () => {
     const data = await bookOf(translation, book);
     data.chapters[chapter] = toRecord(verses);
     return persist(translation, book, data);
@@ -139,7 +60,7 @@ export function saveChapter(translation, book, chapter, verses) {
 
 /** Keeps many chapters of one book in one write (`chapters`: { "1": [{ v, t }], … }). */
 export function saveChapters(translation, book, chapters) {
-  return serial(`${translation}/${book}`, async () => {
+  return serial(`bible/${translation}/${book}`, async () => {
     const data = await bookOf(translation, book);
     for (const [n, verses] of Object.entries(chapters)) {
       // Keep the highlight colours we already know for a chapter we are re-downloading.
@@ -147,6 +68,50 @@ export function saveChapters(translation, book, chapters) {
     }
     return persist(translation, book, data);
   });
+}
+
+/**
+ * Sets highlight colours on a chapter in every translation stored on the phone (a highlight belongs to the verse,
+ * not to a translation). `colors` is `{ verse: 'yellow' | null }`; null clears.
+ */
+export async function setVerseColors(book, chapter, colors) {
+  for (const translation of Object.keys(await translationsOnPhone())) {
+    const held = (await indexOf(translation)).books[book]?.c ?? [];
+    if (!held.includes(Number(chapter))) continue;
+    await serial(`bible/${translation}/${book}`, async () => {
+      const data = await bookOf(translation, book);
+      const record = data.chapters[chapter];
+      if (!record) return;
+      const next = { ...(record.c ?? {}) };
+      for (const [verse, color] of Object.entries(colors)) {
+        if (color) next[verse] = color;
+        else delete next[verse];
+      }
+      data.chapters[chapter] = { v: record.v, ...(Object.keys(next).length ? { c: next } : {}) };
+      await persist(translation, book, data);
+    });
+  }
+}
+
+/** Forgets every highlight colour kept on the phone (when someone signs out). The Bible text stays. */
+export async function clearHighlights() {
+  removeFile('bible/highlights.json');
+  for (const translation of Object.keys(await translationsOnPhone())) {
+    const index = await indexOf(translation);
+    for (const [book, entry] of Object.entries(index.books)) {
+      if (!entry.h) continue;
+      await serial(`bible/${translation}/${book}`, async () => {
+        const data = await bookOf(translation, book);
+        for (const n of Object.keys(data.chapters)) data.chapters[n] = { v: data.chapters[n].v };
+        await persist(translation, book, data);
+      });
+    }
+  }
+}
+
+async function translationsOnPhone() {
+  const keys = ((await getMeta())?.translations ?? []).map((t) => t.key);
+  return Object.fromEntries(keys.map((k) => [k, 1]));
 }
 
 /** The chapter numbers of a book that are on the phone. */
@@ -167,19 +132,19 @@ export async function storageUsed(translation) {
 }
 
 export async function removeBook(translation, book) {
-  return serial(`${translation}/${book}`, async () => {
+  return serial(`bible/${translation}/${book}`, async () => {
     bookCache.delete(`${translation}/${book}`);
-    removeFile(`${translation}/${book}.json`);
+    removeFile(`bible/${translation}/${book}.json`);
     const index = await indexOf(translation);
     delete index.books[book];
-    await writeJson(`${translation}/_index.json`, index);
+    await writeJson(`bible/${translation}/_index.json`, index);
   });
 }
 
 export async function removeTranslation(translation) {
   bookCache.forEach((_, key) => key.startsWith(`${translation}/`) && bookCache.delete(key));
   indexCache.delete(translation);
-  removeDir(translation);
+  removeDir(`bible/${translation}`);
 }
 
 // ── What the Bible tab shows (books, translations) and the member's own translation ────────────────────
@@ -187,15 +152,20 @@ export async function removeTranslation(translation) {
 let metaCache = null;
 
 export async function getMeta() {
-  return (metaCache ??= await readJson('meta.json'));
+  return (metaCache ??= await readJson('bible/meta.json'));
 }
 
 /** Merges into the stored meta: `{ books, translations, colors, translation }`. */
 export async function saveMeta(patch) {
   metaCache = { ...((await getMeta()) ?? {}), ...patch };
-  await writeJson('meta.json', metaCache);
+  await writeJson('bible/meta.json', metaCache);
   return metaCache;
 }
+
+// ── Your highlight list, as the server last sent it ─────────────────────────────────────────────────────
+
+export const getHighlightsCache = async () => (await readJson('bible/highlights.json'))?.list ?? null;
+export const saveHighlightsCache = (list) => writeJson('bible/highlights.json', { list });
 
 // ── Passages: the last few the server resolved, for plans and sermons ───────────────────────────────────
 
@@ -203,17 +173,17 @@ const MAX_PASSAGES = 40;
 const passageKey = (translation, reference) => `${translation}|${String(reference).trim().toLowerCase()}`;
 
 export async function getPassage(translation, reference) {
-  return ((await readJson('passages.json')) ?? {})[passageKey(translation, reference)] ?? null;
+  return ((await readJson('bible/passages.json')) ?? {})[passageKey(translation, reference)] ?? null;
 }
 
 export function savePassage(translation, reference, passage) {
-  return serial('passages', async () => {
-    const all = (await readJson('passages.json')) ?? {};
+  return serial('bible/passages', async () => {
+    const all = (await readJson('bible/passages.json')) ?? {};
     const key = passageKey(translation, reference);
     delete all[key];
     all[key] = passage;
     for (const old of Object.keys(all).slice(0, Math.max(0, Object.keys(all).length - MAX_PASSAGES))) delete all[old];
-    await writeJson('passages.json', all);
+    await writeJson('bible/passages.json', all);
   });
 }
 

@@ -14,9 +14,10 @@ import StateView from '../../../components/StateView';
 import VerseList from '../../../components/VerseList';
 import { COLORS, FONTS, RADIUS, SHADOW, SPACING } from '../../../constants/theme';
 import api, { errorMessage } from '../../../lib/api';
-import { HIGHLIGHTS, getFontSize, referenceLabel, setFontSize, setLastRead, shareText, verseKey } from '../../../lib/bible';
-import { isOffline, useChapter } from '../../../lib/bibleOffline';
-import { saveChapter } from '../../../lib/bibleStore';
+import { HIGHLIGHTS, getFontSize, referenceLabel, setFontSize, setLastRead, shareText } from '../../../lib/bible';
+import { setHighlight, useChapter } from '../../../lib/bibleOffline';
+import { setVerseColors } from '../../../lib/bibleStore';
+import { useOutbox } from '../../../lib/outbox';
 import { useFetch } from '../../../lib/useFetch';
 
 function Sheet({ visible, onClose, title, children }) {
@@ -42,6 +43,7 @@ export default function ReaderScreen() {
 
   const [t, setT] = useState(undefined); // undefined = the member's own translation
   const { chapterInfo, loading, error, offline, retry } = useChapter(book, chapter, t);
+  const { pending, flushing } = useOutbox();
 
   const [verses, setVerses] = useState([]);
   const [selected, setSelected] = useState(new Set());
@@ -92,16 +94,20 @@ export default function ReaderScreen() {
     Share.share({ message: shareText({ bookName: chapterInfo.book_name, chapter, verses: chosen, translation: chapterInfo.translation }) }).catch(() => {});
   }
 
+  // The colour shows at once and is kept on the phone; with no connection it is sent when you are back online.
   async function highlight(color) {
     setBusy(true);
+    const numbers = chosen.map((v) => v.v);
+    const before = Object.fromEntries(chosen.map((v) => [v.v, v.color ?? null]));
+    setVerses(verses.map((v) => (selected.has(v.v) ? { ...v, color } : v)));
+    setSelected(new Set());
     try {
-      await api.post('/bible/highlights', { verses: chosen.map((v) => verseKey(book, chapter, v.v)), color });
-      const next = verses.map((v) => (selected.has(v.v) ? { ...v, color } : v));
-      setVerses(next);
-      saveChapter(chapterInfo.translation, book, chapter, next); // keep the colours for reading offline
-      setSelected(new Set());
+      await setHighlight({ book, chapter, verses: numbers, color });
     } catch (e) {
-      Alert.alert(isOffline(e) ? 'You are offline' : 'Could not highlight', isOffline(e) ? 'Highlighting needs a connection. You can still read, copy and share.' : errorMessage(e));
+      // The server refused it: put the old colours back.
+      setVerses((all) => all.map((v) => (v.v in before ? { ...v, color: before[v.v] } : v)));
+      setVerseColors(book, chapter, before);
+      Alert.alert('Could not highlight', errorMessage(e));
     } finally {
       setBusy(false);
     }
@@ -148,10 +154,13 @@ export default function ReaderScreen() {
       <StateView loading={loading} error={error} onRetry={retry}>
         {chapterInfo ? (
           <ScrollView ref={scroller} contentContainerStyle={{ padding: SPACING.md, paddingBottom: 140 + insets.bottom }} showsVerticalScrollIndicator={false}>
-            {offline ? (
+            {offline || pending ? (
               <View style={styles.offline}>
-                <Ionicons name="cloud-offline-outline" size={15} color={COLORS.primaryDark} />
-                <AppText style={styles.offlineText}>Offline copy · highlights and notes need a connection</AppText>
+                <Ionicons name={offline ? 'cloud-offline-outline' : 'sync-outline'} size={15} color={COLORS.primaryDark} />
+                <AppText style={styles.offlineText}>
+                  {offline ? `Offline copy${pending ? ' · ' : ''}` : ''}
+                  {pending ? (flushing ? 'Sending your changes…' : `${pending} change${pending === 1 ? '' : 's'} waiting to sync`) : ''}
+                </AppText>
               </View>
             ) : null}
             <AppText style={styles.hint}>Tap a verse to copy, highlight, note or share it.</AppText>
