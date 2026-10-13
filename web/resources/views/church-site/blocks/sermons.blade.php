@@ -10,7 +10,7 @@
                 @foreach ($sermons as $sermon)
                     <div class="col-md-4">
                         <a href="{{ ff_platform_route('sermons.show', $sermon) }}" class="ff-card ff-card-flush ff-card-hover ff-card-link h-100 d-block">
-                            @if ($sermon->thumbnail_url)<img src="{{ $sermon->thumbnail_url }}" alt="" class="ff-cover" loading="lazy">@else<div class="ff-cover-placeholder" style="background: var(--site-accent)"><i class="bi bi-play-fill"></i></div>@endif
+                            @if ($sermon->picture_url)<img src="{{ $sermon->picture_url }}" alt="" class="ff-cover" loading="lazy">@else<div class="ff-cover-placeholder" style="background: var(--site-accent)"><i class="bi bi-play-fill"></i></div>@endif
                             <div class="p-3"><div class="fw-bold text-ff-black">{{ $sermon->title }}</div><div class="small text-ff-muted">{{ $sermon->preacher }} · {{ $sermon->published_at?->format('j M Y') }}</div></div>
                         </a>
                     </div>

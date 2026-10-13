@@ -71,6 +71,7 @@ class DonationService
             'ip_address' => request()?->ip(),
         ]);
 
+        $donation->returnTo = $data['return_to'] ?? null;
         $result = PaymentService::driver($method)->charge($donation->setRelation('church', $church));
         $this->applyResult($donation, $result);
 

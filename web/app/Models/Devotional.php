@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\Auditable;
 use App\Models\Concerns\BelongsToChurch;
+use App\Models\Concerns\HasArtwork;
 use App\Models\Concerns\HasChurchSlug;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -15,12 +16,22 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 
 class Devotional extends Model implements HasMedia
 {
-    use Auditable, BelongsToChurch, HasChurchSlug, HasFactory, InteractsWithMedia, SoftDeletes;
+    use Auditable, BelongsToChurch, HasArtwork, HasChurchSlug, HasFactory, InteractsWithMedia, SoftDeletes;
 
     protected $fillable = [
         'church_id', 'user_id', 'title', 'slug', 'scripture', 'scripture_text', 'body', 'prayer',
         'audio_url', 'publish_date', 'status', 'visibility', 'notified_at',
     ];
+
+    public function artworkKind(): string
+    {
+        return 'devotional';
+    }
+
+    public function uploadedPicture(): ?string
+    {
+        return null;
+    }
 
     protected function casts(): array
     {

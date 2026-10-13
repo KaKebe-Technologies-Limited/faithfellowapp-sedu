@@ -78,7 +78,7 @@ class EventController extends Controller
 
         ['donation' => $donation, 'result' => $result] = $this->donations->initiate($request->user(), $rsvp->event->church, [
             ...$data, 'amount' => $rsvp->amount, 'category' => 'event', 'event_rsvp_id' => $rsvp->id,
-            'country' => strtoupper($request->user()->country ?? 'UG'),
+            'country' => strtoupper($request->user()->country ?? 'UG'), 'return_to' => 'app',
         ]);
 
         return $this->paymentStarted($donation, $result);

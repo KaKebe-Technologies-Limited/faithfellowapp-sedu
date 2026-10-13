@@ -94,6 +94,16 @@ used, expired or the verifier does not match. Limited to 10 requests per minute.
 
 The server needs `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `https://<your-site>/auth/google/app/callback` added as an
 authorised redirect URI of the OAuth client in Google Cloud (set `GOOGLE_REDIRECT_URI` when the public address differs from `APP_URL`).
+### `POST /auth/password/code` and `POST /auth/password/reset`
+
+"Forgot password" inside the app. `POST /auth/password/code` with `{ "email" }` emails a 6-digit code (valid 15 minutes) and always answers
+`202` — the same whether or not the address has an account. `POST /auth/password/reset` with `{ "email", "code", "password", "password_confirmation" }`
+sets the new password and signs every device out (the app then signs in with the new password). Five wrong codes lock the code; ask for a new one.
+
+### `GET /pages/{terms|privacy}`
+
+The legal pages as blocks the app draws natively: `{ "data": { "slug", "title", "updated", "blocks": [ { "type": "heading|paragraph|bullet", "text" } ] } }`.
+No sign-in needed. The text is read from the website's pages, so the two always agree.
 ### `DELETE /auth/token` 🔒
 
 Revokes the token used for this request.
@@ -177,6 +187,33 @@ Services that are live now or scheduled, for the member's churches. Open `watch_
 
 ---
 
+### Events: seats, tickets and questions
+
+`GET /events/{id}` now carries everything the event screen needs: `description`, `agenda`, `speakers`, `tickets` (`id`, `name`, `price`, `remaining`, `on_sale`),
+`seats_left`, `going_count`, `qa_enabled`, `questions`, `is_past` and `my_rsvp` (`null`, or `{ id, status, quantity, amount, code, qr, ticket, checked_in }`).
+`code` and `qr` (the text the door scanner reads) appear only once the seat is confirmed.
+
+- `POST /events/{id}/rsvp` `{ quantity?, status?: going|maybe, event_ticket_id? }` → `201` with the RSVP and `next.action`: `done` (free, seat confirmed) or `pay` (paid event: seat held until paid).
+- `DELETE /events/{id}/rsvp` cancels the reservation.
+- `POST /rsvps/{id}/pay` `{ method, phone? }` pays for a held seat; same answer as giving (`data` is the donation, `next.action` is `approve_on_phone` or `redirect`).
+- `GET /tickets` lists your upcoming tickets (going, or held and waiting for payment).
+- `POST /events/{id}/questions` `{ body }` sends a question to the speakers (only when `qa_enabled`).
+
+Every event, sermon, devotional and campaign has a `cover_url` (sermons: `thumbnail_url`): the church's own photo, or a generated picture that fits the title
+(`/art/{kind}/{id}`), so there is never an empty image.
+
+### Devotionals, announcements and campaigns
+
+- `GET /devotionals` (newest first, paged) and `GET /devotionals/{id}` (`body` and `prayer` as plain text, `audio_url`, `cover_url`).
+- `GET /announcements` and `GET /announcements/{id}` (`body` in full, `urgent`, `image_url`).
+- `GET /campaigns?church=<id>` and `GET /campaigns/{id}`: `goal`, `raised`, `percent`, `givers`, `days_left`, `is_open`, and on the detail `milestones`, `updates`, `leaderboard` (opted-in, never anonymous), `recent_givers` and `comments`.
+- `POST /campaigns/{id}/comments` `{ body }` adds a word of encouragement.
+
+### Live services
+
+- `GET /live/{id}`: `status`, `chat_enabled`, `viewers`, and `playback` (`video` / `audio` are HLS playlists, `embed` is a YouTube or Facebook page; all `null` unless the service is live) plus `recording` when the church kept one.
+- `POST /live/{id}/heartbeat` (every ~30 s while watching) → `{ viewers, status }`.
+- `GET /live/{id}/messages?after=<id>` → `{ data: [ { id, name, body, at, mine } ], hidden: [ids] }`; `POST /live/{id}/messages` `{ body }` (only while live).
 ## Giving 🔒
 
 ### `POST /churches/{slug}/give`
@@ -212,6 +249,14 @@ The member's giving history, paginated.
 
 ---
 
+### More giving
+
+- `GET /churches/{slug}/giving`: what the give screen shows — `methods` (`type`, `label`, `needs_phone`), `offline` (bank, cash, with instructions), `categories`, open `campaigns`, `quick_amounts`, `saved_phone`, `diaspora`.
+- `POST /churches/{slug}/give` also accepts `recurring` (`weekly|monthly|quarterly`; the first gift is charged now), `is_anonymous`, `show_on_leaderboard`, `note`, `campaign_team_id`, `pledge_id`.
+  A card payment returns `next.action = "redirect"` with a secure checkout address (the app opens it in an in-app browser sheet); afterwards the card page returns to `/pay/return/{reference}`, a plain "back to the app" page.
+- `GET /giving/summary`: this year's total, per church, open `pledges` and `recurring` gifts. `GET /giving?year=` lists gifts.
+- `GET /giving/{reference}/receipt`: the receipt as data (number, amount, what for, how paid, church), once paid.
+- `POST /churches/{slug}/pledges` `{ amount, frequency, installments, campaign_id?, … }`, `DELETE /pledges/{id}` cancels one, `PUT /recurring/{id}` `{ status: active|paused|cancelled }`.
 ## Prayer wall 🔒
 
 ### `GET /prayer?status=open|answered`
@@ -226,6 +271,10 @@ Lists requests the member may see. Pastor-only requests appear only to their aut
 
 `visibility` is `public`, `church` or `pastor`. Public and church requests are created with `status: "pending"` and appear on the wall only after a pastor approves them. Until then only the author and the pastoral team can see them, and nobody can pray on them yet. Pastor-only requests are never shared; the pastor's private reply is shown to the author in the app.
 
+### `GET /prayer?status=open|answered|mine`, `GET /prayer/{id}`, `POST /prayer/{id}/answered`, `DELETE /prayer/{id}`
+
+`status=mine` lists your own requests in every state (including those waiting for a pastor's approval). The detail shows `chain_enabled`, your pastors' reply
+(`pastor_response`, only to the author) and whether you prayed. `POST …/answered` `{ answer_note? }` and `DELETE` are for the author only.
 ### `POST /prayer/{id}/pray`
 
 Toggles "I prayed" and returns `{"prayed": true, "count": 15}`.

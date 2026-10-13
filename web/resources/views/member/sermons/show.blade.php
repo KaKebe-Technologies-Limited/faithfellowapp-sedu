@@ -3,7 +3,7 @@
     $transcript = $sermon->transcripts->firstWhere('status', 'completed');
     $hasVideo = $sermon->video_embed_url || $sermon->video_file_src || ($sermon->video_url && ! $sermon->video_embed_url);
 @endphp
-<x-dynamic-component :component="$layout" :title="$sermon->title" :description="strip_tags((string) $sermon->description) ?: $sermon->title.' — '.$sermon->preacher" :image="$sermon->thumbnail_url">
+<x-dynamic-component :component="$layout" :title="$sermon->title" :description="strip_tags((string) $sermon->description) ?: $sermon->title.' — '.$sermon->preacher" :image="$sermon->picture_url">
     <div @class(['container py-4 py-md-5' => ! auth()->check()])>
         <div class="row g-4">
             <div class="col-xl-8">
@@ -13,7 +13,7 @@
                         @if ($sermon->video_embed_url)
                             <div class="ratio ratio-16x9"><iframe src="{{ $sermon->video_embed_url }}" title="{{ $sermon->title }}" allow="accelerometer; autoplay; encrypted-media; picture-in-picture" allowfullscreen loading="lazy"></iframe></div>
                         @else
-                            <video controls preload="metadata" playsinline @if ($sermon->thumbnail_url) poster="{{ $sermon->thumbnail_url }}" @endif src="{{ $sermon->video_file_src ?: $sermon->video_url }}"></video>
+                            <video controls preload="metadata" playsinline @if ($sermon->picture_url) poster="{{ $sermon->picture_url }}" @endif src="{{ $sermon->video_file_src ?: $sermon->video_url }}"></video>
                         @endif
                     </div>
                 @endif

@@ -1,8 +1,8 @@
 {{-- Sermon card. Expects $sermon with church + media loaded. --}}
 <article class="ff-card ff-card-flush ff-card-hover h-100 d-flex flex-column">
     <div class="position-relative">
-        @if ($sermon->thumbnail_url)
-            <img src="{{ $sermon->thumbnail_url }}" alt="" class="ff-cover" loading="lazy">
+        @if ($sermon->picture_url)
+            <img src="{{ $sermon->picture_url }}" alt="" class="ff-cover" loading="lazy">
         @else
             <div class="ff-cover-placeholder"><i class="bi {{ $sermon->video_url || $sermon->video_file_src ? 'bi-play-btn' : 'bi-mic' }}"></i></div>
         @endif

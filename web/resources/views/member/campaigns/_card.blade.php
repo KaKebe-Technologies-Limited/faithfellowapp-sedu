@@ -1,7 +1,7 @@
 {{-- Campaign card. Expects $campaign (church + media loaded). --}}
 <article class="ff-card ff-card-flush ff-card-hover ff-campaign-card h-100 d-flex flex-column">
-    @if ($campaign->cover_url)
-        <img src="{{ $campaign->cover_url }}" alt="" class="ff-cover" loading="lazy">
+    @if ($campaign->picture_url)
+        <img src="{{ $campaign->picture_url }}" alt="" class="ff-cover" loading="lazy">
     @else
         <div class="ff-cover-placeholder"><i class="bi bi-flag"></i></div>
     @endif

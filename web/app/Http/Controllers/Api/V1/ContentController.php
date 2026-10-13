@@ -58,7 +58,7 @@ class ContentController extends Controller
         ];
 
         return match ($type) {
-            'devotional' => $base + ['scripture' => $model->scripture, 'scripture_text' => $model->scripture_text, 'web_url' => route('devotionals.show', $model)],
+            'devotional' => $base + ['scripture' => $model->scripture, 'scripture_text' => $model->scripture_text, 'cover_url' => $model->picture_url, 'web_url' => route('devotionals.show', $model)],
             'announcement' => $base + ['urgent' => $model->priority === 'urgent'],
             'post' => $base + ['images' => $model->getMedia('images')->take(4)->map(fn ($media) => $media->getUrl('feed'))->values()->all()],
             'testimony' => $base + ['author' => $model->is_anonymous ? null : $model->user?->name],

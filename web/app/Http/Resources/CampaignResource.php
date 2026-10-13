@@ -20,7 +20,7 @@ class CampaignResource extends JsonResource
             'title' => $this->title,
             'type' => $this->type_label,
             'description' => $detail ? plain_text($this->story ?: $this->short_description) : Str::limit(plain_text($this->short_description), 140),
-            'cover_url' => $this->cover_url,
+            'cover_url' => $this->picture_url,
             'goal' => (float) $this->goal_amount,
             'raised' => (float) $this->raised_amount,
             'percent' => $this->percent(),

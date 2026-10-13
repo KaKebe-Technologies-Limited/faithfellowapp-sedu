@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\Auditable;
 use App\Models\Concerns\BelongsToChurch;
+use App\Models\Concerns\HasArtwork;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -18,13 +19,23 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media as SpatieMedia;
 
 class Campaign extends Model implements HasMedia
 {
-    use Auditable, BelongsToChurch, HasFactory, InteractsWithMedia, SoftDeletes;
+    use Auditable, BelongsToChurch, HasArtwork, HasFactory, InteractsWithMedia, SoftDeletes;
 
     protected $fillable = [
         'church_id', 'branch_id', 'user_id', 'title', 'slug', 'type', 'short_description', 'story', 'goal_amount', 'currency',
         'raised_amount', 'pledged_amount', 'givers_count', 'starts_at', 'ends_at', 'status', 'visibility',
         'show_leaderboard', 'allow_anonymous', 'is_featured', 'goal_reached_at',
     ];
+
+    public function artworkKind(): string
+    {
+        return 'campaign';
+    }
+
+    public function uploadedPicture(): ?string
+    {
+        return $this->cover_url;
+    }
 
     protected function casts(): array
     {

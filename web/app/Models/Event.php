@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\Auditable;
 use App\Models\Concerns\BelongsToChurch;
+use App\Models\Concerns\HasArtwork;
 use App\Models\Concerns\HasChurchSlug;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -17,7 +18,7 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media as SpatieMedia;
 
 class Event extends Model implements HasMedia
 {
-    use Auditable, BelongsToChurch, HasChurchSlug, HasFactory, InteractsWithMedia, SoftDeletes;
+    use Auditable, BelongsToChurch, HasArtwork, HasChurchSlug, HasFactory, InteractsWithMedia, SoftDeletes;
 
     protected $fillable = [
         'church_id', 'branch_id', 'user_id', 'title', 'slug', 'description', 'location_name', 'address', 'lat', 'lng',
@@ -25,6 +26,16 @@ class Event extends Model implements HasMedia
         'status', 'visibility', 'agenda', 'speakers', 'qa_enabled', 'recording_url', 'recording_sermon_id',
         'reminder_24h_sent_at', 'reminder_1h_sent_at', 'notified_at',
     ];
+
+    public function artworkKind(): string
+    {
+        return 'event';
+    }
+
+    public function uploadedPicture(): ?string
+    {
+        return $this->cover_url;
+    }
 
     protected function casts(): array
     {

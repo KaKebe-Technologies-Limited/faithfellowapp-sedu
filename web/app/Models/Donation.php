@@ -155,8 +155,11 @@ class Donation extends Model implements Payable
         return $this->user?->email;
     }
 
+    /** Set (not saved) when a payment starts from the app: the card checkout then returns to a plain "back to the app" page. */
+    public ?string $returnTo = null;
+
     public function paymentReturnUrl(): string
     {
-        return route('give.status', $this->reference);
+        return $this->returnTo === 'app' ? route('pay.return', $this->reference) : route('give.status', $this->reference);
     }
 }

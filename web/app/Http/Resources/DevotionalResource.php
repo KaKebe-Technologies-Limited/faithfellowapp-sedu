@@ -22,6 +22,7 @@ class DevotionalResource extends JsonResource
             'excerpt' => Str::limit(trim(strip_tags((string) $this->body)), 180),
             'body' => $this->when($detail, fn () => plain_text($this->body)),
             'prayer' => $this->when($detail, fn () => $this->prayer ? plain_text($this->prayer) : null),
+            'cover_url' => $this->picture_url,
             'audio_url' => $this->audio_src,
             'author' => $this->whenLoaded('author', fn () => $this->author?->name),
             'publish_date' => $this->publish_date?->toDateString(),

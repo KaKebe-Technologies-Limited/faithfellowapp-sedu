@@ -1,11 +1,11 @@
 @php($layout = auth()->check() ? 'layouts.member' : 'layouts.public')
-<x-dynamic-component :component="$layout" :title="$campaign->title" :description="$campaign->short_description" :image="$campaign->cover_url">
+<x-dynamic-component :component="$layout" :title="$campaign->title" :description="$campaign->short_description" :image="$campaign->picture_url">
     @if ($celebrate)<span data-ff-celebrate hidden></span>@endif
     <div @class(['container py-4 py-md-5' => ! auth()->check()])>
         <div class="row g-4">
             <div class="col-lg-8">
-                @if ($campaign->cover_url)
-                    <img src="{{ $campaign->cover_url }}" alt="" class="ff-cover ff-rounded-xl mb-4">
+                @if ($campaign->picture_url)
+                    <img src="{{ $campaign->picture_url }}" alt="" class="ff-cover ff-rounded-xl mb-4">
                 @endif
                 <div class="d-flex flex-wrap gap-2 mb-2">
                     <span class="ff-tag">{{ $campaign->type_label }}</span>

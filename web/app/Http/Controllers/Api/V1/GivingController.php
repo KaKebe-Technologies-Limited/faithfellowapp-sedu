@@ -83,6 +83,7 @@ class GivingController extends Controller
     {
         $data = $request->validated();
         $data['country'] = strtoupper((string) ($request->user()->country ?: 'UG'));
+        $data['return_to'] = 'app';
 
         if (! empty($data['recurring'])) {
             $data['recurring_gift_id'] = $this->donations->scheduleRecurring($request->user(), $church, $data)->id;

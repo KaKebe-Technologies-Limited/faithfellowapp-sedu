@@ -26,7 +26,7 @@ class EventResource extends JsonResource
             'is_paid' => (bool) $this->is_paid,
             'rsvp_enabled' => (bool) $this->rsvp_enabled,
             'capacity' => $this->capacity,
-            'cover_url' => $this->cover_url,
+            'cover_url' => $this->picture_url,
             'church' => new ChurchSummaryResource($this->whenLoaded('church')),
             'web_url' => route('events.show', $this->resource),
 
@@ -43,7 +43,7 @@ class EventResource extends JsonResource
                 'remaining' => $t->remaining(), 'on_sale' => $t->isOnSale(),
             ])->values()),
             'my_rsvp' => $this->when($detail && $user, fn () => ($rsvp = EventRsvp::with('ticket')->where('event_id', $this->id)->where('user_id', $user->id)->first())
-                ? new EventRsvpResource($rsvp) : null),
+                ? new EventRsvpResource($rsvp->setRelation('event', $this->resource)) : null),
             'questions' => $this->when($detail && $this->qa_enabled, fn () => $this->questions()->with('user:id,name')->where('is_hidden', false)
                 ->orderByDesc('upvotes')->latest()->take(20)->get()->map(fn ($q) => [
                     'id' => $q->id, 'body' => $q->body, 'author' => $q->user?->name, 'is_answered' => (bool) $q->is_answered, 'mine' => $q->user_id === $user?->id,

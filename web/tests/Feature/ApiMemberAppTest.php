@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Notifications\Auth\PasswordResetCode;
 use App\Services\DonationService;
 use App\Services\PaymentService;
+use App\Support\ContentArtwork;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Laravel\Sanctum\Sanctum;
@@ -70,7 +71,7 @@ test('a free event is reserved, shows a ticket code, and can be cancelled', func
         ->assertJsonPath('data.status', 'going')->assertJsonPath('data.quantity', 2)->assertJsonPath('next.action', 'done');
 
     $detail = $this->getJson(route('api.v1.events.show', $event))->assertOk()->assertJsonPath('data.seats_left', 98)->assertJsonPath('data.going_count', 2)->json('data');
-    expect($detail['my_rsvp']['code'])->toHaveLength(10);
+    expect($detail['my_rsvp']['code'])->toHaveLength(10)->and($detail['my_rsvp']['qr'])->toContain($detail['my_rsvp']['code']);
 
     $this->getJson(route('api.v1.tickets.index'))->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.event.title', 'Youth Conference');
 
@@ -327,4 +328,44 @@ test('the reset code locks after five wrong tries', function () {
     }
     // Even the right code no longer works: ask for a new one.
     $this->postJson(route('api.v1.auth.password.reset'), $new + ['code' => $code])->assertUnprocessable();
+});
+
+// ── Cover pictures ─────────────────────────────────────────────────────────────────────────────────────────
+
+test('cover themes follow the title, then the campaign type, then a varied default', function () {
+    expect(ContentArtwork::themeFor('event', 'Youth Camp 2026'))->toBe('worship')
+        ->and(ContentArtwork::themeFor('event', 'Friday Night of Prayer'))->toBe('bokeh')
+        ->and(ContentArtwork::themeFor('event', 'Christmas Carols'))->toBe('nativity')
+        ->and(ContentArtwork::themeFor('event', 'Easter Sunday Service'))->toBe('cross')
+        ->and(ContentArtwork::themeFor('devotional', 'Bible Study: Romans'))->toBe('book')
+        ->and(ContentArtwork::themeFor('event', 'Community Outreach'))->toBe('waves')
+        ->and(ContentArtwork::themeFor('campaign', 'Roof Fund', 1, 'sunrise'))->toBe('sunrise')
+        ->and(ContentArtwork::themeFor('sermon', 'Walking in Faith', 0))->toBe('sunrise')
+        ->and(ContentArtwork::themeFor('sermon', 'Walking in Faith', 1))->toBe('cross');
+});
+
+test('events, sermons, devotionals and campaigns show a generated cover until the church uploads a photo', function () {
+    [, $church] = appMember();
+    $event = appEvent($church);
+    $church->devotionals()->create(['title' => 'Walk by faith', 'slug' => 'walk', 'body' => 'x', 'publish_date' => today(), 'status' => 'published', 'visibility' => 'public']);
+    $church->sermons()->create(['title' => 'Grace', 'language' => 'en', 'status' => 'published', 'visibility' => 'public', 'published_at' => now()]);
+    $church->campaigns()->create(['title' => 'Roof Fund', 'type' => 'building', 'goal_amount' => 1000, 'status' => 'active', 'visibility' => 'public']);
+
+    $cover = $this->getJson(route('api.v1.events.show', $event))->json('data.cover_url');
+    expect($cover)->toContain('/art/event/'.$event->id);
+    expect($this->getJson(route('api.v1.devotionals.index'))->json('data.0.cover_url'))->toContain('/art/devotional/');
+    expect($this->getJson(route('api.v1.sermons.index'))->json('data.0.thumbnail_url'))->toContain('/art/sermon/');
+    expect($this->getJson(route('api.v1.campaigns.index'))->json('data.0.cover_url'))->toContain('/art/campaign/');
+
+    // The picture is a real JPEG, drawn once and then served from disk with a long cache.
+    $response = $this->get($cover)->assertOk();
+    expect($response->headers->get('Content-Type'))->toBe('image/jpeg')
+        ->and($response->headers->get('Cache-Control'))->toContain('max-age=31536000');
+    $this->get(route('art', ['kind' => 'event', 'id' => 999999]))->assertNotFound();
+    $this->get('/art/anything/1')->assertNotFound();
+});
+
+test('the card checkout of a payment started in the app returns to a plain back-to-the-app page', function () {
+    $this->get(route('pay.return', 'FF-ABC123'))->assertOk()->assertSee('faithfellows://pay/FF-ABC123', false)->assertSee('Thank you');
+    $this->get(route('pay.return', ['reference' => 'FF-ABC123', 'cancelled' => 1]))->assertOk()->assertSee('Payment cancelled');
 });

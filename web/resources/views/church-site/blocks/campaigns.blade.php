@@ -7,7 +7,7 @@
                 @foreach ($campaigns as $campaign)
                     <div class="col-md-4">
                         <a href="{{ ff_platform_route('campaigns.show', $campaign) }}" class="ff-card ff-card-flush ff-card-hover ff-card-link h-100 d-block">
-                            @if ($campaign->cover_url)<img src="{{ $campaign->cover_url }}" alt="" class="ff-cover" loading="lazy">@endif
+                            @if ($campaign->picture_url)<img src="{{ $campaign->picture_url }}" alt="" class="ff-cover" loading="lazy">@endif
                             <div class="p-4">
                                 <div class="fw-bold text-ff-black mb-2">{{ $campaign->title }}</div>
                                 <div class="ff-progress mb-2"><div class="ff-progress-bar" style="width: {{ min(100, $campaign->percent()) }}%; background: var(--site-accent)"></div></div>

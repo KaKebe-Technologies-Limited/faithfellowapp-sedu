@@ -8,8 +8,8 @@
         <span class="ff-feed-type ff-tag"><i class="bi bi-mic"></i> {{ __('Sermon') }}</span>
     </div>
     <a href="{{ route('sermons.show', $sermon) }}" class="d-flex gap-3 align-items-center ff-card-link">
-        @if ($sermon->thumbnail_url)
-            <img src="{{ $sermon->thumbnail_url }}" alt="" class="rounded-3 ff-cover" style="width:132px;aspect-ratio:16/9" loading="lazy">
+        @if ($sermon->picture_url)
+            <img src="{{ $sermon->picture_url }}" alt="" class="rounded-3 ff-cover" style="width:132px;aspect-ratio:16/9" loading="lazy">
         @else
             <span class="ff-cover-placeholder rounded-3" style="width:132px;font-size:1.6rem"><i class="bi bi-play-fill"></i></span>
         @endif

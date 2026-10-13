@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\Auditable;
 use App\Models\Concerns\BelongsToChurch;
+use App\Models\Concerns\HasArtwork;
 use App\Models\Concerns\HasChurchSlug;
 use App\Models\Concerns\HasEngagement;
 use App\Models\Concerns\Publishable;
@@ -21,12 +22,22 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media as SpatieMedia;
 
 class Sermon extends Model implements HasMedia
 {
-    use Auditable, BelongsToChurch, HasChurchSlug, HasEngagement, HasFactory, InteractsWithMedia, Publishable, SoftDeletes;
+    use Auditable, BelongsToChurch, HasArtwork, HasChurchSlug, HasEngagement, HasFactory, InteractsWithMedia, Publishable, SoftDeletes;
 
     protected $fillable = [
         'church_id', 'branch_id', 'sermon_series_id', 'user_id', 'title', 'slug', 'preacher', 'scripture', 'description',
         'audio_url', 'video_url', 'duration_seconds', 'language', 'status', 'visibility', 'published_at', 'notified_at', 'preached_on',
     ];
+
+    public function artworkKind(): string
+    {
+        return 'sermon';
+    }
+
+    public function uploadedPicture(): ?string
+    {
+        return $this->thumbnail_url;
+    }
 
     protected function casts(): array
     {
