@@ -6,7 +6,7 @@ Mobile app for FaithFellows. It talks to the Laravel API in `../web` (`/api/v1`,
 
 ```bash
 npm install
-cp .env.example .env     # then set EXPO_PUBLIC_API_URL to http://<your-LAN-IP>:8000/api
+cp .env.example .env     # EXPO_PUBLIC_API_URL=auto uses this computer's address; or write http://<your-LAN-IP>:8000/api
 npx expo start           # scan the QR code with Expo Go
 ```
 
@@ -49,7 +49,7 @@ Every screen handles **loading**, **error** and **empty** states through `compon
 
 ## Configuration
 
-- `EXPO_PUBLIC_API_URL` — API root ending in `/api` (only `EXPO_PUBLIC_*` variables reach the app).
+- `EXPO_PUBLIC_API_URL` — API root ending in `/api` (only `EXPO_PUBLIC_*` variables reach the app). `auto` (or empty, in development) uses the address of the computer running the Expo dev server with port 8000, so the phone keeps working when the Wi-Fi or hotspot changes. Restart Expo with `npx expo start -c` after changing it.
 - `EXPO_PUBLIC_APP_ENV` — `development`, `staging` or `production`; picks the URL from `app.json → extra.apiUrl` when `EXPO_PUBLIC_API_URL` is not set.
 - `app.json → extra.eas.projectId` — replace `REPLACE_WITH_EAS_PROJECT_ID` after running `npx eas-cli init`.
 

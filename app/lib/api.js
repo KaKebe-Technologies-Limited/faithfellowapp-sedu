@@ -7,8 +7,23 @@ import { clearToken, expireSession, getToken } from './session';
 const ENV = Constants.expoConfig?.extra?.apiUrl || {};
 const appEnv = process.env.EXPO_PUBLIC_APP_ENV || 'development';
 
-// .env wins (EXPO_PUBLIC_API_URL); otherwise the per-environment URL from app.json.
-export const API_ROOT = (process.env.EXPO_PUBLIC_API_URL || ENV[appEnv] || ENV.development || '').replace(/\/+$/, '');
+/**
+ * While developing, the computer that serves the app to the phone is also the one running the API, so its address is
+ * known from the dev server itself (for example 192.168.0.103:8081 -> http://192.168.0.103:8000/api). That way the phone
+ * keeps working when the computer's address changes (home Wi-Fi, a phone hotspot, an office network).
+ */
+function devServerApi() {
+  if (!__DEV__) return '';
+  const fromBrowser = typeof document !== 'undefined' ? globalThis.location?.hostname : '';
+  const host = String(Constants.expoConfig?.hostUri || Constants.expoGoConfig?.debuggerHost || fromBrowser || '').split(':')[0];
+
+  return host && !host.includes('exp.direct') ? `http://${host}:8000/api` : '';
+}
+
+// EXPO_PUBLIC_API_URL wins (set it to a real address, or leave it as "auto" / empty while developing to use the address of the
+// computer running the dev server); otherwise the per-environment URL from app.json.
+const configured = (process.env.EXPO_PUBLIC_API_URL || '').trim();
+export const API_ROOT = ((configured && configured !== 'auto' ? configured : devServerApi()) || ENV[appEnv] || ENV.development || '').replace(/\/+$/, '');
 export const SITE_URL = API_ROOT.replace(/\/api$/, '');
 
 const api = axios.create({
