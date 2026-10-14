@@ -1,6 +1,6 @@
-// Home tab. From the top: greeting, the banner slider of your churches, church "stories", a live-now
-// card, swipeable highlights (urgent notices, events, devotional, campaigns, sermons), then the feed of
-// everything your churches post. Pull down to refresh; scroll to the end to load older items.
+// Home tab. From the top: greeting, the banner slider of your churches, "stories" (radio, podcasts, hymns, churches), a live-now
+// card, notices and campaigns, the verse of the day, quiz games, the prayer wall, the most listened sermons, upcoming events,
+// giving, then the feed of everything your churches post. Pull down to refresh; scroll to the end to load older items.
 // Data: GET /api/v1/home (the banner and highlights) and GET /api/v1/feed (the list).
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, View } from 'react-native';
@@ -11,9 +11,15 @@ import FeedItem from '../../components/FeedItem';
 import ChurchStories from '../../components/home/ChurchStories';
 import Highlights from '../../components/home/Highlights';
 import HeroCarousel from '../../components/home/HeroCarousel';
+import GiveCard from '../../components/home/GiveCard';
 import HomeHeader from '../../components/home/HomeHeader';
 import LiveBanner from '../../components/home/LiveBanner';
+import PrayerWall from '../../components/home/PrayerWall';
+import QuizCard from '../../components/home/QuizCard';
 import SuggestedChurches from '../../components/home/SuggestedChurches';
+import TopSermons from '../../components/home/TopSermons';
+import UpcomingEvents from '../../components/home/UpcomingEvents';
+import VerseCard from '../../components/home/VerseCard';
 import WelcomeBanner from '../../components/home/WelcomeBanner';
 import SectionHeader from '../../components/SectionHeader';
 import Skeleton from '../../components/Skeleton';
@@ -118,6 +124,16 @@ export default function HomeScreen() {
           <ChurchStories churches={data.churches} />
           <LiveBanner stream={liveNow} />
           <Highlights home={data} />
+          <VerseCard verse={data.verse} />
+          {hasChurches ? (
+            <>
+              <QuizCard quiz={data.quiz} />
+              <PrayerWall prayers={data.prayers} />
+              <TopSermons sermons={data.top_sermons} />
+              <UpcomingEvents events={data.events} />
+              <GiveCard churches={data.churches} campaigns={data.campaigns} />
+            </>
+          ) : null}
           {items.length || status.loading ? <SectionHeader title="Latest from your churches" /> : null}
         </>
       ) : null}

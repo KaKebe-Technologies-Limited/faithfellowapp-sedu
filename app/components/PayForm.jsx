@@ -12,7 +12,7 @@ import TextField from './TextField';
 const METHOD_STYLE = {
   mtn_momo: { icon: 'phone-portrait-outline', tint: '#F5B800', hint: 'MTN Mobile Money' },
   airtel_money: { icon: 'phone-portrait-outline', tint: '#E40000', hint: 'Airtel Money' },
-  iotec: { icon: 'phone-portrait-outline', tint: COLORS.primary, hint: 'Any mobile money' },
+  iotec: { icon: 'phone-portrait-outline', tint: COLORS.primary, hint: 'MTN or Airtel Money, paid securely through ioTec Pay' },
   stripe: { icon: 'card-outline', tint: '#635BFF', hint: 'Visa or Mastercard, on a secure page' },
 };
 

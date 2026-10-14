@@ -1,6 +1,6 @@
 // A sermon, in the app: watch the video or listen to the audio right here, with the preacher, scripture,
 // series and description under it. Video plays inline (file or YouTube page); audio has its own player card.
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -13,6 +13,7 @@ import Pill from '../../components/Pill';
 import ScreenHeader, { BackButton, HeaderAction } from '../../components/ScreenHeader';
 import StateView from '../../components/StateView';
 import { COLORS, FONTS, RADIUS, SPACING } from '../../constants/theme';
+import api from '../../lib/api';
 import { formatDate, formatDuration } from '../../lib/format';
 import { useFetch } from '../../lib/useFetch';
 
@@ -23,6 +24,15 @@ export default function SermonScreen() {
   const s = data?.data;
   const [mode, setMode] = useState(null); // 'video' | 'audio' once the member taps play
   const playing = mode ?? (s?.video_url && !s?.audio_url ? 'video' : null);
+
+  // Pressing play counts one listen (so the most listened sermons can be shown on Home).
+  const counted = useRef(null);
+  useEffect(() => {
+    if (playing && s && counted.current !== s.id) {
+      counted.current = s.id;
+      api.post(`/sermons/${s.id}/listen`).catch(() => {});
+    }
+  }, [playing, s]);
 
   const share = () => Share.share({ message: `${s.title}${s.preacher ? ` — ${s.preacher}` : ''}` }).catch(() => {});
 
@@ -69,7 +79,7 @@ export default function SermonScreen() {
               {s.audio_url ? (
                 <View style={{ marginTop: SPACING.md }}>
                   {playing === 'audio' || !s.video_url ? (
-                    <AudioPlayerCard key={s.id} url={s.audio_url} title={s.title} duration={s.duration_seconds} autoPlay={mode === 'audio'} />
+                    <AudioPlayerCard key={s.id} url={s.audio_url} title={s.title} duration={s.duration_seconds} autoPlay={mode === 'audio'} onPlay={() => setMode((m) => m ?? 'audio')} />
                   ) : (
                     <Pressable onPress={() => setMode('audio')} style={styles.audioOnly} accessibilityRole="button">
                       <Ionicons name="headset-outline" size={20} color={COLORS.primary} />

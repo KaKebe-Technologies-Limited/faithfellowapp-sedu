@@ -33,7 +33,7 @@ function Pulse({ children }) {
 }
 
 export default function PayScreen() {
-  const { reference, redirect } = useLocalSearchParams();
+  const { reference, redirect, church: churchParam, logo, amount: amountParam, currency: currencyParam, gateway } = useLocalSearchParams();
   const insets = useSafeAreaInsets();
   const [donation, setDonation] = useState(null);
   const [error, setError] = useState(null);
@@ -81,6 +81,10 @@ export default function PayScreen() {
   }, [check]);
 
   const status = donation?.status;
+  const church = donation?.church ?? (churchParam ? { name: String(churchParam), logo_url: logo ? String(logo) : null } : null);
+  const amount = donation ? donation.amount : amountParam ? Number(amountParam) : null;
+  const currency = donation?.currency ?? (currencyParam ? String(currencyParam) : 'UGX');
+  const viaIotec = gateway === 'iotec';
   const done = status === 'succeeded';
   const failed = status === 'failed' || status === 'refunded';
 
@@ -114,15 +118,21 @@ export default function PayScreen() {
 
         <AppText style={styles.title}>{done ? 'Thank you!' : failed ? 'Payment did not go through' : redirect ? 'Finishing your payment…' : 'Approve on your phone'}</AppText>
 
-        {donation ? (
+        {church ? (
           <View style={styles.summary}>
-            <ChurchAvatar church={donation.church} size={36} />
+            <ChurchAvatar church={church} size={40} />
             <View style={{ flex: 1 }}>
-              <AppText style={styles.amount}>{formatMoney(donation.amount, donation.currency)}</AppText>
+              <AppText style={styles.amount}>{amount != null ? formatMoney(amount, currency) : church.name}</AppText>
               <AppText variant="caption" numberOfLines={1}>
-                {[donation.church?.name, donation.campaign?.title].filter(Boolean).join(' · ')}
+                {amount != null ? ['to', church.name, donation?.campaign?.title].filter(Boolean).join(' ') : donation?.campaign?.title}
               </AppText>
             </View>
+          </View>
+        ) : null}
+        {viaIotec && !done && !failed ? (
+          <View style={styles.secure}>
+            <Ionicons name="shield-checkmark" size={15} color={COLORS.success} />
+            <AppText style={styles.secureText}>Secured by ioTec Pay</AppText>
           </View>
         ) : null}
 
@@ -134,7 +144,7 @@ export default function PayScreen() {
           <AppText style={styles.message}>We have not heard back yet. If you approved the prompt, it can take a minute. You can check again.</AppText>
         ) : (
           <>
-            <AppText style={styles.message}>{redirect ? 'Complete the payment on the secure page, then come back here.' : 'A prompt was sent to your phone. Enter your PIN to confirm — this page updates by itself.'}</AppText>
+            <AppText style={styles.message}>{redirect ? 'Complete the payment on the secure page, then come back here.' : `${viaIotec ? 'ioTec Pay sent' : 'A prompt was sent'} a prompt to your phone${church ? ` for your gift to ${church.name}` : ''}. Enter your PIN to confirm. This page updates by itself.`}</AppText>
             <ActivityIndicator color={COLORS.primary} style={{ marginTop: 18 }} />
           </>
         )}
@@ -176,4 +186,6 @@ const styles = StyleSheet.create({
   summary: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: COLORS.white, borderRadius: RADIUS.lg, padding: 14, marginTop: 20, alignSelf: 'stretch', ...SHADOW },
   amount: { fontFamily: FONTS.bold, fontSize: 18, color: COLORS.black },
   actions: { gap: 10 },
+  secure: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12 },
+  secureText: { fontFamily: FONTS.semibold, fontSize: 12.5, color: COLORS.success },
 });

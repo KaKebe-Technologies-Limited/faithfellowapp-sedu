@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\ChurchSummaryResource;
 use App\Http\Resources\EventResource;
 use App\Http\Resources\LiveStreamResource;
+use App\Http\Resources\PrayerRequestResource;
 use App\Http\Resources\SermonResource;
 use App\Models\Announcement;
 use App\Models\Campaign;
@@ -13,8 +14,14 @@ use App\Models\Church;
 use App\Models\Devotional;
 use App\Models\Event;
 use App\Models\LiveStream;
+use App\Models\PrayerInteraction;
+use App\Models\PrayerRequest;
+use App\Models\QuizPlayer;
+use App\Models\QuizSession;
 use App\Models\Sermon;
+use App\Services\Bible\BibleService;
 use App\Services\HomeSlider;
+use App\Support\VerseOfTheDay;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -28,7 +35,7 @@ use Illuminate\Support\Str;
  */
 class HomeController extends Controller
 {
-    public function __invoke(Request $request, HomeSlider $slider): JsonResponse
+    public function __invoke(Request $request, HomeSlider $slider, BibleService $bible): JsonResponse
     {
         $user = $request->user();
         $memberIds = $user->memberChurchIds();
@@ -60,6 +67,21 @@ class HomeController extends Controller
         $announcements = Announcement::with('church.media')->current()->forAudience($memberIds)
             ->whereIn('church_id', $churchIds)
             ->orderByRaw("priority = 'urgent' DESC")->latest('published_at')->take(3)->get();
+
+        // The two sermons members listened to most (all time, across their churches); newest first when nothing has been played yet.
+        $topSermons = Sermon::with(['church.media', 'media', 'series'])->published()->visibleTo($memberIds)
+            ->whereIn('church_id', $churchIds)->orderByDesc('listens_count')->orderByDesc('views_count')->latest('published_at')->take(2)->get();
+
+        // Prayer requests the member may see, newest first, and which of them they have already prayed for.
+        $prayers = PrayerRequest::with('church.media')->visibleTo($user, $memberIds, $user->pastoralChurchIds())
+            ->whereIn('church_id', $churchIds)->where('status', 'open')->latest()->take(3)->get();
+        $prayed = PrayerInteraction::where('user_id', $user->id)->where('type', 'prayed')->whereIn('prayer_request_id', $prayers->pluck('id'))->pluck('prayer_request_id')->all();
+        foreach ($prayers as $p) {
+            $p->prayed_by_viewer = in_array($p->id, $prayed, true);
+        }
+
+        $games = QuizSession::active()->with(['quiz', 'church.media'])->withCount('players')->whereIn('church_id', $churchIds)->latest()->take(2)->get();
+        $played = QuizPlayer::where('user_id', $user->id);
 
         return response()->json(['data' => [
             'slides' => $this->slides($user, $slider, $followed),
@@ -102,6 +124,19 @@ class HomeController extends Controller
                 'web_url' => route('campaigns.show', $c),
             ])->values(),
             'sermons' => SermonResource::collection($sermons),
+            'top_sermons' => $topSermons->map(fn (Sermon $s) => [...(new SermonResource($s))->resolve($request), 'listens' => (int) $s->listens_count])->values(),
+            'verse' => rescue(fn () => VerseOfTheDay::forUser($user, $bible), null, false),
+            'prayers' => [
+                'items' => PrayerRequestResource::collection($prayers),
+                'open_count' => PrayerRequest::visibleTo($user, $memberIds, $user->pastoralChurchIds())->whereIn('church_id', $churchIds)->where('status', 'open')->count(),
+            ],
+            'quiz' => [
+                'live' => $games->map(fn (QuizSession $g) => [
+                    'id' => $g->id, 'quiz' => $g->quiz->title, 'players_count' => (int) $g->players_count, 'status' => $g->status, 'church' => new ChurchSummaryResource($g->church),
+                ])->values(),
+                'played' => (clone $played)->count(),
+                'best_score' => (int) (clone $played)->max('score'),
+            ],
         ]]);
     }
 

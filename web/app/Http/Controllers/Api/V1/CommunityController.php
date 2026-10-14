@@ -35,7 +35,9 @@ class CommunityController extends Controller
         $page = $query->latest()->paginate(20)->withQueryString();
 
         $prayed = PrayerInteraction::where('user_id', $user->id)->where('type', 'prayed')->whereIn('prayer_request_id', $page->pluck('id'))->pluck('prayer_request_id')->all();
-        $page->getCollection()->each(fn ($p) => $p->prayed_by_viewer = in_array($p->id, $prayed, true));
+        foreach ($page->getCollection() as $p) {
+            $p->prayed_by_viewer = in_array($p->id, $prayed, true);
+        }
 
         return PrayerRequestResource::collection($page);
     }

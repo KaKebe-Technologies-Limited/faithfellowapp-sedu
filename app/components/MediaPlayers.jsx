@@ -2,7 +2,7 @@
 //  - VideoPlayer: a direct video file or an HLS (.m3u8) live stream, with native controls (expo-video)
 //  - EmbedPlayer: a YouTube / Facebook / Vimeo page shown in a small in-app web view
 //  - AudioPlayerCard: sermon audio (expo-audio) with play/pause, back 15 s, forward 30 s and a progress bar
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
@@ -48,9 +48,18 @@ export function Video({ url, ...rest }) {
   return isEmbed(url) ? <EmbedPlayer url={url} {...rest} /> : <VideoPlayer url={url} {...rest} />;
 }
 
-export function AudioPlayerCard({ url, title, duration: knownDuration, autoPlay = false }) {
+export function AudioPlayerCard({ url, title, duration: knownDuration, autoPlay = false, onPlay }) {
   const player = useAudioPlayer(mediaUrl(url));
   const status = useAudioPlayerStatus(player);
+  const reported = useRef(false);
+
+  // Tell the screen once when the audio really starts (the sermon page counts it as a listen).
+  useEffect(() => {
+    if (status.playing && !reported.current) {
+      reported.current = true;
+      onPlay?.();
+    }
+  }, [status.playing, onPlay]);
 
   useEffect(() => {
     if (autoPlay) player.play();

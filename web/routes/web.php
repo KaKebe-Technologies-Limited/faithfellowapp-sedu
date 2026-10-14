@@ -575,6 +575,19 @@ Route::prefix('super-admin')->name('super-admin.')
         Route::delete('/radio/{track}', [SuperAdmin\RadioController::class, 'destroy'])->name('radio.destroy');
 
         // Podcasts made by members: review before they show in the app
+        // The hymn book: only the super admin adds hymnals and hymns
+        Route::get('/hymnals', [SuperAdmin\HymnalController::class, 'index'])->name('hymnals.index');
+        Route::get('/hymnals/new', [SuperAdmin\HymnalController::class, 'create'])->name('hymnals.create');
+        Route::post('/hymnals', [SuperAdmin\HymnalController::class, 'store'])->name('hymnals.store');
+        Route::get('/hymnals/{hymnal}', [SuperAdmin\HymnalController::class, 'show'])->name('hymnals.show');
+        Route::get('/hymnals/{hymnal}/edit', [SuperAdmin\HymnalController::class, 'edit'])->name('hymnals.edit');
+        Route::put('/hymnals/{hymnal}', [SuperAdmin\HymnalController::class, 'update'])->name('hymnals.update');
+        Route::delete('/hymnals/{hymnal}', [SuperAdmin\HymnalController::class, 'destroy'])->name('hymnals.destroy');
+        Route::get('/hymnals/{hymnal}/hymns/new', [SuperAdmin\HymnalController::class, 'createHymn'])->name('hymns.create');
+        Route::post('/hymnals/{hymnal}/hymns', [SuperAdmin\HymnalController::class, 'storeHymn'])->name('hymns.store');
+        Route::get('/hymnals/{hymnal}/hymns/{hymn}/edit', [SuperAdmin\HymnalController::class, 'editHymn'])->name('hymns.edit');
+        Route::put('/hymnals/{hymnal}/hymns/{hymn}', [SuperAdmin\HymnalController::class, 'updateHymn'])->name('hymns.update');
+        Route::delete('/hymnals/{hymnal}/hymns/{hymn}', [SuperAdmin\HymnalController::class, 'destroyHymn'])->name('hymns.destroy');
         Route::get('/podcasts', [SuperAdmin\PodcastController::class, 'index'])->name('podcasts.index');
         Route::put('/podcasts/hosts', [SuperAdmin\PodcastController::class, 'hosts'])->name('podcasts.hosts');
         Route::get('/podcasts/{podcast}', [SuperAdmin\PodcastController::class, 'show'])->name('podcasts.show');

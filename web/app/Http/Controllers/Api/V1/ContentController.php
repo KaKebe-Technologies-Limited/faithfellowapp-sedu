@@ -8,6 +8,7 @@ use App\Http\Resources\EventResource;
 use App\Http\Resources\LiveStreamResource;
 use App\Http\Resources\PrayerRequestResource;
 use App\Http\Resources\SermonResource;
+use App\Models\ContentView;
 use App\Models\Event;
 use App\Models\LiveStream;
 use App\Models\Post;
@@ -17,6 +18,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\Cache;
 
 /**
  * Feed, sermons, events and live services for the signed-in member.
@@ -99,6 +101,22 @@ class ContentController extends Controller
         $this->authorize('view', $sermon);
 
         return new SermonResource($sermon->load(['church.media', 'media', 'series']));
+    }
+
+    /**
+     * The app calls this when a member starts playing a sermon. One member counts once in half an hour, so pressing
+     * play again and again does not push a sermon up the "most listened" list.
+     */
+    public function listen(Request $request, Sermon $sermon): JsonResponse
+    {
+        $this->authorize('view', $sermon);
+
+        if (Cache::add('sermon-listen.'.$request->user()->id.'.'.$sermon->id, true, now()->addMinutes(30))) {
+            ContentView::create(['church_id' => $sermon->church_id, 'viewable_type' => $sermon->getMorphClass(), 'viewable_id' => $sermon->getKey(), 'user_id' => $request->user()->id, 'action' => 'listen', 'seconds' => 0]);
+            $sermon->increment('listens_count');
+        }
+
+        return response()->json(['listens' => (int) $sermon->fresh()->listens_count]);
     }
 
     public function events(Request $request): AnonymousResourceCollection

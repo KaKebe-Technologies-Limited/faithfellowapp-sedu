@@ -10,12 +10,15 @@ use Illuminate\Support\Facades\Http;
  */
 class BibleApiComProvider implements BibleProvider
 {
+    /** Seconds to wait for one chapter; the home screen lowers it so a slow Bible service never holds the page up. */
+    public static ?int $timeout = null;
+
     public function chapter(array $translation, string $book, int $chapter): array
     {
         $id = $translation['id'] ?? $translation['key'];
 
         try {
-            $response = Http::acceptJson()->timeout(12)->retry(2, 800, throw: false)
+            $response = Http::acceptJson()->timeout(self::$timeout ?? 12)->retry(self::$timeout ? 0 : 2, 800, throw: false)
                 ->get("https://bible-api.com/data/{$id}/{$book}/{$chapter}");
         } catch (\Throwable $e) {
             throw new BibleUnavailable($e->getMessage(), 0, $e);

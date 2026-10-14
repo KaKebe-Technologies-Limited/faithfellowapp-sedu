@@ -225,7 +225,7 @@ Every event, sermon, devotional and campaign has a `cover_url` (sermons: `thumbn
 
 - `method` is one of the church's `giving_methods`: `mtn_momo`, `airtel_money`, `iotec` or `stripe`.
 - `category` is one of `tithe`, `offering`, `project`, `building_fund`, `missions`, `welfare` or `special`. Omit it when you pass `campaign_id`.
-- `phone` is required for mobile money. `GET /churches/{slug}/giving` sends each method's `phone_pattern` (a regular expression) so the app checks the number the same way the server does; while ioTec's test mode is on (`IOTEC_SANDBOX=true`, local machines only) it also accepts ioTec's test numbers such as `0111777771`.
+- `phone` is required for mobile money. The payment goes through ioTec Pay: its prompt on the giver's phone says "Gift to <church> — <category>" and the payment in ioTec carries the church and the reference. The response's `next` has `gateway` (`iotec` when ioTec Pay carries it) and a `message` naming the church. `GET /churches/{slug}/giving` sends each method's `phone_pattern` (a regular expression) so the app checks the number the same way the server does; while ioTec's test mode is on (`IOTEC_SANDBOX=true`, local machines only) it also accepts ioTec's test numbers such as `0111777771`.
 
 **201**
 
@@ -405,6 +405,23 @@ One station for the whole app. The super admin adds the songs at `/super-admin/r
 - Website (super admin): `GET/POST /super-admin/radio` (upload, one song per request), `PUT /super-admin/radio/{song}` (title, artist, on or off), `POST /super-admin/radio/{song}/move` `{ direction: up|down }`, `DELETE /super-admin/radio/{song}`, `PUT /super-admin/radio/settings` `{ name, enabled }`. From the command line: `php artisan radio:add "song.mp3" --title= --artist=`.
 
 ---
+
+## Hymn book 🔒
+
+Hymnals and hymns are added by the super admin on the website (`/super-admin/hymnals`); members read them. Only published hymnals and hymns are returned; anything else is `404`.
+
+- `GET /hymnals` → `{ hymnals: [{ id, name, slug, language, language_label, denomination, description, hymns_count, source_name, source_url }], favorites, languages: [{ key, label }] }`.
+- `GET /hymnals/{id}?q=&theme=` → the hymnal card plus `themes: [{ name, count }]` and `hymns: [{ id, number, title, first_line, author, themes, has_audio, favorite, hymnal, search }]` (no lyrics; `search` is the lower-case words, so the app can filter instantly and offline).
+- `GET /hymnals/{id}/download` → the same with every hymn in full (below) and `downloaded_at`, to keep on the phone.
+- `GET /hymns/{id}` → a hymn: `sections` in singing order (`[{ type: verse|refrain, label, lines: [] }]`, the refrain after every verse), `credits: [{ label, value }]` (Words, Translated by, Music, Setting, Copyright, Text collected from), `credit_note`, `translator`, `composer`, `arranger`, `tune`, `meter`, `key_signature`, `year_written`, `scripture`, `copyright_status`, `copyright_label`, `source_url`, `audio_url`, `sheet_music_url`, `share_text` (the whole hymn with credits, for WhatsApp), `favorite`, `prev_id`, `next_id`.
+- `GET /hymns/search?q=&hymnal=&language=` → up to 40 hymn cards: `q` is a number, a title, a first line, an author or any words.
+- `GET /hymns/favorites`, `POST /hymns/{id}/favorite`, `DELETE /hymns/{id}/favorite` → `{ favorite, favorites_count }`.
+- Website, super admin: `GET/POST /super-admin/hymnals`, `…/{hymnal}` (list of its hymns, edit, update, delete), `…/{hymnal}/hymns` (create, edit, update, delete). Lyrics are typed as paragraphs separated by an empty line; a paragraph starting `Refrain:` or `Chorus:` is the refrain. The author of the words is required; copyright is `public_domain`, `licensed` or `original`; audio and sheet-music links must be https.
+- Load the classic hymnal with `php artisan db:seed --class=HymnSeeder` (safe to run again; it only adds what is missing).
+
+## Home 🔒
+
+`GET /home` also returns: `verse` (the verse of the day in the member's translation, `null` when the Bible service cannot be reached), `top_sermons` (the two most listened sermons, each a sermon with `listens`), `prayers: { items (the newest three open requests, with `prayed`), open_count }` and `quiz: { live, played, best_score }`. `POST /sermons/{id}/listen` counts a listen (once per member every half hour) and returns `{ listens }`.
 
 ## Podcasts 🔒
 

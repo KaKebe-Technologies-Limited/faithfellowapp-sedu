@@ -118,6 +118,20 @@ shows whichever is on, above the tabs and at the bottom of other screens. Podcas
 themselves. Audio is played straight from the link the podcaster
 added, so the host must support byte ranges for seeking (all normal audio hosts do).
 
+## Hymn book
+
+`app/hymns/index.jsx` is the hymn book (search by number, title or words, your favourites, hymnals, recently opened),
+`app/hymnal/[id].jsx` one hymnal (search and filter by theme, and "Save for offline": `lib/hymnStore.js` keeps the whole
+hymnal on the phone), `app/hymn/[id].jsx` one hymn (A- / A+ text size, favourite star, share, auto-scroll, audio when there is
+one, the credits) and `app/worship/[id].jsx` worship mode (one verse at a time in large type, light or dark, screen stays on).
+Hymns are added by the super admin on the website; every hymn shows who wrote its words and music.
+
+## Home
+
+The Home tab (`app/(tabs)/index.jsx`) is built from sections in `components/home/`: church stories (radio, podcasts, hymns,
+churches), notices, `VerseCard` (verse of the day), `QuizCard`, `PrayerWall`, `TopSermons`, `UpcomingEvents`, `GiveCard`, then
+the feed. All come from the one `GET /api/v1/home` response.
+
 ## Notes
 
 - This is **Expo SDK 57**. APIs change between SDKs, so check the versioned docs (`https://docs.expo.dev/versions/v57.0.0/`)

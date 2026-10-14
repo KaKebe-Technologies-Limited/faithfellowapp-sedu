@@ -1,4 +1,4 @@
-// "Your churches" row under the banner: the gospel radio's play button first, then podcasts, then each followed church's logo in a
+// "Your churches" row under the banner: the gospel radio's play button first, then podcasts and hymns, then each followed church's logo in a
 // rounded tile, with a red ring and a LIVE tag while it is streaming. Tap opens the church; the last tile finds more.
 // The radio tile is just a play / stop button: tap it and the music starts, with the player bar above the tabs.
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
@@ -77,6 +77,22 @@ function PodcastTile() {
   );
 }
 
+/** The hymn book as a story-sized tile, next to the podcasts. */
+function HymnTile() {
+  return (
+    <Pressable onPress={() => router.push('/hymns')} style={styles.item} accessibilityRole="button" accessibilityLabel="Hymns">
+      <View style={styles.radio}>
+        <LinearGradient colors={['#F4B73E', '#C77700']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.podcast}>
+          <Ionicons name="musical-notes" size={28} color={COLORS.white} />
+        </LinearGradient>
+      </View>
+      <AppText style={styles.name} numberOfLines={1}>
+        Hymns
+      </AppText>
+    </Pressable>
+  );
+}
+
 export default function ChurchStories({ churches }) {
   useStationInfo();
   const { station } = useRadio();
@@ -86,6 +102,7 @@ export default function ChurchStories({ churches }) {
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row} style={styles.scroll}>
       {radio ? <RadioTile /> : null}
       <PodcastTile />
+      <HymnTile />
       {(churches ?? []).map((church) => (
         <Tile key={church.id} church={church} />
       ))}

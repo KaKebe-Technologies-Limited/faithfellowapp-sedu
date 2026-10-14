@@ -34,7 +34,7 @@ test('a member who follows no church gets an empty but well-formed home screen',
     homeChurch('Somewhere Else'); // exists, but not followed
 
     $this->getJson(route('api.v1.home'))->assertOk()->assertExactJsonStructure([
-        'data' => ['slides', 'churches', 'live', 'announcements', 'events', 'devotional', 'campaigns', 'sermons'],
+        'data' => ['slides', 'churches', 'live', 'announcements', 'events', 'devotional', 'campaigns', 'sermons', 'top_sermons', 'verse', 'prayers', 'quiz'],
     ])->assertJsonPath('data.slides', [])->assertJsonPath('data.churches', [])->assertJsonPath('data.devotional', null);
 });
 

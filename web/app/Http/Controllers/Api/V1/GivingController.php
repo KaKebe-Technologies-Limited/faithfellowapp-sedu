@@ -13,6 +13,7 @@ use App\Models\Pledge;
 use App\Models\RecurringGift;
 use App\Services\CampaignService;
 use App\Services\DonationService;
+use App\Services\Payments\Drivers\IotecDriver;
 use App\Services\PaymentService;
 use App\Support\MobileMoneyPhone;
 use Illuminate\Http\JsonResponse;
@@ -63,12 +64,18 @@ class GivingController extends Controller
         abort_unless($church->isActive(), 404);
         $user = $request->user();
         $country = strtoupper((string) ($user->country ?: 'UG'));
+        $channels = $church->givingChannels()->where('is_active', true)->orderBy('sort')->get();
+        // When ioTec Pay carries MTN and Airtel anyway, one "Mobile money" button is clearer than three that end up in the same place.
+        $oneMobileMoney = $channels->contains('type', 'iotec') && PaymentService::driver('mtn_momo') instanceof IotecDriver;
 
         return response()->json(['data' => [
             'church' => ['id' => $church->id, 'slug' => $church->slug, 'name' => $church->name, 'logo_url' => $church->logo_url],
             'currency' => config('faithfellows.currency'),
-            'methods' => $church->givingChannels()->where('is_active', true)->orderBy('sort')->get()
+            'methods' => $channels
                 ->filter(fn (GivingChannel $c) => $c->isOnline() && PaymentService::enabled($c->type))
+                // When real money is switched on, a gateway that has no credentials (and would only pretend to take a payment) is not offered.
+                ->reject(fn (GivingChannel $c) => ! config('faithfellows.payments.sandbox') && PaymentService::isSandbox($c->type))
+                ->reject(fn (GivingChannel $c) => $oneMobileMoney && in_array($c->type, ['mtn_momo', 'airtel_money'], true))
                 ->map(fn (GivingChannel $c) => ['type' => $c->type, 'label' => $c->display_name, 'needs_phone' => in_array($c->type, GivingChannel::PHONE_METHODS, true), 'phone_pattern' => MobileMoneyPhone::pattern()])->values(),
             'offline' => $church->givingChannels()->where('is_active', true)->whereIn('type', ['bank', 'cash', 'ussd'])->orderBy('sort')->get()
                 ->map(fn (GivingChannel $c) => ['type' => $c->type, 'label' => $c->display_name, 'instructions' => $c->instructions])->values(),

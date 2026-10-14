@@ -7,7 +7,16 @@ import { router } from 'expo-router';
 export function openPayment(response) {
   const reference = response?.data?.reference;
   if (!reference) return;
-  router.replace({ pathname: '/pay/[reference]', params: { reference, redirect: response.next?.action === 'redirect' ? response.next.redirect_url : '' } });
+  const gift = response.data;
+  router.replace({
+    pathname: '/pay/[reference]',
+    params: {
+      reference,
+      redirect: response.next?.action === 'redirect' ? response.next.redirect_url : '',
+      // Shown at once, before the gift is loaded again: who is being paid and through which gateway.
+      church: gift.church?.name ?? '', logo: gift.church?.logo_url ?? '', amount: String(gift.amount ?? ''), currency: gift.currency ?? 'UGX', gateway: response.next?.gateway ?? '',
+    },
+  });
 }
 
 /** A phone number the way the API wants it: digits only, local 07… or +2567…. */

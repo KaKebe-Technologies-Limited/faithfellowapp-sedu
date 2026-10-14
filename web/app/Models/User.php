@@ -174,6 +174,11 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
     }
 
     /** Podcasts this member follows. */
+    public function favoriteHymns(): BelongsToMany
+    {
+        return $this->belongsToMany(Hymn::class, 'hymn_favorites')->withTimestamps();
+    }
+
     public function followedPodcasts(): BelongsToMany
     {
         return $this->belongsToMany(Podcast::class, 'podcast_follows')->withTimestamps();

@@ -91,6 +91,7 @@ class ChurchOnboardingService
 
             $this->createPresetRoles($church);
             $this->ensureMainBranch($church);
+            $this->ensureMobileMoney($church);
             if (! $church->trial_ends_at) {
                 app(BillingService::class)->startTrial($church);
             }
@@ -103,6 +104,16 @@ class ChurchOnboardingService
         }
 
         return $church;
+    }
+
+    /** A newly approved church can take mobile money (MTN and Airtel through ioTec Pay) from its first day. */
+    protected function ensureMobileMoney(Church $church): void
+    {
+        if ($church->givingChannels()->where('type', 'iotec')->exists()) {
+            return;
+        }
+        $church->givingChannels()->increment('sort');
+        $church->givingChannels()->create(['type' => 'iotec', 'label' => 'Mobile money', 'is_active' => true, 'sort' => 0]);
     }
 
     public function suspend(Church $church, ?string $reason = null): Church

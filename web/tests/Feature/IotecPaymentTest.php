@@ -129,3 +129,16 @@ test('ioTec test numbers are accepted in the give form only while the sandbox is
         ->and(Validator::make(['phone' => '0772123456'], ['phone' => [MobileMoneyPhone::rule()]])->passes())->toBeTrue()
         ->and(Validator::make(['phone' => '0555123456'], ['phone' => [MobileMoneyPhone::rule()]])->passes())->toBeFalse();
 });
+
+test('the church is named on the prompt the giver sees and beside the payment in ioTec', function () {
+    fakeIotec(['id' => 'tx-9', 'status' => 'Pending']);
+    $gift = ioGift('0772123456', 20000);
+    $gift->church->update(['name' => 'Grace Community Church Lira']);
+
+    $result = PaymentService::driver('mtn_momo')->charge($gift->fresh());
+
+    Http::assertSent(fn ($r) => str_contains($r->url(), '/collections/collect')
+        && str_starts_with($r['payerNote'], 'Gift to Grace Community Church Lira') && strlen($r['payerNote']) <= 60
+        && str_contains($r['payeeNote'], $gift->reference) && str_contains($r['payeeNote'], 'Grace Community Church Lira'));
+    expect($result->message)->toContain('ioTec Pay')->toContain('Grace Community Church Lira');
+});

@@ -13,6 +13,7 @@ class DatabaseSeeder extends Seeder
             PlanSeeder::class,
             SuperAdminSeeder::class,
             BlogSeeder::class,
+            HymnSeeder::class,
         ]);
 
         // Demo data (churches, members, content, giving) for local / staging.

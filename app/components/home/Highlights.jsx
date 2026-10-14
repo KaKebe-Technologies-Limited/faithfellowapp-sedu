@@ -1,6 +1,6 @@
 // "Highlights" rail on the home screen: swipeable cards for what matters now in your churches —
-// urgent notices first, then upcoming events, today's devotional, giving campaigns and the latest
-// sermons. Built from the one GET /api/v1/home response.
+// urgent notices first, today's devotional, giving campaigns and live services that are coming up. Events and sermons have
+// their own sections below. Built from the one GET /api/v1/home response.
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
@@ -175,10 +175,8 @@ function SoonCard({ stream }) {
 export default function Highlights({ home }) {
   const cards = [
     ...(home.announcements ?? []).map((a) => ({ key: `a${a.id}`, node: <AnnouncementCard a={a} /> })),
-    ...(home.events ?? []).slice(0, 3).map((e) => ({ key: `e${e.id}`, node: <EventCard e={e} /> })),
     ...(home.devotional ? [{ key: `d${home.devotional.id}`, node: <DevotionalCard d={home.devotional} /> }] : []),
     ...(home.campaigns ?? []).map((c) => ({ key: `c${c.id}`, node: <CampaignCard c={c} /> })),
-    ...(home.sermons ?? []).slice(0, 3).map((s) => ({ key: `s${s.id}`, node: <SermonCard s={s} /> })),
     ...(home.live ?? []).filter((l) => l.status !== 'live').map((l) => ({ key: `l${l.id}`, node: <SoonCard stream={l} /> })),
   ];
 

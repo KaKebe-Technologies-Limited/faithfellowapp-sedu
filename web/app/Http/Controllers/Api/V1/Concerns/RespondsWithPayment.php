@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1\Concerns;
 use App\Http\Resources\DonationResource;
 use App\Models\Donation;
 use App\Services\Payments\PaymentResult;
+use App\Services\PaymentService;
 use Illuminate\Http\JsonResponse;
 
 /**
@@ -21,6 +22,7 @@ trait RespondsWithPayment
                 'redirect_url' => $result->redirectUrl,
                 'message' => $result->message,
                 'poll_url' => route('api.v1.giving.show', $donation->reference),
+                'gateway' => rescue(fn () => PaymentService::driver($donation->method)->name(), null, false),
             ]])->response()->setStatusCode(201);
     }
 }

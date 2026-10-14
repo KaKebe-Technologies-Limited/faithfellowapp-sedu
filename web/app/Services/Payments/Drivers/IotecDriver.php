@@ -5,6 +5,7 @@ namespace App\Services\Payments\Drivers;
 use App\Contracts\Payable;
 use App\Services\Payments\PaymentResult;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 /**
  * ioTec Pay — one account that collects MTN and Airtel mobile money in Uganda: the giver enters their number and
@@ -61,8 +62,10 @@ class IotecDriver extends GatewayDriver
                 'externalId' => $payable->paymentReference(),
                 'payer' => static::msisdn($payable->paymentPhone()),
                 'amount' => (int) round($payable->paymentAmount()),
-                'payerNote' => substr($payable->paymentDescription(), 0, 60),
-                'payeeNote' => $payable->paymentReference(),
+                // Every church is paid through one ioTec wallet, so both notes say which church the money is for: the giver sees it on
+                // their phone's prompt and finance sees it beside the payment in ioTec.
+                'payerNote' => Str::limit('Gift to '.$payable->paymentDescription(), 60, ''),
+                'payeeNote' => Str::limit($payable->paymentReference().' | '.$payable->paymentDescription(), 120, ''),
                 'transactionChargesCategory' => 'ChargeWallet',
             ]);
         } catch (\Throwable $e) {
@@ -81,7 +84,7 @@ class IotecDriver extends GatewayDriver
             return PaymentResult::succeeded($payable->paymentReference(), $data['id'] ?? null, $data);
         }
 
-        return PaymentResult::pending($payable->paymentReference(), $data['id'] ?? null, __('Approve the mobile money prompt on your phone.'), $data);
+        return PaymentResult::pending($payable->paymentReference(), $data['id'] ?? null, __('Approve the ioTec Pay prompt on your phone: :what', ['what' => $payable->paymentDescription()]), $data);
     }
 
     /**
