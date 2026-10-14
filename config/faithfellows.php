@@ -222,15 +222,21 @@ return [
 
     /*
     | In-app Bible. 'bible_api_com' needs no key (public-domain English texts);
-    | 'api_bible' needs API_BIBLE_KEY and the translation's API.Bible id.
+    | 'api_bible' needs API_BIBLE_KEY and the translation's API.Bible id; 'esv' needs ESV_API_KEY (api.esv.org) and is
+    | licensed text that is never stored on the server or the phone ('offline' => false). The default is the ESV; until
+    | its key is set the reader quietly falls back to the King James Version.
     */
     'bible' => [
-        'default' => env('BIBLE_DEFAULT_TRANSLATION', 'kjv'),
+        'default' => env('BIBLE_DEFAULT_TRANSLATION', 'esv'),
         'translations' => [
+            'esv' => ['name' => 'English Standard Version', 'short' => 'ESV', 'language' => 'English', 'provider' => 'esv', 'offline' => false],
             'kjv' => ['name' => 'King James Version', 'short' => 'KJV', 'language' => 'English', 'provider' => 'bible_api_com'],
             'web' => ['name' => 'World English Bible', 'short' => 'WEB', 'language' => 'English', 'provider' => 'bible_api_com'],
             'bbe' => ['name' => 'Bible in Basic English', 'short' => 'BBE', 'language' => 'English', 'provider' => 'bible_api_com'],
             'asv' => ['name' => 'American Standard Version', 'short' => 'ASV', 'language' => 'English', 'provider' => 'bible_api_com'],
+            'darby' => ['name' => 'Darby Bible', 'short' => 'DBY', 'language' => 'English', 'provider' => 'bible_api_com'],
+            'dra' => ['name' => 'Douay-Rheims 1899 American Edition', 'short' => 'DRA', 'language' => 'English', 'provider' => 'bible_api_com'],
+            'webbe' => ['name' => 'World English Bible, British Edition', 'short' => 'WEBBE', 'language' => 'English', 'provider' => 'bible_api_com'],
             // Enabled automatically when API_BIBLE_KEY is set (ids from scripture.api.bible).
             'swahili' => ['name' => 'Biblia Habari Njema', 'short' => 'BHN', 'language' => 'Kiswahili', 'provider' => 'api_bible', 'id' => env('API_BIBLE_SWAHILI_ID')],
             'luganda' => ['name' => 'Bayibuli Entukuvu', 'short' => 'LUG', 'language' => 'Luganda', 'provider' => 'api_bible', 'id' => env('API_BIBLE_LUGANDA_ID')],

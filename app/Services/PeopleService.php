@@ -4,11 +4,14 @@ namespace App\Services;
 
 use App\Models\Church;
 use App\Models\Connection;
+use App\Models\Subscription;
 use App\Models\User;
 use App\Models\UserBlock;
 use App\Notifications\Social\ConnectionAccepted;
 use App\Notifications\Social\ConnectionRequested;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -54,6 +57,93 @@ class PeopleService
         return $nearby ? $this->near($query, $viewer, (int) ($filters['radius'] ?? 50)) : $query->orderBy('name');
     }
 
+    /**
+     * "For you": the people the viewer may find (the same rules as everyone else), ranked by what they share: faith interests,
+     * podcasts they follow, hymns they love, books of the Bible they highlight, the same church, a similar age, the same town,
+     * and living close by. Each person says why they were suggested. A person with nothing in common still follows, so a new
+     * member never sees an empty list.
+     *
+     * @param  array<string, mixed>  $filters
+     */
+    public function recommended(User $viewer, array $filters = [], int $perPage = 20, int $page = 1): LengthAwarePaginator
+    {
+        $pool = $this->discover($viewer, [...$filters, 'scope' => 'everyone'])->limit(1000)->get();
+        $ids = $pool->pluck('id')->all();
+        $count = fn ($query) => $query->groupBy('user_id')->pluck('c', 'user_id');
+
+        $myPodcasts = DB::table('podcast_follows')->where('user_id', $viewer->id)->pluck('podcast_id');
+        $podcasts = $myPodcasts->isEmpty() ? collect() : $count(DB::table('podcast_follows')->whereIn('user_id', $ids)->whereIn('podcast_id', $myPodcasts)->selectRaw('user_id, COUNT(*) c'));
+        $myHymns = DB::table('hymn_favorites')->where('user_id', $viewer->id)->pluck('hymn_id');
+        $hymns = $myHymns->isEmpty() ? collect() : $count(DB::table('hymn_favorites')->whereIn('user_id', $ids)->whereIn('hymn_id', $myHymns)->selectRaw('user_id, COUNT(*) c'));
+        $myBooks = DB::table('bible_highlights')->where('user_id', $viewer->id)->distinct()->pluck('book');
+        $books = $myBooks->isEmpty() ? collect() : $count(DB::table('bible_highlights')->whereIn('user_id', $ids)->whereIn('book', $myBooks)->selectRaw('user_id, COUNT(DISTINCT book) c'));
+        $mine = $viewer->memberChurchIds();
+        $churches = $mine === [] ? collect() : $count(Subscription::query()->whereIn('user_id', $ids)->whereIn('church_id', $mine)->where('status', 'active')->selectRaw('user_id, COUNT(*) c')->toBase());
+        $myInterests = collect($viewer->interests ?? [])->map(fn ($i) => mb_strtolower((string) $i));
+        $myAge = $viewer->date_of_birth?->age;
+
+        $ranked = $pool->map(function (User $other) use ($viewer, $podcasts, $hymns, $books, $churches, $myInterests, $myAge) {
+            $score = 0;
+            $why = [];
+
+            $interests = collect($other->interests ?? [])->filter(fn ($i) => $myInterests->contains(mb_strtolower((string) $i)))->values();
+            if ($interests->isNotEmpty()) {
+                $score += min(5, $interests->count()) * 3;
+                $why[] = __('Both like :things', ['things' => $interests->take(2)->implode(' & ')]);
+            }
+            if (($churches[$other->id] ?? 0) > 0) {
+                $score += 4;
+                $why[] = __('Same church');
+            }
+            if (($podcasts[$other->id] ?? 0) > 0) {
+                $score += min(3, (int) $podcasts[$other->id]) * 2;
+                $why[] = __('Follow the same podcasts');
+            }
+            if (($books[$other->id] ?? 0) > 0) {
+                $score += min(3, (int) $books[$other->id]);
+                $why[] = __('Read the same scriptures');
+            }
+            if (($hymns[$other->id] ?? 0) > 0) {
+                $score += min(3, (int) $hymns[$other->id]);
+                $why[] = __('Love the same hymns');
+            }
+            if ($myAge !== null && $other->date_of_birth) {
+                $gap = abs($myAge - $other->date_of_birth->age);
+                if ($gap <= 5) {
+                    $score += 2;
+                    $why[] = __('Similar age');
+                } elseif ($gap <= 10) {
+                    $score += 1;
+                }
+            }
+            if ($viewer->city && $other->city && mb_strtolower($viewer->city) === mb_strtolower($other->city)) {
+                $score += 2;
+                $why[] = __('Same town');
+            } elseif ($viewer->country && $viewer->country === $other->country) {
+                $score += 1;
+            }
+            if ($viewer->latitude !== null && $other->latitude !== null && $this->kilometres($viewer, $other) <= 25) {
+                $score += 2;
+                $why[] = __('Lives near you');
+            }
+
+            $other->setAttribute('match_score', $score);
+            $other->setAttribute('match_reasons', array_values(array_unique($why)));
+
+            return $other;
+        })->sortBy([['match_score', 'desc'], ['name', 'asc']])->values();
+
+        return new LengthAwarePaginator($ranked->forPage($page, $perPage)->values(), $ranked->count(), $perPage, $page);
+    }
+
+    /** Straight-line kilometres between two members who both shared a place. */
+    protected function kilometres(User $a, User $b): float
+    {
+        [$lat1, $lat2, $lng1, $lng2] = [deg2rad((float) $a->latitude), deg2rad((float) $b->latitude), deg2rad((float) $a->longitude), deg2rad((float) $b->longitude)];
+
+        return 6371 * acos(min(1, cos($lat1) * cos($lat2) * cos($lng2 - $lng1) + sin($lat1) * sin($lat2)));
+    }
+
     /** Only people who shared a place within `$radius` km of the viewer's, nearest first (nobody if the viewer shared none). */
     protected function near(Builder $query, User $viewer, int $radius): Builder
     {
@@ -76,8 +166,7 @@ class PeopleService
         if ($viewer->latitude === null || $other->latitude === null) {
             return null;
         }
-        [$a, $b, $c, $d] = [deg2rad((float) $viewer->latitude), deg2rad((float) $other->latitude), deg2rad((float) $viewer->longitude), deg2rad((float) $other->longitude)];
-        $km = 6371 * acos(min(1, cos($a) * cos($b) * cos($d - $c) + sin($a) * sin($b)));
+        $km = $this->kilometres($viewer, $other);
 
         return match (true) {
             $km < 5 => __('Less than 5 km away'),

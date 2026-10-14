@@ -46,6 +46,7 @@ class GiveController extends Controller
             'group' => $request->filled('group')
                 ? SmallGroup::where('church_id', $church->id)->whereHas('memberships', fn ($q) => $q->where('user_id', $request->user()->id))->find($request->query('group'))
                 : null,
+            'reasons' => $church->givingReasons()->active()->ordered()->get(),
             'campaigns' => $church->campaigns()->active()->visibleTo($request->user()->memberChurchIds())->orderBy('title')->get(['id', 'title', 'slug']),
             'channels' => $church->givingChannels->filter(fn ($c) => PaymentService::enabled($c->type) && (! in_array($c->type, GivingChannel::ONLINE, true) || config('faithfellows.payments.sandbox') || ! PaymentService::isSandbox($c->type)))->values(),
             'diaspora' => $this->isDiaspora($request),

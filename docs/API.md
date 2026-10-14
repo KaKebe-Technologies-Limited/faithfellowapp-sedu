@@ -457,3 +457,16 @@ Faith-based podcasts made by members on the website (`/podcast-studio`). A podca
 ## Versioning
 
 Breaking changes go to `/api/v2`, and v1 keeps working for at least 12 months after v2 ships. Additive fields may appear at any time, so clients must ignore unknown keys.
+
+## App 1.1 additions 🔒
+
+**Bible versions.** `GET /bible` lists `translations` (`key`, `name`, `short`, `language`, `offline`) and the member's `translation`; `PUT /bible/translation {translation}` changes it. The default is `esv` once the server has `ESV_API_KEY`, otherwise `kjv`. Books come in canon order (the position in the list is the book number, 1 to 66). `GET /bible/{book}/{chapter}` and `GET /bible/passage` also answer `copyright` (shown under the text) and, for a chapter, `keep_offline: false` for licensed text (the ESV), which the app must not save; `GET /bible/download/{book}` has nothing to give for those.
+
+**Community games.** `GET /games/library` (25 ready-made quizzes by category), `POST /games/start {quiz_id}` (the member becomes host and player; answers `id` and `pin`), `GET /games/friends?session=<id>` (people played with, and connections, with `invited` / `joined`), `POST /games/{id}/invite {user_ids}`, `POST /games/{id}/begin` (host starts it; everyone joined or invited is notified), `POST /games/{id}/cancel`. `POST /games/join {pin}` accepts a community PIN from anyone; the state at `GET /games/{id}` adds `community`, `is_host` and `host_name`. `GET /games` also lists `invites` and `hosting`. Notifications for an invitation and a start have `kind: "game"` and `ref: <game id>`.
+
+**Grow your circle.** `GET /people?scope=recommended|church|nearby|everyone` (`recommended` is ranked and each person has `reasons`; `radius` 5, 10, 25, 50, 100 or 200 for `nearby`). `GET /churches/nearby?radius=` lists churches close to the member's shared place, nearest first, with `distance_label` (`has_location: false` until a place is shared).
+
+**Giving.** `GET /churches/{slug}/giving` adds `reasons` (what the church lets people give for); `POST /churches/{slug}/give` takes `reason_id` instead of `category` (or `campaign_id` for a fundraiser). `GET /campaigns/{id}` lists `recent_givers` (most recent first, 12). Admin: `GET|POST /admin/{church}/giving/reasons`, `PUT|DELETE /admin/{church}/giving/reasons/{id}` (permission `giving.manage` to change), and `GET /admin/{church}/giving/summary` adds `by_reason`, `fees_month`, `net_month`, `givers_month`, `awaiting_payout`.
+
+**Home.** `GET /home` adds `highlights` (slider items with a picture each), `inspiration` (`slot`, `label`, `body`, `reference`) and `podcasts` (the top four); `sermons` falls back to public sermons for a member with no church yet.
+

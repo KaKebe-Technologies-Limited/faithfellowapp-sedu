@@ -82,7 +82,7 @@
                 @endforelse
             </x-ff.card>
             @if ($leaderboard->isNotEmpty())
-                <x-ff.card :title="__('Top givers (public)')">
+                <x-ff.card :title="__('Givers who chose to be listed')">
                     @foreach ($leaderboard as $i => $row)
                         <div class="ff-leaderboard-row"><span class="ff-leaderboard-rank">{{ $i + 1 }}</span><span class="flex-grow-1 small">{{ $row->name }}</span><span class="small">{{ ff_short_number($row->total) }}</span></div>
                     @endforeach

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Church;
 use App\Models\Donation;
+use App\Services\FinancialRecords;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -19,6 +20,7 @@ class GivingController extends Controller
     {
         $paid = fn () => Donation::where('church_id', $church->id)->succeeded();
         $sum = fn ($from) => (float) $paid()->where('paid_at', '>=', $from)->sum('amount');
+        $records = app(FinancialRecords::class)->build($church, now()->startOfMonth(), now()->endOfMonth());
 
         return response()->json(['data' => [
             'currency' => config('faithfellows.currency'),
@@ -28,6 +30,12 @@ class GivingController extends Controller
             'year' => $sum(now()->startOfYear()),
             'last_month' => (float) $paid()->whereBetween('paid_at', [now()->subMonthNoOverflow()->startOfMonth(), now()->subMonthNoOverflow()->endOfMonth()])->sum('amount'),
             'gifts_month' => (int) $paid()->where('paid_at', '>=', now()->startOfMonth())->count(),
+            // This month's gifts clustered by what they were given for (the church's reasons, fundraisers, tickets) and the money behind them.
+            'by_reason' => $records['by_reason']->map(fn ($r) => ['key' => $r['label'], 'label' => $r['label'], 'total' => $r['gross'], 'gifts' => $r['gifts'], 'share' => $r['share']])->values(),
+            'fees_month' => $records['fees'],
+            'net_month' => $records['net'],
+            'givers_month' => $records['givers'],
+            'awaiting_payout' => $records['awaiting_payout']['amount'],
             'by_category' => $paid()->where('paid_at', '>=', now()->startOfMonth())->select('category', DB::raw('SUM(amount) as total'))->groupBy('category')->orderByDesc('total')->get()
                 ->map(fn ($r) => ['key' => $r->category, 'label' => config('faithfellows.giving_categories.'.$r->category, $r->category), 'total' => (float) $r->total])->values(),
             'by_method' => $paid()->where('paid_at', '>=', now()->startOfMonth())->select('method', DB::raw('SUM(amount) as total'))->groupBy('method')->orderByDesc('total')->get()

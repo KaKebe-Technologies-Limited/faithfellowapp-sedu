@@ -102,7 +102,7 @@ class PodcastController extends Controller
     }
 
     /** @return array<string, mixed> */
-    protected function card(Podcast $p, bool $following): array
+    public function card(Podcast $p, bool $following): array
     {
         return [
             'id' => $p->id,

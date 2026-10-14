@@ -17,7 +17,7 @@ class Donation extends Model implements Payable
 
     protected $fillable = [
         'church_id', 'branch_id', 'user_id', 'campaign_id', 'campaign_team_id', 'pledge_id', 'recurring_gift_id', 'event_rsvp_id',
-        'small_group_id', 'payout_id', 'category', 'amount', 'fee', 'currency', 'method', 'reference', 'provider_ref', 'phone',
+        'small_group_id', 'payout_id', 'category', 'giving_reason_id', 'reason', 'amount', 'fee', 'currency', 'method', 'reference', 'provider_ref', 'phone',
         'status', 'failure_reason', 'is_anonymous', 'show_on_leaderboard', 'giver_name', 'note', 'provider_payload',
         'receipt_number', 'receipt_sent_at', 'paid_at', 'refunded_at', 'refund_reason', 'recorded_by', 'reconciled_at',
         'country', 'ip_address',
@@ -111,9 +111,15 @@ class Donation extends Model implements Payable
         return $this->giver_name ?: ($this->user?->name ?? __('Anonymous'));
     }
 
+    public function givingReason(): BelongsTo
+    {
+        return $this->belongsTo(GivingReason::class);
+    }
+
+    /** What the gift was for: the church's own reason as it was given, else the platform category. */
     public function getCategoryLabelAttribute(): string
     {
-        return config('faithfellows.giving_categories.'.$this->category, Str::headline($this->category));
+        return $this->reason ?: config('faithfellows.giving_categories.'.$this->category, Str::headline($this->category));
     }
 
     public function getMethodLabelAttribute(): string

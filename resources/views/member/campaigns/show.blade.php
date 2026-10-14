@@ -115,16 +115,8 @@
                     </x-ff.card>
                 @endif
 
-                @if ($leaderboard->isNotEmpty())
-                    <x-ff.card :title="__('Top givers')" :subtitle="__('Only givers who chose to be listed')">
-                        @foreach ($leaderboard as $i => $row)
-                            <div class="ff-leaderboard-row"><span class="ff-leaderboard-rank">{{ $i + 1 }}</span><span class="flex-grow-1 small fw-semibold text-ff-black">{{ $row->name }}</span><span class="small">{{ ff_short_number($row->total) }}</span></div>
-                        @endforeach
-                    </x-ff.card>
-                @endif
-
                 @if ($recent->isNotEmpty())
-                    <x-ff.card :title="__('Recent gifts')">
+                    <x-ff.card :title="__('Givers')" :subtitle="__('The most recent first')">
                         @foreach ($recent as $gift)
                             <div class="d-flex justify-content-between small py-1"><span>{{ $gift->display_name }}</span><span class="text-ff-muted">{{ $gift->paid_at?->diffForHumans(short: true) }}</span></div>
                         @endforeach

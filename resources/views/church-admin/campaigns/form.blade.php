@@ -49,7 +49,7 @@
                     <div class="col-6"><x-ff.input name="ends_at" type="date" :label="__('Ends')" :value="$campaign->ends_at?->format('Y-m-d')" /></div>
                 </div>
                 @if ($branches->count() > 1)<x-ff.select name="branch_id" :label="__('Branch')" :options="$branches" :value="$campaign->branch_id" :placeholder="__('Whole church')" />@endif
-                <x-ff.checkbox name="show_leaderboard" :label="__('Show top givers (opt-in only)')" :checked="$campaign->show_leaderboard" switch />
+                <x-ff.checkbox name="show_leaderboard" :label="__('Show the givers list (opt-in only)')" :checked="$campaign->show_leaderboard" switch />
                 <x-ff.checkbox name="allow_anonymous" :label="__('Allow anonymous gifts')" :checked="$campaign->allow_anonymous" switch />
                 <x-ff.checkbox name="is_featured" :label="__('Feature on member dashboards')" :checked="$campaign->is_featured" switch />
                 <button class="btn btn-ff-primary w-100 mt-2">{{ $campaign->exists ? __('Save changes') : __('Launch campaign') }}</button>

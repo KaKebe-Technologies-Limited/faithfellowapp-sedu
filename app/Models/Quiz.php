@@ -16,7 +16,18 @@ class Quiz extends Model
 {
     use Auditable, BelongsToChurch, SoftDeletes;
 
-    protected $fillable = ['church_id', 'user_id', 'title', 'description', 'theme'];
+    protected $fillable = ['church_id', 'user_id', 'title', 'description', 'theme', 'category', 'emoji', 'is_sample'];
+
+    protected function casts(): array
+    {
+        return ['is_sample' => 'boolean'];
+    }
+
+    /** A ready-made community game (no church) that any member can start. */
+    public function scopeSamples($query)
+    {
+        return $query->where('is_sample', true)->whereNull('church_id');
+    }
 
     public function author(): BelongsTo
     {

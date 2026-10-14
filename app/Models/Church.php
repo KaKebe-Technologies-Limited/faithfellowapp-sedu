@@ -37,6 +37,12 @@ class Church extends Model implements HasMedia
         ['type' => 'contact', 'enabled' => true],
     ];
 
+    protected static function booted(): void
+    {
+        // Every church starts with a few common giving reasons it can change.
+        static::created(fn (Church $church) => GivingReason::seedDefaults($church));
+    }
+
     protected $fillable = [
         'owner_id', 'name', 'slug', 'denomination', 'tagline', 'description', 'about', 'pastor_name', 'founded_year',
         'languages', 'country', 'district', 'city', 'address', 'lat', 'lng', 'phone', 'email', 'website',
@@ -267,6 +273,12 @@ class Church extends Model implements HasMedia
     public function givingChannels(): HasMany
     {
         return $this->hasMany(GivingChannel::class)->orderBy('sort');
+    }
+
+    /** What members can give for at this church (the church writes this list). */
+    public function givingReasons(): HasMany
+    {
+        return $this->hasMany(GivingReason::class);
     }
 
     public function campaigns(): HasMany

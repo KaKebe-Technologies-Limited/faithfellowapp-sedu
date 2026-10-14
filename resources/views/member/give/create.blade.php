@@ -38,6 +38,18 @@
                 @else
                     <div class="ff-form-section">
                         <label class="form-label">{{ __('What are you giving for?') }}</label>
+                        @if ($reasons->isNotEmpty() && ! $pledge)
+                            {{-- What the church itself lets people give for. --}}
+                            <div class="ff-pills mb-2">
+                                @foreach ($reasons as $reason)
+                                    <label @class(['ff-pill', 'active' => (int) old('reason_id', $reasons->first()->id) === $reason->id]) style="cursor:pointer" title="{{ $reason->description }}">
+                                        <input type="radio" name="reason_id" value="{{ $reason->id }}" class="d-none" @checked((int) old('reason_id', $reasons->first()->id) === $reason->id) onchange="this.closest('.ff-pills').querySelectorAll('.ff-pill').forEach(p => p.classList.toggle('active', p.contains(this)))">
+                                        {{ $reason->name }}
+                                    </label>
+                                @endforeach
+                            </div>
+                            @error('reason_id')<div class="text-danger small">{{ $message }}</div>@enderror
+                        @else
                         <div class="ff-pills mb-2">
                             @foreach (['tithe', 'offering', 'building_fund', 'missions', 'welfare', 'project', 'special'] as $cat)
                                 <label @class(['ff-pill', 'active' => old('category', $pledge ? 'project' : 'tithe') === $cat]) style="cursor:pointer">
@@ -47,6 +59,7 @@
                             @endforeach
                         </div>
                         @error('category')<div class="text-danger small">{{ $message }}</div>@enderror
+                        @endif
                         @if ($campaigns->isNotEmpty())
                             <div class="small text-ff-muted">{{ __('Or give to a campaign:') }}
                                 @foreach ($campaigns as $c)<a href="{{ route('give.create', [$church, 'campaign' => $c->slug]) }}" class="me-2">{{ $c->title }}</a>@endforeach

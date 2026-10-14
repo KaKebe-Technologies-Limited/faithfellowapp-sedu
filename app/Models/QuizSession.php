@@ -49,6 +49,11 @@ class QuizSession extends Model
         return $this->hasMany(QuizPlayer::class);
     }
 
+    public function invites(): HasMany
+    {
+        return $this->hasMany(QuizInvite::class);
+    }
+
     public function answers(): HasMany
     {
         return $this->hasMany(QuizAnswer::class);

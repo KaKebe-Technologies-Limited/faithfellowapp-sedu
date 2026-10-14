@@ -160,3 +160,13 @@ That means the Git entry in hPanel deploys `main` instead of `production`. Fix i
 5. `https://faithfellows.com/up` must show a green page, and `https://faithfellows.com/web/artisan` must be 404.
 
 The `.htaccess` at the top of `main` makes a server that is pointed at `main` by mistake serve nothing, so the source stays private in the meantime.
+
+## After the app 1.1 update: email, Google sign-in and the ESV Bible
+
+Three things are set up once, by the super admin, on the website (nothing needs to be typed into a server file, and none of the secrets belong in git):
+
+1. **Email (receipts, the thank-you note every giver gets, password codes).** Super admin, **Email**: the Gmail address (`faithfellowsofficial@gmail.com`), its Google **App Password** (Google account, Security, 2-Step Verification, App passwords), switch **Send emails from this account** on, **Save**, then **Send test**. The password is saved encrypted and never shown again. Emails are queued: the `queue:work` cron job of step 8 must be running. (Alternatively put `MAIL_MAILER=smtp`, `MAIL_HOST=smtp.gmail.com`, `MAIL_PORT=587`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM_ADDRESS` in the server `.env`; the website setting wins when it is on.)
+2. **Google sign-in.** Super admin, **Google sign-in**: the OAuth client ID and secret of the Google Cloud project. In Google Cloud, Credentials, open that Web client and add `https://faithfellows.com/auth/google/app/callback` under **Authorised redirect URIs**; publish the OAuth consent screen (otherwise only listed test users can sign in).
+3. **ESV Bible.** Get a free key at https://api.esv.org/account/ and put `ESV_API_KEY=…` in the server `.env`. Until then the app reads the King James Version. The ESV is licensed text: it is never stored on the server or the phones, and Crossway's terms apply (non-commercial use).
+
+New database changes (giving reasons, community games and the 25 sample games, inspiration) are applied by the scheduler, or from Super admin, **Database updates**. Members need the 1.1.0 app (a new APK) for the new icon and bottom bar; the screens themselves also update over the air once their phone has 1.1.0.

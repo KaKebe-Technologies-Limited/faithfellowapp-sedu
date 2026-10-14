@@ -57,6 +57,8 @@ class BibleController extends Controller
             'chapter' => $chapter,
             'chapters' => Books::chapters($book),
             'translation' => $translation,
+            'keep_offline' => $this->bible->keepsOffline($translation),
+            'copyright' => $this->bible->copyright($translation),
             'verses' => $this->withColors($verses, $book, $chapter, $colors),
             'previous' => $previous ? ['book' => $previous[0], 'chapter' => $previous[1], 'label' => Books::name($previous[0]).' '.$previous[1]] : null,
             'next' => $next ? ['book' => $next[0], 'chapter' => $next[1], 'label' => Books::name($next[0]).' '.$next[1]] : null,
@@ -77,6 +79,10 @@ class BibleController extends Controller
         }
         $translation = $this->translation($request);
         $total = Books::chapters($book);
+        if (! $this->bible->keepsOffline($translation)) {
+            // Licensed text (the ESV) is read online only; there is nothing to download.
+            return response()->json(['data' => ['translation' => $translation, 'book' => $book, 'total' => $total, 'chapters' => (object) [], 'missing' => [], 'fetched' => 0, 'offline' => false]]);
+        }
         $have = collect(explode(',', (string) $request->query('have')))->map(fn ($n) => (int) $n)->filter()->flip();
 
         $cached = BibleChapter::where('translation', $translation)->where('book', $book)->pluck('verses', 'chapter');
@@ -122,6 +128,7 @@ class BibleController extends Controller
         return response()->json(['data' => [
             'title' => $passage['title'],
             'translation' => $translation,
+            'copyright' => $this->bible->copyright($translation),
             'sections' => collect($passage['sections'])->map(fn ($s) => [
                 'label' => $s['label'], 'book' => $s['book'], 'chapter' => $s['chapter'], 'error' => $s['error'] ?? null,
                 'verses' => $this->withColors($s['verses'], $s['book'], $s['chapter'], $colors),
@@ -169,7 +176,7 @@ class BibleController extends Controller
     /** @return array<int, array{key: string, name: string, short: string, language: string}> */
     protected function translations(): array
     {
-        return collect($this->bible->translations())->map(fn ($t) => ['key' => $t['key'], 'name' => $t['name'], 'short' => $t['short'], 'language' => $t['language']])->values()->all();
+        return collect($this->bible->translations())->map(fn ($t) => ['key' => $t['key'], 'name' => $t['name'], 'short' => $t['short'], 'language' => $t['language'], 'offline' => $this->bible->keepsOffline($t['key'])])->values()->all();
     }
 
     /**

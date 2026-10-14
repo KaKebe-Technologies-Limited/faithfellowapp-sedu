@@ -31,7 +31,8 @@ class GiveRequest extends FormRequest
 
         return [
             'amount' => ['required', 'numeric', 'min:500', 'max:100000000'],
-            'category' => ['required_without:campaign_id', 'nullable', Rule::in($categories)],
+            'category' => ['required_without_all:campaign_id,reason_id', 'nullable', Rule::in($categories)],
+            'reason_id' => ['nullable', Rule::exists('giving_reasons', 'id')->where('church_id', $church->id)->where('is_active', true)],
             'method' => ['required', Rule::in(array_merge(GivingChannel::ONLINE, ['bank'])), function ($attribute, $value, $fail) {
                 if (! PaymentService::enabled((string) $value)) {
                     $fail(__('This payment method is temporarily unavailable. Please choose another.'));

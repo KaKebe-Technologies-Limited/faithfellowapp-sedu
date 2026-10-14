@@ -79,6 +79,8 @@ class GivingController extends Controller
                 ->map(fn (GivingChannel $c) => ['type' => $c->type, 'label' => $c->display_name, 'needs_phone' => in_array($c->type, GivingChannel::PHONE_METHODS, true), 'phone_pattern' => MobileMoneyPhone::pattern()])->values(),
             'offline' => $church->givingChannels()->where('is_active', true)->whereIn('type', ['bank', 'cash', 'ussd'])->orderBy('sort')->get()
                 ->map(fn (GivingChannel $c) => ['type' => $c->type, 'label' => $c->display_name, 'instructions' => $c->instructions])->values(),
+            // What the church lets people give for (the church writes this list); `categories` is kept for older apps.
+            'reasons' => $church->givingReasons()->active()->ordered()->get()->map(fn ($r) => ['id' => $r->id, 'name' => $r->name, 'description' => $r->description])->values(),
             'categories' => collect(config('faithfellows.giving_categories'))->except(['event', 'pledge', 'campaign'])->map(fn ($label, $key) => ['key' => $key, 'label' => $label])->values(),
             'campaigns' => $church->campaigns()->active()->visibleTo($user->memberChurchIds())->orderBy('title')->get(['id', 'title'])->map(fn ($c) => ['id' => $c->id, 'title' => $c->title])->values(),
             'quick_amounts' => config('faithfellows.quick_amounts'),
