@@ -12,7 +12,8 @@
       "env": {
         "EXPO_PUBLIC_API_URL": "https://faithfellows.com/api",
         "EXPO_PUBLIC_APP_ENV": "production"
-      }
+      },
+      "channel": "production"
     },
     "local-wifi": {
       "distribution": "internal",
@@ -24,7 +25,8 @@
         "EXPO_PUBLIC_API_URL": "http://192.168.0.103:8000/api",
         "EXPO_PUBLIC_APP_ENV": "development",
         "ALLOW_CLEARTEXT": "1"
-      }
+      },
+      "channel": "local-wifi"
     },
     "production-apk": {
       "distribution": "internal",
@@ -35,7 +37,8 @@
       "env": {
         "EXPO_PUBLIC_API_URL": "https://faithfellows.com/api",
         "EXPO_PUBLIC_APP_ENV": "production"
-      }
+      },
+      "channel": "production"
     },
     "production": {
       "autoIncrement": true,
@@ -45,7 +48,8 @@
       "env": {
         "EXPO_PUBLIC_API_URL": "https://faithfellows.com/api",
         "EXPO_PUBLIC_APP_ENV": "production"
-      }
+      },
+      "channel": "production"
     }
   },
   "submit": {

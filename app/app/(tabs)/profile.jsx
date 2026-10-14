@@ -16,6 +16,7 @@ import { API_ROOT, mediaUrl, ping } from '../../lib/api';
 import { useAuth } from '../../lib/auth';
 import { initials } from '../../lib/format';
 import { useOutbox } from '../../lib/outbox';
+import { versionLabel } from '../../lib/updates';
 import { useFetch } from '../../lib/useFetch';
 
 const MENU = [
@@ -161,6 +162,9 @@ export default function ProfileScreen() {
         <View style={styles.actions}>
           <Button title="Sign out" onPress={confirmSignOut} />
         </View>
+        <AppText variant="caption" style={styles.version}>
+          FaithFellows {versionLabel()}
+        </AppText>
       </ScrollView>
     </StateView>
     </View>
@@ -186,5 +190,6 @@ const styles = StyleSheet.create({
   menuIcon: { width: 34, height: 34, borderRadius: 11, backgroundColor: COLORS.primaryMist, alignItems: 'center', justifyContent: 'center' },
   server: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md },
   dot: { width: 10, height: 10, borderRadius: 5 },
-  actions: { gap: SPACING.sm, marginTop: SPACING.lg, marginBottom: SPACING.lg },
+  actions: { gap: SPACING.sm, marginTop: SPACING.lg, marginBottom: SPACING.sm },
+  version: { textAlign: 'center', marginBottom: SPACING.lg },
 });

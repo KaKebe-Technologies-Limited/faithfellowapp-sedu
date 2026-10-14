@@ -59,15 +59,47 @@ The app registers the phone's Expo push token with the server (`POST /api/v1/dev
 pushes church news, connection requests and chat messages (`../web/docs/API.md`, "Push to the phone"). Members control it
 under Me → Notification settings, which also has a "Send me a test" button.
 
-To make it work on a phone:
+**Who gets a church's news:** only people who follow (are subscribed to) that church, plus its staff. A member who left a
+church, follows another church, or muted that church gets nothing from it. A church can also aim a message at a branch, a
+small group or a membership stage. The server code is `NotificationService::recipients()`, and a test proves it
+(`ApiPushTest`: "church news goes only to the phones of people who follow that church"). No extra package is needed.
 
-1. Run `npx eas-cli init` once; it puts your real project id in `app.json → extra.eas.projectId`.
-2. Use a **development build** (`npx eas-cli build --profile development`), not Expo Go: Expo Go on Android cannot receive
-   remote push any more. iOS needs an Apple developer account for push; Android needs a Firebase (FCM) key added with
-   `npx eas-cli credentials`.
-3. On the server run a queue worker (`php artisan queue:work`); pushes are queued.
+To make it work on an Android phone (installed APK, not Expo Go):
+
+1. **Firebase project.** At https://console.firebase.google.com create a project (for example "FaithFellows").
+2. **Register the Android app** in it, with the package name `tech.kakebe.faithfellows`, and download **`google-services.json`**.
+   Save it as `app/google-services.json` (it may be committed: it holds public identifiers only). `app.config.js` picks it up.
+3. **Upload the server key to Expo.** Firebase, Project settings, Service accounts, **Generate new private key**. Then on
+   https://expo.dev open the project, Credentials, the Android app `tech.kakebe.faithfellows`, Service credentials,
+   **FCM V1 service account key**, upload that JSON. Never commit this file (the root `.gitignore` blocks `*firebase-adminsdk*.json`).
+4. **Build a new APK** (`npx.cmd eas-cli build -p android --profile preview`): `google-services.json` goes inside the APK.
+5. On the server the queue worker must run (the `queue:work` cron job in `../web/docs/DEPLOYMENT_SHARED_HOSTING.md`); pushes are queued.
+6. Check it: sign in, Me, Notification settings, **Send me a test**.
 
 In the web preview and in Expo Go on Android the push code does nothing, and the settings screen says why.
+
+## EAS Update (app changes without a new APK)
+
+Installed APKs download new JavaScript, text and images by themselves when the app opens or comes to the front, then restart into
+them (`lib/updates.js`). Me, at the bottom, shows which update a phone runs ("FaithFellows 1.0.0 · update 1a2b3c4d").
+
+**Setting up (once)**
+
+1. Create an access token at https://expo.dev (Account settings, Access tokens, Create token).
+2. In GitHub open the repository, Settings, Secrets and variables, Actions, **New repository secret**: name `EXPO_TOKEN`, value the token.
+3. Install an APK built after `expo-updates` was added (profiles `preview`, `production-apk`, `production` use the `production`
+   channel in `eas.json`). Older APKs cannot receive updates.
+
+**Every day:** change app code, commit, `git push`. `.github/workflows/app-update.yml` publishes it to the `production` channel
+in a couple of minutes, and phones take it the next time they open the app. Server changes need nothing from the app.
+
+**What an update cannot carry:** a new native package, a new permission or plugin, an app icon or name change. These live in
+the APK. If a push contains one, the workflow stops with an explanation (`.github/scripts/check-native-change.py`): raise
+`version` in `app.json` (for example 1.0.0 to 1.1.0), push, and build a new APK. `runtimeVersion` follows `version`, so an
+update is only ever offered to APKs of the same version.
+
+**By hand** (needs `eas-cli` and a login): `npx.cmd eas-cli update --channel production --environment production --platform android --message "what changed"`.
+The address of the server is stored for that environment on Expo: `npx.cmd eas-cli env:list --environment production`.
 
 ## Offline Bible
 

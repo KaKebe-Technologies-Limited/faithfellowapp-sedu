@@ -19,6 +19,7 @@ import { AuthProvider, useAuth } from '../lib/auth';
 import { useOfflineSync } from '../lib/outbox';
 import { syncNotes } from '../lib/notesSync';
 import { usePushSetup } from '../lib/push';
+import { useAppUpdates } from '../lib/updates';
 import { useRadioLifecycle } from '../lib/radio';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -28,6 +29,7 @@ function Navigator({ fontsLoaded }) {
   usePushSetup(user);
   useOfflineSync(user, syncNotes);
   useRadioLifecycle();
+  useAppUpdates();
   const segments = useSegments();
   const insets = useSafeAreaInsets();
   // The tab screens carry the player bar inside their own tab bar; every other screen gets it here, at the bottom.

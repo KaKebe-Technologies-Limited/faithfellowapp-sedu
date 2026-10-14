@@ -1,0 +1,81 @@
+# Publishes the app's changes to every installed APK (EAS Update).
+#
+# Every push to main that touches app/ sends the new JavaScript, text and images to the phones that have the FaithFellows APK
+# (they pick it up the next time the app opens). It needs one secret, EXPO_TOKEN (see app/README.md, "EAS Update"); until the
+# secret exists this workflow does nothing and shows a notice instead of failing.
+#
+# Changes that live inside the APK (a native package, a permission, a plugin) cannot travel this way: the check below stops
+# them and asks for a version bump and a new APK build.
+
+name: Publish the app update
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'app/**'
+      - '!app/README.md'
+      - '.github/workflows/app-update.yml'
+      - '.github/scripts/check-native-change.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: app-update
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+    steps:
+      - name: Is the Expo token set?
+        id: token
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=App update skipped::Add the EXPO_TOKEN secret (GitHub, Settings, Secrets and variables, Actions) to publish app updates. See app/README.md."
+          else
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.token.outputs.present == 'true'
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        if: steps.token.outputs.present == 'true'
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - uses: expo/expo-github-action@v8
+        if: steps.token.outputs.present == 'true'
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install the app's packages
+        if: steps.token.outputs.present == 'true'
+        working-directory: app
+        run: npm ci
+
+      - name: Stop changes that need a new APK
+        if: steps.token.outputs.present == 'true' && github.event_name == 'push'
+        run: python3 .github/scripts/check-native-change.py "${{ github.event.before }}" "${{ github.sha }}"
+
+      - name: Publish the update
+        if: steps.token.outputs.present == 'true'
+        working-directory: app
+        env:
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+          EXPO_PUBLIC_API_URL: https://faithfellows.com/api
+          EXPO_PUBLIC_APP_ENV: production
+        run: |
+          MESSAGE="$(printf '%s' "${COMMIT_MESSAGE:-Manual update}" | head -n 1)"
+          eas update --channel production --environment production --platform android --message "$MESSAGE" --non-interactive

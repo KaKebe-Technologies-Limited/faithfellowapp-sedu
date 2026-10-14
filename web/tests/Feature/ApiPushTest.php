@@ -153,6 +153,28 @@ test('church news is sent to Expo with where to open it, and a phone that is gon
     expect($member->deviceTokens()->pluck('token')->all())->toBe([PUSH_TOKEN]);
 });
 
+test('church news goes only to the phones of people who follow that church', function () {
+    $grace = pushChurch();
+    $other = pushChurch();
+    $follower = pushMember($grace);
+    $ofOther = pushMember($other);
+    $left = pushMember($grace);
+    $grace->subscriptions()->where('user_id', $left->id)->update(['status' => 'left']);
+    withPhone($follower, 'ExponentPushToken[followerfollowerfollow]');
+    withPhone($ofOther, 'ExponentPushToken[otherchurchotherchurch]');
+    withPhone($left, 'ExponentPushToken[leftleftleftleftleftle]');
+    Http::fake(['exp.host/*' => Http::response(['data' => [['status' => 'ok', 'id' => 'ticket-1']]])]);
+
+    $recipients = app(NotificationService::class)->recipients($grace->id, 'members')->pluck('id')->all();
+    expect($recipients)->toContain($follower->id)->not->toContain($ofOther->id)->not->toContain($left->id);
+
+    app(NotificationService::class)->notifyChurch($grace, churchNews($grace));
+
+    Http::assertSent(fn ($request) => str_contains($request->url(), '/push/send') && $request[0]['to'] === 'ExponentPushToken[followerfollowerfollow]');
+    Http::assertNotSent(fn ($request) => str_contains($request->url(), '/push/send')
+        && in_array($request[0]['to'] ?? '', ['ExponentPushToken[otherchurchotherchurch]', 'ExponentPushToken[leftleftleftleftleftle]'], true));
+});
+
 test('urgent news uses the urgent channel and live services the live channel', function () {
     $church = pushChurch();
     $member = pushMember($church);

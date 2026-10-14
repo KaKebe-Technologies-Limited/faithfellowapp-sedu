@@ -3,6 +3,8 @@
     "name": "FaithFellows",
     "slug": "faithfellows",
     "version": "1.0.0",
+    "runtimeVersion": { "policy": "appVersion" },
+    "updates": { "url": "https://u.expo.dev/dde3d075-b0ff-46a1-af51-ccd15ea0d2ca", "fallbackToCacheTimeout": 0 },
     "orientation": "portrait",
     "scheme": "faithfellows",
     "userInterfaceStyle": "light",
