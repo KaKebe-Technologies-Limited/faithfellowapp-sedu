@@ -13,7 +13,7 @@ import { Video } from '../../components/MediaPlayers';
 import Pill from '../../components/Pill';
 import { BackButton } from '../../components/ScreenHeader';
 import StateView from '../../components/StateView';
-import { COLORS, FONTS, RADIUS, SPACING } from '../../constants/theme';
+import { COLORS, FONTS, RADIUS, SPACING, MAX_FONT_SCALE } from '../../constants/theme';
 import api from '../../lib/api';
 import { dayAndTime } from '../../lib/format';
 import { useFetch } from '../../lib/useFetch';
@@ -177,7 +177,7 @@ export default function LiveScreen() {
                 />
                 {status === 'live' ? (
                   <View style={[styles.compose, { paddingBottom: Math.max(insets.bottom, 10) }]}>
-                    <TextInput value={draft} onChangeText={setDraft} placeholder="Write a message…" placeholderTextColor={COLORS.gray500} maxLength={500} onSubmitEditing={send} returnKeyType="send" style={styles.input} />
+                    <TextInput maxFontSizeMultiplier={MAX_FONT_SCALE} value={draft} onChangeText={setDraft} placeholder="Write a message…" placeholderTextColor={COLORS.gray500} maxLength={500} onSubmitEditing={send} returnKeyType="send" style={styles.input} />
                     <Pressable onPress={send} disabled={!draft.trim() || sending} style={[styles.send, (!draft.trim() || sending) && { opacity: 0.45 }]} accessibilityLabel="Send message" accessibilityRole="button">
                       <Ionicons name="send" size={18} color={COLORS.white} />
                     </Pressable>

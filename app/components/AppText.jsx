@@ -2,7 +2,7 @@
 // A screen can pass a bigger fontSize (an amount, initials in a circle). The variant's own line height would then be
 // too short for the letters and iPhones cut them off, so the line height grows with the text unless one is given.
 import { StyleSheet, Text } from 'react-native';
-import { COLORS, FONTS } from '../constants/theme';
+import { COLORS, FONTS, MAX_FONT_SCALE } from '../constants/theme';
 
 const VARIANTS = {
   title: { fontFamily: FONTS.bold, fontSize: 26, lineHeight: 32, color: COLORS.black },
@@ -18,8 +18,8 @@ export default function AppText({ variant = 'body', style, children, ...rest }) 
   const grown = own.fontSize && own.lineHeight === undefined && base.lineHeight < own.fontSize * 1.25 ? { lineHeight: Math.ceil(own.fontSize * 1.3) } : null;
 
   return (
-    // A phone set to very large text still grows the words, but not so much that amounts and buttons are cut off.
-    <Text style={[base, style, grown]} maxFontSizeMultiplier={1.25} {...rest}>
+    // A phone set to large text still grows the words a little, but not so much that amounts and buttons look oversized or are cut off.
+    <Text style={[base, style, grown]} maxFontSizeMultiplier={MAX_FONT_SCALE} {...rest}>
       {children}
     </Text>
   );

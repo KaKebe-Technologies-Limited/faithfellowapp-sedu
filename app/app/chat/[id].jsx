@@ -9,7 +9,7 @@ import AppText from '../../components/AppText';
 import Avatar from '../../components/Avatar';
 import { BackButton } from '../../components/ScreenHeader';
 import StateView from '../../components/StateView';
-import { COLORS, FONTS, RADIUS, SPACING } from '../../constants/theme';
+import { COLORS, FONTS, RADIUS, SPACING, MAX_FONT_SCALE } from '../../constants/theme';
 import api, { errorMessage } from '../../lib/api';
 import { setActiveChat } from '../../lib/push';
 
@@ -154,7 +154,7 @@ export default function ChatScreen() {
               {problem ? <AppText style={styles.problem}>{problem}</AppText> : null}
               {messages.length === 0 ? <AppText variant="caption" style={styles.safety}>Keep chatting here in the app. Phone numbers and emails cannot be shared.</AppText> : null}
               <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 10 }}>
-                <TextInput value={draft} onChangeText={setDraft} placeholder="Write a message…" placeholderTextColor={COLORS.gray500} multiline maxLength={2000} style={styles.input} />
+                <TextInput maxFontSizeMultiplier={MAX_FONT_SCALE} value={draft} onChangeText={setDraft} placeholder="Write a message…" placeholderTextColor={COLORS.gray500} multiline maxLength={2000} style={styles.input} />
                 <Pressable onPress={send} disabled={!draft.trim() || sending} style={[styles.send, (!draft.trim() || sending) && { opacity: 0.45 }]} accessibilityRole="button" accessibilityLabel="Send message">
                   <Ionicons name="send" size={18} color={COLORS.white} />
                 </Pressable>

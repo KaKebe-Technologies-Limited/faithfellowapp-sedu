@@ -12,7 +12,7 @@ import HymnRow from '../../components/hymn/HymnRow';
 import HymnalCard from '../../components/hymn/HymnalCard';
 import ScreenHeader from '../../components/ScreenHeader';
 import StateView from '../../components/StateView';
-import { COLORS, FONTS, RADIUS, SHADOW, SPACING } from '../../constants/theme';
+import { COLORS, FONTS, RADIUS, SHADOW, SPACING, MAX_FONT_SCALE } from '../../constants/theme';
 import api from '../../lib/api';
 import { getHymnalList, getSavedHymnal, recentHymns, savedHymnals } from '../../lib/hymnStore';
 
@@ -90,7 +90,7 @@ export default function HymnsScreen() {
       <ScreenHeader title="Hymn book" subtitle="Sing along, anywhere" />
       <View style={styles.search}>
         <Ionicons name="search" size={18} color={COLORS.gray700} />
-        <TextInput
+        <TextInput maxFontSizeMultiplier={MAX_FONT_SCALE}
           value={text}
           onChangeText={setText}
           returnKeyType="search"

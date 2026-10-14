@@ -14,7 +14,7 @@ import Button from '../../components/Button';
 import ScreenHeader from '../../components/ScreenHeader';
 import StateView from '../../components/StateView';
 import TextField from '../../components/TextField';
-import { COLORS, FONTS, RADIUS, SHADOW, SPACING } from '../../constants/theme';
+import { COLORS, FONTS, RADIUS, SHADOW, SPACING, MAX_FONT_SCALE } from '../../constants/theme';
 import api, { errorMessage, mediaUrl } from '../../lib/api';
 import { formatDate, timeAgo } from '../../lib/format';
 import { useFetch } from '../../lib/useFetch';
@@ -101,7 +101,7 @@ function Conversation({ group }) {
         </ScrollView>
       </StateView>
       <View style={[styles.compose, { paddingBottom: Math.max(insets.bottom, 10) }]}>
-        <TextInput value={draft} onChangeText={setDraft} placeholder="Write to the group…" placeholderTextColor={COLORS.gray500} multiline maxLength={2000} style={styles.input} />
+        <TextInput maxFontSizeMultiplier={MAX_FONT_SCALE} value={draft} onChangeText={setDraft} placeholder="Write to the group…" placeholderTextColor={COLORS.gray500} multiline maxLength={2000} style={styles.input} />
         <Pressable onPress={send} disabled={!draft.trim() || sending} style={[styles.send, (!draft.trim() || sending) && { opacity: 0.45 }]} accessibilityRole="button" accessibilityLabel="Send">
           <Ionicons name="send" size={18} color={COLORS.white} />
         </Pressable>

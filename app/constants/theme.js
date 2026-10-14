@@ -34,6 +34,10 @@ export const FONTS = {
   bold: 'ClarityCity_700Bold',
 };
 
+// A phone set to a large font (many Samsung phones are) still grows our words, but never past this multiple of their size,
+// so nothing looks oversized or gets cut off. Bible and hymn text have their own A- / A+ buttons.
+export const MAX_FONT_SCALE = 1.1;
+
 export const SPACING = { xs: 4, sm: 8, md: 16, lg: 24, xl: 32, xxl: 48 };
 
 export const RADIUS = { sm: 6, md: 10, lg: 16, xl: 24, full: 9999 };

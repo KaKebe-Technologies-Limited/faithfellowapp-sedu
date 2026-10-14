@@ -9,7 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AppText from '../../components/AppText';
 import SectionHeader from '../../components/SectionHeader';
 import StateView from '../../components/StateView';
-import { COLORS, FONTS, RADIUS, SHADOW, SPACING } from '../../constants/theme';
+import { COLORS, FONTS, RADIUS, SHADOW, SPACING, MAX_FONT_SCALE } from '../../constants/theme';
 import { HIGHLIGHTS, getLastRead } from '../../lib/bible';
 import { useBibleIndex } from '../../lib/bibleOffline';
 
@@ -54,7 +54,7 @@ export default function BibleTab() {
 
           <View style={styles.search}>
             <Ionicons name="search" size={18} color={COLORS.gray700} />
-            <TextInput value={query} onChangeText={setQuery} onSubmitEditing={search} returnKeyType="search" placeholder="Go to a verse — John 3:16, Psalm 23" placeholderTextColor={COLORS.gray500} style={styles.searchInput} autoCapitalize="none" />
+            <TextInput maxFontSizeMultiplier={MAX_FONT_SCALE} value={query} onChangeText={setQuery} onSubmitEditing={search} returnKeyType="search" placeholder="Go to a verse — John 3:16, Psalm 23" placeholderTextColor={COLORS.gray500} style={styles.searchInput} autoCapitalize="none" />
           </View>
 
           {last ? (

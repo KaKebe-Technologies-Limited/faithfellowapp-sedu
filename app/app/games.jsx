@@ -12,7 +12,7 @@ import ChurchAvatar from '../components/ChurchAvatar';
 import ScreenHeader from '../components/ScreenHeader';
 import SectionHeader from '../components/SectionHeader';
 import StateView from '../components/StateView';
-import { COLORS, FONTS, RADIUS, SHADOW, SPACING } from '../constants/theme';
+import { COLORS, FONTS, RADIUS, SHADOW, SPACING, MAX_FONT_SCALE } from '../constants/theme';
 import api, { errorMessage, fieldErrors } from '../lib/api';
 import { timeAgo } from '../lib/format';
 import { useFetch } from '../lib/useFetch';
@@ -62,7 +62,7 @@ export default function GamesScreen() {
               <AppText style={styles.joinTitle}>Join a game</AppText>
               <AppText style={styles.joinText}>Type the PIN shown on the screen at church.</AppText>
               <View style={styles.pinRow}>
-                <TextInput value={pin} onChangeText={(t) => setPin(t.replace(/\D/g, '').slice(0, 8))} placeholder="PIN" placeholderTextColor="rgba(255,255,255,0.55)" keyboardType="number-pad" style={styles.pinInput} maxLength={8} onSubmitEditing={join} accessibilityLabel="Game PIN" />
+                <TextInput maxFontSizeMultiplier={MAX_FONT_SCALE} value={pin} onChangeText={(t) => setPin(t.replace(/\D/g, '').slice(0, 8))} placeholder="PIN" placeholderTextColor="rgba(255,255,255,0.55)" keyboardType="number-pad" style={styles.pinInput} maxLength={8} onSubmitEditing={join} accessibilityLabel="Game PIN" />
                 <Button title="Join" variant="light" loading={joining} onPress={join} style={{ minWidth: 96 }} />
               </View>
               {pinError ? <AppText style={styles.pinError}>{pinError}</AppText> : null}

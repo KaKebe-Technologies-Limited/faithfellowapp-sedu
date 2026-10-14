@@ -11,7 +11,7 @@ import AppText from '../components/AppText';
 import Button from '../components/Button';
 import PagedScreen from '../components/PagedScreen';
 import { PersonRow } from '../components/PersonCard';
-import { COLORS, FONTS, RADIUS, SPACING } from '../constants/theme';
+import { COLORS, FONTS, RADIUS, SPACING, MAX_FONT_SCALE } from '../constants/theme';
 import { useAuth } from '../lib/auth';
 import { shareMyLocation } from '../lib/location';
 import { COUNTRIES, INTERESTS } from '../lib/people';
@@ -95,7 +95,7 @@ export default function PeopleScreen() {
       <View style={{ flexDirection: 'row', gap: 8 }}>
         <View style={styles.search}>
           <Ionicons name="search" size={18} color={COLORS.gray700} />
-          <TextInput value={query} onChangeText={setQuery} onSubmitEditing={() => setSearch(query.trim())} returnKeyType="search" placeholder="Search by name" placeholderTextColor={COLORS.gray500} style={styles.input} />
+          <TextInput maxFontSizeMultiplier={MAX_FONT_SCALE} value={query} onChangeText={setQuery} onSubmitEditing={() => setSearch(query.trim())} returnKeyType="search" placeholder="Search by name" placeholderTextColor={COLORS.gray500} style={styles.input} />
         </View>
         <Pressable onPress={() => { setDraft(filters); setOpen(true); }} style={[styles.filterBtn, active.length > 0 && { backgroundColor: COLORS.primary }]} accessibilityRole="button" accessibilityLabel="Filters">
           <Ionicons name="options-outline" size={20} color={active.length ? COLORS.white : COLORS.primary} />
@@ -148,7 +148,7 @@ export default function PeopleScreen() {
               ))}
             </View>
             <AppText style={styles.label}>City</AppText>
-            <TextInput value={draft.city ?? ''} onChangeText={(t) => setDraft((d) => ({ ...d, city: t || undefined }))} placeholder="For example: Lira" placeholderTextColor={COLORS.gray500} style={styles.cityInput} />
+            <TextInput maxFontSizeMultiplier={MAX_FONT_SCALE} value={draft.city ?? ''} onChangeText={(t) => setDraft((d) => ({ ...d, city: t || undefined }))} placeholder="For example: Lira" placeholderTextColor={COLORS.gray500} style={styles.cityInput} />
             <AppText style={styles.label}>Age</AppText>
             <View style={styles.wrap}>
               {AGES.map(([name, min, max]) => (

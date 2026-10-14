@@ -11,7 +11,7 @@ import Chip from '../../../components/Chip';
 import ScreenHeader from '../../../components/ScreenHeader';
 import Sheet from '../../../components/Sheet';
 import StateView from '../../../components/StateView';
-import { COLORS, FONTS, RADIUS, SHADOW, SPACING } from '../../../constants/theme';
+import { COLORS, FONTS, RADIUS, SHADOW, SPACING, MAX_FONT_SCALE } from '../../../constants/theme';
 import { adminApi } from '../../../lib/admin';
 import { errorMessage } from '../../../lib/api';
 import { formatDate } from '../../../lib/format';
@@ -42,7 +42,7 @@ export default function AdminMembers() {
       <View style={{ paddingHorizontal: SPACING.md, gap: 10, paddingBottom: 8 }}>
         <View style={styles.search}>
           <Ionicons name="search" size={18} color={COLORS.gray700} />
-          <TextInput value={query} onChangeText={setQuery} onSubmitEditing={() => setSearch(query.trim())} returnKeyType="search" placeholder="Search by name or phone" placeholderTextColor={COLORS.gray500} style={styles.input} />
+          <TextInput maxFontSizeMultiplier={MAX_FONT_SCALE} value={query} onChangeText={setQuery} onSubmitEditing={() => setSearch(query.trim())} returnKeyType="search" placeholder="Search by name or phone" placeholderTextColor={COLORS.gray500} style={styles.input} />
         </View>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
           {[['', 'Active & waiting'], ['pending', 'Waiting'], ['active', 'Active'], ['blocked', 'Blocked']].map(([key, label]) => (

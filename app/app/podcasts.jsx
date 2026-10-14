@@ -8,7 +8,7 @@ import Chip from '../components/Chip';
 import { EpisodeRow, PodcastRow, PodcastTile } from '../components/podcast/PodcastCards';
 import ScreenHeader from '../components/ScreenHeader';
 import StateView from '../components/StateView';
-import { COLORS, FONTS, RADIUS, SPACING } from '../constants/theme';
+import { COLORS, FONTS, RADIUS, SPACING, MAX_FONT_SCALE } from '../constants/theme';
 import { usePaged } from '../lib/usePaged';
 import { useFetch } from '../lib/useFetch';
 
@@ -102,7 +102,7 @@ export default function PodcastsScreen() {
       <ScreenHeader title="Podcasts" subtitle="Faith-based, to listen to anywhere" />
       <View style={styles.search}>
         <Ionicons name="search" size={18} color={COLORS.gray700} />
-        <TextInput
+        <TextInput maxFontSizeMultiplier={MAX_FONT_SCALE}
           value={text}
           onChangeText={setText}
           returnKeyType="search"

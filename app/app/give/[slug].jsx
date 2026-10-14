@@ -11,7 +11,7 @@ import PayForm from '../../components/PayForm';
 import ScreenHeader from '../../components/ScreenHeader';
 import StateView from '../../components/StateView';
 import TextField from '../../components/TextField';
-import { COLORS, FONTS, RADIUS, SHADOW, SPACING } from '../../constants/theme';
+import { COLORS, FONTS, RADIUS, SHADOW, SPACING, MAX_FONT_SCALE } from '../../constants/theme';
 import api, { errorMessage, fieldErrors } from '../../lib/api';
 import { formatMoney } from '../../lib/format';
 import { openPayment } from '../../lib/payments';
@@ -101,7 +101,7 @@ export default function GiveScreen() {
                 </AppText>
                 <View style={styles.amountRow}>
                   <AppText style={styles.cur}>{currency}</AppText>
-                  <TextInput
+                  <TextInput maxFontSizeMultiplier={MAX_FONT_SCALE}
                     value={numeric ? numeric.toLocaleString() : ''}
                     onChangeText={(t) => setAmount(t.replace(/[^\d]/g, ''))}
                     keyboardType="number-pad"

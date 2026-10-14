@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, FONTS, RADIUS, SPACING } from '../constants/theme';
+import { COLORS, FONTS, RADIUS, SPACING, MAX_FONT_SCALE } from '../constants/theme';
 import AppText from './AppText';
 
 export default function TextField({ label, error, secureTextEntry, style, ...inputProps }) {
@@ -17,7 +17,7 @@ export default function TextField({ label, error, secureTextEntry, style, ...inp
         </AppText>
       ) : null}
       <View style={[styles.field, focused && styles.focused, !!error && styles.invalid]}>
-        <TextInput
+        <TextInput maxFontSizeMultiplier={MAX_FONT_SCALE}
           {...inputProps}
           secureTextEntry={hidden}
           onFocus={() => setFocused(true)}

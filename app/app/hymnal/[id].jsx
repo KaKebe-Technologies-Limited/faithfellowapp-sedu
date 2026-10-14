@@ -12,7 +12,7 @@ import Chip from '../../components/Chip';
 import HymnRow from '../../components/hymn/HymnRow';
 import ScreenHeader from '../../components/ScreenHeader';
 import StateView from '../../components/StateView';
-import { COLORS, FONTS, RADIUS, SPACING } from '../../constants/theme';
+import { COLORS, FONTS, RADIUS, SPACING, MAX_FONT_SCALE } from '../../constants/theme';
 import api, { errorMessage } from '../../lib/api';
 import { getSavedHymnal, removeSavedHymnal, saveHymnal, savedHymnals, withCache } from '../../lib/hymnStore';
 
@@ -158,7 +158,7 @@ export default function HymnalScreen() {
 
       <View style={styles.search}>
         <Ionicons name="search" size={18} color={COLORS.gray700} />
-        <TextInput value={text} onChangeText={setText} placeholder="Find a hymn in this hymnal" placeholderTextColor={COLORS.gray500} style={styles.searchInput} autoCorrect={false} accessibilityLabel="Search this hymnal" />
+        <TextInput maxFontSizeMultiplier={MAX_FONT_SCALE} value={text} onChangeText={setText} placeholder="Find a hymn in this hymnal" placeholderTextColor={COLORS.gray500} style={styles.searchInput} autoCorrect={false} accessibilityLabel="Search this hymnal" />
         {text ? (
           <Pressable onPress={() => setText('')} hitSlop={10} accessibilityRole="button" accessibilityLabel="Clear search">
             <Ionicons name="close-circle" size={18} color={COLORS.gray500} />

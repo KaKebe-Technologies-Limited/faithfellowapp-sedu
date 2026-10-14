@@ -9,7 +9,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import AppText from '../../components/AppText';
 import ScreenHeader, { HeaderAction, goBack } from '../../components/ScreenHeader';
 import StateView from '../../components/StateView';
-import { COLORS, FONTS, RADIUS, SPACING } from '../../constants/theme';
+import { COLORS, FONTS, RADIUS, SPACING, MAX_FONT_SCALE } from '../../constants/theme';
 import api, { errorMessage } from '../../lib/api';
 import { isOffline } from '../../lib/net';
 import { PAPER, getNote, getNoteById, markDeleted, mergeFromServer, newContext, putNote } from '../../lib/notesStore';
@@ -175,8 +175,8 @@ export default function NoteScreen() {
                 <AppText style={styles.refText}>{refText.current}</AppText>
               </View>
             ) : null}
-            <TextInput value={title} onChangeText={(t) => { setTitle(t); changed(); }} placeholder="Title" placeholderTextColor={COLORS.gray500} style={styles.title} maxLength={160} />
-            <TextInput value={body} onChangeText={(t) => { setBody(t); changed(); }} placeholder="Write what God is showing you…" placeholderTextColor={COLORS.gray500} style={styles.body} multiline textAlignVertical="top" scrollEnabled={false} />
+            <TextInput maxFontSizeMultiplier={MAX_FONT_SCALE} value={title} onChangeText={(t) => { setTitle(t); changed(); }} placeholder="Title" placeholderTextColor={COLORS.gray500} style={styles.title} maxLength={160} />
+            <TextInput maxFontSizeMultiplier={MAX_FONT_SCALE} value={body} onChangeText={(t) => { setBody(t); changed(); }} placeholder="Write what God is showing you…" placeholderTextColor={COLORS.gray500} style={styles.body} multiline textAlignVertical="top" scrollEnabled={false} />
             <View style={styles.colors}>
               {Object.entries(PAPER).map(([key, hex]) => (
                 <Pressable key={key} onPress={() => { setColor(key); changed(); }} accessibilityRole="button" accessibilityLabel={`${key} paper`} style={[styles.dot, { backgroundColor: hex }, color === key && styles.dotOn]} />

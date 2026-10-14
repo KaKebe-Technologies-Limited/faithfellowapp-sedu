@@ -13,7 +13,7 @@ import Button from '../../../../components/Button';
 import EventForm from '../../../../components/EventForm';
 import ScreenHeader from '../../../../components/ScreenHeader';
 import StateView from '../../../../components/StateView';
-import { COLORS, FONTS, RADIUS, SHADOW, SPACING } from '../../../../constants/theme';
+import { COLORS, FONTS, RADIUS, SHADOW, SPACING, MAX_FONT_SCALE } from '../../../../constants/theme';
 import { adminApi } from '../../../../lib/admin';
 import { errorMessage } from '../../../../lib/api';
 import { dayAndTime, formatMoney } from '../../../../lib/format';
@@ -97,7 +97,7 @@ export default function AdminEvent() {
               <AppText style={styles.h}>Door check-in</AppText>
               <Button title="Scan QR tickets" onPress={openScanner} />
               <View style={styles.codeRow}>
-                <TextInput value={code} onChangeText={(t) => setCode(t.toUpperCase())} placeholder="Or type the code" placeholderTextColor={COLORS.gray500} autoCapitalize="characters" style={styles.codeInput} onSubmitEditing={() => { checkIn(code); setCode(''); }} />
+                <TextInput maxFontSizeMultiplier={MAX_FONT_SCALE} value={code} onChangeText={(t) => setCode(t.toUpperCase())} placeholder="Or type the code" placeholderTextColor={COLORS.gray500} autoCapitalize="characters" style={styles.codeInput} onSubmitEditing={() => { checkIn(code); setCode(''); }} />
                 <Button title="Check in" small onPress={() => { checkIn(code); setCode(''); }} disabled={!code.trim()} />
               </View>
               {result ? (

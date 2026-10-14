@@ -13,7 +13,7 @@ import PassageView from '../../components/PassageView';
 import ScreenHeader from '../../components/ScreenHeader';
 import StateView from '../../components/StateView';
 import TextField from '../../components/TextField';
-import { COLORS, FONTS, RADIUS, SHADOW, SPACING } from '../../constants/theme';
+import { COLORS, FONTS, RADIUS, SHADOW, SPACING, MAX_FONT_SCALE } from '../../constants/theme';
 import api, { errorMessage, mediaUrl } from '../../lib/api';
 import { timeAgo } from '../../lib/format';
 import { useFetch } from '../../lib/useFetch';
@@ -161,7 +161,7 @@ export default function CircleScreen() {
 
               <View style={styles.compose}>
                 <AppText style={styles.h3}>{mine?.done ? 'Your summary' : 'Finished reading? Share what stood out'}</AppText>
-                <TextInput value={text} onChangeText={setSummary} placeholder="A verse that spoke to you, a question, a prayer…" placeholderTextColor={COLORS.gray500} multiline style={styles.input} maxLength={3000} textAlignVertical="top" />
+                <TextInput maxFontSizeMultiplier={MAX_FONT_SCALE} value={text} onChangeText={setSummary} placeholder="A verse that spoke to you, a question, a prayer…" placeholderTextColor={COLORS.gray500} multiline style={styles.input} maxLength={3000} textAlignVertical="top" />
                 <Button title={mine?.done ? 'Update summary' : "I've read it — tell my partners"} onPress={complete} loading={busy} />
               </View>
 

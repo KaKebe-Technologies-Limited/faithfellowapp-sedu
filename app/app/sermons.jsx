@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { SermonListCard } from '../components/ListCards';
 import ScreenHeader from '../components/ScreenHeader';
 import StateView from '../components/StateView';
-import { COLORS, FONTS, RADIUS, SPACING } from '../constants/theme';
+import { COLORS, FONTS, RADIUS, SPACING, MAX_FONT_SCALE } from '../constants/theme';
 import { useFetch } from '../lib/useFetch';
 
 export default function SermonsScreen() {
@@ -20,7 +20,7 @@ export default function SermonsScreen() {
       <ScreenHeader title="Sermons" subtitle="From the churches you follow" />
       <View style={styles.search}>
         <Ionicons name="search" size={18} color={COLORS.gray700} />
-        <TextInput
+        <TextInput maxFontSizeMultiplier={MAX_FONT_SCALE}
           value={query}
           onChangeText={setQuery}
           onSubmitEditing={() => setSearch(query.trim())}

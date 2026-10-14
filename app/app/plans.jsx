@@ -12,7 +12,7 @@ import ChurchAvatar from '../components/ChurchAvatar';
 import ScreenHeader from '../components/ScreenHeader';
 import SectionHeader from '../components/SectionHeader';
 import StateView from '../components/StateView';
-import { COLORS, FONTS, RADIUS, SHADOW, SPACING } from '../constants/theme';
+import { COLORS, FONTS, RADIUS, SHADOW, SPACING, MAX_FONT_SCALE } from '../constants/theme';
 import api, { errorMessage, fieldErrors, mediaUrl } from '../lib/api';
 import { useFetch } from '../lib/useFetch';
 
@@ -98,7 +98,7 @@ export default function PlansScreen() {
           <ScrollView contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" refreshControl={<RefreshControl refreshing={refreshing} onRefresh={reload} tintColor={COLORS.primary} colors={[COLORS.primary]} />}>
             <View style={styles.join}>
               <Ionicons name="people-outline" size={20} color={COLORS.primary} />
-              <TextInput value={code} onChangeText={(t) => setCode(t.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6))} placeholder="Reading partner's code" placeholderTextColor={COLORS.gray500} style={styles.codeInput} autoCapitalize="characters" maxLength={6} onSubmitEditing={join} />
+              <TextInput maxFontSizeMultiplier={MAX_FONT_SCALE} value={code} onChangeText={(t) => setCode(t.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6))} placeholder="Reading partner's code" placeholderTextColor={COLORS.gray500} style={styles.codeInput} autoCapitalize="characters" maxLength={6} onSubmitEditing={join} />
               <Button title="Join" small loading={joining} onPress={join} />
             </View>
             {codeError ? <AppText style={styles.err}>{codeError}</AppText> : null}

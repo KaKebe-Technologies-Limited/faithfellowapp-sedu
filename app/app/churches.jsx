@@ -11,7 +11,7 @@ import Card from '../components/Card';
 import ChurchAvatar from '../components/ChurchAvatar';
 import ScreenHeader from '../components/ScreenHeader';
 import StateView from '../components/StateView';
-import { COLORS, FONTS, RADIUS, SPACING } from '../constants/theme';
+import { COLORS, FONTS, RADIUS, SPACING, MAX_FONT_SCALE } from '../constants/theme';
 import api, { errorMessage } from '../lib/api';
 import { useFetch } from '../lib/useFetch';
 
@@ -74,7 +74,7 @@ export default function ChurchesScreen() {
       {tab === 'discover' ? (
         <View style={styles.search}>
           <Ionicons name="search" size={18} color={COLORS.gray700} />
-          <TextInput
+          <TextInput maxFontSizeMultiplier={MAX_FONT_SCALE}
             value={query}
             onChangeText={setQuery}
             onSubmitEditing={() => setSearch(query.trim())}

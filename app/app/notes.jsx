@@ -8,7 +8,7 @@ import { router } from 'expo-router';
 import AppText from '../components/AppText';
 import ScreenHeader from '../components/ScreenHeader';
 import StateView from '../components/StateView';
-import { COLORS, FONTS, RADIUS, SHADOW, SPACING } from '../constants/theme';
+import { COLORS, FONTS, RADIUS, SHADOW, SPACING, MAX_FONT_SCALE } from '../constants/theme';
 import { excerpt, timeAgo } from '../lib/format';
 import { useNotes } from '../lib/notesSync';
 import { newContext } from '../lib/notesStore';
@@ -36,7 +36,7 @@ export default function NotesScreen() {
     <View style={{ paddingHorizontal: SPACING.md, gap: 10, paddingBottom: 10 }}>
       <View style={styles.search}>
         <Ionicons name="search" size={18} color={COLORS.gray700} />
-        <TextInput value={query} onChangeText={setQuery} returnKeyType="search" placeholder="Search your notes" placeholderTextColor={COLORS.gray500} style={styles.input} />
+        <TextInput maxFontSizeMultiplier={MAX_FONT_SCALE} value={query} onChangeText={setQuery} returnKeyType="search" placeholder="Search your notes" placeholderTextColor={COLORS.gray500} style={styles.input} />
       </View>
       <View style={styles.chips}>
         {KINDS.map((k) => (
