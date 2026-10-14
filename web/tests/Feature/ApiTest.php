@@ -27,8 +27,18 @@ function apiMember(): array
 test('the API health check answers without a token', function () {
     $this->getJson('/api/ping')->assertOk()
         ->assertJson(['status' => 'ok', 'service' => 'FaithFellows API', 'version' => '1.0.0'])
-        ->assertJsonStructure(['time'])
+        ->assertJsonStructure(['time', 'release'])
         ->assertHeader('Cache-Control', 'no-store, private');
+});
+
+test('the health check says which update is live once a release file exists', function () {
+    file_put_contents(base_path('RELEASE'), "abc1234 2026-10-14 10:00 UTC\n");
+
+    try {
+        $this->getJson('/api/ping')->assertOk()->assertJson(['release' => 'abc1234 2026-10-14 10:00 UTC']);
+    } finally {
+        unlink(base_path('RELEASE'));
+    }
 });
 
 test('browsers get CORS headers on the API; credentials are not offered', function () {

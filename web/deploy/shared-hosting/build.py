@@ -20,6 +20,7 @@ The database file is made on a throwaway database on this computer (ff_export), 
 (ff_verify), and both are dropped at the end. Settings come from web/.env.production (see docs/DEPLOYMENT_SHARED_HOSTING.md).
 """
 import base64
+import datetime
 import json
 import os
 import pathlib
@@ -297,6 +298,11 @@ def build_stage(stage, for_git=False):
     say('Installing the PHP packages for production (no development tools)')
     env = {**os.environ, 'COMPOSER_PROCESS_TIMEOUT': '0', 'APP_KEY': 'base64:' + 'A' * 43 + '=', 'APP_ENV': 'production'}
     run([*composer(), 'install', '--no-dev', '--optimize-autoloader', '--no-interaction', '--no-progress'], cwd=stage, env=env, capture=True)
+
+    # Shown by https://faithfellows.com/api/ping as "release", so you can see which update is live.
+    sha = os.environ.get('GITHUB_SHA') or run(['git', 'rev-parse', 'HEAD'], cwd=WEB, capture=True, check=False).stdout.strip()
+    stamp = datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d %H:%M UTC')
+    (stage / 'RELEASE').write_text(f'{sha[:7] or "unknown"} {stamp}\n', encoding='utf-8', newline='\n')
 
     if for_git:
         for cache in (stage / 'bootstrap' / 'cache').glob('*.php'):

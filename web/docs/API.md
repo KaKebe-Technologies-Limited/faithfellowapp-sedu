@@ -19,7 +19,7 @@ This is a JSON REST API for the FaithFellows mobile app and integrations.
 
 ### `GET /api/ping`
 
-Public and never cached. It lives at `/api/ping` (not under `/v1`). Returns `{"status": "ok", "service": "FaithFellows API", "version": "1.0.0", "time": "2026-10-12T18:26:40+03:00"}`. The mobile app and uptime monitors use it to tell "server unreachable" from other errors.
+Public and never cached. It lives at `/api/ping` (not under `/v1`). Returns `{"status": "ok", "service": "FaithFellows API", "version": "1.0.0", "release": "799c4cc 2026-10-14 10:20 UTC", "time": "2026-10-12T18:26:40+03:00"}`. `release` is the commit and time of the build that is live (`null` in development), so you can see that an update has landed. The mobile app and uptime monitors use it to tell "server unreachable" from other errors.
 
 ---
 
