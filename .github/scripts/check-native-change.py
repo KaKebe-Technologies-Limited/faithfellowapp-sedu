@@ -54,6 +54,8 @@ def main(before, after):
             reasons.append(f'the package {name} was removed')
     if show_text(before, 'app/app.config.js') != show_text(after, 'app/app.config.js'):
         reasons.append('app.config.js changed (it adds config plugins and build settings)')
+    if show_text(before, 'app/google-services.json') != show_text(after, 'app/google-services.json'):
+        reasons.append('google-services.json changed (the Firebase settings inside the APK)')
     old_expo, new_expo = old_app.get('expo', {}), new_app.get('expo', {})
     for key in NATIVE_KEYS:
         if old_expo.get(key) != new_expo.get(key):

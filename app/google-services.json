@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "385660439935",
+    "project_id": "faithfellows-18738",
+    "storage_bucket": "faithfellows-18738.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:385660439935:android:aeb337ef49cbc61dfa5e4a",
+        "android_client_info": {
+          "package_name": "tech.kakebe.faithfellows"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBVq02tmLKM12RX7mSAbTK_4BN0ZKrHddE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
