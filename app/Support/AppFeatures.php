@@ -4,6 +4,7 @@ namespace App\Support;
 
 use App\Models\Church;
 use App\Models\User;
+use Illuminate\Database\QueryException;
 
 /**
  * Which platform features a person sees in the app: podcasts, the hymn book and the gospel radio.
@@ -38,7 +39,12 @@ class AppFeatures
             return $all;
         }
 
-        $churches = Church::whereIn('id', $ids)->where('status', 'active')->get(array_column(self::FEATURES, 'column'));
+        try {
+            $churches = Church::whereIn('id', $ids)->where('status', 'active')->get(array_column(self::FEATURES, 'column'));
+        } catch (QueryException) {
+            // An update is live but its database change has not run yet (the scheduler applies it within a minute): show everything.
+            return $all;
+        }
         if ($churches->isEmpty()) {
             return $all;
         }
