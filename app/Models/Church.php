@@ -40,7 +40,7 @@ class Church extends Model implements HasMedia
     protected static function booted(): void
     {
         // Every church starts with a few common giving reasons it can change.
-        static::created(fn (Church $church) => GivingReason::seedDefaults($church));
+        static::created(fn (Church $church) => rescue(fn () => GivingReason::seedDefaults($church), report: false));
     }
 
     protected $fillable = [

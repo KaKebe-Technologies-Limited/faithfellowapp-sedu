@@ -59,6 +59,8 @@ class DonationService
         }
 
         $donation = Donation::create([
+            // The reason's name and id are only written when there is one, so a gift still works before the database update that added them.
+            ...($reason ? ['giving_reason_id' => $reason->id, 'reason' => $reason->name] : []),
             'church_id' => $church->id,
             'user_id' => $user?->id,
             'campaign_id' => $data['campaign_id'] ?? null,
@@ -69,8 +71,6 @@ class DonationService
             'small_group_id' => $data['small_group_id'] ?? null,
             'branch_id' => $data['branch_id'] ?? null,
             'category' => $data['category'],
-            'giving_reason_id' => $reason?->id,
-            'reason' => $reason?->name,
             'amount' => $data['amount'],
             'currency' => $data['currency'] ?? config('faithfellows.currency'),
             'method' => $method,
@@ -100,7 +100,7 @@ class DonationService
     {
         $reason = ! empty($data['reason_id']) ? GivingReason::where('church_id', $church->id)->active()->find($data['reason_id']) : null;
         $recurring = RecurringGift::create([
-            'church_id' => $church->id, 'user_id' => $user->id, 'campaign_id' => $data['campaign_id'] ?? null, 'giving_reason_id' => $reason?->id,
+            'church_id' => $church->id, 'user_id' => $user->id, 'campaign_id' => $data['campaign_id'] ?? null, ...($reason ? ['giving_reason_id' => $reason->id] : []),
             'category' => $reason?->category ?? $data['category'] ?? 'tithe', 'amount' => $data['amount'], 'currency' => config('faithfellows.currency'),
             'frequency' => $data['recurring'], 'method' => $data['method'], 'phone' => $data['phone'] ?? null,
             'next_run_on' => today(), 'status' => 'active',

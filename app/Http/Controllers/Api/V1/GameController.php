@@ -37,10 +37,10 @@ class GameController extends Controller
             'live' => QuizSession::active()->with(['quiz', 'church.media'])->withCount('players')->whereIn('church_id', $churchIds)->latest()->get()->map($card)->values(),
             'recent' => QuizSession::where('status', 'finished')->with(['quiz', 'church.media'])->withCount('players')->whereIn('church_id', $churchIds)->latest('finished_at')->take(9)->get()->map($card)->values(),
             // Community games: invitations waiting for you, and the games you started that nobody has finished yet.
-            'invites' => QuizInvite::with(['session.quiz', 'inviter'])->where('user_id', $user->id)->whereHas('session', fn ($q) => $q->active())->latest()->take(10)->get()
-                ->map(fn (QuizInvite $i) => ['session_id' => $i->quiz_session_id, 'quiz' => $i->session->quiz->title, 'emoji' => $i->session->quiz->emoji, 'from' => $i->inviter?->name, 'status' => $i->session->status, 'at' => $i->created_at?->toIso8601String()])->values(),
-            'hosting' => QuizSession::active()->whereNull('church_id')->where('host_id', $user->id)->with('quiz')->withCount('players')->latest()->get()
-                ->map(fn (QuizSession $s) => ['id' => $s->id, 'quiz' => $s->quiz->title, 'emoji' => $s->quiz->emoji, 'pin' => $s->pin, 'status' => $s->status, 'players_count' => (int) $s->players_count])->values(),
+            'invites' => rescue(fn () => QuizInvite::with(['session.quiz', 'inviter'])->where('user_id', $user->id)->whereHas('session', fn ($q) => $q->active())->latest()->take(10)->get()
+                ->map(fn (QuizInvite $i) => ['session_id' => $i->quiz_session_id, 'quiz' => $i->session->quiz->title, 'emoji' => $i->session->quiz->emoji, 'from' => $i->inviter?->name, 'status' => $i->session->status, 'at' => $i->created_at?->toIso8601String()])->values(), [], false),
+            'hosting' => rescue(fn () => QuizSession::active()->whereNull('church_id')->where('host_id', $user->id)->with('quiz')->withCount('players')->latest()->get()
+                ->map(fn (QuizSession $s) => ['id' => $s->id, 'quiz' => $s->quiz->title, 'emoji' => $s->quiz->emoji, 'pin' => $s->pin, 'status' => $s->status, 'players_count' => (int) $s->players_count])->values(), [], false),
             'mine' => QuizPlayer::with('session.quiz')->where('user_id', $user->id)->latest()->take(5)->get()->map(fn (QuizPlayer $p) => [
                 'session_id' => $p->quiz_session_id, 'quiz' => $p->session?->quiz?->title, 'score' => (int) $p->score, 'correct' => (int) $p->correct_count, 'at' => $p->created_at?->toIso8601String(),
             ])->values(),
