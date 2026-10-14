@@ -515,6 +515,7 @@ Route::prefix('super-admin')->name('super-admin.')
         Route::get('/churches/create', [SuperAdmin\ChurchController::class, 'create'])->name('churches.create');
         Route::post('/churches', [SuperAdmin\ChurchController::class, 'store'])->name('churches.store');
         Route::get('/churches/{church:id}', [SuperAdmin\ChurchController::class, 'show'])->name('churches.show');
+        Route::get('/churches/{church:id}/manage', [SuperAdmin\ChurchController::class, 'manage'])->name('churches.manage');
         Route::patch('/churches/{church:id}', [SuperAdmin\ChurchController::class, 'update'])->name('churches.update');
         Route::post('/churches/{church:id}/approve', [SuperAdmin\ChurchController::class, 'approve'])->name('churches.approve');
         Route::post('/churches/{church:id}/suspend', [SuperAdmin\ChurchController::class, 'suspend'])->name('churches.suspend');

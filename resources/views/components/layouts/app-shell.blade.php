@@ -18,6 +18,13 @@
             </form>
         </div>
     @endif
+    @if ($area === 'church-admin' && auth()->user()?->isSuperAdmin() && ! session('impersonator_id') && app()->bound('currentChurch'))
+        <div class="ff-impersonation-bar">
+            <i class="bi bi-shield-lock me-1"></i>
+            {{ __('You are managing :church as the super admin. What you change is recorded.', ['church' => app('currentChurch')->name]) }}
+            <a href="{{ route('super-admin.churches.show', app('currentChurch')) }}" class="btn btn-sm btn-dark rounded-pill ms-2 py-0">{{ __('Back to Super admin') }}</a>
+        </div>
+    @endif
     @include('partials.lite-banner')
     @include('partials.global-announcement')
 

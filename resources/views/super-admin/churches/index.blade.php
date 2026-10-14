@@ -39,7 +39,10 @@
                             <td>{{ $church->staff_members_count }}</td>
                             <td><x-ff.status :status="$church->status" /></td>
                             <td class="small text-ff-muted">{{ $church->created_at->format('j M Y') }}</td>
-                            <td class="text-end"><a href="{{ route('super-admin.churches.show', $church) }}" class="btn btn-sm btn-ff-soft">{{ __('Open') }}</a></td>
+                            <td class="text-end text-nowrap">
+                                @if ($church->status === 'active')<a href="{{ route('super-admin.churches.manage', $church) }}" class="btn btn-sm btn-ff-primary"><i class="bi bi-box-arrow-in-right"></i> {{ __('Manage') }}</a>@endif
+                                <a href="{{ route('super-admin.churches.show', $church) }}" class="btn btn-sm btn-ff-soft">{{ __('Open') }}</a>
+                            </td>
                         </tr>
                     @empty
                         <tr><td colspan="7"><x-ff.empty-state icon="bi-buildings" :title="__('No churches yet')" class="border-0" /></td></tr>

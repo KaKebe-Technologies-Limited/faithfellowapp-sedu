@@ -8,6 +8,7 @@ use App\Models\AuditLog;
 use App\Models\Church;
 use App\Services\AnalyticsService;
 use App\Services\ChurchOnboardingService;
+use App\Support\Audit;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -51,6 +52,14 @@ class ChurchController extends Controller
 
         return redirect()->route('super-admin.churches.show', $church)
             ->with('success', __(':church was created and the admin was invited.', ['church' => $church->name]));
+    }
+
+    /** Opens the church's own admin area as the super admin (to help or fix something); the visit is recorded. */
+    public function manage(Church $church): RedirectResponse
+    {
+        Audit::log('church.managed', $church, __(':admin opened :church to manage it', ['admin' => auth()->user()->name, 'church' => $church->name]), [], [], $church->id);
+
+        return redirect()->route('church-admin.dashboard', $church);
     }
 
     public function show(Church $church): View

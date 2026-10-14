@@ -67,7 +67,8 @@ trait HasChurchMemberships
         $membership = $this->staffMembershipFor($churchId);
 
         $permissions = match (true) {
-            $membership === null => null,
+            // A super admin is not on a church's staff but may do everything in it (managing a church to help it).
+            $membership === null => $this->isSuperAdmin() ? ChurchRole::catalog() : null,
             $membership->is_admin => ChurchRole::catalog(),
             default => $membership->role?->permissions ?? [],
         };
