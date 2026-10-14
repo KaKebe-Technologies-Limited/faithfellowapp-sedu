@@ -1,0 +1,13 @@
+/.env
+/.env.*
+!/.env.example
+/public/hot
+/public/storage
+/bootstrap/cache/*.php
+/storage/app/public/*
+/storage/app/private/*
+/storage/logs/*
+/storage/framework/cache/data/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+!.gitkeep

@@ -1,0 +1,298 @@
+/* ==========================================================================
+   Fellowship features (Sprint 10): Bible, note taker, home slider,
+   reading circles, live quiz, notification pop-ups
+   ========================================================================== */
+
+/* ── Bible reader ──────────────────────────────────────────────────────── */
+.ff-bible-page { max-width: 760px; margin-inline: auto; }
+.ff-bible-toolbar {
+    position: sticky; top: calc(var(--ff-topbar-height, 64px) + 8px); z-index: 5;
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    padding: 8px 10px; border-radius: var(--ff-radius-full, 999px);
+    background: rgba(255, 255, 255, .92); backdrop-filter: blur(10px);
+    box-shadow: 0 6px 24px rgba(0, 0, 0, .06); border: 1px solid rgba(0, 0, 0, .05);
+}
+.ff-bible-toolbar .form-select { border-radius: 999px; width: auto; font-weight: 600; font-size: .85rem; }
+.ff-scripture {
+    font-family: Georgia, "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Cambria, serif;
+    color: #2a2326; line-height: 1.85; letter-spacing: .005em;
+}
+.ff-scripture-heading { font-family: var(--ff-font); text-align: center; margin: 32px 0 20px; }
+.ff-scripture-heading .ff-eyebrow { justify-content: center; }
+.ff-scripture-heading h1, .ff-scripture-heading h2 { font-weight: 700; color: var(--ff-black, #1a1a1a); margin: 4px 0 0; }
+.ff-chapter-drop {
+    float: left; font-family: var(--ff-font); font-weight: 700; color: var(--ff-primary, #BC2649);
+    font-size: 3.6em; line-height: .82; margin: 6px 12px 0 0;
+}
+.ff-verse { cursor: pointer; border-radius: 6px; padding: 1px 0; transition: background .2s, box-shadow .2s; -webkit-tap-highlight-color: transparent; outline: none; }
+.ff-verse:hover { background: rgba(188, 38, 73, .05); }
+.ff-verse:focus-visible { box-shadow: 0 0 0 2px var(--ff-primary, #BC2649); }
+.ff-verse sup {
+    font-family: var(--ff-font); font-size: .58em; font-weight: 700; color: var(--ff-primary, #BC2649);
+    margin: 0 3px 0 6px; vertical-align: .55em; user-select: none;
+}
+/* Saved highlights (marker-pen look) */
+.ff-verse[data-hl="yellow"] { background: #FFF1A8; }
+.ff-verse[data-hl="green"] { background: #D3F2DB; }
+.ff-verse[data-hl="blue"] { background: #DCEBFF; }
+.ff-verse[data-hl="pink"] { background: #FFDCEA; }
+.ff-verse[data-hl]:hover { filter: saturate(1.15); }
+/* Tapped verses: a dotted underline + side bar, so a highlight colour stays visible */
+.ff-verse.is-selected { box-shadow: inset 0 -2px 0 var(--ff-primary, #BC2649); }
+.ff-verse.is-selected:not([data-hl]) { background: rgba(188, 38, 73, .08); }
+/* Jumped-to verse (from a link like John 3:16) */
+.ff-verse.is-target { animation: ff-verse-target 2.4s ease 1; }
+@keyframes ff-verse-target { 0%, 60% { background: rgba(188, 38, 73, .16); } 100% { background: transparent; } }
+.ff-verse[data-hl].is-target { animation: none; }
+
+/* One verse per line: number in a gutter, text in a clean column */
+.ff-scripture.is-lines { line-height: 1.7; }
+.ff-scripture.is-lines .ff-chapter-drop { display: none; }
+.ff-scripture.is-lines .ff-verse { display: block; position: relative; padding: 7px 12px 7px 46px; margin: 2px 0; border-radius: 12px; }
+.ff-scripture.is-lines .ff-verse sup {
+    position: absolute; left: 6px; top: .62em; width: 30px; margin: 0; text-align: right;
+    font-size: .62em; vertical-align: baseline; line-height: 1.7; opacity: .9;
+}
+.ff-scripture.is-lines .ff-verse.is-selected { box-shadow: inset 3px 0 0 var(--ff-primary, #BC2649); }
+.ff-scripture.is-lines .ff-passage-section h3 { margin-left: 12px; }
+.ff-verse-hint { text-align: center; }
+
+/* Floating verse actions */
+.ff-verse-bar {
+    position: fixed; left: 50%; bottom: max(20px, env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 1050;
+    width: min(560px, calc(100vw - 24px)); padding: 10px 12px 12px;
+    background: #1d1416; color: #fff; border-radius: 20px; box-shadow: 0 18px 44px rgba(0, 0, 0, .32);
+}
+.ff-verse-bar-top { display: flex; align-items: center; gap: 8px; padding: 0 2px 8px 6px; font-size: .9rem; min-width: 0; }
+.ff-verse-bar-actions { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.ff-verse-bar .btn { color: #fff; border-radius: 999px; font-size: .85rem; font-weight: 600; padding: 6px 12px; }
+.ff-verse-bar .btn:hover { background: rgba(255, 255, 255, .12); }
+.ff-hl-swatches { display: flex; align-items: center; gap: 8px; padding: 4px 10px 4px 4px; margin-right: auto; }
+.ff-hl-swatch {
+    width: 28px; height: 28px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, .25); background: var(--sw);
+    padding: 0; display: inline-flex; align-items: center; justify-content: center; transition: transform .15s, border-color .15s;
+}
+.ff-hl-swatch:hover { transform: scale(1.12); }
+.ff-hl-swatch.is-on { border-color: #fff; box-shadow: 0 0 0 2px rgba(255, 255, 255, .35); }
+.ff-hl-swatch.is-clear { background: rgba(255, 255, 255, .12); color: #fff; font-size: .85rem; }
+@media (max-width: 480px) {
+    /* Colours on one row, labelled actions on the next */
+    .ff-hl-swatches { flex-basis: 100%; justify-content: center; margin: 0 0 6px; padding: 2px 0 8px; border-bottom: 1px solid rgba(255, 255, 255, .1); }
+    .ff-verse-bar .ff-verse-bar-actions .btn { flex: 1; }
+}
+@media (max-width: 575.98px) {
+    .ff-bible-toolbar { flex-wrap: nowrap; gap: 2px; padding: 6px 8px; }
+    .ff-bible-toolbar .form-select { max-width: 80px; padding-left: .6rem; padding-right: 1.6rem; background-position: right .45rem center; }
+    .ff-bible-toolbar .btn { padding-left: .45rem; padding-right: .45rem; }
+}
+/* Recent highlights on the Bible home */
+.ff-hl-card { display: block; height: 100%; padding: 14px 16px; border-radius: 16px; border-left: 5px solid var(--sw); background: #fff; box-shadow: 0 4px 18px rgba(0, 0, 0, .05); color: var(--ff-black, #1a1a1a); }
+.ff-hl-card:hover { text-decoration: none; box-shadow: 0 8px 26px rgba(0, 0, 0, .09); }
+.ff-hl-card .ff-scripture { font-size: 1rem; line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.ff-hl-card mark { padding: 0 2px; border-radius: 4px; background: var(--sw-soft); }
+.ff-chapter-nav { display: flex; justify-content: space-between; gap: 12px; margin: 40px 0 12px; }
+.ff-chapter-nav a { flex: 1; padding: 14px 18px; border-radius: var(--ff-radius-lg, 16px); background: #fff; border: 1px solid rgba(0, 0, 0, .06); color: var(--ff-black, #1a1a1a); }
+.ff-chapter-nav a:hover { border-color: var(--ff-primary, #BC2649); text-decoration: none; }
+.ff-chapter-nav small { display: block; color: var(--ff-gray-700, #727272); font-size: .75rem; }
+.ff-chapter-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(44px, 1fr)); gap: 6px; }
+.ff-chapter-grid a { display: flex; align-items: center; justify-content: center; height: 40px; border-radius: 10px; background: var(--ff-gray-100, #f1f1f1); color: var(--ff-black, #1a1a1a); font-weight: 600; font-size: .85rem; }
+.ff-chapter-grid a:hover, .ff-chapter-grid a.active { background: var(--ff-primary, #BC2649); color: #fff; text-decoration: none; }
+.ff-book-list { columns: 2 180px; column-gap: 24px; }
+.ff-book-list details { break-inside: avoid; margin-bottom: 4px; }
+.ff-book-list summary { list-style: none; cursor: pointer; padding: 7px 10px; border-radius: 10px; font-weight: 600; color: var(--ff-black, #1a1a1a); display: flex; justify-content: space-between; }
+.ff-book-list summary::-webkit-details-marker { display: none; }
+.ff-book-list summary:hover, .ff-book-list details[open] summary { background: var(--ff-primary-mist, #FFE9F5); color: var(--ff-primary-dark, #8E1C37); }
+.ff-book-list summary small { color: var(--ff-gray-500, #a5a5a5); font-weight: 500; }
+.ff-book-list .ff-chapter-grid { padding: 8px 4px 12px; }
+.ff-bible-hero {
+    position: relative; overflow: hidden; border-radius: var(--ff-radius-xl, 24px); padding: 32px;
+    background: radial-gradient(circle at 85% 20%, rgba(255, 255, 255, .18), transparent 40%), linear-gradient(135deg, #2b1220 0%, #6e1530 55%, #BC2649 100%); color: #fff;
+}
+.ff-bible-hero .ff-scripture { color: #fff; font-size: 1.35rem; line-height: 1.6; }
+.ff-passage-section + .ff-passage-section { margin-top: 28px; }
+.ff-passage-section h3 { font-family: var(--ff-font); font-size: .8rem; letter-spacing: .1em; text-transform: uppercase; color: var(--ff-primary, #BC2649); margin-bottom: 8px; }
+.ff-passage-skeleton span { display: block; height: 14px; border-radius: 6px; background: linear-gradient(90deg, #f1f1f1, #fafafa, #f1f1f1); background-size: 200% 100%; animation: ff-shimmer 1.2s infinite; margin-bottom: 10px; }
+@keyframes ff-shimmer { to { background-position: -200% 0; } }
+
+/* ── Note taker (slide-out notebook) ──────────────────────────────────── */
+.ff-notes-fab {
+    position: fixed; right: 20px; bottom: 22px; z-index: 1040;
+    display: inline-flex; align-items: center; gap: 8px; padding: 12px 18px; border: 0; border-radius: 999px;
+    background: #1d1416; color: #fff; font-weight: 600; box-shadow: 0 14px 34px rgba(0, 0, 0, .25);
+}
+.ff-notes-fab:hover { background: #000; }
+.ff-notes-fab .dot { width: 8px; height: 8px; border-radius: 50%; background: #F7B2D1; }
+.ff-notes-panel {
+    position: fixed; top: 0; right: 0; bottom: 0; z-index: 1060; width: min(420px, 100vw);
+    display: flex; flex-direction: column; background: #FFFDF7; box-shadow: -18px 0 50px rgba(0, 0, 0, .14);
+    border-left: 1px solid rgba(0, 0, 0, .06);
+}
+.ff-notes-panel[data-color="rose"] { background: #FDF0F3; }
+.ff-notes-panel[data-color="sky"] { background: #EEF5FF; }
+.ff-notes-panel[data-color="mint"] { background: #EDF9F2; }
+.ff-notes-panel[data-color="sun"] { background: #FFF8E6; }
+.ff-notes-head { padding: 18px 20px 10px; border-bottom: 1px dashed rgba(0, 0, 0, .1); }
+.ff-notes-head .ff-notes-ref { font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; font-weight: 700; color: var(--ff-primary, #BC2649); }
+.ff-notes-title { border: 0; background: transparent; width: 100%; font-size: 1.25rem; font-weight: 700; color: var(--ff-black, #1a1a1a); padding: 2px 0; }
+.ff-notes-title:focus, .ff-notes-body:focus { outline: none; }
+.ff-notes-tools { display: flex; gap: 2px; padding: 6px 14px; border-bottom: 1px solid rgba(0, 0, 0, .05); }
+.ff-notes-tools button { border: 0; background: transparent; border-radius: 8px; padding: 5px 9px; color: var(--ff-gray-900, #575757); font-size: .85rem; }
+.ff-notes-tools button:hover { background: rgba(0, 0, 0, .06); color: var(--ff-black, #1a1a1a); }
+.ff-notes-body {
+    flex: 1; border: 0; resize: none; background: transparent; padding: 14px 20px 20px;
+    font-family: Georgia, "Iowan Old Style", Cambria, serif; font-size: 1.02rem; line-height: 30px; color: #2a2326;
+    background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 29px, rgba(188, 38, 73, .09) 29px, rgba(188, 38, 73, .09) 30px);
+    background-attachment: local; background-position: 0 13px;
+}
+.ff-notes-foot { display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-top: 1px solid rgba(0, 0, 0, .06); font-size: .78rem; color: var(--ff-gray-700, #727272); }
+.ff-notes-swatch { width: 18px; height: 18px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, .15); cursor: pointer; }
+.ff-notes-swatch.active { box-shadow: 0 0 0 2px var(--ff-primary, #BC2649); }
+.ff-notes-backdrop { position: fixed; inset: 0; background: rgba(20, 10, 14, .25); z-index: 1055; }
+@media (min-width: 1400px) {
+    .ff-notes-backdrop { display: none; }
+    /* Wide screens: the notebook docks beside the page instead of covering it. */
+    body.ff-notes-docked .ff-main { margin-right: min(420px, 100vw); transition: margin-right .2s ease; }
+}
+
+.ff-note-card { position: relative; border-radius: var(--ff-radius-lg, 16px); padding: 18px 18px 14px; height: 100%; display: flex; flex-direction: column; gap: 8px; border: 1px solid rgba(0, 0, 0, .06); box-shadow: 0 2px 10px rgba(0, 0, 0, .04); transition: transform .15s, box-shadow .15s; }
+.ff-note-card:hover { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(0, 0, 0, .08); }
+.ff-note-card .ff-note-excerpt { font-family: Georgia, Cambria, serif; color: #3a3134; font-size: .95rem; line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; }
+.ff-note-render { font-family: Georgia, Cambria, serif; font-size: 1.05rem; line-height: 1.75; color: #2a2326; }
+.ff-note-render h4 { font-family: var(--ff-font); font-size: 1.1rem; margin: 18px 0 6px; }
+.ff-note-render blockquote { border-left: 3px solid var(--ff-primary, #BC2649); padding: 4px 0 4px 14px; color: #5c4b50; font-style: italic; margin: 10px 0; }
+
+/* ── Member home slider ───────────────────────────────────────────────── */
+.ff-home-slider { border-radius: var(--ff-radius-xl, 24px); overflow: hidden; box-shadow: 0 18px 40px rgba(60, 10, 25, .18); }
+.ff-home-slider .carousel-item { aspect-ratio: 16 / 7; background: #1d1416; }
+@media (max-width: 575.98px) { .ff-home-slider .carousel-item { aspect-ratio: 4 / 3; } }
+.ff-home-slider img { width: 100%; height: 100%; object-fit: cover; }
+.ff-slide-shade { position: absolute; inset: 0; background: linear-gradient(0deg, rgba(10, 4, 6, .78) 0%, rgba(10, 4, 6, .2) 45%, rgba(10, 4, 6, 0) 70%); }
+.ff-slide-caption { position: absolute; left: 0; right: 0; bottom: 0; padding: 22px 26px 34px; color: #fff; display: flex; align-items: flex-end; gap: 14px; }
+.ff-slide-caption .ff-slide-logo { width: 52px; height: 52px; border-radius: 14px; background: #fff; padding: 3px; flex: 0 0 52px; box-shadow: 0 6px 18px rgba(0, 0, 0, .3); object-fit: cover; }
+.ff-slide-caption h2 { color: #fff; font-size: clamp(1.1rem, 2.4vw, 1.6rem); margin: 0; text-shadow: 0 2px 12px rgba(0, 0, 0, .35); }
+.ff-slide-caption p { margin: 2px 0 0; opacity: .88; font-size: .9rem; }
+.ff-slide-church { font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; font-weight: 700; opacity: .85; }
+.ff-home-slider .carousel-indicators { margin-bottom: 10px; }
+.ff-home-slider .carousel-indicators [data-bs-target] { width: 22px; height: 4px; border-radius: 4px; border: 0; opacity: .5; }
+.ff-home-slider .carousel-indicators .active { opacity: 1; width: 34px; }
+.ff-home-slider .carousel-control-prev, .ff-home-slider .carousel-control-next { width: 56px; opacity: 0; transition: opacity .2s; }
+.ff-home-slider:hover .carousel-control-prev, .ff-home-slider:hover .carousel-control-next { opacity: .9; }
+.ff-slide-thumbs { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+.ff-slide-thumb { position: relative; border-radius: 14px; overflow: hidden; aspect-ratio: 16 / 7; background: #eee; }
+.ff-slide-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.ff-slide-thumb .ff-slide-thumb-actions { position: absolute; top: 6px; right: 6px; display: flex; gap: 4px; }
+.ff-slide-thumb .ff-slide-thumb-label { position: absolute; left: 0; right: 0; bottom: 0; padding: 14px 8px 6px; font-size: .72rem; color: #fff; background: linear-gradient(0deg, rgba(0, 0, 0, .6), transparent); }
+
+/* ── Reading circles ──────────────────────────────────────────────────── */
+.ff-circle-code { font-family: "Space Grotesk", monospace; font-size: 1.8rem; font-weight: 700; letter-spacing: .3em; color: var(--ff-primary-dark, #8E1C37); background: var(--ff-primary-mist, #FFE9F5); border-radius: 14px; padding: 8px 18px; display: inline-block; }
+.ff-circle-member { display: flex; align-items: center; gap: 10px; padding: 8px 0; }
+.ff-circle-member .ff-circle-status { margin-left: auto; font-size: .78rem; font-weight: 600; }
+.ff-summary-card { border-radius: 16px; padding: 14px 16px; background: #FFFDF7; border: 1px solid rgba(0, 0, 0, .06); }
+.ff-summary-card .ff-summary-text { font-family: Georgia, Cambria, serif; line-height: 1.65; color: #3a3134; white-space: pre-line; }
+
+/* ── Live quiz ────────────────────────────────────────────────────────── */
+.ff-quiz-arena { min-height: calc(100vh - 140px); border-radius: var(--ff-radius-xl, 24px); padding: clamp(16px, 3vw, 36px); color: #fff; background: radial-gradient(circle at 20% 10%, rgba(255, 255, 255, .12), transparent 35%), linear-gradient(140deg, #3a0d1d 0%, #7a1733 55%, #BC2649 100%); position: relative; overflow: hidden; }
+.ff-quiz-arena h1, .ff-quiz-arena h2, .ff-quiz-arena h3 { color: #fff; }
+.ff-quiz-pin { font-family: "Space Grotesk", monospace; font-weight: 700; letter-spacing: .18em; font-size: clamp(2.6rem, 7vw, 5.5rem); line-height: 1; }
+.ff-quiz-chip { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px; background: rgba(255, 255, 255, .14); font-weight: 600; animation: ff-pop .35s ease; }
+@keyframes ff-pop { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.ff-quiz-question { font-size: clamp(1.3rem, 3.2vw, 2.4rem); font-weight: 700; text-align: center; background: #fff; color: #1d1416; border-radius: 20px; padding: clamp(16px, 3vw, 28px); box-shadow: 0 20px 40px rgba(0, 0, 0, .25); }
+.ff-quiz-options { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+@media (max-width: 575.98px) { .ff-quiz-options { grid-template-columns: 1fr; } }
+.ff-quiz-option { display: flex; align-items: center; gap: 14px; min-height: 84px; padding: 16px 20px; border: 0; border-radius: 16px; color: #fff; font-size: clamp(1rem, 2vw, 1.25rem); font-weight: 700; text-align: left; box-shadow: inset 0 -5px 0 rgba(0, 0, 0, .18); transition: transform .12s, opacity .2s, filter .2s; }
+.ff-quiz-option:not(:disabled):hover { transform: translateY(-2px); }
+.ff-quiz-option:active { transform: scale(.98); }
+.ff-quiz-option i { font-size: 1.5rem; flex: 0 0 auto; }
+.ff-quiz-option.o0 { background: #E21B3C; } .ff-quiz-option.o1 { background: #1368CE; } .ff-quiz-option.o2 { background: #D89E00; } .ff-quiz-option.o3 { background: #26890C; }
+.ff-quiz-option.is-dim { opacity: .35; filter: grayscale(.4); }
+.ff-quiz-option.is-correct { outline: 4px solid #fff; outline-offset: 2px; }
+.ff-quiz-option.is-picked { outline: 4px dashed rgba(255, 255, 255, .85); outline-offset: 2px; }
+.ff-quiz-option .ff-quiz-count { margin-left: auto; font-size: 1.1rem; background: rgba(0, 0, 0, .18); border-radius: 999px; padding: 2px 12px; }
+.ff-quiz-timer { position: relative; width: 84px; height: 84px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.9rem; font-weight: 700; background: conic-gradient(#fff calc(var(--p, 100) * 1%), rgba(255, 255, 255, .18) 0); }
+.ff-quiz-timer span { width: 70px; height: 70px; border-radius: 50%; background: #5d1229; display: flex; align-items: center; justify-content: center; }
+.ff-quiz-bar { height: 8px; border-radius: 8px; background: rgba(255, 255, 255, .18); overflow: hidden; }
+.ff-quiz-bar > div { height: 100%; background: #fff; transition: width .1s linear; }
+.ff-quiz-board { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
+.ff-quiz-row { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-radius: 14px; background: rgba(255, 255, 255, .1); font-weight: 600; transition: transform .3s; }
+.ff-quiz-row.is-me { background: #fff; color: #7a1733; }
+.ff-quiz-row .ff-quiz-rank { width: 30px; height: 30px; border-radius: 50%; background: rgba(255, 255, 255, .18); display: flex; align-items: center; justify-content: center; font-size: .9rem; flex: 0 0 30px; }
+.ff-quiz-row.is-me .ff-quiz-rank { background: #FFE9F5; }
+.ff-quiz-row .ff-quiz-score { margin-left: auto; font-variant-numeric: tabular-nums; }
+.ff-quiz-podium { display: flex; justify-content: center; align-items: flex-end; gap: 14px; margin: 24px 0; }
+.ff-quiz-podium .p { text-align: center; width: min(30vw, 190px); }
+.ff-quiz-podium .p .block { border-radius: 16px 16px 0 0; display: flex; align-items: flex-start; justify-content: center; padding-top: 12px; font-size: 2rem; font-weight: 800; color: #3a0d1d; }
+.ff-quiz-podium .p1 .block { height: 180px; background: linear-gradient(#FFE07A, #F0B400); }
+.ff-quiz-podium .p2 .block { height: 130px; background: linear-gradient(#F3F3F3, #C9C9C9); }
+.ff-quiz-podium .p3 .block { height: 100px; background: linear-gradient(#F5C49B, #CD7F32); }
+.ff-quiz-podium .name { font-weight: 700; margin-bottom: 8px; word-break: break-word; }
+.ff-quiz-feedback { text-align: center; padding: 28px 16px; border-radius: 20px; }
+.ff-quiz-feedback.is-right { background: #26890C; } .ff-quiz-feedback.is-wrong { background: #E21B3C; }
+.ff-quiz-feedback .big { font-size: 3.2rem; }
+.ff-quiz-q-editor { border-radius: 16px; border: 1px solid rgba(0, 0, 0, .08); padding: 16px; background: #fff; }
+.ff-quiz-q-editor .ff-opt { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+.ff-quiz-q-editor .ff-opt .ff-opt-dot { width: 30px; height: 30px; border-radius: 8px; color: #fff; display: flex; align-items: center; justify-content: center; flex: 0 0 30px; }
+.ff-quiz-card-cover { height: 110px; border-radius: 14px; background: linear-gradient(135deg, #3a0d1d, #BC2649); position: relative; overflow: hidden; color: #fff; display: flex; align-items: flex-end; padding: 12px 14px; }
+/* Live leaderboard (always visible during a game) */
+.ff-quiz-live { border-radius: 20px; padding: 16px; background: rgba(0, 0, 0, .18); backdrop-filter: blur(6px); }
+.ff-quiz-live-head { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.ff-quiz-live-dot { width: 10px; height: 10px; border-radius: 50%; background: #FF5A6E; box-shadow: 0 0 0 0 rgba(255, 90, 110, .7); animation: ff-quiz-pulse 1.6s infinite; }
+@keyframes ff-quiz-pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 90, 110, .6); } 70% { box-shadow: 0 0 0 10px rgba(255, 90, 110, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 90, 110, 0); } }
+.ff-quiz-row .ff-quiz-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ff-quiz-row.is-top { background: rgba(255, 255, 255, .16); }
+.ff-quiz-row.is-top .ff-quiz-rank { background: transparent; font-size: 1.25rem; }
+.ff-quiz-row.is-gap { margin-top: 10px; position: relative; }
+.ff-quiz-row.is-gap::before { content: "⋯"; position: absolute; top: -17px; left: 50%; transform: translateX(-50%); opacity: .6; color: #fff; }
+.ff-quiz-move { font-size: .72rem; font-weight: 700; padding: 1px 6px; border-radius: 999px; flex: 0 0 auto; }
+.ff-quiz-move.is-up { background: rgba(38, 137, 12, .9); color: #fff; }
+.ff-quiz-move.is-down { background: rgba(0, 0, 0, .25); color: #fff; }
+.ff-quiz-row.is-me .ff-quiz-move.is-down { background: #F3D6DD; color: #7a1733; }
+.ff-quiz-streak { font-size: .78rem; flex: 0 0 auto; }
+.ff-quiz-gain { font-size: .8rem; font-weight: 700; color: #7CF29C; flex: 0 0 auto; animation: ff-pop .4s ease; }
+.ff-quiz-row.is-me .ff-quiz-gain { color: #26890C; }
+.ff-quiz-row .ff-quiz-score { font-size: 1.05rem; }
+/* "Next question in 4" */
+.ff-quiz-next { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-radius: 999px; background: rgba(255, 255, 255, .12); font-weight: 600; }
+.ff-quiz-next strong { font-size: 1.25rem; min-width: 1.2em; text-align: center; font-variant-numeric: tabular-nums; }
+.ff-quiz-timer.is-next { --p: 100; font-size: 1.4rem; }
+.ff-quiz-bar.is-urgent > div { background: #FFD24D; }
+.ff-quiz-seconds { min-width: 1.4em; text-align: center; font-variant-numeric: tabular-nums; }
+.ff-quiz-seconds.is-urgent { color: #FFD24D; animation: ff-quiz-tick .5s ease infinite alternate; }
+@keyframes ff-quiz-tick { from { transform: scale(1); } to { transform: scale(1.18); } }
+/* Player: the answer they locked in */
+.ff-quiz-locked { display: grid; gap: 10px; justify-items: center; text-align: center; padding: 8px 0; }
+.ff-quiz-locked .ff-quiz-option { min-height: 64px; min-width: min(320px, 100%); justify-content: center; }
+/* Editor timing note */
+.ff-quiz-howto { display: grid; gap: 6px; padding: 12px 14px; border-radius: 14px; background: var(--ff-primary-mist, #FFE9F5); color: var(--ff-primary-dark, #8E1C37); font-size: .85rem; }
+.ff-quiz-howto i { margin-right: 4px; }
+.ff-quiz-card-cover::after { content: ""; position: absolute; width: 160px; height: 160px; border-radius: 50%; background: rgba(255, 255, 255, .08); right: -40px; top: -60px; }
+
+/* ── In-app notification pop-up cards ─────────────────────────────────── */
+.ff-notif-pops { position: fixed; top: calc(var(--ff-topbar-height, 64px) + 12px); right: 16px; z-index: 1090; display: grid; gap: 10px; width: min(360px, calc(100vw - 32px)); }
+.ff-notif-pop {
+    display: flex; gap: 12px; align-items: flex-start; padding: 14px 14px 14px 16px; border-radius: 18px;
+    background: #fff; color: var(--ff-gray-900, #575757); text-decoration: none; position: relative;
+    box-shadow: 0 18px 44px rgba(40, 8, 20, .22); border: 1px solid rgba(188, 38, 73, .12); animation: ff-slide-in .35s cubic-bezier(.2, .8, .2, 1);
+}
+.ff-notif-pop:hover { text-decoration: none; border-color: var(--ff-primary, #BC2649); }
+.ff-notif-pop.is-leaving { opacity: 0; transform: translateX(30px); transition: .25s; }
+.ff-notif-pop-icon { width: 40px; height: 40px; border-radius: 12px; flex: 0 0 40px; display: flex; align-items: center; justify-content: center; background: var(--ff-gradient-primary, #BC2649); color: #fff; font-size: 1.1rem; }
+.ff-notif-pop-text { min-width: 0; display: grid; gap: 1px; padding-right: 18px; }
+.ff-notif-pop-church { font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; color: var(--ff-primary, #BC2649); }
+.ff-notif-pop-text strong { color: var(--ff-black, #1a1a1a); font-size: .95rem; line-height: 1.3; }
+.ff-notif-pop-body { font-size: .82rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.ff-notif-pop .btn-close { position: absolute; top: 10px; right: 10px; font-size: .6rem; }
+@keyframes ff-slide-in { from { opacity: 0; transform: translateY(-10px) scale(.97); } to { opacity: 1; transform: none; } }
+
+/* ── Church contact gate ──────────────────────────────────────────────── */
+.ff-contact-locked { display: flex; gap: 14px; align-items: center; padding: 16px 18px; border-radius: 16px; background: var(--ff-primary-mist, #FFE9F5); }
+.ff-contact-locked i { font-size: 1.6rem; color: var(--ff-primary, #BC2649); }
+
+/* ── Subscription limit meter ─────────────────────────────────────────── */
+.ff-limit-dots { display: inline-flex; gap: 4px; vertical-align: middle; }
+.ff-limit-dots span { width: 10px; height: 10px; border-radius: 50%; background: var(--ff-gray-300, #cacaca); }
+.ff-limit-dots span.on { background: var(--ff-primary, #BC2649); }
+
+/* Grid children may shrink below their content's width (long truncated titles
+   used to push feed cards off the right edge on phones). */
+.d-grid > * { min-width: 0; }
+.ff-note-card .ff-note-excerpt { white-space: pre-line; }
