@@ -23,10 +23,7 @@ class PasswordResetCode extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject(__('Your FaithFellows password reset code'))
-            ->greeting(__('Hello :name,', ['name' => $notifiable->first_name]))
-            ->line(__('Use this code in the app to choose a new password:'))
-            ->line('**'.$this->code.'**')
-            ->line(__('The code expires in 15 minutes. If you did not ask to reset your password, you can ignore this message — your password has not changed.'));
+            ->subject(__('Your FaithFellows password reset code: :code', ['code' => $this->code]))
+            ->view(['emails.password-code', 'emails.password-code-text'], ['name' => $notifiable->first_name ?: $notifiable->name, 'code' => $this->code]);
     }
 }

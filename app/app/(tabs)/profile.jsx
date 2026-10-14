@@ -1,6 +1,5 @@
-// Profile tab: your details (GET /api/v1/me), a server health check (GET /api/ping) and sign out.
+// Profile tab: your details (GET /api/v1/me), the churches you follow (tap one to open it), your things and sign out.
 // Shows loading, error and (no followed churches) empty states.
-import { useCallback, useEffect, useState } from 'react';
 import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -12,7 +11,7 @@ import ChurchAvatar from '../../components/ChurchAvatar';
 import StateView from '../../components/StateView';
 import TabTitle from '../../components/TabTitle';
 import { COLORS, FONTS, RADIUS, SPACING } from '../../constants/theme';
-import { API_ROOT, mediaUrl, ping } from '../../lib/api';
+import { mediaUrl } from '../../lib/api';
 import { useAuth } from '../../lib/auth';
 import { initials } from '../../lib/format';
 import { useOutbox } from '../../lib/outbox';
@@ -37,22 +36,7 @@ export default function ProfileScreen() {
   const { signOut } = useAuth();
   const { pending } = useOutbox();
   const { data, loading, refreshing, error, reload, retry } = useFetch('/me');
-  const [server, setServer] = useState({ state: 'checking' });
   const me = data?.data ?? data;
-
-  const checkServer = useCallback(async () => {
-    setServer({ state: 'checking' });
-    try {
-      const result = await ping();
-      setServer({ state: 'ok', version: result.version, ms: result.ms });
-    } catch {
-      setServer({ state: 'down' });
-    }
-  }, []);
-
-  useEffect(() => {
-    checkServer();
-  }, [checkServer]);
 
   function confirmSignOut() {
     const lose = pending === 1 ? 'it' : 'them';
@@ -76,7 +60,7 @@ export default function ProfileScreen() {
     <StateView loading={loading} error={error} onRetry={retry} empty={!loading && !error && !me} emptyIcon="person-outline" emptyTitle="No profile found">
       <ScrollView
         contentContainerStyle={styles.scroll}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { reload(); checkServer(); }} tintColor={COLORS.primary} colors={[COLORS.primary]} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={reload} tintColor={COLORS.primary} colors={[COLORS.primary]} />}
       >
         <Card style={styles.identity}>
           <Avatar person={me} size={84} />
@@ -103,12 +87,13 @@ export default function ProfileScreen() {
         {me?.churches?.length ? (
           <Card style={styles.list}>
             {me.churches.map((church) => (
-              <View key={church.id} style={styles.church}>
+              <Pressable key={church.id} onPress={() => router.push({ pathname: '/church/[slug]', params: { slug: church.slug } })} style={styles.church} accessibilityRole="button" accessibilityLabel={church.name}>
                 <ChurchAvatar church={church} size={36} />
                 <AppText variant="body" numberOfLines={1} style={{ flex: 1 }}>
                   {church.name}
                 </AppText>
-              </View>
+                <Ionicons name="chevron-forward" size={16} color={COLORS.gray500} />
+              </Pressable>
             ))}
           </Card>
         ) : (
@@ -148,17 +133,6 @@ export default function ProfileScreen() {
         <AppText variant="label" style={styles.section}>
           Connection
         </AppText>
-        <Card style={styles.server}>
-          <View style={[styles.dot, { backgroundColor: server.state === 'ok' ? COLORS.success : server.state === 'down' ? COLORS.danger : COLORS.warning }]} />
-          <View style={{ flex: 1 }}>
-            <AppText variant="label">{server.state === 'ok' ? `Connected · API v${server.version} · ${server.ms} ms` : server.state === 'down' ? 'Cannot reach the server' : 'Checking…'}</AppText>
-            <AppText variant="caption" numberOfLines={1}>
-              {API_ROOT}
-            </AppText>
-          </View>
-          <Button title="Retest" variant="outline" small onPress={checkServer} />
-        </Card>
-
         <View style={styles.actions}>
           <Button title="Sign out" onPress={confirmSignOut} />
         </View>
@@ -188,8 +162,6 @@ const styles = StyleSheet.create({
   menuRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
   menuBorder: { borderTopWidth: 1, borderTopColor: COLORS.gray100 },
   menuIcon: { width: 34, height: 34, borderRadius: 11, backgroundColor: COLORS.primaryMist, alignItems: 'center', justifyContent: 'center' },
-  server: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md },
-  dot: { width: 10, height: 10, borderRadius: 5 },
   actions: { gap: SPACING.sm, marginTop: SPACING.lg, marginBottom: SPACING.sm },
   version: { textAlign: 'center', marginBottom: SPACING.lg },
 });

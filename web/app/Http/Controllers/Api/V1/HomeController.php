@@ -14,6 +14,7 @@ use App\Models\Church;
 use App\Models\Devotional;
 use App\Models\Event;
 use App\Models\LiveStream;
+use App\Models\Podcast;
 use App\Models\PrayerInteraction;
 use App\Models\PrayerRequest;
 use App\Models\QuizPlayer;
@@ -21,6 +22,7 @@ use App\Models\QuizSession;
 use App\Models\Sermon;
 use App\Services\Bible\BibleService;
 use App\Services\HomeSlider;
+use App\Services\InspirationService;
 use App\Support\VerseOfTheDay;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -35,7 +37,7 @@ use Illuminate\Support\Str;
  */
 class HomeController extends Controller
 {
-    public function __invoke(Request $request, HomeSlider $slider, BibleService $bible): JsonResponse
+    public function __invoke(Request $request, HomeSlider $slider, BibleService $bible, InspirationService $inspiration): JsonResponse
     {
         $user = $request->user();
         $memberIds = $user->memberChurchIds();
@@ -53,7 +55,8 @@ class HomeController extends Controller
             ->whereIn('church_id', $churchIds)->orderBy('starts_at')->take(4)->get();
 
         $sermons = Sermon::with(['church.media', 'media', 'series'])->published()->visibleTo($memberIds)
-            ->whereIn('church_id', $churchIds)->latest('published_at')->take(4)->get();
+            ->when($memberIds, fn ($q) => $q->whereIn('church_id', $memberIds), fn ($q) => $q->where('visibility', 'public'))
+            ->latest('published_at')->take(4)->get();
 
         $campaigns = Campaign::with(['church.media', 'media'])->active()->visibleTo($memberIds)
             ->whereIn('church_id', $churchIds)->where(fn ($q) => $q->whereNull('ends_at')->orWhere('ends_at', '>', now()))
@@ -85,6 +88,10 @@ class HomeController extends Controller
 
         return response()->json(['data' => [
             'slides' => $this->slides($user, $slider, $followed),
+            'highlights' => $this->highlights($live, $events, $campaigns, $devotional, $sermons),
+            'inspiration' => rescue(fn () => $inspiration->current(), null, false),
+            'podcasts' => rescue(fn () => Podcast::listed()->orderByDesc('followers_count')->orderByDesc('episodes_count')->orderByDesc('id')->take(4)->get()
+                ->map(fn (Podcast $p) => app(PodcastController::class)->card($p, $user->followedPodcasts()->whereKey($p->id)->exists()))->values(), [], false),
             'churches' => $followed->map(fn (Church $c) => [
                 'id' => $c->id, 'slug' => $c->slug, 'name' => $c->name, 'logo_url' => $c->logo_url, 'is_live' => in_array($c->id, $liveChurchIds, true),
             ])->values(),
@@ -138,6 +145,34 @@ class HomeController extends Controller
                 'best_score' => (int) (clone $played)->max('score'),
             ],
         ]]);
+    }
+
+    /**
+     * What the slider at the top of Home shows: the live service first, then the next events, giving campaigns, today's devotional and the
+     * latest sermons, each with a picture (the church's own, or a generated cover) and a line of words. Words only, no icons.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    protected function highlights(Collection $live, Collection $events, Collection $campaigns, ?Devotional $devotional, Collection $sermons): array
+    {
+        $items = collect();
+        foreach ($live->where('status', 'live') as $s) {
+            $items->push(['kind' => 'live', 'id' => $s->id, 'label' => __('Live now'), 'title' => $s->title, 'subtitle' => $s->church?->name, 'image' => $s->church?->cover_url, 'church' => $s->church?->name]);
+        }
+        foreach ($events as $e) {
+            $items->push(['kind' => 'event', 'id' => $e->id, 'label' => __('Event'), 'title' => $e->title, 'subtitle' => collect([$e->starts_at?->format('D j M, g:i A'), $e->location_name ?? null])->filter()->implode(' · '), 'image' => $e->picture_url, 'church' => $e->church?->name]);
+        }
+        foreach ($campaigns as $c) {
+            $items->push(['kind' => 'campaign', 'id' => $c->id, 'label' => __('Fundraising'), 'title' => $c->title, 'subtitle' => Str::limit(trim(strip_tags((string) $c->short_description)), 90), 'image' => $c->picture_url, 'church' => $c->church?->name]);
+        }
+        if ($devotional) {
+            $items->push(['kind' => 'devotional', 'id' => $devotional->id, 'label' => __('Devotional'), 'title' => $devotional->title, 'subtitle' => $devotional->scripture, 'image' => $devotional->picture_url, 'church' => $devotional->church?->name]);
+        }
+        foreach ($sermons->take(2) as $s) {
+            $items->push(['kind' => 'sermon', 'id' => $s->id, 'label' => __('Sermon'), 'title' => $s->title, 'subtitle' => $s->preacher, 'image' => $s->picture_url, 'church' => $s->church?->name]);
+        }
+
+        return $items->filter(fn (array $i) => filled($i['title']))->take(10)->values()->all();
     }
 
     /**

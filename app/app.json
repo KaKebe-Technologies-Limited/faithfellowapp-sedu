@@ -2,7 +2,7 @@
   "expo": {
     "name": "FaithFellows",
     "slug": "faithfellows",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "runtimeVersion": { "policy": "appVersion" },
     "updates": { "url": "https://u.expo.dev/dde3d075-b0ff-46a1-af51-ccd15ea0d2ca", "fallbackToCacheTimeout": 0 },
     "orientation": "portrait",
@@ -19,7 +19,7 @@
     "android": {
       "package": "tech.kakebe.faithfellows",
       "adaptiveIcon": {
-        "backgroundColor": "#BC2649",
+        "backgroundColor": "#FFFFFF",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -43,9 +43,9 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#BC2649",
+          "backgroundColor": "#FFFFFF",
           "image": "./assets/splash-icon.png",
-          "imageWidth": 180
+          "imageWidth": 220
         }
       ],
       "expo-asset",

@@ -352,10 +352,16 @@ Route::prefix('church/{church}/admin')->name('church-admin.')
             Route::get('/giving', [ChurchAdmin\GivingController::class, 'index'])->name('giving.index');
             Route::get('/giving/transactions', [ChurchAdmin\GivingController::class, 'transactions'])->name('giving.transactions');
             Route::get('/giving/export', [ChurchAdmin\GivingController::class, 'export'])->name('giving.export');
+            Route::get('/giving/records', [ChurchAdmin\GivingController::class, 'records'])->name('giving.records');
+            Route::get('/giving/records/export', [ChurchAdmin\GivingController::class, 'recordsExport'])->name('giving.records.export');
             Route::get('/giving/payouts', [ChurchAdmin\PayoutController::class, 'index'])->name('payouts.index');
         });
         Route::middleware('church.can:giving.manage')->group(function () {
             Route::post('/giving/record', [ChurchAdmin\GivingController::class, 'record'])->name('giving.record');
+            Route::get('/giving/reasons', [ChurchAdmin\GivingReasonController::class, 'index'])->name('giving.reasons');
+            Route::post('/giving/reasons', [ChurchAdmin\GivingReasonController::class, 'store'])->name('giving.reasons.store');
+            Route::put('/giving/reasons/{givingReason}', [ChurchAdmin\GivingReasonController::class, 'update'])->name('giving.reasons.update');
+            Route::delete('/giving/reasons/{givingReason}', [ChurchAdmin\GivingReasonController::class, 'destroy'])->name('giving.reasons.destroy');
             Route::post('/giving/{donation}/refund', [ChurchAdmin\GivingController::class, 'refund'])->name('giving.refund');
             Route::post('/giving/{donation}/confirm', [ChurchAdmin\GivingController::class, 'confirm'])->name('giving.confirm');
             Route::post('/giving/payouts', [ChurchAdmin\PayoutController::class, 'store'])->name('payouts.store');
@@ -566,6 +572,17 @@ Route::prefix('super-admin')->name('super-admin.')
         Route::delete('/messages/{message}', [SuperAdmin\MessageController::class, 'destroy'])->name('messages.destroy');
         Route::get('/audit-logs', [SuperAdmin\AuditLogController::class, 'index'])->name('audit-logs');
         Route::get('/audit-logs/export', [SuperAdmin\AuditLogController::class, 'export'])->name('audit-logs.export');
+
+        // The short inspiring messages on the home screen (morning, mid-morning, evening)
+        Route::get('/google', [SuperAdmin\GoogleSettingsController::class, 'edit'])->name('google.edit');
+        Route::put('/google', [SuperAdmin\GoogleSettingsController::class, 'update'])->name('google.update');
+        Route::get('/email', [SuperAdmin\EmailSettingsController::class, 'edit'])->name('email.edit');
+        Route::put('/email', [SuperAdmin\EmailSettingsController::class, 'update'])->name('email.update');
+        Route::post('/email/test', [SuperAdmin\EmailSettingsController::class, 'test'])->middleware('throttle:10,1')->name('email.test');
+        Route::get('/inspiration', [SuperAdmin\InspirationController::class, 'index'])->name('inspiration.index');
+        Route::post('/inspiration', [SuperAdmin\InspirationController::class, 'store'])->name('inspiration.store');
+        Route::put('/inspiration/{inspiration}', [SuperAdmin\InspirationController::class, 'update'])->name('inspiration.update');
+        Route::delete('/inspiration/{inspiration}', [SuperAdmin\InspirationController::class, 'destroy'])->name('inspiration.destroy');
 
         // Database changes that came with an update (for hosting without a terminal)
         Route::get('/updates', [SuperAdmin\DatabaseUpdateController::class, 'index'])->name('updates.index');

@@ -83,7 +83,7 @@ export default function PayForm({ methods = [], savedPhone = '', submitLabel = '
           error={touched && phoneBad ? 'Enter a Ugandan mobile money number, for example 0772 123 456.' : undefined}
         />
       ) : null}
-      {chosen?.needs_phone ? <AppText variant="caption" style={styles.note}>You will get a prompt on this phone to approve the payment with your PIN.</AppText> : null}
+      {chosen?.needs_phone ? <AppText variant="caption" style={styles.note}>A prompt will be sent to this phone. Enter your mobile money PIN to approve it, and the amount is deducted from your mobile money.</AppText> : null}
 
       {error ? <AppText style={styles.error}>{error}</AppText> : null}
       <Button title={submitLabel} onPress={submit} loading={loading} style={{ marginTop: SPACING.sm }} />

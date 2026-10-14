@@ -189,6 +189,7 @@ export default function ReaderScreen() {
               </Pressable>
             </View>
             <Button title={`Notes on ${chapterInfo.book_name} ${chapter}`} variant="outline" onPress={() => note()} style={{ marginTop: 14 }} />
+            {chapterInfo.copyright ? <AppText style={styles.copyright}>{chapterInfo.copyright}</AppText> : null}
           </ScrollView>
         ) : null}
       </StateView>
@@ -284,6 +285,7 @@ export default function ReaderScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: COLORS.canvas },
   hint: { fontFamily: FONTS.regular, fontSize: 12.5, color: COLORS.gray700, textAlign: 'center', marginBottom: 10 },
+  copyright: { fontFamily: FONTS.regular, fontSize: 11, lineHeight: 15, color: COLORS.gray700, textAlign: 'center', marginTop: 18 },
   offline: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, alignSelf: 'center', backgroundColor: COLORS.primaryMist, borderRadius: RADIUS.full, paddingHorizontal: 12, paddingVertical: 6, marginBottom: 10 },
   offlineText: { fontFamily: FONTS.semibold, fontSize: 12, color: COLORS.primaryDark },
   pager: { flexDirection: 'row', gap: 12, marginTop: 22 },

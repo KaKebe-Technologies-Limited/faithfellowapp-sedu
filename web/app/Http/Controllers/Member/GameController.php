@@ -38,7 +38,7 @@ class GameController extends Controller
         $data = $request->validate(['pin' => ['required', 'string', 'max:8']]);
         $session = $this->quizzes->findByPin($data['pin']);
 
-        if (! $session || ! $request->user()->isMemberOf($session->church_id)) {
+        if (! $session || $session->church_id === null || ! $request->user()->isMemberOf($session->church_id)) {
             throw ValidationException::withMessages(['pin' => __('No live game with that PIN in your churches.')]);
         }
 
@@ -92,6 +92,7 @@ class GameController extends Controller
 
     protected function authorizeMember(Request $request, QuizSession $session): void
     {
+        abort_if($session->church_id === null, 404); // community games are played in the app
         abort_unless($request->user()->isMemberOf($session->church_id) || $request->user()->canInChurch($session->church_id, 'quizzes.manage'), 404);
     }
 }

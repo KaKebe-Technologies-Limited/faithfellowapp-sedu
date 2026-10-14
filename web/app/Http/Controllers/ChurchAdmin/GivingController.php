@@ -8,6 +8,7 @@ use App\Models\Church;
 use App\Models\Donation;
 use App\Services\AnalyticsService;
 use App\Services\DonationService;
+use App\Services\FinancialRecords;
 use App\Support\CsvExport;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Database\Eloquent\Builder;
@@ -46,6 +47,68 @@ class GivingController extends Controller
             'campaigns' => $church->campaigns()->orderBy('title')->pluck('title', 'id'),
             'branches' => $church->branches()->orderBy('name')->pluck('name', 'id'),
         ]);
+    }
+
+    /**
+     * Financial records for accounting and monitoring: what came in over a period, clustered by what it was given for (the church's
+     * giving reasons, fundraising campaigns, tickets), by payment method and over time, with the ledger behind it.
+     */
+    public function records(Request $request, Church $church, FinancialRecords $records): View
+    {
+        [$from, $to, $period] = FinancialRecords::period($request->query('period'), $request->query('from'), $request->query('to'));
+        $filters = array_filter($request->only(['reason', 'method', 'campaign']));
+
+        return view('church-admin.giving.records', [
+            'church' => $church,
+            'report' => $records->build($church, $from, $to, $filters),
+            'ledger' => $records->ledger($church, $from, $to, $filters)->reorder('paid_at', 'desc')->paginate(25)->withQueryString(),
+            'period' => $period,
+            'from' => $from,
+            'to' => $to,
+            'filters' => $filters,
+            'choices' => $records->choices($church),
+        ]);
+    }
+
+    /** The records as a file: the ledger (CSV, one row per gift), the summary by reason and method (CSV), or a printable PDF. */
+    public function recordsExport(Request $request, Church $church, FinancialRecords $records): StreamedResponse|Response
+    {
+        [$from, $to] = FinancialRecords::period($request->query('period'), $request->query('from'), $request->query('to'));
+        $filters = array_filter($request->only(['reason', 'method', 'campaign']));
+        $name = 'financial-records-'.$church->slug.'-'.$from->format('Ymd').'-'.$to->format('Ymd');
+
+        if ($request->query('format') === 'summary' || $request->query('format') === 'pdf') {
+            $report = $records->build($church, $from, $to, $filters);
+
+            if ($request->query('format') === 'pdf') {
+                return Pdf::loadView('receipts.financial-report', [
+                    'church' => $church, 'report' => $report,
+                    'ledger' => $records->ledger($church, $from, $to, $filters)->limit(1500)->get(),
+                ])->setPaper('a4', 'landscape')->download($name.'.pdf');
+            }
+
+            $money = fn ($v) => number_format((float) $v, 2, '.', '');
+            $rows = [
+                [__('Period'), $from->toDateString().' to '.$to->toDateString(), '', '', '', ''],
+                [__('Total received'), '', $report['gifts'], $money($report['gross']), $money($report['fees']), $money($report['net'])],
+                [__('Paid-out status'), __('Collected online, not yet paid out to the church'), $report['awaiting_payout']['count'], '', '', $money($report['awaiting_payout']['amount'])],
+                ['', '', '', '', '', ''],
+                [__('GIVEN FOR'), '', '', '', '', ''],
+                ...$report['by_reason']->map(fn ($r) => [$r['label'], $r['kind'], $r['gifts'], $money($r['gross']), $money($r['fees']), $money($r['net'])])->all(),
+                ['', '', '', '', '', ''],
+                [__('PAYMENT METHOD'), '', '', '', '', ''],
+                ...$report['by_method']->map(fn ($r) => [$r['label'], '', $r['gifts'], $money($r['gross']), $money($r['fees']), $money($r['net'])])->all(),
+            ];
+
+            return CsvExport::download($name.'-summary.csv', [__('Item'), __('Type'), __('Gifts'), __('Gross'), __('Fees'), __('Net')], $rows);
+        }
+
+        return CsvExport::download($name.'-ledger.csv',
+            ['Paid at', 'Receipt', 'Giver', 'Phone', 'Given for', 'Campaign', 'Method', 'Amount', 'Fee', 'Net', 'Currency', 'Reference', 'Provider ref', 'Note'],
+            $records->ledger($church, $from, $to, $filters)->cursor()->map(fn (Donation $d) => [
+                $d->paid_at?->format('Y-m-d H:i'), $d->receipt_number, $d->display_name, $d->is_anonymous ? '' : $d->phone, $d->category_label,
+                $d->campaign?->title, $d->method_label, $d->amount, $d->fee, number_format((float) $d->amount - (float) $d->fee, 2, '.', ''), $d->currency, $d->reference, $d->provider_ref, $d->note,
+            ]));
     }
 
     public function record(RecordDonationRequest $request, Church $church): RedirectResponse
@@ -92,7 +155,7 @@ class GivingController extends Controller
         }
 
         return CsvExport::download('giving-'.$church->slug.'-'.now()->format('Ymd').'.csv',
-            ['Date', 'Receipt', 'Giver', 'Phone', 'Category', 'Campaign', 'Method', 'Amount', 'Currency', 'Status', 'Reference', 'Provider ref'],
+            ['Date', 'Receipt', 'Giver', 'Phone', 'Given for', 'Campaign', 'Method', 'Amount', 'Currency', 'Status', 'Reference', 'Provider ref'],
             $query->cursor()->map(fn (Donation $d) => [
                 $d->created_at->format('Y-m-d H:i'), $d->receipt_number, $d->display_name, $d->is_anonymous ? '' : $d->phone,
                 $d->category_label, $d->campaign?->title, $d->method_label, $d->amount, $d->currency, $d->status, $d->reference, $d->provider_ref,
@@ -104,6 +167,7 @@ class GivingController extends Controller
         return $church->donations()->getQuery()
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->query('status')))
             ->when($request->filled('category'), fn ($q) => $q->where('category', $request->query('category')))
+            ->when($request->filled('reason'), fn ($q) => $q->where('giving_reason_id', (int) $request->query('reason')))
             ->when($request->filled('method'), fn ($q) => $q->where('method', $request->query('method')))
             ->when($request->filled('campaign'), fn ($q) => $q->where('campaign_id', $request->query('campaign')))
             ->when($request->filled('branch'), fn ($q) => $q->where('branch_id', $request->query('branch')))

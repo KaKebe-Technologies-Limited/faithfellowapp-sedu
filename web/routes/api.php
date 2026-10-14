@@ -32,6 +32,7 @@ Route::prefix('v1')->name('api.v1.')->middleware('throttle:api')->group(function
 
     // Public directory
     Route::get('/churches', [V1\ChurchController::class, 'index'])->name('churches.index');
+    Route::get('/churches/nearby', [V1\ChurchController::class, 'nearby'])->middleware(['auth:sanctum', 'api.active'])->name('churches.nearby');
     Route::get('/churches/{church}', [V1\ChurchController::class, 'show'])->name('churches.show');
 
     Route::middleware(['auth:sanctum', 'api.active'])->group(function () {
@@ -145,6 +146,12 @@ Route::prefix('v1')->name('api.v1.')->middleware('throttle:api')->group(function
 
         Route::get('/games', [V1\GameController::class, 'index'])->name('games.index');
         Route::post('/games/join', [V1\GameController::class, 'join'])->middleware('throttle:20,1')->name('games.join');
+        Route::get('/games/library', [V1\CommunityGameController::class, 'library'])->name('games.library');
+        Route::get('/games/friends', [V1\CommunityGameController::class, 'friends'])->name('games.friends');
+        Route::post('/games/start', [V1\CommunityGameController::class, 'start'])->middleware('throttle:20,1')->name('games.start');
+        Route::post('/games/{quizSession}/invite', [V1\CommunityGameController::class, 'invite'])->middleware('throttle:30,1')->name('games.invite');
+        Route::post('/games/{quizSession}/begin', [V1\CommunityGameController::class, 'begin'])->middleware('throttle:30,1')->name('games.begin');
+        Route::post('/games/{quizSession}/cancel', [V1\CommunityGameController::class, 'cancel'])->middleware('throttle:30,1')->name('games.cancel');
         Route::get('/games/{quizSession}', [V1\GameController::class, 'state'])->middleware('throttle:300,1')->name('games.state');
         Route::post('/games/{quizSession}/answer', [V1\GameController::class, 'answer'])->middleware('throttle:60,1')->name('games.answer');
 
@@ -252,6 +259,12 @@ Route::prefix('v1')->name('api.v1.')->middleware('throttle:api')->group(function
             Route::middleware('church.can:giving.view')->group(function () {
                 Route::get('/giving/summary', [V1\Admin\GivingController::class, 'summary'])->name('giving.summary');
                 Route::get('/giving', [V1\Admin\GivingController::class, 'index'])->name('giving.index');
+                Route::get('/giving/reasons', [V1\Admin\GivingReasonController::class, 'index'])->name('giving.reasons.index');
+            });
+            Route::middleware('church.can:giving.manage')->group(function () {
+                Route::post('/giving/reasons', [V1\Admin\GivingReasonController::class, 'store'])->name('giving.reasons.store');
+                Route::put('/giving/reasons/{givingReason}', [V1\Admin\GivingReasonController::class, 'update'])->name('giving.reasons.update');
+                Route::delete('/giving/reasons/{givingReason}', [V1\Admin\GivingReasonController::class, 'destroy'])->name('giving.reasons.destroy');
             });
         });
         Route::get('/notifications', [V1\CommunityController::class, 'notifications'])->name('notifications.index');

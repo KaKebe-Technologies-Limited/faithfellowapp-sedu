@@ -1,15 +1,18 @@
 // Playing a live quiz on your phone. The screen asks the server for the game's state about once a second:
-// the lobby (waiting for the host), each 10-second question with four big answers and a live scoreboard,
+// the lobby (the host shares the PIN, invites people they have played with by name and presses Start; everyone else waits),
+// each 10-second question with four big answers and a live scoreboard,
 // the reveal (right answer, points, how many chose each option) and the final podium.
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AppText from '../../components/AppText';
+import Avatar from '../../components/Avatar';
 import Button from '../../components/Button';
 import { BackButton } from '../../components/ScreenHeader';
+import Sheet from '../../components/Sheet';
 import StateView from '../../components/StateView';
 import { COLORS, FONTS, RADIUS, SPACING } from '../../constants/theme';
 import api, { errorMessage } from '../../lib/api';
@@ -43,6 +46,8 @@ export default function GameScreen() {
   const [left, setLeft] = useState(0);
   const received = useRef(0);
   const finished = useRef(false);
+  const [people, setPeople] = useState(null); // the invite sheet: null = closed, otherwise the list
+  const [busy, setBusy] = useState(false);
 
   const poll = useCallback(async () => {
     try {
@@ -50,7 +55,7 @@ export default function GameScreen() {
       received.current = Date.now();
       setState(data.data);
       setError(null);
-      finished.current = data.data.status === 'finished';
+      finished.current = ['finished', 'cancelled'].includes(data.data.status);
     } catch (e) {
       setError(errorMessage(e));
     }
@@ -83,6 +88,66 @@ export default function GameScreen() {
     }
   }
 
+  async function share() {
+    try {
+      await Share.share({ message: `Join my FaithFellows game “${state.quiz}”! Open the FaithFellows app → Games → type the PIN ${state.pin}.` });
+    } catch {
+      // the share sheet was closed
+    }
+  }
+
+  async function begin() {
+    setBusy(true);
+    try {
+      const { data } = await api.post(`/games/${id}/begin`);
+      received.current = Date.now();
+      setState(data.data);
+    } catch (e) {
+      Alert.alert('Could not start', errorMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function cancelGame() {
+    Alert.alert('Cancel this game?', 'Everyone waiting will be taken out of it.', [
+      { text: 'Keep it', style: 'cancel' },
+      {
+        text: 'Cancel game',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await api.post(`/games/${id}/cancel`);
+            router.replace('/games');
+          } catch (e) {
+            Alert.alert('Could not cancel', errorMessage(e));
+          }
+        },
+      },
+    ]);
+  }
+
+  async function openPeople() {
+    setPeople([]);
+    try {
+      const { data } = await api.get('/games/friends', { params: { session: id } });
+      setPeople(data.data);
+    } catch (e) {
+      setPeople(null);
+      Alert.alert('Could not load your people', errorMessage(e));
+    }
+  }
+
+  async function invite(person) {
+    setPeople((list) => list.map((p) => (p.id === person.id ? { ...p, invited: true } : p)));
+    try {
+      await api.post(`/games/${id}/invite`, { user_ids: [person.id] });
+    } catch (e) {
+      setPeople((list) => list.map((p) => (p.id === person.id ? { ...p, invited: false } : p)));
+      Alert.alert('Not invited', errorMessage(e));
+    }
+  }
+
   const q = state?.question;
   const mine = state?.index != null ? picked[state.index] ?? state?.me?.answer ?? null : null;
   const fraction = q ? Math.min(1, left / (q.time_limit * 1000)) : 0;
@@ -112,10 +177,10 @@ export default function GameScreen() {
             {state.status === 'lobby' ? (
               <View style={styles.center}>
                 <View style={styles.pulse}>
-                  <Ionicons name="hourglass-outline" size={42} color={COLORS.white} />
+                  <Ionicons name={state.is_host ? 'people' : 'hourglass-outline'} size={42} color={COLORS.white} />
                 </View>
-                <AppText style={styles.big}>You are in!</AppText>
-                <AppText style={styles.sub}>Waiting for the host to start the game…</AppText>
+                <AppText style={styles.big}>{state.is_host ? 'Your game is ready' : 'You are in!'}</AppText>
+                <AppText style={styles.sub}>{state.is_host ? 'Share the PIN or invite friends, then press Start.' : `Waiting for ${state.host_name ?? 'the host'} to start the game…`}</AppText>
                 <AppText style={styles.pin}>PIN {state.pin}</AppText>
                 <AppText style={styles.sub}>{state.players_count} {state.players_count === 1 ? 'player' : 'players'} so far</AppText>
                 <View style={styles.names}>
@@ -125,6 +190,24 @@ export default function GameScreen() {
                     </View>
                   ))}
                 </View>
+                {state.is_host ? (
+                  <View style={styles.hostBox}>
+                    <View style={styles.hostRow}>
+                      <Pressable onPress={share} style={styles.ghost} accessibilityRole="button" accessibilityLabel="Share the game PIN">
+                        <Ionicons name="share-social-outline" size={18} color={COLORS.white} />
+                        <AppText style={styles.ghostText}>Share PIN</AppText>
+                      </Pressable>
+                      <Pressable onPress={openPeople} style={styles.ghost} accessibilityRole="button" accessibilityLabel="Invite people you have played with">
+                        <Ionicons name="person-add-outline" size={18} color={COLORS.white} />
+                        <AppText style={styles.ghostText}>Invite people</AppText>
+                      </Pressable>
+                    </View>
+                    <Button title={state.players_count > 1 ? `Start game · ${state.players_count} players` : 'Start game'} variant="light" loading={busy} onPress={begin} />
+                    <Pressable onPress={cancelGame} accessibilityRole="button" style={{ alignSelf: 'center', padding: 8 }}>
+                      <AppText style={styles.cancel}>Cancel game</AppText>
+                    </Pressable>
+                  </View>
+                ) : null}
               </View>
             ) : null}
 
@@ -195,6 +278,17 @@ export default function GameScreen() {
               </View>
             ) : null}
 
+            {state.status === 'cancelled' ? (
+              <View style={styles.center}>
+                <View style={styles.pulse}>
+                  <Ionicons name="close-circle-outline" size={42} color={COLORS.white} />
+                </View>
+                <AppText style={styles.big}>This game was closed</AppText>
+                <AppText style={styles.sub}>The host ended it. Start your own from the games list.</AppText>
+                <Button title="Back to games" variant="light" onPress={() => router.replace('/games')} style={{ alignSelf: 'stretch', marginTop: 18 }} />
+              </View>
+            ) : null}
+
             {state.status === 'finished' ? (
               <View style={{ gap: 16, alignItems: 'center' }}>
                 <AppText style={styles.big}>Game over 🎉</AppText>
@@ -228,6 +322,33 @@ export default function GameScreen() {
           </ScrollView>
         ) : null}
       </StateView>
+
+      <Sheet visible={people !== null} onClose={() => setPeople(null)} title="Invite people">
+        {people && people.length === 0 ? (
+          <AppText style={styles.empty}>Nobody yet. People you play games with, and your connections, show up here so you can invite them with one tap. Share the PIN for now.</AppText>
+        ) : null}
+        {(people ?? []).map((p) => (
+          <View key={p.id} style={styles.person}>
+            <Avatar person={p} size={42} />
+            <View style={{ flex: 1 }}>
+              <AppText style={styles.personName} numberOfLines={1}>{p.name}</AppText>
+              {p.plays ? <AppText variant="caption">Played together {p.plays} {p.plays === 1 ? 'time' : 'times'}</AppText> : <AppText variant="caption">Connection</AppText>}
+            </View>
+            {p.joined ? (
+              <AppText style={styles.joined}>In the game</AppText>
+            ) : p.invited ? (
+              <View style={styles.invited}>
+                <Ionicons name="checkmark" size={16} color={COLORS.success} />
+                <AppText style={styles.invitedText}>Invited</AppText>
+              </View>
+            ) : (
+              <Pressable onPress={() => invite(p)} style={styles.inviteBtn} accessibilityRole="button" accessibilityLabel={`Invite ${p.name}`}>
+                <AppText style={styles.inviteText}>Invite</AppText>
+              </Pressable>
+            )}
+          </View>
+        ))}
+      </Sheet>
     </View>
   );
 }
@@ -276,6 +397,19 @@ const styles = StyleSheet.create({
   podRank: { fontFamily: FONTS.bold, fontSize: 24, color: '#2B1B22' },
   podName: { fontFamily: FONTS.bold, fontSize: 13, color: COLORS.white, maxWidth: '100%' },
   podScore: { fontFamily: FONTS.semibold, fontSize: 13, color: '#FFD36B', marginBottom: 4 },
+  hostBox: { alignSelf: 'stretch', gap: 12, marginTop: 22 },
+  hostRow: { flexDirection: 'row', gap: 10 },
+  ghost: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 48, borderRadius: RADIUS.full, backgroundColor: 'rgba(255,255,255,0.16)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)' },
+  ghostText: { fontFamily: FONTS.semibold, fontSize: 14, color: COLORS.white },
+  cancel: { fontFamily: FONTS.semibold, fontSize: 14, color: 'rgba(255,255,255,0.75)' },
+  empty: { fontFamily: FONTS.regular, fontSize: 14, lineHeight: 20, color: COLORS.gray700, textAlign: 'center', paddingVertical: 12 },
+  person: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: COLORS.gray300 },
+  personName: { fontFamily: FONTS.semibold, fontSize: 15.5, color: COLORS.black },
+  inviteBtn: { backgroundColor: COLORS.primary, borderRadius: RADIUS.full, paddingHorizontal: 16, paddingVertical: 8 },
+  inviteText: { fontFamily: FONTS.bold, fontSize: 13, color: COLORS.white },
+  invited: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  invitedText: { fontFamily: FONTS.semibold, fontSize: 13, color: COLORS.success },
+  joined: { fontFamily: FONTS.semibold, fontSize: 13, color: COLORS.gray700 },
   final: { backgroundColor: 'rgba(255,255,255,0.16)', borderRadius: RADIUS.full, paddingHorizontal: 18, paddingVertical: 10 },
   finalText: { fontFamily: FONTS.bold, fontSize: 15, color: COLORS.white },
 });

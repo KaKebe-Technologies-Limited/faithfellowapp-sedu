@@ -34,7 +34,12 @@ class PasswordResetController extends Controller
         if ($user && $user->status === 'active') {
             $code = (string) random_int(100000, 999999);
             Cache::put($this->key($email), ['hash' => Hash::make($code), 'tries' => 0], now()->addMinutes(self::MINUTES));
-            $user->notify(new PasswordResetCode($code));
+            try {
+                $user->notify(new PasswordResetCode($code));
+            } catch (\Throwable $e) {
+                // The mail server did not take it. The answer stays the same (it must not reveal who has an account), but the super admin sees why.
+                report($e);
+            }
         }
 
         // The same answer whether or not the address has an account, so this can not be used to look accounts up.

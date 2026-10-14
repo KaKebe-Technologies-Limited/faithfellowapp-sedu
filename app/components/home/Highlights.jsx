@@ -1,230 +1,162 @@
-// "Highlights" rail on the home screen: swipeable cards for what matters now in your churches —
-// urgent notices first, today's devotional, giving campaigns and live services that are coming up. Events and sermons have
-// their own sections below. Built from the one GET /api/v1/home response.
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
+// "Highlights": short summary cards on soft coloured backgrounds that slide along by themselves, one after the other, like the live
+// service card: the live service, urgent notices and announcements, the devotional, giving campaigns and the next event. Words
+// only. It pauses while you touch it, and a tap opens the item. Built from the one GET /api/v1/home response.
+import { useEffect, useRef, useState } from 'react';
+import { Animated, Easing, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { COLORS, FONTS, RADIUS, SHADOW, SPACING } from '../../constants/theme';
-import { mediaUrl } from '../../lib/api';
-import { dateTile, dayAndTime, formatDuration, formatMoney } from '../../lib/format';
+import { COLORS, FONTS, SPACING } from '../../constants/theme';
+import { SOFT, SOFT_SHADOW } from '../../constants/soft';
+import { dayAndTime, formatMoney } from '../../lib/format';
 import AppText from '../AppText';
-import Pill from '../Pill';
 import SectionHeader from '../SectionHeader';
 
-const CARD_W = 284;
-const CARD_H = 184;
+const GAP = 12;
+const SLIDE_MS = 4800;
 const go = (pathname, id) => router.push({ pathname, params: { id } });
 
-/** Photo (or brand gradient) backdrop with a dark fade, for the image-led cards. */
-function Backdrop({ uri, colors = [COLORS.primaryDark, COLORS.primary] }) {
-  return (
-    <>
-      <LinearGradient colors={colors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
-      {uri ? <Image source={{ uri: mediaUrl(uri) }} style={StyleSheet.absoluteFill} contentFit="cover" transition={300} /> : null}
-      <LinearGradient colors={['rgba(20,6,12,0.05)', 'rgba(20,6,12,0.35)', 'rgba(20,6,12,0.82)']} locations={[0, 0.5, 1]} style={StyleSheet.absoluteFill} />
-    </>
-  );
-}
+const TONES = {
+  live: { colors: ['#4A0F29', '#7D1A39'], ink: '#fff', soft: 'rgba(255,255,255,0.78)', accent: '#FFD98A' },
+  urgent: { colors: ['#FFE9E9', '#FFD3D3'], ink: '#7A1B1B', soft: '#9B4A4A', accent: '#D63031' },
+  note: { colors: ['#FFF0F6', '#FFE0EC'], ink: '#7A1832', soft: '#9A5568', accent: COLORS.primary },
+  devotional: { colors: ['#FFF6E0', '#FFE9BD'], ink: '#6B4309', soft: '#8C6422', accent: '#C77700' },
+  campaign: { colors: ['#E4F7EC', '#C9EEDA'], ink: '#0E4D35', soft: '#2F7458', accent: '#12704F' },
+  event: { colors: ['#EEE8FB', '#DDD1F6'], ink: '#35205F', soft: '#5F4A8C', accent: '#6B46C1' },
+};
 
-function Frame({ onPress, style, label, children }) {
+function Card({ tone, kicker, title, body, foot, onPress, children, width, label }) {
+  const t = TONES[tone];
+
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label} style={({ pressed }) => [styles.card, style, pressed && { opacity: 0.92 }]}>
-      {children}
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label} style={({ pressed }) => [{ width }, pressed && { opacity: 0.93 }]}>
+      <LinearGradient colors={t.colors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.card}>
+        <View style={[styles.glow, { backgroundColor: t.accent }]} />
+        <AppText style={[styles.kicker, { color: t.accent }]}>{kicker.toUpperCase()}</AppText>
+        <AppText style={[styles.title, { color: t.ink }]} numberOfLines={2}>
+          {title}
+        </AppText>
+        {body ? (
+          <AppText style={[styles.body, { color: t.soft }]} numberOfLines={2}>
+            {body}
+          </AppText>
+        ) : null}
+        {children}
+        {foot ? (
+          <AppText style={[styles.foot, { color: t.soft }]} numberOfLines={1}>
+            {foot}
+          </AppText>
+        ) : null}
+      </LinearGradient>
     </Pressable>
   );
 }
 
-function AnnouncementCard({ a }) {
-  return (
-    <Frame onPress={() => go('/announcement/[id]', a.id)} label={`Announcement: ${a.title}`} style={[styles.light, a.urgent && styles.urgent]}>
-      <Pill label={a.urgent ? 'Urgent' : 'Announcement'} icon="megaphone-outline" tone={a.urgent ? 'urgent' : 'soft'} />
-      <AppText style={styles.cardTitle} numberOfLines={2}>
-        {a.title}
-      </AppText>
-      <AppText style={styles.cardBody} numberOfLines={2}>
-        {a.body}
-      </AppText>
-      <AppText variant="caption" style={styles.foot} numberOfLines={1}>
-        {a.church?.name}
-      </AppText>
-    </Frame>
-  );
-}
-
-function EventCard({ e }) {
-  const tile = e.starts_at ? dateTile(e.starts_at) : null;
-  return (
-    <Frame onPress={() => go('/event/[id]', e.id)} label={`Event: ${e.title}`}>
-      <Backdrop uri={e.cover_url} />
-      <View style={styles.topRow}>
-        {tile ? (
-          <View style={styles.tile}>
-            <AppText style={styles.tileMonth}>{tile.month}</AppText>
-            <AppText style={styles.tileDay}>{tile.day}</AppText>
-          </View>
-        ) : null}
-        <Pill label="Event" icon="calendar-outline" tone="dark" />
-      </View>
-      <View style={styles.bottom}>
-        <AppText style={styles.onPhotoTitle} numberOfLines={2}>
-          {e.title}
-        </AppText>
-        <AppText style={styles.onPhotoMeta} numberOfLines={1}>
-          {[dayAndTime(e.starts_at), e.location?.name].filter(Boolean).join(' · ')}
-        </AppText>
-        <AppText style={styles.onPhotoChurch} numberOfLines={1}>
-          {e.church?.name}
-        </AppText>
-      </View>
-    </Frame>
-  );
-}
-
-function DevotionalCard({ d }) {
-  return (
-    <Frame onPress={() => go('/devotional/[id]', d.id)} label={`Devotional: ${d.title}`} style={styles.pinkCard}>
-      <Pill label="Devotional of the day" icon="book-outline" tone="white" />
-      <AppText style={styles.quote} numberOfLines={4}>
-        {d.scripture_text ? `“${d.scripture_text}”` : d.excerpt}
-      </AppText>
-      <AppText style={styles.scripture} numberOfLines={1}>
-        {d.scripture || d.title}
-      </AppText>
-      <AppText variant="caption" style={styles.foot} numberOfLines={1}>
-        {d.title} · {d.church?.name}
-      </AppText>
-    </Frame>
-  );
-}
-
-function CampaignCard({ c }) {
+function Progress({ c }) {
   const pct = Math.max(0, Math.min(100, Math.round(c.percent)));
+
   return (
-    <Frame onPress={() => go('/campaign/[id]', c.id)} label={`Campaign: ${c.title}`} style={styles.light}>
-      <View style={styles.topRow}>
-        <Pill label="Campaign" icon="flag-outline" />
-        <View style={styles.give}>
-          <AppText style={styles.giveText}>Give</AppText>
-        </View>
-      </View>
-      <AppText style={styles.cardTitle} numberOfLines={2}>
-        {c.title}
-      </AppText>
+    <View style={{ marginTop: 10 }}>
       <View style={styles.track}>
         <View style={[styles.fill, { width: `${Math.max(pct, 3)}%` }]} />
       </View>
-      <View style={styles.progressRow}>
-        <AppText variant="caption" style={{ color: COLORS.gray900 }} numberOfLines={1}>
-          {formatMoney(c.raised, c.currency)} of {formatMoney(c.goal, c.currency)}
-        </AppText>
-        <AppText style={styles.percent}>{pct}%</AppText>
-      </View>
-    </Frame>
-  );
-}
-
-function SermonCard({ s }) {
-  return (
-    <Frame onPress={() => go('/sermon/[id]', s.id)} label={`Sermon: ${s.title}`}>
-      <Backdrop uri={s.thumbnail_url} colors={['#2A0A14', COLORS.primaryDark]} />
-      <View style={styles.topRow}>
-        <Pill label="Sermon" icon="mic-outline" tone="dark" />
-        <View style={styles.play}>
-          <Ionicons name="play" size={20} color={COLORS.primary} style={{ marginLeft: 2 }} />
-        </View>
-      </View>
-      <View style={styles.bottom}>
-        <AppText style={styles.onPhotoTitle} numberOfLines={2}>
-          {s.title}
-        </AppText>
-        <AppText style={styles.onPhotoMeta} numberOfLines={1}>
-          {[s.preacher, s.duration_seconds ? formatDuration(s.duration_seconds) : null].filter(Boolean).join(' · ')}
-        </AppText>
-        <AppText style={styles.onPhotoChurch} numberOfLines={1}>
-          {s.church?.name}
-        </AppText>
-      </View>
-    </Frame>
-  );
-}
-
-function SoonCard({ stream }) {
-  return (
-    <Frame onPress={() => go('/live/[id]', stream.id)} label={`Upcoming live service: ${stream.title}`}>
-      <Backdrop colors={['#2A0A14', '#5B1229']} />
-      <View style={styles.topRow}>
-        <Pill label="Live service" icon="radio-outline" tone="dark" />
-      </View>
-      <View style={styles.bottom}>
-        <AppText style={styles.onPhotoTitle} numberOfLines={2}>
-          {stream.title}
-        </AppText>
-        <AppText style={styles.onPhotoMeta} numberOfLines={1}>
-          {dayAndTime(stream.scheduled_at)}
-        </AppText>
-        <AppText style={styles.onPhotoChurch} numberOfLines={1}>
-          {stream.church?.name}
-        </AppText>
-      </View>
-    </Frame>
+      <AppText style={[styles.body, { color: TONES.campaign.soft, marginTop: 5 }]} numberOfLines={1}>
+        {formatMoney(c.raised, c.currency)} of {formatMoney(c.goal, c.currency)} · {pct}%
+      </AppText>
+    </View>
   );
 }
 
 export default function Highlights({ home }) {
-  const cards = [
-    ...(home.announcements ?? []).map((a) => ({ key: `a${a.id}`, node: <AnnouncementCard a={a} /> })),
-    ...(home.devotional ? [{ key: `d${home.devotional.id}`, node: <DevotionalCard d={home.devotional} /> }] : []),
-    ...(home.campaigns ?? []).map((c) => ({ key: `c${c.id}`, node: <CampaignCard c={c} /> })),
-    ...(home.live ?? []).filter((l) => l.status !== 'live').map((l) => ({ key: `l${l.id}`, node: <SoonCard stream={l} /> })),
-  ];
+  const { width: screen } = useWindowDimensions();
+  const width = Math.min(screen - SPACING.md * 2 - 24, 340);
+  const step = width + GAP;
+  const scroll = useRef(null);
+  const at = useRef(0);
+  const [paused, setPaused] = useState(false);
+  const fade = useRef(new Animated.Value(0)).current;
 
-  if (!cards.length) return null;
+  const live = (home.live ?? []).filter((l) => l.status === 'live');
+  const soon = (home.live ?? []).filter((l) => l.status !== 'live');
+  const event = home.events?.[0];
+  const cards = [
+    ...live.map((l) => ({ key: `live${l.id}`, el: (c) => <Card {...c} tone="live" kicker="Live now" title={l.title} foot={l.church?.name} label={`Live: ${l.title}`} onPress={() => go('/live/[id]', l.id)} /> })),
+    ...(home.announcements ?? []).map((a) => ({
+      key: `a${a.id}`,
+      el: (c) => <Card {...c} tone={a.urgent ? 'urgent' : 'note'} kicker={a.urgent ? 'Urgent notice' : 'Announcement'} title={a.title} body={a.body} foot={a.church?.name} label={`Announcement: ${a.title}`} onPress={() => go('/announcement/[id]', a.id)} />,
+    })),
+    ...(home.devotional
+      ? [{
+          key: `d${home.devotional.id}`,
+          el: (c) => <Card {...c} tone="devotional" kicker="Devotional" title={home.devotional.title} body={home.devotional.scripture_text ? `“${home.devotional.scripture_text}”` : home.devotional.excerpt} foot={home.devotional.scripture || home.devotional.church?.name} label={`Devotional: ${home.devotional.title}`} onPress={() => go('/devotional/[id]', home.devotional.id)} />,
+        }]
+      : []),
+    ...(home.campaigns ?? []).map((k) => ({
+      key: `c${k.id}`,
+      el: (c) => (
+        <Card {...c} tone="campaign" kicker="Fundraising" title={k.title} foot={k.church?.name} label={`Fundraising: ${k.title}`} onPress={() => go('/campaign/[id]', k.id)}>
+          <Progress c={k} />
+        </Card>
+      ),
+    })),
+    ...(event
+      ? [{
+          key: `e${event.id}`,
+          el: (c) => <Card {...c} tone="event" kicker="Next event" title={event.title} body={dayAndTime(event.starts_at)} foot={[event.location?.name, event.church?.name].filter(Boolean).join(' · ')} label={`Event: ${event.title}`} onPress={() => go('/event/[id]', event.id)} />,
+        }]
+      : []),
+    ...soon.map((l) => ({ key: `s${l.id}`, el: (c) => <Card {...c} tone="live" kicker="Live service" title={l.title} body={dayAndTime(l.scheduled_at)} foot={l.church?.name} label={`Upcoming live service: ${l.title}`} onPress={() => go('/live/[id]', l.id)} /> })),
+  ];
+  const count = cards.length;
+
+  useEffect(() => {
+    if (count < 2 || paused) return undefined;
+    const timer = setInterval(() => {
+      at.current = (at.current + 1) % count;
+      scroll.current?.scrollTo({ x: at.current * step, animated: true });
+    }, SLIDE_MS);
+
+    return () => clearInterval(timer);
+  }, [count, paused, step]);
+
+  useEffect(() => {
+    Animated.timing(fade, { toValue: 1, duration: 500, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
+  }, [fade]);
+
+  if (!count) return null;
 
   return (
-    <View style={styles.section}>
+    <Animated.View style={[styles.section, { opacity: fade }]}>
       <SectionHeader title="Highlights" />
       <ScrollView
+        ref={scroll}
         horizontal
         showsHorizontalScrollIndicator={false}
-        snapToInterval={CARD_W + 12}
+        snapToInterval={step}
         decelerationRate="fast"
         contentContainerStyle={styles.rail}
+        onScrollBeginDrag={() => setPaused(true)}
+        onMomentumScrollEnd={(e) => {
+          at.current = Math.round(e.nativeEvent.contentOffset.x / step);
+          setPaused(false);
+        }}
       >
-        {cards.map(({ key, node }) => (
-          <View key={key}>{node}</View>
+        {cards.map(({ key, el }) => (
+          <View key={key}>{el({ width })}</View>
         ))}
       </ScrollView>
-    </View>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   section: { marginBottom: SPACING.md },
-  rail: { paddingHorizontal: SPACING.md, gap: 12, paddingBottom: 8 },
-  card: { width: CARD_W, height: CARD_H, borderRadius: RADIUS.xl - 4, overflow: 'hidden', padding: 14, backgroundColor: COLORS.primaryDark, ...SHADOW },
-  light: { backgroundColor: COLORS.white },
-  urgent: { backgroundColor: '#FFF6F6', borderWidth: 1.5, borderColor: COLORS.danger },
-  pinkCard: { backgroundColor: COLORS.pink },
-  topRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
-  bottom: { position: 'absolute', left: 14, right: 14, bottom: 14 },
-  cardTitle: { fontFamily: FONTS.bold, fontSize: 16, lineHeight: 21, color: COLORS.black, marginTop: 10 },
-  cardBody: { fontFamily: FONTS.regular, fontSize: 13, lineHeight: 18, color: COLORS.gray700, marginTop: 4 },
-  foot: { position: 'absolute', left: 14, right: 14, bottom: 12 },
-  onPhotoTitle: { fontFamily: FONTS.bold, fontSize: 18, lineHeight: 23, color: COLORS.white },
-  onPhotoMeta: { fontFamily: FONTS.medium, fontSize: 12.5, color: 'rgba(255,255,255,0.9)', marginTop: 3 },
-  onPhotoChurch: { fontFamily: FONTS.regular, fontSize: 11.5, color: 'rgba(255,255,255,0.7)', marginTop: 2 },
-  tile: { backgroundColor: COLORS.white, borderRadius: 12, width: 50, paddingVertical: 5, alignItems: 'center' },
-  tileMonth: { fontFamily: FONTS.bold, fontSize: 10, letterSpacing: 0.8, color: COLORS.primary },
-  tileDay: { fontFamily: FONTS.bold, fontSize: 20, lineHeight: 23, color: COLORS.black },
-  quote: { fontFamily: FONTS.regular, fontStyle: 'italic', fontSize: 15, lineHeight: 21, color: COLORS.gray900, marginTop: 12 },
-  scripture: { fontFamily: FONTS.bold, fontSize: 13, color: COLORS.primary, marginTop: 8 },
-  give: { backgroundColor: COLORS.primary, borderRadius: RADIUS.full, paddingHorizontal: 14, paddingVertical: 5 },
-  giveText: { fontFamily: FONTS.bold, fontSize: 12, color: COLORS.white },
-  track: { height: 8, borderRadius: 4, backgroundColor: COLORS.primaryMist, marginTop: 14, overflow: 'hidden' },
-  fill: { height: 8, borderRadius: 4, backgroundColor: COLORS.primary },
-  progressRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 },
-  percent: { fontFamily: FONTS.bold, fontSize: 14, color: COLORS.primary },
-  play: { width: 40, height: 40, borderRadius: 20, backgroundColor: COLORS.white, alignItems: 'center', justifyContent: 'center' },
+  rail: { paddingHorizontal: SPACING.md, gap: GAP, paddingBottom: 14 },
+  card: { minHeight: 150, borderRadius: 24, padding: 18, overflow: 'hidden', borderWidth: 1.5, borderColor: SOFT.glassBorder, ...SOFT_SHADOW },
+  glow: { position: 'absolute', right: -36, top: -44, width: 130, height: 130, borderRadius: 65, opacity: 0.12 },
+  kicker: { fontFamily: FONTS.bold, fontSize: 11, letterSpacing: 1.5, marginBottom: 6 },
+  title: { fontFamily: FONTS.bold, fontSize: 18, lineHeight: 24 },
+  body: { fontFamily: FONTS.regular, fontSize: 13.5, lineHeight: 19, marginTop: 4 },
+  foot: { fontFamily: FONTS.medium, fontSize: 12, marginTop: 10 },
+  track: { height: 8, borderRadius: 4, backgroundColor: 'rgba(18,112,79,0.16)', overflow: 'hidden' },
+  fill: { height: 8, borderRadius: 4, backgroundColor: '#12704F' },
 });

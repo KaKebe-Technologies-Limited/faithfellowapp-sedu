@@ -1,78 +1,83 @@
-// The banner slider at the top of the home screen: the churches' photos, taking turns between the
-// churches you follow. Swipe or wait; it advances by itself and pauses while you touch it.
-// Each slide shows the church badge, name, title and subtitle over a soft dark gradient; tap opens the church.
+// The slider at the top of the home screen: the highlights (the live service, events, giving campaigns, the devotional, sermons),
+// each over its picture with a line of words and nothing else: no icons, no date tiles. It advances by itself, pauses while you
+// touch it, and a tap opens the item. When a highlight has no picture of its own, a soft wine colour stands in.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Animated, FlatList, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { COLORS, FONTS, RADIUS, SHADOW, SPACING } from '../../constants/theme';
+import { COLORS, FONTS, SPACING } from '../../constants/theme';
 import { mediaUrl } from '../../lib/api';
-import { initials } from '../../lib/format';
 import AppText from '../AppText';
 
 const AUTO_MS = 5500;
 
-function Slide({ slide, width, height }) {
-  const logo = mediaUrl(slide.church?.logo_url);
+const ROUTES = {
+  live: '/live/[id]',
+  event: '/event/[id]',
+  campaign: '/campaign/[id]',
+  devotional: '/devotional/[id]',
+  sermon: '/sermon/[id]',
+};
 
+function open(item) {
+  if (item.kind === 'church' && item.slug) return router.push({ pathname: '/church/[slug]', params: { slug: item.slug } });
+  if (ROUTES[item.kind]) router.push({ pathname: ROUTES[item.kind], params: { id: item.id } });
+}
+
+function Slide({ item, width, height }) {
   return (
     <View style={{ width, paddingHorizontal: SPACING.md }}>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={`${slide.title}, ${slide.church?.name ?? ''}`}
-        onPress={() => slide.church && router.push({ pathname: '/church/[slug]', params: { slug: slide.church.slug } })}
-        style={[styles.card, { height }]}
-      >
-        <Image source={{ uri: mediaUrl(slide.image) }} style={StyleSheet.absoluteFill} contentFit="cover" transition={350} />
-        <LinearGradient colors={['rgba(20,6,12,0)', 'rgba(20,6,12,0.18)', 'rgba(20,6,12,0.78)']} locations={[0.25, 0.55, 1]} style={StyleSheet.absoluteFill} />
+      <Pressable accessibilityRole="button" accessibilityLabel={`${item.label}: ${item.title}`} onPress={() => open(item)} style={[styles.card, { height }]}>
+        <LinearGradient colors={['#5B1431', COLORS.primaryDark, COLORS.primary]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
+        {item.image ? <Image source={{ uri: mediaUrl(item.image) }} style={StyleSheet.absoluteFill} contentFit="cover" transition={350} /> : null}
+        <LinearGradient colors={['rgba(20,6,12,0)', 'rgba(20,6,12,0.25)', 'rgba(20,6,12,0.82)']} locations={[0.2, 0.55, 1]} style={StyleSheet.absoluteFill} />
 
         <View style={styles.content}>
-          <View style={styles.badge}>
-            {logo ? (
-              <Image source={{ uri: logo }} style={styles.badgeImage} contentFit="cover" />
-            ) : (
-              <AppText style={{ fontFamily: FONTS.bold, fontSize: 16, color: COLORS.primary }}>{initials(slide.church?.name)}</AppText>
-            )}
-          </View>
-          <View style={styles.text}>
+          <AppText style={styles.label}>{String(item.label ?? '').toUpperCase()}</AppText>
+          <AppText style={styles.title} numberOfLines={2}>
+            {item.title}
+          </AppText>
+          {item.subtitle ? (
+            <AppText style={styles.subtitle} numberOfLines={2}>
+              {item.subtitle}
+            </AppText>
+          ) : null}
+          {item.church ? (
             <AppText style={styles.church} numberOfLines={1}>
-              {(slide.church?.name ?? '').toUpperCase()}
+              {item.church}
             </AppText>
-            <AppText style={styles.title} numberOfLines={1}>
-              {slide.title}
-            </AppText>
-            {slide.subtitle ? (
-              <AppText style={styles.subtitle} numberOfLines={2}>
-                {slide.subtitle}
-              </AppText>
-            ) : null}
-          </View>
+          ) : null}
         </View>
       </Pressable>
     </View>
   );
 }
 
-export default function HeroCarousel({ slides }) {
+/** `items`: [{ kind, id, label, title, subtitle, image, church }]. */
+export default function HeroCarousel({ items }) {
   const { width } = useWindowDimensions();
-  const height = Math.min(300, Math.round((width - SPACING.md * 2) * 0.72));
+  const height = Math.min(300, Math.round((width - SPACING.md * 2) * 0.78));
   const listRef = useRef(null);
   const scrollX = useRef(new Animated.Value(0)).current;
   const index = useRef(0);
   const [current, setCurrent] = useState(0);
   const [paused, setPaused] = useState(false);
-  const count = slides.length;
+  const count = items.length;
 
-  const goTo = useCallback((next) => {
-    index.current = next;
-    setCurrent(next);
-    listRef.current?.scrollToOffset({ offset: next * width, animated: true });
-  }, [width]);
+  const goTo = useCallback(
+    (next) => {
+      index.current = next;
+      setCurrent(next);
+      listRef.current?.scrollToOffset({ offset: next * width, animated: true });
+    },
+    [width],
+  );
 
   useEffect(() => {
     if (count < 2 || paused) return undefined;
     const timer = setInterval(() => goTo((index.current + 1) % count), AUTO_MS);
+
     return () => clearInterval(timer);
   }, [count, paused, goTo]);
 
@@ -82,13 +87,13 @@ export default function HeroCarousel({ slides }) {
     <View style={styles.wrap}>
       <FlatList
         ref={listRef}
-        data={slides}
+        data={items}
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
-        keyExtractor={(slide, i) => `${slide.church?.id ?? 'c'}-${i}`}
+        keyExtractor={(item, i) => `${item.kind}-${item.id ?? i}-${i}`}
         getItemLayout={(_, i) => ({ length: width, offset: width * i, index: i })}
-        renderItem={({ item }) => <Slide slide={item} width={width} height={height} />}
+        renderItem={({ item }) => <Slide item={item} width={width} height={height} />}
         onScroll={Animated.event([{ nativeEvent: { contentOffset: { x: scrollX } } }], { useNativeDriver: false })}
         scrollEventThrottle={16}
         onScrollBeginDrag={() => setPaused(true)}
@@ -102,9 +107,9 @@ export default function HeroCarousel({ slides }) {
         windowSize={3}
       />
 
-      {count > 1 && count <= 10 ? (
+      {count > 1 ? (
         <View style={styles.dots} pointerEvents="none">
-          {slides.map((_, i) => {
+          {items.slice(0, 10).map((_, i) => {
             const input = [(i - 1) * width, i * width, (i + 1) * width];
             return (
               <Animated.View
@@ -121,30 +126,18 @@ export default function HeroCarousel({ slides }) {
           })}
         </View>
       ) : null}
-
-      {count > 10 ? (
-        <View style={styles.counter} pointerEvents="none">
-          <AppText style={styles.counterText}>
-            {current + 1} / {count}
-          </AppText>
-        </View>
-      ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: { marginBottom: SPACING.md },
-  card: { borderRadius: 28, overflow: 'hidden', backgroundColor: COLORS.primaryDark, borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.25)', ...SHADOW, shadowOpacity: 0.3 },
-  content: { position: 'absolute', left: 14, right: 14, bottom: 30, flexDirection: 'row', alignItems: 'flex-end', gap: 12 },
-  badge: { width: 52, height: 52, borderRadius: 14, borderWidth: 2, borderColor: COLORS.white, backgroundColor: COLORS.white, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
-  badgeImage: { width: '100%', height: '100%' },
-  text: { flex: 1 },
-  church: { fontFamily: FONTS.bold, fontSize: 10, letterSpacing: 1.4, color: 'rgba(255,255,255,0.92)', marginBottom: 2 },
-  title: { fontFamily: FONTS.bold, fontSize: 21, lineHeight: 26, color: COLORS.white },
-  subtitle: { fontFamily: FONTS.regular, fontSize: 13, lineHeight: 18, color: 'rgba(255,255,255,0.86)', marginTop: 1 },
-  dots: { position: 'absolute', bottom: 12, left: 0, right: 0, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 5 },
+  wrap: { marginBottom: SPACING.sm },
+  card: { borderRadius: 28, overflow: 'hidden', backgroundColor: COLORS.primaryDark, borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.25)' },
+  content: { position: 'absolute', left: 18, right: 18, bottom: 34 },
+  label: { fontFamily: FONTS.bold, fontSize: 11, letterSpacing: 1.6, color: 'rgba(255,255,255,0.9)', marginBottom: 4 },
+  title: { fontFamily: FONTS.bold, fontSize: 24, lineHeight: 30, color: COLORS.white },
+  subtitle: { fontFamily: FONTS.medium, fontSize: 14, lineHeight: 20, color: 'rgba(255,255,255,0.9)', marginTop: 3 },
+  church: { fontFamily: FONTS.regular, fontSize: 12.5, color: 'rgba(255,255,255,0.72)', marginTop: 5 },
+  dots: { position: 'absolute', bottom: 14, left: 0, right: 0, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 5 },
   dot: { height: 4, borderRadius: 2, backgroundColor: COLORS.white },
-  counter: { position: 'absolute', bottom: 12, right: SPACING.md + 12, backgroundColor: 'rgba(0,0,0,0.45)', borderRadius: RADIUS.full, paddingHorizontal: 10, paddingVertical: 3 },
-  counterText: { fontFamily: FONTS.semibold, fontSize: 11, color: COLORS.white },
 });

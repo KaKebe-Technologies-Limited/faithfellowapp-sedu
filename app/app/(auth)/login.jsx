@@ -1,23 +1,22 @@
-// Sign-in screen: email + password (POST /api/v1/auth/token) with a link to create an account.
-// "Continue with Google" appears above the form only when Google sign-in is switched on
-// (EXPO_PUBLIC_GOOGLE_SIGNIN=1). States: loading (button spinner), error (inline message).
+// Sign in with email: the "Continue with email" step after the welcome screen (POST /api/v1/auth/token), with a link to reset
+// a forgotten password and one to create an account. "Continue with Google" is on the welcome screen, above this.
+// After a password reset the email arrives filled in. States: loading (button spinner), error (inline message).
 import { useState } from 'react';
 import { KeyboardAvoidingView, StyleSheet, View } from 'react-native';
-import { Link, router } from 'expo-router';
+import { Link, router, useLocalSearchParams } from 'expo-router';
 import AppText from '../../components/AppText';
 import Button from '../../components/Button';
-import GoogleButton from '../../components/GoogleButton';
 import Logo from '../../components/Logo';
 import TextField from '../../components/TextField';
 import KeyboardScroll from '../../components/KeyboardScroll';
 import { COLORS, RADIUS, SPACING } from '../../constants/theme';
 import { API_ROOT, errorMessage, fieldErrors } from '../../lib/api';
 import { useAuth } from '../../lib/auth';
-import { GOOGLE_ENABLED } from '../../lib/google';
 
 export default function Login() {
   const { signIn } = useAuth();
-  const [email, setEmail] = useState('');
+  const params = useLocalSearchParams();
+  const [email, setEmail] = useState(typeof params.email === 'string' ? params.email : '');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -47,26 +46,23 @@ export default function Login() {
     <KeyboardAvoidingView style={styles.flex} behavior="padding">
       <KeyboardScroll contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <View style={styles.hero}>
-          <Logo size={84} />
+          <Logo size={76} />
           <AppText variant="title" style={styles.heroTitle}>
-            FaithFellows
+            Welcome back
           </AppText>
-          <AppText style={styles.heroText}>Empowering your ministry in the digital age</AppText>
+          <AppText style={styles.heroText}>Sign in with your email to join your church family.</AppText>
         </View>
 
         <View style={styles.card}>
           <AppText variant="heading" style={styles.cardTitle}>
-            Welcome back
+            Continue with email
           </AppText>
 
-          {GOOGLE_ENABLED ? (
-            <View style={styles.google}>
-              <GoogleButton />
-              <View style={styles.divider}>
-                <View style={styles.line} />
-                <AppText variant="caption">or use your email</AppText>
-                <View style={styles.line} />
-              </View>
+          {params.reset ? (
+            <View style={styles.good} accessibilityRole="alert">
+              <AppText variant="label" style={{ color: COLORS.success }}>
+                Your password was changed. Sign in with the new one.
+              </AppText>
             </View>
           ) : null}
 
@@ -143,6 +139,7 @@ const styles = StyleSheet.create({
   google: { marginBottom: SPACING.xs },
   divider: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, marginVertical: SPACING.md },
   line: { flex: 1, height: 1, backgroundColor: COLORS.gray100 },
+  good: { backgroundColor: '#E8F6EE', borderRadius: RADIUS.md, padding: SPACING.md, marginBottom: SPACING.md },
   banner: { backgroundColor: COLORS.primaryMist, borderRadius: RADIUS.md, padding: SPACING.md, marginBottom: SPACING.md },
   forgot: { color: COLORS.primary, alignSelf: 'flex-end', marginTop: -SPACING.xs, marginBottom: SPACING.xs },
   submit: { marginTop: SPACING.sm },

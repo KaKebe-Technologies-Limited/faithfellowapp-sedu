@@ -1,5 +1,5 @@
-// Quiz games on Home: a live game from one of your churches (with a pulsing LIVE tag and a Join button), or an invitation
-// to play, with your own record. Both open the Quiz games screen, where you enter the game PIN.
+// Games on Home: a live game from one of your churches (with a pulsing LIVE tag and a Join button), or an invitation to play,
+// with your own record. Both open the Games screen, where you start a game, join one with its code, or answer an invitation.
 import { useEffect, useRef } from 'react';
 import { Animated, Pressable, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -33,7 +33,7 @@ export default function QuizCard({ quiz }) {
   if (!quiz) return null;
 
   return (
-    <Pressable onPress={() => router.push('/games')} style={({ pressed }) => [styles.wrap, pressed && { opacity: 0.95 }]} accessibilityRole="button" accessibilityLabel={live ? `Live quiz: ${live.quiz}. Join` : 'Bible quiz games'}>
+    <Pressable onPress={() => router.push('/games')} style={({ pressed }) => [styles.wrap, pressed && { opacity: 0.95 }]} accessibilityRole="button" accessibilityLabel={live ? `Live game: ${live.quiz}. Join` : 'Games'}>
       <LinearGradient colors={['#2B1763', '#5A32B8', '#8B5CF6']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.card}>
         <View style={styles.bubbleA} />
         <View style={styles.bubbleB} />
@@ -48,11 +48,11 @@ export default function QuizCard({ quiz }) {
               <AppText style={styles.liveText}>LIVE NOW</AppText>
             </View>
           ) : (
-            <AppText style={styles.kicker}>QUIZ GAMES</AppText>
+            <AppText style={styles.kicker}>GAMES</AppText>
           )}
         </View>
         <AppText style={styles.title}>{live ? live.quiz : 'Test your Bible knowledge'}</AppText>
-        <AppText style={styles.sub}>{live ? `${live.church?.name} · ${live.players_count} playing` : 'Join a live quiz with your church, answer fast and climb the leaderboard.'}</AppText>
+        <AppText style={styles.sub}>{live ? `${live.church?.name} · ${live.players_count} playing` : 'Start a game, invite friends, answer fast and climb the leaderboard.'}</AppText>
         <View style={styles.bottom}>
           {quiz.played ? (
             <View style={styles.stats}>

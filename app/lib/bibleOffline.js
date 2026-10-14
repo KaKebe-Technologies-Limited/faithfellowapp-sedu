@@ -84,7 +84,7 @@ export function useChapter(book, chapter, t) {
       const { data } = await api.get(`/bible/${book}/${chapter}`, { params: { t } });
       const info = data.data;
       fresh({ info, loading: false, error: null, offline: false });
-      store.saveChapter(info.translation, book, chapter, info.verses);
+      if (info.keep_offline !== false) store.saveChapter(info.translation, book, chapter, info.verses); // licensed text (the ESV) is never kept on the phone
       if (!t) store.saveMeta({ translation: info.translation });
     } catch (e) {
       if (local) fresh({ offline: isOffline(e) });

@@ -1,5 +1,6 @@
-// Person cards for "Grow your circle": a tall card for rails (photo, name, where they are, a "Say Hey" button) and a
-// wide row for lists. The button asks to connect; once asked it says "Requested", and once connected "Message".
+// People in "Grow your circle": a tall card for rails (photo, name, where they are, a "Say Hey" button) and a plain list
+// row (photo, name, why we suggest them, how far away, a "Say Hey" button; no age). The button asks to connect; once asked it
+// says "Requested", and once connected "Message".
 import { useState } from 'react';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -36,7 +37,10 @@ export function useRelation(person, onChange) {
   return { relation, label, busy, act };
 }
 
-const place = (p) => [p.city, p.age_range].filter(Boolean).join(' · ');
+const place = (p) => p.city ?? '';
+
+/** One line on why this person is listed: what you share, else the church you share, else what they care about. */
+const reason = (p) => (p.reasons?.length ? p.reasons.slice(0, 2).join(' · ') : p.shared_churches?.length ? p.shared_churches.map((c) => c.name).join(', ') : p.interests?.length ? p.interests.slice(0, 3).join(' · ') : place(p) || 'Fellow believer');
 
 export function PersonTile({ person, onChange }) {
   const { label, busy, act, relation } = useRelation(person, onChange);
@@ -60,13 +64,13 @@ export function PersonRow({ person, onChange, children }) {
   const { label, busy, act, relation } = useRelation(person, onChange);
   return (
     <Pressable onPress={() => router.push({ pathname: '/person/[id]', params: { id: String(person.id) } })} style={({ pressed }) => [styles.row, pressed && { opacity: 0.94 }]} accessibilityLabel={`${person.name}, view profile`}>
-      <Avatar person={person} size={54} />
+      <Avatar person={person} size={50} />
       <View style={{ flex: 1, gap: 2 }}>
         <AppText style={styles.rowName} numberOfLines={1}>
           {person.name}
         </AppText>
-        <AppText variant="caption" numberOfLines={1}>
-          {place(person) || 'Fellow believer'}
+        <AppText variant="caption" numberOfLines={1} style={{ color: person.reasons?.length ? COLORS.primary : COLORS.gray700 }}>
+          {reason(person)}
         </AppText>
         {person.distance_label ? (
           <View style={styles.shared}>
@@ -75,18 +79,6 @@ export function PersonRow({ person, onChange, children }) {
               {person.distance_label}
             </AppText>
           </View>
-        ) : null}
-        {person.shared_churches?.length ? (
-          <View style={styles.shared}>
-            <Ionicons name="business-outline" size={12} color={COLORS.primary} />
-            <AppText style={styles.sharedText} numberOfLines={1}>
-              {person.shared_churches.map((c) => c.name).join(', ')}
-            </AppText>
-          </View>
-        ) : person.interests?.length ? (
-          <AppText variant="caption" numberOfLines={1} style={{ color: COLORS.primary }}>
-            {person.interests.slice(0, 3).join(' · ')}
-          </AppText>
         ) : null}
       </View>
       {children ?? (
@@ -105,7 +97,7 @@ const styles = StyleSheet.create({
   heyRow: { marginTop: 0, paddingHorizontal: 14 },
   heyQuiet: { backgroundColor: COLORS.primaryMist },
   heyText: { fontFamily: FONTS.bold, fontSize: 12.5, color: COLORS.white },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: COLORS.white, borderRadius: RADIUS.lg + 2, padding: 12, marginHorizontal: 16, marginBottom: 10, ...SHADOW, shadowOpacity: 0.05 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 16, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: COLORS.gray300 },
   rowName: { fontFamily: FONTS.bold, fontSize: 15.5, color: COLORS.black },
   shared: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   sharedText: { flex: 1, fontFamily: FONTS.medium, fontSize: 11.5, color: COLORS.primary },

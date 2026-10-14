@@ -87,7 +87,7 @@ export default function ExploreGrid({ home }) {
           hint="Give to your church with mobile money"
           onPress={() => (church && !several ? router.push({ pathname: '/give/[slug]', params: { slug: church.slug } }) : router.push('/(tabs)/give'))}
         />
-        <Cell icon="game-controller" colors={['#A58AFF', '#5B3CC4']} label="Quiz" hint="Quiz games" onPress={() => router.push('/games')} />
+        <Cell icon="game-controller" colors={['#A58AFF', '#5B3CC4']} label="Games" hint="Games" onPress={() => router.push('/games')} />
       </View>
     </View>
   );

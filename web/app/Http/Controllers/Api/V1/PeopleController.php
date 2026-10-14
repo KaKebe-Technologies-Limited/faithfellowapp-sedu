@@ -23,7 +23,7 @@ class PeopleController extends Controller
     public function index(Request $request): JsonResponse
     {
         $filters = $request->validate([
-            'scope' => ['nullable', Rule::in(['church', 'nearby', 'everyone'])],
+            'scope' => ['nullable', Rule::in(['recommended', 'church', 'nearby', 'everyone'])],
             'radius' => ['nullable', Rule::in([5, 10, 25, 50, 100, 200])],
             'church' => ['nullable', 'integer'],
             'q' => ['nullable', 'string', 'max:80'],
@@ -35,10 +35,12 @@ class PeopleController extends Controller
             'age_max' => ['nullable', 'integer', 'min:18', 'max:100'],
         ]);
 
-        $page = $this->people->discover($request->user(), $filters)->paginate(20)->withQueryString();
+        $page = ($filters['scope'] ?? null) === 'recommended'
+            ? $this->people->recommended($request->user(), $filters, 20, (int) $request->query('page', 1))
+            : $this->people->discover($request->user(), $filters)->paginate(20)->withQueryString();
 
         return response()->json([
-            'data' => collect($page->items())->map(fn (User $u) => $this->people->person($request->user(), $u))->values(),
+            'data' => collect($page->items())->map(fn (User $u) => $this->people->person($request->user(), $u) + (($r = $u->getAttributes()['match_reasons'] ?? null) ? ['reasons' => $r] : []))->values(),
             'meta' => ['current_page' => $page->currentPage(), 'last_page' => $page->lastPage(), 'total' => $page->total()],
             'viewer' => ['can_connect' => $this->people->isAdult($request->user()), 'has_location' => $request->user()->latitude !== null, 'discoverable' => (bool) ($request->user()->directory_opt_in || $request->user()->open_to_connect)],
         ]);

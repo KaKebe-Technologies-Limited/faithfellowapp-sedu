@@ -1,14 +1,15 @@
 // A giving campaign, in the app: cover, how much is raised, milestones reached, the story, updates from the
-// church, the people who gave (never anonymous gifts) and words of encouragement. "Give" opens the in-app give
-// screen with this campaign already chosen.
+// church, the givers (the most recent first; anonymous gifts show as "Anonymous") and words of encouragement. "Donate" opens a
+// short sheet: an amount and your mobile money number, then a prompt on your phone to approve with your PIN.
 import { useState } from 'react';
 import { Alert, ScrollView, Share, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { router, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import AppText from '../../components/AppText';
 import Button from '../../components/Button';
 import ChurchAvatar from '../../components/ChurchAvatar';
 import CoverHero from '../../components/CoverHero';
+import DonateSheet from '../../components/DonateSheet';
 import Pill from '../../components/Pill';
 import { HeaderAction } from '../../components/ScreenHeader';
 import StateView from '../../components/StateView';
@@ -25,6 +26,7 @@ export default function CampaignScreen() {
   const c = data?.data;
   const [comment, setComment] = useState('');
   const [sending, setSending] = useState(false);
+  const [donating, setDonating] = useState(false);
   const pct = c ? Math.max(0, Math.min(100, Math.round(c.percent))) : 0;
 
   async function send() {
@@ -122,33 +124,25 @@ export default function CampaignScreen() {
                   </View>
                 ) : null}
 
-                {c.leaderboard?.length ? (
-                  <View style={styles.section}>
-                    <AppText style={styles.h2}>Top givers</AppText>
-                    {c.leaderboard.map((g, i) => (
-                      <View key={`${g.name}${i}`} style={styles.giver}>
-                        <AppText style={styles.rank}>{i + 1}</AppText>
-                        <AppText style={[styles.updateTitle, { flex: 1 }]}>{g.name}</AppText>
-                        <AppText style={styles.pct}>{formatMoney(g.total, c.currency)}</AppText>
-                      </View>
-                    ))}
-                  </View>
-                ) : null}
-
-                {c.recent_givers?.length ? (
-                  <View style={styles.section}>
-                    <AppText style={styles.h2}>Recent gifts</AppText>
-                    {c.recent_givers.map((g, i) => (
+                <View style={styles.section}>
+                  <AppText style={styles.h2}>Givers</AppText>
+                  {c.recent_givers?.length ? (
+                    c.recent_givers.map((g, i) => (
                       <View key={i} style={styles.giver}>
                         <View style={styles.heart}>
                           <Ionicons name="heart" size={14} color={COLORS.primary} />
                         </View>
-                        <AppText style={[styles.updateTitle, { flex: 1 }]}>{g.name}</AppText>
-                        <AppText variant="caption">{formatMoney(g.amount, c.currency)}</AppText>
+                        <View style={{ flex: 1 }}>
+                          <AppText style={styles.updateTitle}>{g.name}</AppText>
+                          <AppText variant="caption">{timeAgo(g.at)}</AppText>
+                        </View>
+                        <AppText style={styles.pct}>{formatMoney(g.amount, c.currency)}</AppText>
                       </View>
-                    ))}
-                  </View>
-                ) : null}
+                    ))
+                  ) : (
+                    <AppText variant="caption">Be the first to give to this fundraiser.</AppText>
+                  )}
+                </View>
 
                 <View style={styles.section}>
                   <AppText style={styles.h2}>Words of encouragement</AppText>
@@ -165,10 +159,11 @@ export default function CampaignScreen() {
               </View>
             </ScrollView>
             {c.is_open ? (
-              <StickyBar title={`${pct}% funded`} subtitle={c.church?.name} action="Give" onPress={() => router.push({ pathname: '/give/[slug]', params: { slug: c.church.slug, campaign: String(c.id) } })} />
+              <StickyBar title={`${pct}% funded`} subtitle={`${formatMoney(c.raised, c.currency)} raised`} action="Donate" onPress={() => setDonating(true)} />
             ) : (
               <StickyBar title="This campaign has closed" subtitle="Thank you to everyone who gave" />
             )}
+            <DonateSheet visible={donating} onClose={() => setDonating(false)} church={c.church} campaign={c} />
           </>
         ) : null}
       </StateView>

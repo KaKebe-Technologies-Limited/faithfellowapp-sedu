@@ -23,15 +23,36 @@ class BibleService
     {
         return collect(config('faithfellows.bible.translations'))
             ->map(fn ($t, $key) => [...$t, 'key' => $key])
-            ->filter(fn ($t) => $t['provider'] !== 'api_bible' || filled(config('services.bible.api_bible_key')))
+            ->filter(fn ($t) => match ($t['provider']) {
+                'api_bible' => filled(config('services.bible.api_bible_key')),
+                'esv' => filled(config('services.bible.esv_key')),
+                default => true,
+            })
             ->all();
+    }
+
+    /** Licensed text (the ESV) is read from its API every time: not kept in our database and not downloaded to phones. */
+    public function keepsOffline(string $translation): bool
+    {
+        return (config('faithfellows.bible.translations')[$translation]['offline'] ?? true) !== false;
+    }
+
+    /** The copyright line a translation must show, or null. */
+    public function copyright(string $translation): ?string
+    {
+        return $translation === 'esv' ? EsvApiProvider::COPYRIGHT : null;
     }
 
     public function defaultTranslation(?User $user = null): string
     {
-        $wanted = $user?->bible_translation ?: session('bible_translation') ?: config('faithfellows.bible.default', 'kjv');
+        $available = $this->translations();
+        foreach ([$user?->bible_translation, session('bible_translation'), config('faithfellows.bible.default', 'esv')] as $wanted) {
+            if ($wanted && array_key_exists($wanted, $available)) {
+                return $wanted;
+            }
+        }
 
-        return array_key_exists($wanted, $this->translations()) ? $wanted : 'kjv';
+        return 'kjv';
     }
 
     /**
@@ -45,7 +66,8 @@ class BibleService
             throw new BibleUnavailable("Unknown chapter {$book} {$chapter}");
         }
 
-        $cached = BibleChapter::where('translation', $translation)->where('book', $book)->where('chapter', $chapter)->first();
+        $keep = $this->keepsOffline($translation);
+        $cached = $keep ? BibleChapter::where('translation', $translation)->where('book', $book)->where('chapter', $chapter)->first() : null;
         if ($cached) {
             return $cached->verses;
         }
@@ -56,7 +78,9 @@ class BibleService
             throw new BibleUnavailable("Empty chapter {$book} {$chapter}");
         }
 
-        BibleChapter::updateOrCreate(['translation' => $translation, 'book' => $book, 'chapter' => $chapter], ['verses' => $verses]);
+        if ($keep) {
+            BibleChapter::updateOrCreate(['translation' => $translation, 'book' => $book, 'chapter' => $chapter], ['verses' => $verses]);
+        }
 
         return $verses;
     }
@@ -95,6 +119,7 @@ class BibleService
     {
         return match ($name) {
             'api_bible' => app(ApiBibleProvider::class),
+            'esv' => app(EsvApiProvider::class),
             default => app(BibleApiComProvider::class),
         };
     }

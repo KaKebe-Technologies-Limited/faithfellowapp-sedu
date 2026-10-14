@@ -7,13 +7,17 @@ use App\Notifications\Channels\SmsChannel;
 use App\Notifications\Channels\TenantDatabaseChannel;
 use App\Notifications\Channels\WebPushChannel;
 use App\Notifications\Channels\WhatsAppChannel;
+use App\Services\GoogleSettings;
+use App\Services\MailSettings;
 use App\View\Composers\AppShellComposer;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Notifications\Channels\DatabaseChannel;
 use Illuminate\Pagination\Paginator;
+use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
@@ -45,6 +49,12 @@ class AppServiceProvider extends ServiceProvider
         Gate::before(fn ($user, string $ability) => $user->isSuperAdmin() && $ability !== 'viewNotes' ? true : null);
 
         $this->configureRateLimiting();
+
+        // The email account saved by the super admin (Super admin → Email) replaces the server's mail settings. A queue worker that
+        // has been running for a while looks again before each job, so a change on the website reaches it without a restart.
+        rescue(fn () => MailSettings::apply(), report: false);
+        rescue(fn () => GoogleSettings::apply(), report: false);
+        Event::listen(JobProcessing::class, fn () => rescue(fn () => MailSettings::apply(), report: false));
 
         // Production passwords: 8+ chars with letters and numbers, not in a known breach (HIBP k-anonymity).
         Password::defaults(fn () => $this->app->isProduction()

@@ -36,7 +36,7 @@ class CampaignResource extends JsonResource
                 'id' => $u->id, 'title' => $u->title, 'body' => plain_text($u->body), 'published_at' => $u->published_at?->toIso8601String(),
             ])->values()),
             'leaderboard' => $this->when($detail, fn () => app(CampaignService::class)->leaderboard($this->resource, 5)->map(fn ($r) => ['name' => $r->name, 'total' => (float) $r->total])->values()),
-            'recent_givers' => $this->when($detail, fn () => $this->donations()->with('user:id,name')->succeeded()->latest('paid_at')->take(6)->get()->map(fn ($d) => [
+            'recent_givers' => $this->when($detail, fn () => $this->donations()->with('user:id,name')->succeeded()->latest('paid_at')->take(12)->get()->map(fn ($d) => [
                 'name' => $d->display_name, 'amount' => (float) $d->amount, 'at' => $d->paid_at?->toIso8601String(),
             ])->values()),
             'comments' => $this->when($detail, fn () => $this->comments()->with('user:id,name')->visible()->whereNull('parent_id')->latest()->take(20)->get()->map(fn ($c) => [

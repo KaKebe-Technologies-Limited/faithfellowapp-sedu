@@ -14,6 +14,7 @@ const ROUTES = [
   [/^\/reading-plans\/(\d+)/, (id) => ({ pathname: '/plan/[id]', params: { id } })],
   [/^\/podcast-studio\/(\d+)/, (id) => ({ pathname: '/podcast/[id]', params: { id } })],
   [/^\/campaigns/, () => '/campaigns'],
+  [/^\/games\/(\d+)/, (id) => ({ pathname: '/game/[id]', params: { id } })],
   [/^\/games/, () => '/games'],
   [/^\/giving/, () => '/(tabs)/give'],
   [/^\/prayer/, () => '/prayer'],
@@ -28,6 +29,7 @@ export function routeFor(notification) {
   if (notification.kind === 'message' && notification.ref) return { pathname: '/chat/[id]', params: { id: String(notification.ref) } };
   if (notification.kind === 'post' && notification.ref) return { pathname: '/post/[id]', params: { id: String(notification.ref) } };
   if (notification.kind === 'test') return '/settings/notifications';
+  if (notification.kind === 'game' && notification.ref) return { pathname: '/game/[id]', params: { id: String(notification.ref) } };
   if (notification.kind === 'connection_accepted' && notification.ref) return { pathname: '/person/[id]', params: { id: String(notification.ref) } };
 
   let path = '';

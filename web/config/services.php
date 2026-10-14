@@ -82,6 +82,8 @@ return [
     // ── Messaging ───────────────────────────────────────────────────────
     'bible' => [
         'api_bible_key' => env('API_BIBLE_KEY'),
+        // Crossway's ESV API (api.esv.org): a free key for non-commercial use, from https://api.esv.org/account/
+        'esv_key' => env('ESV_API_KEY'),
     ],
 
     // Push to the phone app goes through Expo. The access token is optional (it adds protection if you turn on

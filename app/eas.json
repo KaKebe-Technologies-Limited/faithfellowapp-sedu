@@ -11,7 +11,8 @@
       },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://faithfellows.com/api",
-        "EXPO_PUBLIC_APP_ENV": "production"
+        "EXPO_PUBLIC_APP_ENV": "production",
+        "EXPO_PUBLIC_GOOGLE_SIGNIN": "1"
       },
       "channel": "production"
     },
@@ -24,7 +25,8 @@
       "env": {
         "EXPO_PUBLIC_API_URL": "http://192.168.0.103:8000/api",
         "EXPO_PUBLIC_APP_ENV": "development",
-        "ALLOW_CLEARTEXT": "1"
+        "ALLOW_CLEARTEXT": "1",
+        "EXPO_PUBLIC_GOOGLE_SIGNIN": "1"
       },
       "channel": "local-wifi"
     },
@@ -36,7 +38,8 @@
       },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://faithfellows.com/api",
-        "EXPO_PUBLIC_APP_ENV": "production"
+        "EXPO_PUBLIC_APP_ENV": "production",
+        "EXPO_PUBLIC_GOOGLE_SIGNIN": "1"
       },
       "channel": "production"
     },
@@ -47,7 +50,8 @@
       },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://faithfellows.com/api",
-        "EXPO_PUBLIC_APP_ENV": "production"
+        "EXPO_PUBLIC_APP_ENV": "production",
+        "EXPO_PUBLIC_GOOGLE_SIGNIN": "1"
       },
       "channel": "production"
     }

@@ -1,41 +1,38 @@
-// Home tab, in a soft frosted style on the brand colours. From the top: a deep wine panel with the greeting and the banner slider
-// of your churches (or the welcome card), then on the pale surface: "Explore" (radio, podcasts, hymns, sermons, events, prayer,
-// giving, quiz), a live-now card, your churches, notices and campaigns, the verse of the day, the quiz card, and the feed of
-// everything your churches post. Pull down to refresh; scroll to the end to load older items.
-// Data: GET /api/v1/home (the banner and highlights) and GET /api/v1/feed (the list).
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, View } from 'react-native';
+// Home tab, in a soft frosted style on the brand colours. From the top: a deep wine panel with the slider of highlights (a short
+// greeting shows for ten seconds when the app opens), then on the pale surface: Explore (radio, podcasts, hymns, sermons, events,
+// prayer, giving, games), the inspiration of the hour, Highlights that slide along by themselves, the verse of the day, Games, the
+// top four podcasts and four sermons. Nothing more: your churches are on Me. Pull down to refresh.
+// Data: GET /api/v1/home, in one request.
+import { useCallback, useRef } from 'react';
+import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import AppText from '../../components/AppText';
 import Button from '../../components/Button';
-import FeedItem from '../../components/FeedItem';
-import ChurchStories from '../../components/home/ChurchStories';
 import ExploreGrid from '../../components/home/ExploreGrid';
 import Highlights from '../../components/home/Highlights';
 import HeroCarousel from '../../components/home/HeroCarousel';
 import HomeHero from '../../components/home/HomeHero';
+import { LatestSermons, TopPodcasts } from '../../components/home/HomeLists';
+import InspirationCard from '../../components/home/InspirationCard';
 import LiveBanner from '../../components/home/LiveBanner';
 import QuizCard from '../../components/home/QuizCard';
-import SuggestedChurches from '../../components/home/SuggestedChurches';
 import VerseCard from '../../components/home/VerseCard';
 import WelcomeBanner from '../../components/home/WelcomeBanner';
-import SectionHeader from '../../components/SectionHeader';
 import Skeleton from '../../components/Skeleton';
 import { COLORS, RADIUS, SHADOW, SPACING } from '../../constants/theme';
 import { SOFT } from '../../constants/soft';
-import api, { errorMessage } from '../../lib/api';
 import { useAuth } from '../../lib/auth';
 import { useFetch } from '../../lib/useFetch';
 
 function HomeSkeleton() {
   return (
     <View style={{ paddingHorizontal: SPACING.md, gap: SPACING.md, marginBottom: SPACING.md }}>
-      <Skeleton height={210} radius={RADIUS.xl} />
       <View style={{ flexDirection: 'row', gap: 14 }}>
         {[0, 1, 2, 3].map((i) => (
-          <Skeleton key={i} width={64} height={64} radius={20} />
+          <Skeleton key={i} width={66} height={66} radius={22} />
         ))}
       </View>
+      <Skeleton height={130} radius={RADIUS.xl} />
       <Skeleton height={150} radius={RADIUS.xl} />
     </View>
   );
@@ -51,138 +48,71 @@ function Notice({ title, message, actionTitle, onAction }) {
   );
 }
 
+/** What the slider shows: the highlights, else the churches' own banners, else nothing (the welcome card takes over). */
+function sliderItems(data) {
+  if (data.highlights?.length) return data.highlights;
+
+  return (data.slides ?? []).map((s) => ({ kind: 'church', slug: s.church?.slug, label: s.church?.name, title: s.title, subtitle: s.subtitle, image: s.image, church: null }));
+}
+
 export default function HomeScreen() {
   const { user } = useAuth();
   const home = useFetch('/home');
-  const [items, setItems] = useState([]);
-  const [next, setNext] = useState(null);
-  const [status, setStatus] = useState({ loading: true, refreshing: false, more: false, error: null });
-  const busy = useRef(false);
 
-  const load = useCallback(async (mode = 'load', before = null) => {
-    if (busy.current) return;
-    busy.current = true;
-    if (mode !== 'silent') setStatus((s) => ({ ...s, loading: mode === 'load', refreshing: mode === 'refresh', more: mode === 'more', error: null }));
-    try {
-      const { data } = await api.get('/feed', { params: before ? { before } : {} });
-      setItems((current) => (mode === 'more' ? [...current, ...data.data] : data.data));
-      setNext(data.next_before ?? null);
-      setStatus({ loading: false, refreshing: false, more: false, error: null });
-    } catch (e) {
-      setStatus({ loading: false, refreshing: false, more: false, error: errorMessage(e) });
-    } finally {
-      busy.current = false;
-    }
-  }, []);
-
-  useEffect(() => {
-    load('load');
-  }, [load]);
-
-  // Coming back to Home (e.g. after following a church) quietly refreshes the banner, highlights and feed.
-  // (useFetch returns a new reload function each render, so keep the latest one in a ref and keep this callback stable.)
+  // Coming back to Home (for example after following a church) quietly refreshes it. (useFetch returns a new reload function each
+  // render, so keep the latest in a ref and keep this callback stable.)
   const firstFocus = useRef(true);
-  const reloadHome = useRef(home.reload);
-  reloadHome.current = home.reload;
+  const reload = useRef(home.reload);
+  reload.current = home.reload;
   useFocusEffect(
     useCallback(() => {
       if (firstFocus.current) {
         firstFocus.current = false;
         return;
       }
-      reloadHome.current();
-      load('silent');
-    }, [load]),
+      reload.current();
+    }, []),
   );
 
   const data = home.data?.data;
-  const slides = data?.slides ?? [];
+  const items = data ? sliderItems(data) : [];
   const liveNow = (data?.live ?? []).find((stream) => stream.status === 'live');
   const hasChurches = (data?.churches ?? []).length > 0;
 
-  const header = (
-    <View>
-      <HomeHero user={user}>
-        {data ? (slides.length ? <HeroCarousel slides={slides} /> : !hasChurches ? <WelcomeBanner /> : null) : null}
-      </HomeHero>
+  return (
+    <ScrollView
+      style={styles.list}
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={{ paddingBottom: SPACING.lg }}
+      refreshControl={<RefreshControl refreshing={home.refreshing} onRefresh={home.reload} tintColor={COLORS.primary} colors={[COLORS.primary]} />}
+    >
+      <HomeHero user={user}>{data ? items.length ? <HeroCarousel items={items} /> : <WelcomeBanner /> : null}</HomeHero>
+
       {home.loading && !data ? <HomeSkeleton /> : null}
       {home.error && !data ? (
         <View style={{ paddingHorizontal: SPACING.md }}>
-          <Notice title="Highlights could not load" message={home.error} actionTitle="Try again" onAction={home.retry} />
+          <Notice title="Home could not load" message={home.error} actionTitle="Try again" onAction={home.retry} />
         </View>
       ) : null}
+
       {data ? (
         <>
-          {!hasChurches ? (
-            <SuggestedChurches
-              onFollowed={() => {
-                home.reload();
-                load('silent');
-              }}
-            />
-          ) : null}
           <ExploreGrid home={data} />
+          {!hasChurches ? (
+            <View style={{ paddingHorizontal: SPACING.md, marginBottom: SPACING.lg }}>
+              <Notice title="Find your church family" message="Follow a church to get its sermons, events and prayer requests." actionTitle="Find churches" onAction={() => router.push('/churches')} />
+            </View>
+          ) : null}
+          <InspirationCard inspiration={data.inspiration} />
           <LiveBanner stream={liveNow} />
-          <ChurchStories churches={data.churches} />
           <Highlights home={data} />
           <VerseCard verse={data.verse} />
-          {hasChurches ? <QuizCard quiz={data.quiz} /> : null}
-          {items.length || status.loading ? <SectionHeader title="Latest from your churches" /> : null}
+          <QuizCard quiz={data.quiz} />
+          <TopPodcasts podcasts={data.podcasts} />
+          <LatestSermons sermons={data.sermons} />
         </>
       ) : null}
-    </View>
-  );
-
-  const empty = !status.loading ? (
-    !hasChurches && !status.error ? null : status.error ? (
-      <View style={{ paddingHorizontal: SPACING.md }}>
-        <Notice title="Your feed could not load" message={status.error} actionTitle="Try again" onAction={() => load('load')} />
-      </View>
-    ) : (
-      <View style={{ paddingHorizontal: SPACING.md }}>
-        <Notice
-          title={hasChurches ? 'Nothing new yet' : 'Your feed is empty'}
-          message={hasChurches ? 'When your churches share sermons, events or updates, they will appear here.' : 'Follow a church to see its sermons, events and updates here.'}
-          actionTitle={hasChurches ? undefined : 'Find churches'}
-          onAction={() => router.push('/churches')}
-        />
-      </View>
-    )
-  ) : (
-    <View style={{ paddingHorizontal: SPACING.md, gap: SPACING.md }}>
-      <Skeleton height={120} radius={RADIUS.lg} />
-      <Skeleton height={120} radius={RADIUS.lg} />
-    </View>
-  );
-
-  return (
-    <FlatList
-      style={styles.list}
-      data={items}
-      keyExtractor={(entry, index) => `${entry.type}-${entry.item?.id ?? index}-${entry.at}`}
-      renderItem={({ item }) => <FeedItem entry={item} />}
-      ListHeaderComponent={header}
-      ListEmptyComponent={empty}
-      ListFooterComponent={status.more ? <ActivityIndicator color={COLORS.primary} style={{ paddingVertical: SPACING.lg }} /> : <View style={{ height: SPACING.lg }} />}
-      contentContainerStyle={{ paddingBottom: SPACING.md }}
-      showsVerticalScrollIndicator={false}
-      refreshControl={
-        <RefreshControl
-          refreshing={status.refreshing}
-          onRefresh={() => {
-            home.reload();
-            load('refresh');
-          }}
-          tintColor={COLORS.primary}
-          colors={[COLORS.primary]}
-        />
-      }
-      onEndReachedThreshold={0.5}
-      onEndReached={() => next && !busy.current && load('more', next)}
-      initialNumToRender={15}
-      maxToRenderPerBatch={10}
-      windowSize={9}
-    />
+    </ScrollView>
   );
 }
 

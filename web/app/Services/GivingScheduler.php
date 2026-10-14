@@ -41,7 +41,7 @@ class GivingScheduler
                 try {
                     $this->donations->initiate($gift->user, $gift->church, [
                         'amount' => $gift->amount, 'category' => $gift->category, 'method' => $gift->method,
-                        'phone' => $gift->phone, 'campaign_id' => $gift->campaign_id, 'recurring_gift_id' => $gift->id,
+                        'phone' => $gift->phone, 'campaign_id' => $gift->campaign_id, 'recurring_gift_id' => $gift->id, 'reason_id' => $gift->giving_reason_id,
                     ]);
                     $count++;
                 } catch (Throwable $e) {

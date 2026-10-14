@@ -6,6 +6,7 @@ use App\Events\DonationSucceeded;
 use App\Models\Campaign;
 use App\Models\Church;
 use App\Models\Donation;
+use App\Models\GivingReason;
 use App\Models\RecurringGift;
 use App\Models\User;
 use App\Services\Payments\PaymentResult;
@@ -48,6 +49,15 @@ class DonationService
             $data['category'] = 'campaign';
         }
 
+        // A reason chosen from the church's own list: its name is kept on the gift, and it counts as the reason's category.
+        $reason = empty($data['campaign_id']) && ! empty($data['reason_id']) ? GivingReason::where('church_id', $church->id)->active()->find($data['reason_id']) : null;
+        if (! empty($data['reason_id']) && empty($data['campaign_id']) && ! $reason) {
+            throw ValidationException::withMessages(['reason_id' => __('Choose what your gift is for.')]);
+        }
+        if ($reason) {
+            $data['category'] = $reason->category;
+        }
+
         $donation = Donation::create([
             'church_id' => $church->id,
             'user_id' => $user?->id,
@@ -59,6 +69,8 @@ class DonationService
             'small_group_id' => $data['small_group_id'] ?? null,
             'branch_id' => $data['branch_id'] ?? null,
             'category' => $data['category'],
+            'giving_reason_id' => $reason?->id,
+            'reason' => $reason?->name,
             'amount' => $data['amount'],
             'currency' => $data['currency'] ?? config('faithfellows.currency'),
             'method' => $method,
@@ -86,9 +98,10 @@ class DonationService
      */
     public function scheduleRecurring(User $user, Church $church, array $data): RecurringGift
     {
+        $reason = ! empty($data['reason_id']) ? GivingReason::where('church_id', $church->id)->active()->find($data['reason_id']) : null;
         $recurring = RecurringGift::create([
-            'church_id' => $church->id, 'user_id' => $user->id, 'campaign_id' => $data['campaign_id'] ?? null,
-            'category' => $data['category'] ?? 'tithe', 'amount' => $data['amount'], 'currency' => config('faithfellows.currency'),
+            'church_id' => $church->id, 'user_id' => $user->id, 'campaign_id' => $data['campaign_id'] ?? null, 'giving_reason_id' => $reason?->id,
+            'category' => $reason?->category ?? $data['category'] ?? 'tithe', 'amount' => $data['amount'], 'currency' => config('faithfellows.currency'),
             'frequency' => $data['recurring'], 'method' => $data['method'], 'phone' => $data['phone'] ?? null,
             'next_run_on' => today(), 'status' => 'active',
         ]);

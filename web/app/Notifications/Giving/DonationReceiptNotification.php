@@ -47,19 +47,35 @@ class DonationReceiptNotification extends ChurchNotification
         return $this->donation->church?->name;
     }
 
+    /** The thank-you email every giver gets: a warm, branded note with the gift's details, and the receipt as a PDF. */
     public function toMail(object $notifiable): MailMessage
     {
         $receipts = app(ReceiptService::class);
+        $donation = $this->donation;
+        $church = $donation->church?->name ?? config('app.name');
 
-        return (new MailMessage)
-            ->subject(__('Your receipt from :church (:number)', ['church' => $this->donation->church?->name, 'number' => $this->donation->receipt_number]))
-            ->greeting(__('Thank you, :name!', ['name' => $notifiable->first_name]))
-            ->line(__('We have received your gift of **:amount** to :church.', ['amount' => ff_money($this->donation->amount, $this->donation->currency), 'church' => $this->donation->church?->name]))
-            ->line(__('Category: :category', ['category' => $this->donation->category_label]).($this->donation->campaign ? ' — '.$this->donation->campaign->title : ''))
-            ->line(__('Reference: :ref', ['ref' => $this->donation->provider_ref ?: $this->donation->reference]))
-            ->action(__('View your giving history'), route('giving.index'))
-            ->line(__('“God loves a cheerful giver.” — 2 Corinthians 9:7'))
-            ->attach($receipts->path($this->donation), ['as' => $receipts->filename($this->donation), 'mime' => 'application/pdf']);
+        $mail = (new MailMessage)
+            ->subject(__('Thank you for your gift to :church', ['church' => $church]))
+            ->view(['emails.donation-thanks', 'emails.donation-thanks-text'], [
+                'name' => $notifiable->first_name ?: $notifiable->name,
+                'amount' => ff_money($donation->amount, $donation->currency),
+                'church' => $church,
+                'reason' => $donation->category_label,
+                'campaign' => $donation->campaign,
+                'date' => ($donation->paid_at ?? $donation->created_at)?->format('j F Y, H:i'),
+                'method' => $donation->method_label,
+                'receipt' => $donation->receipt_number ?: $donation->reference,
+                'url' => route('giving.index'),
+            ]);
+
+        // The receipt is a PDF; if it cannot be made right now, the thank-you still goes.
+        try {
+            $mail->attach($receipts->path($donation), ['as' => $receipts->filename($donation), 'mime' => 'application/pdf']);
+        } catch (\Throwable $e) {
+            report($e);
+        }
+
+        return $mail;
     }
 
     public function toSms(object $notifiable): string

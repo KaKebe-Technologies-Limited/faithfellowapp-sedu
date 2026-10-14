@@ -12,7 +12,7 @@ class RecurringGift extends Model
     use BelongsToChurch;
 
     protected $fillable = [
-        'church_id', 'user_id', 'campaign_id', 'category', 'amount', 'currency', 'frequency', 'method', 'phone',
+        'church_id', 'user_id', 'campaign_id', 'giving_reason_id', 'category', 'amount', 'currency', 'frequency', 'method', 'phone',
         'next_run_on', 'last_run_at', 'failures', 'status',
     ];
 

@@ -1,7 +1,8 @@
-// People: find other believers — in your own churches, near you (by distance), or across the whole app for those who
-// chose to be found. Nobody sees where you are, only about how far away.
-// Filter by country, city, age, gender and what they care about; ask to connect with "Say Hey". Adults only; you need
-// your own birth date on your profile to connect. Data: GET /api/v1/people.
+// People ("Grow your circle"): a plain list of believers. "For you" ranks the people who share your interests, podcasts, hymns,
+// scriptures, church, town and age; "My church", "Near me" (pick a distance range; the churches around you are listed first)
+// and "Everyone" are the other views. The phone asks for location once; nobody sees where you are, only about how far away.
+// Ask to connect with "Say Hey". Adults only; you need your own birth date on your profile to connect.
+// Data: GET /api/v1/people, GET /api/v1/churches/nearby.
 import { useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,11 +10,13 @@ import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AppText from '../components/AppText';
 import Button from '../components/Button';
+import ChurchAvatar from '../components/ChurchAvatar';
 import PagedScreen from '../components/PagedScreen';
 import { PersonRow } from '../components/PersonCard';
 import { COLORS, FONTS, RADIUS, SPACING, MAX_FONT_SCALE } from '../constants/theme';
 import { useAuth } from '../lib/auth';
 import { shareMyLocation } from '../lib/location';
+import { useFetch } from '../lib/useFetch';
 import { COUNTRIES, INTERESTS } from '../lib/people';
 
 const AGES = [['18–24', 18, 24], ['25–34', 25, 34], ['35–44', 35, 44], ['45–54', 45, 54], ['55+', 55, 100]];
@@ -29,7 +32,7 @@ function Chip({ label, on, onPress }) {
 export default function PeopleScreen() {
   const insets = useSafeAreaInsets();
   const { user, setUser } = useAuth();
-  const [scope, setScope] = useState('church');
+  const [scope, setScope] = useState('recommended');
   const [radius, setRadius] = useState(50);
   const [hasLocation, setHasLocation] = useState(!!user?.has_location);
   const [locating, setLocating] = useState(false);
@@ -41,6 +44,7 @@ export default function PeopleScreen() {
   const [draft, setDraft] = useState({});
   const [open, setOpen] = useState(false);
 
+  const nearbyChurches = useFetch(`/churches/nearby?radius=${radius}`, { enabled: scope === 'nearby' && hasLocation });
   const active = Object.entries(filters).filter(([, v]) => v !== undefined && v !== '');
   const canConnect = !!user?.date_of_birth && new Date(user.date_of_birth) <= new Date(Date.now() - 18 * 365.25 * 864e5);
 
@@ -68,26 +72,55 @@ export default function PeopleScreen() {
         </Pressable>
       ) : null}
       <View style={styles.seg}>
-        {[['church', 'My church'], ['nearby', 'Near me'], ['everyone', 'Everyone']].map(([key, label]) => (
+        {[['recommended', 'For you'], ['church', 'My church'], ['nearby', 'Near me'], ['everyone', 'Everyone']].map(([key, label]) => (
           <Pressable key={key} onPress={() => setScope(key)} style={[styles.segBtn, scope === key && styles.segOn]} accessibilityRole="tab" accessibilityState={{ selected: scope === key }}>
             <AppText style={[styles.segText, scope === key && { color: COLORS.white }]}>{label}</AppText>
           </Pressable>
         ))}
       </View>
-      {scope === 'nearby' ? (
-        hasLocation ? (
+      {scope === 'nearby' && hasLocation ? (
+        <View style={{ gap: 8 }}>
+          <AppText style={styles.label2}>Distance range</AppText>
           <View style={styles.wrap}>
-            {[10, 25, 50, 100].map((km) => (
+            {[5, 10, 25, 50, 100, 200].map((km) => (
               <Chip key={km} label={`${km} km`} on={radius === km} onPress={() => setRadius(km)} />
             ))}
           </View>
-        ) : (
+          <View>
+            <AppText style={styles.label2}>Churches near you</AppText>
+            {(nearbyChurches.data?.data ?? []).slice(0, 5).map((c) => (
+              <Pressable key={c.id} onPress={() => router.push({ pathname: '/church/[slug]', params: { slug: c.slug } })} style={styles.church} accessibilityRole="button" accessibilityLabel={`${c.name}, ${c.distance_label}`}>
+                <ChurchAvatar church={c} size={40} />
+                <View style={{ flex: 1 }}>
+                  <AppText style={styles.churchName} numberOfLines={1}>{c.name}</AppText>
+                  <AppText variant="caption" numberOfLines={1}>{[c.distance_label, c.denomination].filter(Boolean).join(' · ')}</AppText>
+                </View>
+                <Ionicons name="chevron-forward" size={16} color={COLORS.gray500} />
+              </Pressable>
+            ))}
+            {nearbyChurches.loading ? <AppText variant="caption">Looking for churches around you…</AppText> : null}
+            {!nearbyChurches.loading && nearbyChurches.data && !nearbyChurches.data.data.length ? <AppText variant="caption">No church has shared its place within {radius} km yet. Try a wider range.</AppText> : null}
+          </View>
+          <AppText style={styles.label2}>People near you</AppText>
+        </View>
+      ) : null}
+      {(scope === 'nearby' || scope === 'recommended') && !hasLocation ? (
+        scope === 'nearby' ? (
           <View style={styles.notice}>
             <Ionicons name="location-outline" size={22} color={COLORS.primary} />
             <View style={{ flex: 1, gap: 6 }}>
               <AppText style={styles.noticeText}>Share your approximate area to see believers near you. Others only see how far away you are, never where.</AppText>
               {locationError ? <AppText style={[styles.noticeText, { color: COLORS.danger }]}>{locationError}</AppText> : null}
               <Button title="Use my location" small onPress={useMyLocation} loading={locating} style={{ alignSelf: 'flex-start' }} />
+            </View>
+          </View>
+        ) : (
+          <View style={styles.notice}>
+            <Ionicons name="location-outline" size={22} color={COLORS.primary} />
+            <View style={{ flex: 1, gap: 6 }}>
+              <AppText style={styles.noticeText}>Allow your location to find the churches and believers around you. Others only see how far away you are, never where.</AppText>
+              {locationError ? <AppText style={[styles.noticeText, { color: COLORS.danger }]}>{locationError}</AppText> : null}
+              <Button title="Allow location" small onPress={useMyLocation} loading={locating} style={{ alignSelf: 'flex-start' }} />
             </View>
           </View>
         )
@@ -118,7 +151,7 @@ export default function PeopleScreen() {
     <View style={{ flex: 1 }}>
       <PagedScreen
         key={`${scope}-${radius}-${refresh}`}
-        title="People"
+        title="Grow your circle"
         subtitle="Believers to walk with"
         path="/people"
         params={{ scope, q: search || undefined, ...(scope === 'nearby' ? { radius } : {}), ...Object.fromEntries(active) }}
@@ -126,7 +159,7 @@ export default function PeopleScreen() {
         renderItem={(person) => <PersonRow person={person} />}
         emptyIcon="people-outline"
         emptyTitle="No one found yet"
-        emptyMessage={scope === 'church' ? 'People from your churches who chose to be listed will appear here. Try "Near me" or "Everyone" to meet believers across the app.' : scope === 'nearby' ? (hasLocation ? 'No one has shared an area within this distance yet. Try a wider distance.' : 'Share your approximate area above to see believers near you.') : 'Try fewer filters. Only adults who chose to be found are shown.'}
+        emptyMessage={scope === 'recommended' ? 'When members who chose to be found join, the ones who share your interests appear here first. Add your interests in your profile to get better suggestions.' : scope === 'church' ? 'People from your churches who chose to be listed will appear here. Try "Near me" or "Everyone" to meet believers across the app.' : scope === 'nearby' ? (hasLocation ? 'No one has shared an area within this distance yet. Try a wider distance.' : 'Share your approximate area above to see believers near you.') : 'Try fewer filters. Only adults who chose to be found are shown.'}
         right={
           <Pressable onPress={() => router.push('/connections')} style={styles.reqBtn} accessibilityRole="button" accessibilityLabel="My connections">
             <Ionicons name="people-circle-outline" size={20} color={COLORS.primary} />
@@ -194,6 +227,9 @@ const styles = StyleSheet.create({
   chip: { paddingHorizontal: 13, paddingVertical: 8, borderRadius: RADIUS.full, backgroundColor: COLORS.primaryMist },
   chipOn: { backgroundColor: COLORS.primary },
   chipText: { fontFamily: FONTS.semibold, fontSize: 13, color: COLORS.primary },
+  label2: { fontFamily: FONTS.bold, fontSize: 14, color: COLORS.black, marginTop: 4, marginBottom: 6 },
+  church: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 8 },
+  churchName: { fontFamily: FONTS.semibold, fontSize: 15, color: COLORS.black },
   backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(20,6,12,0.5)' },
   sheet: { position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: COLORS.white, borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: SPACING.lg },
   grab: { width: 44, height: 5, borderRadius: 3, backgroundColor: COLORS.gray300, alignSelf: 'center', marginBottom: 12 },

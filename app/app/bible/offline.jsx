@@ -26,7 +26,10 @@ export default function OfflineBible() {
   const [counts, setCounts] = useState({});
   const [bytes, setBytes] = useState(0);
 
-  const current = translation ?? bible?.translation;
+  // The ESV is licensed text that is read online only, so it is not offered here.
+  const downloadable = useMemo(() => (bible?.translations ?? []).filter((t) => t.offline !== false), [bible]);
+  const wanted = translation ?? bible?.translation;
+  const current = downloadable.some((t) => t.key === wanted) ? wanted : (downloadable[0]?.key ?? wanted);
   const books = useMemo(() => bible?.books ?? [], [bible]);
   const name = bible?.translations?.find((t) => t.key === current)?.short ?? String(current ?? '').toUpperCase();
 
@@ -61,9 +64,9 @@ export default function OfflineBible() {
       <StateView loading={loading && !bible} error={!bible ? error : null} onRetry={retry}>
         {bible ? (
           <ScrollView contentContainerStyle={{ padding: SPACING.md, paddingBottom: 56, gap: 14 }} showsVerticalScrollIndicator={false}>
-            {bible.translations.length > 1 ? (
+            {downloadable.length > 1 ? (
               <View style={styles.chips}>
-                {bible.translations.map((t) => (
+                {downloadable.map((t) => (
                   <Chip key={t.key} label={t.short} on={t.key === current} onPress={() => !busy && setTranslation(t.key)} />
                 ))}
               </View>

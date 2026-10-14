@@ -8,6 +8,7 @@ use App\Models\QuizPlayer;
 use App\Models\QuizQuestion;
 use App\Models\QuizSession;
 use App\Models\User;
+use App\Notifications\Games\GameInvite;
 use App\Notifications\Games\QuizUpdate;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -40,6 +41,68 @@ class QuizService
         }
 
         return $session;
+    }
+
+    /**
+     * A community game: any member picks one of the ready-made quizzes and starts a game of it. The member is the host
+     * and also a player; others join with the PIN or from an invitation. The host presses "Start" when everyone is in.
+     */
+    public function hostCommunity(Quiz $quiz, User $host): QuizSession
+    {
+        abort_unless($quiz->is_sample && $quiz->church_id === null, 404);
+        abort_if($quiz->questions()->count() === 0, 422, __('This quiz has no questions yet.'));
+
+        // Games nobody finished do not pile up, and a member has one waiting game at a time.
+        QuizSession::active()->whereNull('church_id')->where(fn ($q) => $q->where('created_at', '<', now()->subHours(6))
+            ->orWhere(fn ($w) => $w->where('host_id', $host->id)->where('status', 'lobby')))
+            ->update(['status' => 'cancelled', 'finished_at' => now()]);
+
+        $session = QuizSession::create(['church_id' => null, 'quiz_id' => $quiz->id, 'host_id' => $host->id, 'pin' => $this->uniquePin(), 'status' => 'lobby']);
+        $this->join($host, $session);
+
+        return $session->load('quiz');
+    }
+
+    /** The host starts a community game; everyone who joined or was invited is told. */
+    public function beginCommunity(QuizSession $session, User $host): void
+    {
+        abort_unless($session->church_id === null && $session->host_id === $host->id, 403);
+        abort_unless($session->status === 'lobby', 422, __('The game has already started.'));
+
+        $this->start($session);
+
+        $session->loadMissing('quiz');
+        $ids = $session->players()->pluck('user_id')->merge($session->invites()->pluck('user_id'))->unique()->reject(fn ($id) => $id === $host->id);
+        User::whereIn('id', $ids)->get()->each(fn (User $user) => $this->tell($user, $session, 'started', $host));
+    }
+
+    /** Invite members to a community game: each gets a notification in the app and a push to the phone. */
+    public function invite(QuizSession $session, User $host, iterable $users): int
+    {
+        abort_unless($session->church_id === null && $session->host_id === $host->id && $session->isActive(), 403);
+
+        $sent = 0;
+        foreach ($users as $user) {
+            $invite = $session->invites()->firstOrCreate(['user_id' => $user->id], ['invited_by' => $host->id]);
+            if ($invite->wasRecentlyCreated) {
+                $this->tell($user, $session->loadMissing('quiz'), 'invite', $host);
+                $sent++;
+            }
+        }
+
+        return $sent;
+    }
+
+    protected function tell(User $user, QuizSession $session, string $kind, User $from): void
+    {
+        $note = new GameInvite($session, $kind, $from);
+        $user->notify($note);
+        app(DevicePushService::class)->toUser($user, 'games', [
+            'title' => $note->title(),
+            'body' => $note->body(),
+            'data' => ['kind' => 'game', 'ref' => $session->id],
+            'channelId' => $kind === 'started' ? 'live' : 'default',
+        ]);
     }
 
     public function join(User $user, QuizSession $session): QuizPlayer
@@ -199,6 +262,9 @@ class QuizService
             'status' => $session->status,
             'pin' => $session->pin,
             'quiz' => $session->quiz->title,
+            'community' => $session->church_id === null,
+            'is_host' => $viewer !== null && $session->host_id === $viewer->id,
+            'host_name' => $session->host?->name,
             'total' => $questions->count(),
             'index' => $session->current_index,
             'timing' => ['question' => self::questionSeconds(), 'reveal' => self::revealSeconds()],
