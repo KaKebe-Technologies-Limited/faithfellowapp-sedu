@@ -129,8 +129,9 @@ Hymns are added by the super admin on the website; every hymn shows who wrote it
 ## Home
 
 The Home tab (`app/(tabs)/index.jsx`) is built from sections in `components/home/`: church stories (radio, podcasts, hymns,
-churches), notices, `VerseCard` (verse of the day), `QuizCard`, `PrayerWall`, `TopSermons`, `UpcomingEvents`, `GiveCard`, then
-the feed. All come from the one `GET /api/v1/home` response.
+churches), notices, `VerseCard` (verse of the day), `QuizCard`, `QuickAccess` (four small shortcuts: prayer wall, sermons,
+events, giving), then the feed. Kept short on purpose: each shortcut opens its own screen. All come from the one
+`GET /api/v1/home` response.
 
 ## Notes
 
