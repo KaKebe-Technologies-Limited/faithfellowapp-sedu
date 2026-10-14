@@ -18,6 +18,7 @@ Run it from the web folder. The results are written to deploy/shared-hosting/out
 The database file is made on a throwaway database on this computer (ff_export), checked by loading it into a second one
 (ff_verify), and both are dropped at the end. Settings come from web/.env.production (see docs/DEPLOYMENT_SHARED_HOSTING.md).
 """
+import base64
 import json
 import os
 import pathlib
@@ -69,9 +70,9 @@ def mysql(sql, db=None):
     return run(cmd, capture=True).stdout.strip()
 
 
-def artisan(*args, db, extra_env=None):
+def artisan(*args, db, extra_env=None, check=True):
     env = {**os.environ, **ARTISAN_ENV, 'DB_DATABASE': db, **(extra_env or {})}
-    return run([PHP, 'artisan', *args], env=env, cwd=WEB, capture=True)
+    return run([PHP, 'artisan', *args], env=env, cwd=WEB, capture=True, check=check)
 
 
 def dump(db, target, *tables, extra=()):
@@ -83,6 +84,10 @@ def dump(db, target, *tables, extra=()):
 
 prod = {}
 ARTISAN_ENV = {}
+DECRYPT_CHECK = (r"foreach ([\App\Models\GivingChannel::class, \App\Models\CounselingAppointment::class, \App\Models\HomeVisit::class, "
+                 r"\App\Models\LiveStream::class, \App\Models\PastoralNote::class, \App\Models\PaymentMethod::class, \App\Models\PrayerRequest::class, "
+                 r"\App\Models\PlatformSetting::class, \App\Models\ReadingCircleEntry::class, \App\Models\WelfareRecord::class] as $model) { $model::withoutGlobalScopes()->get()->each(function ($m) { foreach ($m->getCasts() as $attr => $cast) { if (str_starts_with((string) $cast, 'encrypted')) { $m->getAttribute($attr); } } }); } "
+                 r"echo 'decrypt-ok';")
 
 
 def load_settings():
@@ -96,7 +101,12 @@ def load_settings():
     cached = WEB / 'bootstrap' / 'cache' / 'config.php'
     if cached.exists():
         sys.exit('bootstrap/cache/config.php exists and would override the settings used here. Run: php artisan config:clear')
+    if not prod.get('APP_KEY', '').startswith('base64:'):
+        sys.exit('web/.env.production needs an APP_KEY (base64:...).')
     ARTISAN_ENV = {
+        # The sample data is seeded with the SERVER's key: some columns are encrypted with it (giving channels, pastoral notes,
+        # prayer replies, stream keys) and would not open on the server if they had been written with the key on this computer.
+        'APP_KEY': prod['APP_KEY'],
         'APP_ENV': 'production', 'APP_DEBUG': 'false', 'APP_URL': prod.get('APP_URL', 'https://ff.bodaerp.site'),
         'DB_CONNECTION': 'mysql', 'DB_HOST': '127.0.0.1', 'DB_PORT': '3306', 'DB_USERNAME': 'root', 'DB_PASSWORD': '',
         'SEED_SUPER_ADMIN_EMAIL': prod.get('SEED_SUPER_ADMIN_EMAIL', 'admin@faithfellows.app'),
@@ -164,7 +174,16 @@ def build_sql():
     status = artisan('migrate:status', db='ff_verify').stdout
     if 'Pending' in status:
         sys.exit('Some migrations are still pending after loading the file.')
+    # Every encrypted column must open with the server's key.
+    opened = artisan('tinker', '--execute=' + DECRYPT_CHECK, db='ff_verify').stdout
+    if 'decrypt-ok' not in opened:
+        sys.exit('An encrypted column could not be read with the production APP_KEY:\n' + opened[-600:])
+    # The same check with a wrong key must fail, otherwise it proves nothing.
+    wrong = 'base64:' + base64.b64encode(os.urandom(32)).decode()
+    if 'decrypt-ok' in artisan('tinker', '--execute=' + DECRYPT_CHECK, db='ff_verify', extra_env={'APP_KEY': wrong}, check=False).stdout:
+        sys.exit('The encrypted-column check cannot tell a wrong key from the right one.')
     checks = {
+        'encrypted columns open with the production key': 'yes',
         'users': mysql('SELECT COUNT(*) FROM users', 'ff_verify'),
         'roles': mysql('SELECT COUNT(*) FROM roles', 'ff_verify'),
         'plans': mysql('SELECT COUNT(*) FROM plans', 'ff_verify'),
