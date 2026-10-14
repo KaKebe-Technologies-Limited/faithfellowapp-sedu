@@ -34,6 +34,11 @@ Artisan::command('ff:publish-scheduled', function (ContentPublisher $publisher) 
 
 Schedule::command('ff:publish-scheduled')->everyMinute()->withoutOverlapping();
 
+// Hosting without a deploy step (Hostinger Git): new migrations are applied by the scheduler a minute after an update.
+if (config('faithfellows.auto_migrate')) {
+    Schedule::command('migrate --force --no-interaction')->everyMinute()->withoutOverlapping(10);
+}
+
 Artisan::command('podcasts:sync-feeds', function (PodcastFeedService $feeds) {
     $result = $feeds->syncDue();
     $this->info("Checked {$result['podcasts']} podcast feed(s): {$result['added']} new episode(s), {$result['errors']} problem(s).");

@@ -83,9 +83,46 @@ The app builds in `app/eas.json` already point to `https://ff.bodaerp.site/api` 
 
 ## Updating the site later
 
+### Through Git (recommended): push, and the site updates
+
+1. **You push** to `main` on GitHub (`git push`). The workflow `.github/workflows/production-branch.yml` builds the finished site
+   (the same thing `build.py` makes: production PHP packages, built styles, root `.htaccess`) and commits it to a branch
+   called **`production`**. It takes about 3 minutes (see the Actions tab on GitHub). Only pushes that change `web/` start it.
+2. **Hostinger pulls that branch** into the site folder, either when you press **Deploy** in hPanel or by itself through the webhook.
+3. **The scheduler applies new database migrations** within a minute (`FF_AUTO_MIGRATE=true` in the server `.env`). Nothing else to do.
+
+The branch never contains `.env`, uploaded files, logs or caches, so a deploy cannot overwrite them. Keep the repository private.
+
+**Connecting Hostinger to the branch (once)**
+
+1. Push first, so the `production` branch exists (Actions tab: "Build the production branch" must be green).
+2. In hPanel open **Advanced, Git** and create a repository entry:
+   - **Repository:** `git@github.com:KaKebe-Technologies-Limited/faithfellowapp-sedu.git` (the SSH address, because the repository is private).
+   - **Branch:** `production`.
+   - **Install path:** the folder of the site. For the subdomain `ff.bodaerp.site` that is `ff` (inside `public_html`); if you open Git from the
+     subdomain's own page, leave it empty. The folder must be empty for the first deploy.
+3. hPanel shows an **SSH key**. In GitHub open the repository, Settings, **Deploy keys**, Add deploy key, paste it (read-only is enough).
+4. Move the existing site out of the way first: in File Manager rename `ff` to `ff-old`, then create the Git entry (it creates a new `ff`),
+   press **Deploy**.
+5. Copy `ff-old/.env` into the new `ff` folder. Add the line `FF_AUTO_MIGRATE=true` to that `.env` if it is not there. If anyone uploaded
+   pictures, copy `ff-old/storage/app/public/*` into `ff/storage/app/public/`. Run `php artisan storage:link` again (once). When the site
+   works, delete `ff-old`.
+6. For automatic deploys: in hPanel copy the **webhook URL** of the Git entry, then in GitHub open Settings, **Webhooks**, Add webhook,
+   paste the URL, content type `application/json`, event "Just the push event".
+
+**Working day:** commit, `git push`. When the Actions run is green, the site is updated (press Deploy in hPanel if you did not set up the webhook).
+
+**Good to know**
+
+- The first run is slow (about 8,000 vendor files). Later runs only commit what changed.
+- A migration runs on the live database as soon as it is deployed. Export the database from phpMyAdmin before pushing a risky one,
+  and keep migrations additive (add columns and tables, do not drop them) so installed apps keep working.
+- If the Actions run is red, nothing is deployed: open the run, read the red step.
+
+### By hand (zip)
+
 Run `python deploy/shared-hosting/build.py zip`, upload the new zip, **Extract** over the old files (it never contains `.env` or
-uploaded files, so they stay). If the update adds database changes, run `php artisan migrate --force` (SSH, or a one-time
-cron job). Do not import the SQL again.
+uploaded files, so they stay), and run `php artisan migrate --force` if the update has database changes. Do not import the SQL again.
 
 ## If something is wrong
 

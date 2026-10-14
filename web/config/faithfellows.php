@@ -38,6 +38,10 @@ return [
 
     'root_domain' => env('FF_ROOT_DOMAIN', 'faithfellows.app'),
 
+    // Shared hosting has no deploy step. With FF_AUTO_MIGRATE=true the scheduler applies new database migrations within a
+    // minute of an update (see docs/DEPLOYMENT_SHARED_HOSTING.md). Leave it off everywhere else.
+    'auto_migrate' => (bool) env('FF_AUTO_MIGRATE', false),
+
     'currency' => env('FF_DEFAULT_CURRENCY', 'UGX'),
 
     'pricing' => [

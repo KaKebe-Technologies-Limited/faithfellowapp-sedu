@@ -1,0 +1,73 @@
+# Builds the finished website and publishes it to the "production" branch.
+#
+# Every push to main that touches web/ builds the site exactly as deploy/shared-hosting/build.py does (production PHP
+# packages, built styles, root .htaccess) and commits the result to the "production" branch. Hostinger's Git feature
+# deploys that branch into the site folder, so a push is all it takes to update https://ff.bodaerp.site.
+# See web/docs/DEPLOYMENT_SHARED_HOSTING.md, "Updating through Git".
+
+name: Build the production branch
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'web/**'
+      - '.github/workflows/production-branch.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: production-branch
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: curl, dom, exif, fileinfo, gd, iconv, intl, mbstring, openssl, pdo_mysql, tokenizer, zip, bcmath
+          tools: composer:v2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install the style tools
+        working-directory: web
+        run: npm ci
+
+      - name: Build the finished site
+        working-directory: web
+        run: python3 deploy/shared-hosting/build.py stage "$RUNNER_TEMP/site"
+
+      - name: Publish it to the production branch
+        env:
+          COMMIT: ${{ github.sha }}
+          REMOTE: https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@users.noreply.github.com"
+          if git ls-remote --exit-code --heads origin production > /dev/null 2>&1; then
+            git clone --quiet --branch production --single-branch "$REMOTE" "$RUNNER_TEMP/production"
+          else
+            git init --quiet "$RUNNER_TEMP/production"
+            git -C "$RUNNER_TEMP/production" checkout --quiet -b production
+            git -C "$RUNNER_TEMP/production" remote add origin "$REMOTE"
+          fi
+          rsync -a --delete --exclude '/.git' "$RUNNER_TEMP/site/" "$RUNNER_TEMP/production/"
+          cd "$RUNNER_TEMP/production"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Nothing changed on the site."
+            exit 0
+          fi
+          git commit --quiet -m "Site built from ${COMMIT:0:7}"
+          git push --quiet origin production
