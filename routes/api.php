@@ -15,6 +15,8 @@ Route::get('/ping', fn () => response()->json([
     'status' => 'ok',
     'service' => 'FaithFellows API',
     'version' => '1.0.0',
+    // Which update is live: the commit and time of the build, written by deploy/shared-hosting/build.py (null in development).
+    'release' => is_file(base_path('RELEASE')) ? trim((string) file_get_contents(base_path('RELEASE'))) : null,
     'time' => now()->toIso8601String(),
 ])->header('Cache-Control', 'no-store'))->name('api.ping');
 
