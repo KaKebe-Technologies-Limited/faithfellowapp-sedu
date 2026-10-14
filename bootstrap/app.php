@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\EnsureAccountActive;
 use App\Http\Middleware\EnsureApiUserActive;
+use App\Http\Middleware\EnsureAppFeature;
 use App\Http\Middleware\EnsureChurchPermission;
 use App\Http\Middleware\EnsureChurchStaff;
 use App\Http\Middleware\EnsureSubscribed;
@@ -48,6 +49,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'church.can' => EnsureChurchPermission::class,
             'subscribed' => EnsureSubscribed::class,
             'api.active' => EnsureApiUserActive::class,
+            'feature' => EnsureAppFeature::class,
         ]);
 
         $middleware->redirectGuestsTo(fn () => route('login'));

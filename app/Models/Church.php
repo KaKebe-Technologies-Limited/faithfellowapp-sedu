@@ -42,7 +42,7 @@ class Church extends Model implements HasMedia
         'languages', 'country', 'district', 'city', 'address', 'lat', 'lng', 'phone', 'email', 'website',
         'brand_color', 'website_blocks', 'settings', 'custom_domain', 'custom_domain_verified',
         'status', 'application_notes', 'status_reason', 'approved_at', 'approved_by', 'setup_completed_at',
-        'requires_member_approval', 'is_featured', 'plan_id', 'billing_status', 'trial_ends_at', 'paid_until', 'domain_addon',
+        'requires_member_approval', 'is_featured', 'show_podcasts', 'show_hymns', 'show_radio', 'plan_id', 'billing_status', 'trial_ends_at', 'paid_until', 'domain_addon',
     ];
 
     protected $attributes = [
@@ -64,6 +64,9 @@ class Church extends Model implements HasMedia
             'custom_domain_verified' => 'boolean',
             'requires_member_approval' => 'boolean',
             'is_featured' => 'boolean',
+            'show_podcasts' => 'boolean',
+            'show_hymns' => 'boolean',
+            'show_radio' => 'boolean',
             'trial_ends_at' => 'date',
             'paid_until' => 'date',
             'domain_addon' => 'boolean',

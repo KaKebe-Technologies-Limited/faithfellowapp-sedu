@@ -63,22 +63,28 @@ Route::prefix('v1')->name('api.v1.')->middleware('throttle:api')->group(function
         Route::get('/devotionals', [V1\ReadingController::class, 'devotionals'])->name('devotionals.index');
         Route::get('/devotionals/{devotional}', [V1\ReadingController::class, 'devotional'])->name('devotionals.show');
         Route::get('/announcements', [V1\ReadingController::class, 'announcements'])->name('announcements.index');
-        Route::get('/hymnals', [V1\HymnController::class, 'hymnals'])->name('hymns.hymnals');
-        Route::get('/hymnals/{hymnal}', [V1\HymnController::class, 'hymnal'])->whereNumber('hymnal')->name('hymns.hymnal');
-        Route::get('/hymnals/{hymnal}/download', [V1\HymnController::class, 'download'])->whereNumber('hymnal')->middleware('throttle:20,1')->name('hymns.download');
-        Route::get('/hymns/search', [V1\HymnController::class, 'search'])->middleware('throttle:120,1')->name('hymns.search');
-        Route::get('/hymns/favorites', [V1\HymnController::class, 'favorites'])->name('hymns.favorites');
-        Route::get('/hymns/{hymn}', [V1\HymnController::class, 'show'])->whereNumber('hymn')->name('hymns.show');
-        Route::post('/hymns/{hymn}/favorite', [V1\HymnController::class, 'favorite'])->whereNumber('hymn')->middleware('throttle:engagement')->name('hymns.favorite');
-        Route::delete('/hymns/{hymn}/favorite', [V1\HymnController::class, 'unfavorite'])->whereNumber('hymn')->name('hymns.unfavorite');
-        Route::get('/podcasts/overview', [V1\PodcastController::class, 'overview'])->name('podcasts.overview');
-        Route::get('/podcasts', [V1\PodcastController::class, 'index'])->name('podcasts.index');
-        Route::get('/podcasts/{podcast}', [V1\PodcastController::class, 'show'])->whereNumber('podcast')->name('podcasts.show');
-        Route::get('/podcasts/{podcast}/episodes', [V1\PodcastController::class, 'episodes'])->whereNumber('podcast')->name('podcasts.episodes');
-        Route::post('/podcasts/{podcast}/follow', [V1\PodcastController::class, 'follow'])->whereNumber('podcast')->middleware('throttle:engagement')->name('podcasts.follow');
-        Route::delete('/podcasts/{podcast}/follow', [V1\PodcastController::class, 'unfollow'])->whereNumber('podcast')->name('podcasts.unfollow');
-        Route::post('/podcast-episodes/{episode}/played', [V1\PodcastController::class, 'played'])->middleware('throttle:120,1')->name('podcasts.played');
-        Route::get('/radio', [V1\RadioController::class, 'show'])->middleware('throttle:120,1')->name('radio');
+        Route::middleware('feature:hymns')->group(function () {
+            Route::get('/hymnals', [V1\HymnController::class, 'hymnals'])->name('hymns.hymnals');
+            Route::get('/hymnals/{hymnal}', [V1\HymnController::class, 'hymnal'])->whereNumber('hymnal')->name('hymns.hymnal');
+            Route::get('/hymnals/{hymnal}/download', [V1\HymnController::class, 'download'])->whereNumber('hymnal')->middleware('throttle:20,1')->name('hymns.download');
+            Route::get('/hymns/search', [V1\HymnController::class, 'search'])->middleware('throttle:120,1')->name('hymns.search');
+            Route::get('/hymns/favorites', [V1\HymnController::class, 'favorites'])->name('hymns.favorites');
+            Route::get('/hymns/{hymn}', [V1\HymnController::class, 'show'])->whereNumber('hymn')->name('hymns.show');
+            Route::post('/hymns/{hymn}/favorite', [V1\HymnController::class, 'favorite'])->whereNumber('hymn')->middleware('throttle:engagement')->name('hymns.favorite');
+            Route::delete('/hymns/{hymn}/favorite', [V1\HymnController::class, 'unfavorite'])->whereNumber('hymn')->name('hymns.unfavorite');
+        });
+        Route::middleware('feature:podcasts')->group(function () {
+            Route::get('/podcasts/overview', [V1\PodcastController::class, 'overview'])->name('podcasts.overview');
+            Route::get('/podcasts', [V1\PodcastController::class, 'index'])->name('podcasts.index');
+            Route::get('/podcasts/{podcast}', [V1\PodcastController::class, 'show'])->whereNumber('podcast')->name('podcasts.show');
+            Route::get('/podcasts/{podcast}/episodes', [V1\PodcastController::class, 'episodes'])->whereNumber('podcast')->name('podcasts.episodes');
+            Route::post('/podcasts/{podcast}/follow', [V1\PodcastController::class, 'follow'])->whereNumber('podcast')->middleware('throttle:engagement')->name('podcasts.follow');
+            Route::delete('/podcasts/{podcast}/follow', [V1\PodcastController::class, 'unfollow'])->whereNumber('podcast')->name('podcasts.unfollow');
+            Route::post('/podcast-episodes/{episode}/played', [V1\PodcastController::class, 'played'])->middleware('throttle:120,1')->name('podcasts.played');
+        });
+        Route::middleware('feature:radio')->group(function () {
+            Route::get('/radio', [V1\RadioController::class, 'show'])->middleware('throttle:120,1')->name('radio');
+        });
         Route::get('/posts/{post}', [V1\ContentController::class, 'post'])->name('posts.show');
         Route::get('/announcements/{announcement}', [V1\ReadingController::class, 'announcement'])->name('announcements.show');
         Route::get('/campaigns', [V1\ReadingController::class, 'campaigns'])->name('campaigns.index');
