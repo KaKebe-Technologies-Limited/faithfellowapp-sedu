@@ -9,6 +9,7 @@ use App\Models\GivingChannel;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * The church's financial records for accounting and monitoring: what came in over a period, clustered by what it was given for
@@ -119,8 +120,10 @@ class FinancialRecords
      */
     protected function byReason(Church $church, Carbon $from, Carbon $to, array $filters, float $gross): Collection
     {
+        // Before the database update that added the reason column, gifts are grouped by their category only.
+        $reason = Schema::hasColumn('donations', 'reason') ? 'reason' : 'NULL';
         $rows = $this->received($church, $from, $to, $filters)
-            ->selectRaw('category, reason, campaign_id, COUNT(*) as gifts, SUM(amount) as gross, SUM(fee) as fees')->groupBy('category', 'reason', 'campaign_id')->get();
+            ->selectRaw("category, {$reason} as reason, campaign_id, COUNT(*) as gifts, SUM(amount) as gross, SUM(fee) as fees")->groupBy('category', 'campaign_id', ...($reason === 'reason' ? ['reason'] : []))->get();
         $campaigns = Campaign::whereIn('id', $rows->pluck('campaign_id')->filter()->unique())->pluck('title', 'id');
 
         return $rows->map(function ($r) use ($campaigns) {
