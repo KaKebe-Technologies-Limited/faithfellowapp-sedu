@@ -84,7 +84,7 @@ function Conversation({ group }) {
   }
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}>
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding" keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}>
       <StateView loading={posts === null && !error} error={error} onRetry={load}>
         <ScrollView ref={scroller} contentContainerStyle={{ padding: SPACING.md, gap: 10 }} keyboardShouldPersistTaps="handled">
           {posts?.length === 0 ? <AppText variant="caption" style={{ textAlign: 'center', marginTop: 24 }}>No messages yet — start the conversation 🙏</AppText> : null}

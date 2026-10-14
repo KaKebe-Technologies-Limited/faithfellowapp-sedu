@@ -2,7 +2,7 @@
 // a campaign…), choose to stay anonymous or repeat the gift, then pay with mobile money or card. The same
 // screen opens from the Give tab, a church page and a campaign (which arrives with ?campaign=<id>).
 import { useMemo, useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Switch, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, Switch, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams } from 'expo-router';
 import AppText from '../../components/AppText';
@@ -11,6 +11,7 @@ import PayForm from '../../components/PayForm';
 import ScreenHeader from '../../components/ScreenHeader';
 import StateView from '../../components/StateView';
 import TextField from '../../components/TextField';
+import KeyboardScroll from '../../components/KeyboardScroll';
 import { COLORS, FONTS, RADIUS, SHADOW, SPACING, MAX_FONT_SCALE } from '../../constants/theme';
 import api, { errorMessage, fieldErrors } from '../../lib/api';
 import { formatMoney } from '../../lib/format';
@@ -85,8 +86,8 @@ export default function GiveScreen() {
       <ScreenHeader title="Give" subtitle={options?.church?.name} />
       <StateView loading={loading} error={error} onRetry={retry}>
         {options ? (
-          <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-            <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+          <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
+            <KeyboardScroll contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
               <View style={styles.churchRow}>
                 <ChurchAvatar church={options.church} size={46} />
                 <View style={{ flex: 1 }}>
@@ -184,7 +185,7 @@ export default function GiveScreen() {
                   </View>
                 </View>
               ) : null}
-            </ScrollView>
+            </KeyboardScroll>
           </KeyboardAvoidingView>
         ) : null}
       </StateView>

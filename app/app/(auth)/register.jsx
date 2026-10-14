@@ -2,12 +2,13 @@
 // POST /api/v1/auth/register → signed in and taken to the feed. Server validation errors show under
 // each field. States: loading (button spinner), error (inline message), empty (n/a for a form).
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Switch, View } from 'react-native';
+import { KeyboardAvoidingView, StyleSheet, Switch, View } from 'react-native';
 import { Link, router } from 'expo-router';
 import AppText from '../../components/AppText';
 import Button from '../../components/Button';
 import GoogleButton from '../../components/GoogleButton';
 import TextField from '../../components/TextField';
+import KeyboardScroll from '../../components/KeyboardScroll';
 import { COLORS, RADIUS, SPACING } from '../../constants/theme';
 import { errorMessage, fieldErrors } from '../../lib/api';
 import { useAuth } from '../../lib/auth';
@@ -51,8 +52,8 @@ export default function Register() {
   }
 
   return (
-    <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+    <KeyboardAvoidingView style={styles.flex} behavior="padding">
+      <KeyboardScroll contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <View style={styles.hero}>
           <AppText variant="title" style={{ color: COLORS.white }}>
             Create your account
@@ -138,7 +139,7 @@ export default function Register() {
             </Link>
           </View>
         </View>
-      </ScrollView>
+      </KeyboardScroll>
     </KeyboardAvoidingView>
   );
 }

@@ -2,13 +2,14 @@
 // only your pastors), and whether to stay anonymous. Church requests wait for a pastor's approval before they
 // appear on the wall; pastor-only requests are never shown to members.
 import { useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Switch, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import AppText from '../../components/AppText';
 import Button from '../../components/Button';
 import ScreenHeader from '../../components/ScreenHeader';
 import TextField from '../../components/TextField';
+import KeyboardScroll from '../../components/KeyboardScroll';
 import { COLORS, FONTS, RADIUS, SPACING } from '../../constants/theme';
 import api, { errorMessage, fieldErrors } from '../../lib/api';
 import { useAuth } from '../../lib/auth';
@@ -69,8 +70,8 @@ export default function NewPrayer() {
   return (
     <View style={styles.screen}>
       <ScreenHeader title="Ask for prayer" />
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
+        <KeyboardScroll contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           {churches.length > 1 ? (
             <>
               <AppText style={styles.h}>Which church?</AppText>
@@ -122,7 +123,7 @@ export default function NewPrayer() {
           ) : null}
 
           <Button title="Send request" onPress={submit} loading={busy} style={{ marginTop: SPACING.lg }} />
-        </ScrollView>
+        </KeyboardScroll>
       </KeyboardAvoidingView>
     </View>
   );

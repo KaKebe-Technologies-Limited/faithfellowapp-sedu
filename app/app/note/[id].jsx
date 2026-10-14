@@ -167,7 +167,7 @@ export default function NoteScreen() {
         }
       />
       <StateView loading={loading} error={error && !context ? error : null} onRetry={() => router.replace({ pathname: '/note/[id]', params: { id: String(idParam) } })}>
-        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
           <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
             {refText.current ? (
               <View style={styles.ref}>

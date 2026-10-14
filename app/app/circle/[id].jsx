@@ -103,7 +103,7 @@ export default function CircleScreen() {
       <ScreenHeader title={c?.name ?? 'Reading circle'} subtitle={c ? `${c.plan.title} · ${c.schedule}` : undefined} />
       <StateView loading={loading && !c} error={!c ? error : null} onRetry={retry}>
         {c ? (
-          <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
             <ScrollView contentContainerStyle={{ padding: SPACING.md, paddingBottom: 48 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
               <View style={styles.codeCard}>
                 <View style={{ flex: 1 }}>

@@ -2,13 +2,14 @@
 // "Continue with Google" appears above the form only when Google sign-in is switched on
 // (EXPO_PUBLIC_GOOGLE_SIGNIN=1). States: loading (button spinner), error (inline message).
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, StyleSheet, View } from 'react-native';
 import { Link, router } from 'expo-router';
 import AppText from '../../components/AppText';
 import Button from '../../components/Button';
 import GoogleButton from '../../components/GoogleButton';
 import Logo from '../../components/Logo';
 import TextField from '../../components/TextField';
+import KeyboardScroll from '../../components/KeyboardScroll';
 import { COLORS, RADIUS, SPACING } from '../../constants/theme';
 import { API_ROOT, errorMessage, fieldErrors } from '../../lib/api';
 import { useAuth } from '../../lib/auth';
@@ -43,8 +44,8 @@ export default function Login() {
   }
 
   return (
-    <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+    <KeyboardAvoidingView style={styles.flex} behavior="padding">
+      <KeyboardScroll contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <View style={styles.hero}>
           <Logo size={84} />
           <AppText variant="title" style={styles.heroTitle}>
@@ -126,7 +127,7 @@ export default function Login() {
             Server: {API_ROOT || 'not set'}
           </AppText>
         ) : null}
-      </ScrollView>
+      </KeyboardScroll>
     </KeyboardAvoidingView>
   );
 }

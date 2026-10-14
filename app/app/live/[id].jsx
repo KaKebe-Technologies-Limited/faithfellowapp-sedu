@@ -112,7 +112,7 @@ export default function LiveScreen() {
     <View style={styles.screen}>
       <StateView loading={loading} error={error} onRetry={retry}>
         {live ? (
-          <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
             <View style={{ paddingTop: insets.top, backgroundColor: '#000' }}>
               {status === 'live' && source ? (
                 <Video url={source} />

@@ -2,7 +2,7 @@
 // you. Being found by others (your churches' members, or any believer on the app) needs a birth date and is for
 // adults only; nobody ever sees your email, phone number or birthday. Saved with PATCH /api/v1/me.
 import { useEffect, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Switch, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
@@ -18,6 +18,7 @@ import { shareMyLocation, stopSharingLocation } from '../../lib/location';
 import { COUNTRIES, INTERESTS } from '../../lib/people';
 import { useFetch } from '../../lib/useFetch';
 import StateView from '../../components/StateView';
+import KeyboardScroll from '../../components/KeyboardScroll';
 
 function Chip({ label, on, onPress }) {
   return (
@@ -121,8 +122,8 @@ export default function EditProfile() {
   return (
     <View style={styles.screen}>
       <ScreenHeader title="Edit profile" />
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView contentContainerStyle={{ padding: SPACING.md, paddingBottom: 60 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
+        <KeyboardScroll contentContainerStyle={{ padding: SPACING.md, paddingBottom: 60 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
           <View style={styles.photo}>
             <Avatar person={user} size={96} />
             <View style={{ gap: 8, alignItems: 'flex-start' }}>
@@ -210,7 +211,7 @@ export default function EditProfile() {
           </View>
 
           <Button title="Save profile" onPress={save} loading={busy} style={{ marginTop: SPACING.lg }} />
-        </ScrollView>
+        </KeyboardScroll>
       </KeyboardAvoidingView>
     </View>
   );

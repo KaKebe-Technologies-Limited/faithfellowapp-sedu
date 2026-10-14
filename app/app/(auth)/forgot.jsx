@@ -1,11 +1,12 @@
 // "Forgot your password?", inside the app: enter your email, we send a 6-digit code, enter the code with a new
 // password. No link to the website, and the code stops working after 15 minutes or five wrong tries.
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
 import AppText from '../../components/AppText';
 import Button from '../../components/Button';
 import TextField from '../../components/TextField';
+import KeyboardScroll from '../../components/KeyboardScroll';
 import { COLORS, RADIUS, SPACING } from '../../constants/theme';
 import api, { errorMessage, fieldErrors } from '../../lib/api';
 
@@ -56,8 +57,8 @@ export default function Forgot() {
   }
 
   return (
-    <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+    <KeyboardAvoidingView style={styles.flex} behavior="padding">
+      <KeyboardScroll contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <View style={styles.hero}>
           <AppText variant="title" style={styles.heroTitle}>
             {step === 'done' ? 'All set' : 'Reset your password'}
@@ -101,7 +102,7 @@ export default function Forgot() {
             </AppText>
           ) : null}
         </View>
-      </ScrollView>
+      </KeyboardScroll>
     </KeyboardAvoidingView>
   );
 }

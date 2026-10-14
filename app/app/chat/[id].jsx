@@ -116,7 +116,7 @@ export default function ChatScreen() {
       </View>
 
       <StateView loading={loading} error={error} onRetry={load}>
-        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
           <ScrollView ref={scroller} contentContainerStyle={styles.list} keyboardShouldPersistTaps="handled">
             {more ? (
               <Pressable onPress={earlier} style={styles.earlier} accessibilityRole="button">
