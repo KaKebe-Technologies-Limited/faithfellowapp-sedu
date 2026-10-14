@@ -50,10 +50,32 @@
       "expo-web-browser",
       "expo-image",
       "expo-video",
-      ["expo-notifications", { "icon": "./assets/android-icon-monochrome.png", "color": "#BC2649", "defaultChannel": "default" }],
-      ["expo-location", { "locationWhenInUsePermission": "FaithFellows uses your approximate location only to show believers near you. Others see how far away you are, never where." }],
-      ["expo-camera", { "cameraPermission": "FaithFellows uses the camera to scan guests' QR tickets at your events." }],
-      ["expo-image-picker", { "photosPermission": "FaithFellows needs your photos so you can choose a profile or event picture." }]
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/android-icon-monochrome.png",
+          "color": "#BC2649",
+          "defaultChannel": "default"
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "FaithFellows uses your approximate location only to show believers near you. Others see how far away you are, never where."
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "FaithFellows uses the camera to scan guests' QR tickets at your events."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "FaithFellows needs your photos so you can choose a profile or event picture."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
@@ -63,7 +85,12 @@
         "development": "http://192.168.0.103:8000/api",
         "staging": "https://staging.faithfellows.app/api",
         "production": "https://faithfellows.app/api"
+      },
+      "router": {},
+      "eas": {
+        "projectId": "dde3d075-b0ff-46a1-af51-ccd15ea0d2ca"
       }
-    }
+    },
+    "owner": "sedrickotolo"
   }
 }
