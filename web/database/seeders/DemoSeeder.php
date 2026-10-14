@@ -625,6 +625,11 @@ class DemoSeeder extends Seeder
      */
     protected function demoAudioFile(): ?string
     {
+        // The hosting build (deploy/shared-hosting/build.py) has no audio files to ship alongside the database.
+        if (env('DEMO_SKIP_MEDIA')) {
+            return null;
+        }
+
         $path = storage_path('app/demo-sermon.wav');
         if (! file_exists($path)) {
             $rate = 8000;

@@ -154,6 +154,8 @@ npx.cmd eas-cli init                           # once: creates the project and f
 npx.cmd eas-cli build -p android --profile preview
 ```
 
+The site must be hosted first: see `../web/docs/DEPLOYMENT_SHARED_HOSTING.md`.
+
 The first build asks "Generate a new Android Keystore?": answer yes (EAS keeps the signing key for you). When it finishes
 (about 15 to 30 minutes on the free plan) it prints a link and a QR code to download the `.apk`; open it on the phone and
 allow "install unknown apps" for the browser.
@@ -162,9 +164,10 @@ Profiles in `eas.json`:
 
 | Profile | Gives | Talks to | Use it for |
 |---|---|---|---|
-| `preview` | `.apk` | the API on your computer over the home Wi-Fi, `http://192.168.0.103:8000/api` (plain http is allowed only in this build, through `ALLOW_CLEARTEXT=1` in `app.config.js`) | trying the app on phones with no Expo Go. The address is fixed in the build: change it in `eas.json` if the computer address changes, and run the API with `--host=0.0.0.0`. |
-| `production-apk` | `.apk` | the live server, `https://faithfellows.app/api` | handing the app to people outside the Play Store |
-| `production` | `.aab` | the live server, `https://faithfellows.app/api` | uploading to the Google Play Store |
+| `preview` | `.apk` | the hosted site, `https://ff.bodaerp.site/api` | trying the app on any phone, on any network. This is the one to share with testers. |
+| `local-wifi` | `.apk` | the API on your computer over the home Wi-Fi, `http://192.168.0.103:8000/api` (plain http is allowed only in this build, through `ALLOW_CLEARTEXT=1` in `app.config.js`) | developing without Expo Go. The address is fixed in the build: change it in `eas.json` if the computer address changes, and run the API with `--host=0.0.0.0`. |
+| `production-apk` | `.apk` | the hosted site | handing the app to people outside the Play Store |
+| `production` | `.aab` | the hosted site | uploading to the Google Play Store |
 
 `EXPO_PUBLIC_*` values in `app/.env` are not uploaded (the file is not in git), so the API address of each build is set in
 its profile in `eas.json`. Push notifications in an installed app also need a Firebase (FCM) key: see "Push notifications".

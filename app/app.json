@@ -83,8 +83,8 @@
     "extra": {
       "apiUrl": {
         "development": "http://192.168.0.103:8000/api",
-        "staging": "https://staging.faithfellows.app/api",
-        "production": "https://faithfellows.app/api"
+        "staging": "https://ff.bodaerp.site/api",
+        "production": "https://ff.bodaerp.site/api"
       },
       "router": {},
       "eas": {
