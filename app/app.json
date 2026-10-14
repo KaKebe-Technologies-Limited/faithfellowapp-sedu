@@ -63,9 +63,6 @@
         "development": "http://192.168.0.103:8000/api",
         "staging": "https://staging.faithfellows.app/api",
         "production": "https://faithfellows.app/api"
-      },
-      "eas": {
-        "projectId": "REPLACE_WITH_EAS_PROJECT_ID"
       }
     }
   }
