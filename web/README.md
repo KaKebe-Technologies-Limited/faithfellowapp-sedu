@@ -14,7 +14,7 @@ FaithFellows is a multi-tenant church management and engagement platform built f
 
 | Area | What churches and members get |
 |------|-------------------------------|
-| **Church websites** | An auto-generated site at `{slug}.faithfellows.app` (or a custom domain) built from drag-and-drop blocks, plus a public page in the church directory |
+| **Church websites** | An auto-generated site at `{slug}.faithfellows.com` (or a custom domain) built from drag-and-drop blocks, plus a public page in the church directory |
 | **Content** | Sermons (audio/video, series, playlists, transcripts, offline listening), devotionals, announcements, reading plans |
 | **Bible & notes** | An in-app Bible (KJV, WEB, BBE, ASV; Swahili and Luganda with an API.Bible key) with cached chapters, one verse per line, tap-to-copy and colour highlights, reading-plan days that open the exact verses ("Matthew 3–5"), and a private autosaving note taker beside every chapter, plan day, sermon and live stream |
 | **Reading partners** | Circles of up to 4 church members joined with a code, with a shared reading time, reminders, "finished" alerts and summaries only the circle can read |
@@ -77,7 +77,7 @@ php artisan schedule:work
 
 | Role | Email | Password |
 |------|-------|----------|
-| Super admin | `admin@faithfellows.app` | `SEED_SUPER_ADMIN_PASSWORD` from `.env` |
+| Super admin | `admin@faithfellows.com` | `SEED_SUPER_ADMIN_PASSWORD` from `.env` |
 | Church admin (Grace Community Church Lira) | `pastor@faithfellows.test` | `password` |
 | Finance staff | `finance@faithfellows.test` | `password` |
 | Member | `member@faithfellows.test` | `password` |

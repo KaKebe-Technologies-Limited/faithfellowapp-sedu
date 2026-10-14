@@ -2,7 +2,7 @@
 
 This is a JSON REST API for the FaithFellows mobile app and integrations.
 
-**Base URL:** `https://faithfellows.app/api/v1`
+**Base URL:** `https://faithfellows.com/api/v1`
 
 ## Conventions
 
@@ -128,7 +128,7 @@ This endpoint is public. It returns church details, service times, accepted givi
 { "data": { "id": 1, "slug": "grace-lira", "name": "Grace Community Church Lira", "denomination": "Pentecostal",
   "location": { "city": "Lira", "district": "Lira", "lat": 2.2475, "lng": 32.9001 },
   "service_times": [ { "name": "Main Service", "day": "Sunday", "time": "10:00 AM – 12:30 PM", "language": "en" } ],
-  "giving_methods": ["mtn_momo", "airtel_money", "stripe"], "subscribers": 47, "is_subscribed": true, "web_url": "https://faithfellows.app/churches/grace-lira" } }
+  "giving_methods": ["mtn_momo", "airtel_money", "stripe"], "subscribers": 47, "is_subscribed": true, "web_url": "https://faithfellows.com/churches/grace-lira" } }
 ```
 
 ### `POST /churches/{slug}/subscription` 🔒
@@ -231,7 +231,7 @@ Every event, sermon, devotional and campaign has a `cover_url` (sermons: `thumbn
 
 ```json
 { "data": { "reference": "FF-8Q2MZ4", "status": "processing", "amount": 20000, "currency": "UGX", "method": "mtn_momo", "church": { "…": "…" } },
-  "next": { "action": "approve_on_phone", "redirect_url": null, "message": "Approve the payment on your phone", "poll_url": "https://faithfellows.app/api/v1/giving/FF-8Q2MZ4" } }
+  "next": { "action": "approve_on_phone", "redirect_url": null, "message": "Approve the payment on your phone", "poll_url": "https://faithfellows.com/api/v1/giving/FF-8Q2MZ4" } }
 ```
 
 How to handle each `next.action`:

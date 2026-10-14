@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 /**
- * Auto-generated church website served at {slug}.faithfellows.app
+ * Auto-generated church website served at {slug}.faithfellows.com
  * (or a verified custom domain), rendered from the church's builder blocks.
  */
 class SiteController extends Controller

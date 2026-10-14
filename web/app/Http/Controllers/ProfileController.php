@@ -112,7 +112,7 @@ class ProfileController extends Controller
         // Anonymise personal data, keep financial records intact for churches' books.
         $user->forceFill([
             'name' => 'Deleted user',
-            'email' => 'deleted-'.$user->id.'-'.Str::random(6).'@deleted.faithfellows.app',
+            'email' => 'deleted-'.$user->id.'-'.Str::random(6).'@deleted.faithfellows.com',
             'phone' => null,
             'bio' => null,
             'date_of_birth' => null,

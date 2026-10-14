@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
-| Church websites on subdomains: {slug}.faithfellows.app
+| Church websites on subdomains: {slug}.faithfellows.com
 |--------------------------------------------------------------------------
 | Registered first so a church subdomain's "/" renders its website.
 */

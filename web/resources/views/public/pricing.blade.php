@@ -4,7 +4,7 @@
         $applyUrl = Route::has('church.apply') ? route('church.apply') : route('contact');
         $faqs = [
             __('Is hosting really free for the first year?')  => __('Yes — your website and content hosting are free for 12 months.'),
-            __('Do I need my own domain?')                    => __('No. You get yourchurch.faithfellows.app free. A custom domain is UGX 60,000/year.'),
+            __('Do I need my own domain?')                    => __('No. You get yourchurch.faithfellows.com free. A custom domain is UGX 60,000/year.'),
             __('How do members pay?')                         => __('MTN MoMo, Airtel Money, Iotec, card, bank, USSD or cash. Your choice.'),
             __('Do you take a cut of donations?')             => __('Never. Only the payment provider\'s standard fee applies.'),
             __('Can members follow more than one church?')    => __('Yes — one account, unlimited churches.'),

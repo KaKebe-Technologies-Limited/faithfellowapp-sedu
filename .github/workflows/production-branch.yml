@@ -2,7 +2,7 @@
 #
 # Every push to main that touches web/ builds the site exactly as deploy/shared-hosting/build.py does (production PHP
 # packages, built styles, root .htaccess) and commits the result to the "production" branch. Hostinger's Git feature
-# deploys that branch into the site folder, so a push is all it takes to update https://ff.bodaerp.site.
+# deploys that branch into the site folder, so a push is all it takes to update https://faithfellows.com.
 # See web/docs/DEPLOYMENT_SHARED_HOSTING.md, "Updating through Git".
 
 name: Build the production branch

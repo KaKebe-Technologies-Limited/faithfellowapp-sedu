@@ -1,4 +1,4 @@
-"""Builds everything you upload to shared hosting (Hostinger and similar) for https://ff.bodaerp.site
+"""Builds everything you upload to shared hosting (Hostinger and similar) for https://faithfellows.com
 
     python deploy/shared-hosting/build.py            # both files below
     python deploy/shared-hosting/build.py sql        # only the database file
@@ -108,9 +108,9 @@ def load_settings():
         # The sample data is seeded with the SERVER's key: some columns are encrypted with it (giving channels, pastoral notes,
         # prayer replies, stream keys) and would not open on the server if they had been written with the key on this computer.
         'APP_KEY': prod['APP_KEY'],
-        'APP_ENV': 'production', 'APP_DEBUG': 'false', 'APP_URL': prod.get('APP_URL', 'https://ff.bodaerp.site'),
+        'APP_ENV': 'production', 'APP_DEBUG': 'false', 'APP_URL': prod.get('APP_URL', 'https://faithfellows.com'),
         'DB_CONNECTION': 'mysql', 'DB_HOST': '127.0.0.1', 'DB_PORT': '3306', 'DB_USERNAME': 'root', 'DB_PASSWORD': '',
-        'SEED_SUPER_ADMIN_EMAIL': prod.get('SEED_SUPER_ADMIN_EMAIL', 'admin@faithfellows.app'),
+        'SEED_SUPER_ADMIN_EMAIL': prod.get('SEED_SUPER_ADMIN_EMAIL', 'admin@faithfellows.com'),
         'SEED_SUPER_ADMIN_PASSWORD': prod['SEED_SUPER_ADMIN_PASSWORD'],
         'CACHE_STORE': 'array', 'SESSION_DRIVER': 'array', 'QUEUE_CONNECTION': 'sync', 'MAIL_MAILER': 'array',
     }
@@ -143,7 +143,7 @@ def build_sql():
 
     say('Writing faithfellows-database.sql')
     dump('ff_export', main)
-    header = ('-- FaithFellows database for https://ff.bodaerp.site (with sample data).\n'
+    header = ('-- FaithFellows database for https://faithfellows.com (with sample data).\n'
               '-- Import it into an EMPTY database. It drops and recreates every table, so NEVER import it again on a live site.\n')
     main.write_text(header + main.read_text(encoding='utf-8'), encoding='utf-8', newline='\n')
 
@@ -217,6 +217,8 @@ HTACCESS = """# Sends every request to the public folder, so nothing else in thi
 Options -Indexes
 <IfModule mod_rewrite.c>
     RewriteEngine On
+    RewriteCond %{HTTP_HOST} ^www\\.(.+)$ [NC]
+    RewriteRule ^ https://%1%{REQUEST_URI} [R=301,L]
     RewriteCond %{REQUEST_URI} !^/public/
     RewriteRule ^(.*)$ public/$1 [L,QSA]
 </IfModule>

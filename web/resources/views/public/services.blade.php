@@ -14,7 +14,7 @@
                 'eyebrow' => __('Presence'),
                 'title'   => __('Your church website — live in a day.'),
                 'icon'    => 'bi-globe2',
-                'items'   => [__('Free subdomain: yourchurch.faithfellows.app'), __('Drag-and-drop page blocks'), __('Google listing & SEO'), __('Custom domain (add-on)')],
+                'items'   => [__('Free subdomain: yourchurch.faithfellows.com'), __('Drag-and-drop page blocks'), __('Google listing & SEO'), __('Custom domain (add-on)')],
             ],
             [
                 'eyebrow' => __('Content'),

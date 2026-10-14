@@ -10,7 +10,7 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://ff.bodaerp.site/api",
+        "EXPO_PUBLIC_API_URL": "https://faithfellows.com/api",
         "EXPO_PUBLIC_APP_ENV": "production"
       }
     },
@@ -33,7 +33,7 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://ff.bodaerp.site/api",
+        "EXPO_PUBLIC_API_URL": "https://faithfellows.com/api",
         "EXPO_PUBLIC_APP_ENV": "production"
       }
     },
@@ -43,7 +43,7 @@
         "buildType": "app-bundle"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://ff.bodaerp.site/api",
+        "EXPO_PUBLIC_API_URL": "https://faithfellows.com/api",
         "EXPO_PUBLIC_APP_ENV": "production"
       }
     }

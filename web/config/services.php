@@ -110,8 +110,8 @@ return [
     // ── Live streaming ──────────────────────────────────────────────────
     'streaming' => [
         'provider' => env('STREAMING_PROVIDER', 'self_hosted'),
-        'rtmp_url' => env('STREAMING_RTMP_URL', 'rtmp://live.faithfellows.app/live'),
-        'hls_base_url' => env('STREAMING_HLS_BASE_URL', 'https://live.faithfellows.app/hls'),
+        'rtmp_url' => env('STREAMING_RTMP_URL', 'rtmp://live.faithfellows.com/live'),
+        'hls_base_url' => env('STREAMING_HLS_BASE_URL', 'https://live.faithfellows.com/hls'),
         'cloudflare_account_id' => env('CLOUDFLARE_ACCOUNT_ID'),
         'cloudflare_token' => env('CLOUDFLARE_STREAM_TOKEN'),
     ],

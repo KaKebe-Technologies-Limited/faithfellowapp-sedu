@@ -1,0 +1,10 @@
+# The main branch is source code, not a website. If a web server is ever pointed at this branch by mistake (for example a
+# hosting Git entry that deploys "main" instead of "production"), it serves nothing instead of showing the code.
+# The website is the "production" branch: it is built from web/ by .github/workflows/production-branch.yml and has its own .htaccess.
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+</IfModule>

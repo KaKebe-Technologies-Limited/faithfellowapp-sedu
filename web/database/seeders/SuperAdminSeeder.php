@@ -10,7 +10,7 @@ class SuperAdminSeeder extends Seeder
 {
     public function run(): void
     {
-        $email = env('SEED_SUPER_ADMIN_EMAIL', 'admin@faithfellows.app');
+        $email = env('SEED_SUPER_ADMIN_EMAIL', 'admin@faithfellows.com');
         $password = env('SEED_SUPER_ADMIN_PASSWORD', 'ChangeMe!2026');
 
         if (app()->isProduction() && $password === 'ChangeMe!2026') {

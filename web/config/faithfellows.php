@@ -36,7 +36,7 @@ return [
         ['name' => 'Sedrick Otolo', 'role' => 'Team Lead', 'phone' => '0777676206'],
     ],
 
-    'root_domain' => env('FF_ROOT_DOMAIN', 'faithfellows.app'),
+    'root_domain' => env('FF_ROOT_DOMAIN', 'faithfellows.com'),
 
     // Shared hosting has no deploy step. With FF_AUTO_MIGRATE=true the scheduler applies new database migrations within a
     // minute of an update (see docs/DEPLOYMENT_SHARED_HOSTING.md). Leave it off everywhere else.

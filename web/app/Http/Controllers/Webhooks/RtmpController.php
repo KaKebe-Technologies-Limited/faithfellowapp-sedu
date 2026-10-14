@@ -11,8 +11,8 @@ use Illuminate\Http\Response;
  * nginx-rtmp callbacks (on_publish / on_publish_done).
  *
  *   application live {
- *       on_publish      https://faithfellows.app/webhooks/rtmp/publish;
- *       on_publish_done https://faithfellows.app/webhooks/rtmp/done;
+ *       on_publish      https://faithfellows.com/webhooks/rtmp/publish;
+ *       on_publish_done https://faithfellows.com/webhooks/rtmp/done;
  *   }
  *
  * The stream key arrives as "name". Unknown keys are rejected (403) so only

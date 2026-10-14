@@ -654,7 +654,7 @@ class DemoSeeder extends Seeder
     protected function seedSubscriptionsAndPosts(User $member, User $pastor): void
     {
         $churches = Church::where('status', 'active')->get();
-        $people = User::role('member')->whereNotIn('email', ['admin@faithfellows.app'])->get();
+        $people = User::role('member')->whereDoesntHave('roles', fn ($q) => $q->where('name', 'super_admin'))->get();
 
         foreach ($people as $i => $person) {
             foreach ($churches->random(min($churches->count(), 1 + $i % 3)) as $church) {

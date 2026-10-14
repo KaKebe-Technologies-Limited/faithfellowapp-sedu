@@ -8,7 +8,7 @@ Welcome to FaithFellows! This guide walks a church administrator (usually the pa
 
 ## Step 1: Create your account and apply
 
-1. Go to **faithfellows.app → Register your church**.
+1. Go to **faithfellows.com → Register your church**.
 2. Create a personal account (or sign in), then confirm your email address.
 3. Fill in the application: church name, denomination, city/district, address, pastor's name, phone and a short description.
 4. Submit. Our team reviews applications within one working day and may call to confirm details.
@@ -45,7 +45,7 @@ Church admins have every permission. Keep *pastoral care* to your pastoral team 
 1. Turn on the methods you accept: **MTN MoMo**, **Airtel Money**, **Iotec**, **card** (for diaspora members), **bank transfer**. Cash is always available for recording.
 2. Enter your merchant or collection details for each channel, and your bank account for payouts.
 3. Make a small test gift yourself. You should get the PIN prompt on your phone, then a receipt by email and SMS.
-4. Share your giving link (`faithfellows.app/give/your-church`). Each campaign also has a printable poster with a QR code.
+4. Share your giving link (`faithfellows.com/give/your-church`). Each campaign also has a printable poster with a QR code.
 
 Each giver gets an instant numbered receipt. Finance staff see gifts live under **Finance**, record cash and envelope offerings, reconcile bank statements (CSV import) and track payouts.
 
@@ -80,7 +80,7 @@ After the service, publish the recording as a sermon with one click.
 
 ## Step 7: Your website
 
-**Settings → Website & branding** builds your site at `your-church.faithfellows.app` from blocks (hero, live, about, service times, sermons, events, campaigns, giving, prayer, contact). Drag blocks to reorder them and switch them on or off.
+**Settings → Website & branding** builds your site at `your-church.faithfellows.com` from blocks (hero, live, about, service times, sermons, events, campaigns, giving, prayer, contact). Drag blocks to reorder them and switch them on or off.
 
 Want your own domain, like `www.yourchurch.org`? Request it under **Billing & plan** (UGX 60,000/year), and we'll guide you through the DNS setup.
 

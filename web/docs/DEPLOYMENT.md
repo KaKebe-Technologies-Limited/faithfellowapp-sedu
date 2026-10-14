@@ -9,7 +9,7 @@ This guide takes a fresh **Ubuntu 22.04 or 24.04** server to a production FaithF
                               │
                  ┌────────────┴────────────┐
            nginx :443                 nginx-rtmp :1935  ← OBS from churches
-   faithfellows.app, *.faithfellows.app,     │ HLS → /var/www/hls
+   faithfellows.com, *.faithfellows.com,     │ HLS → /var/www/hls
    custom church domains                      │
                  │                            │ on_publish / on_publish_done
               PHP-FPM 8.2 ─── Laravel ────────┘
@@ -72,8 +72,8 @@ sudo -u www-data php /var/www/faithfellows/current/artisan db:seed --force   # r
 | Key | Production value |
 |-----|------------------|
 | `APP_ENV` / `APP_DEBUG` | `production` / `false` |
-| `APP_URL` | `https://faithfellows.app` |
-| `FF_ROOT_DOMAIN` | `faithfellows.app` (church sites live at `{slug}.faithfellows.app`) |
+| `APP_URL` | `https://faithfellows.com` |
+| `FF_ROOT_DOMAIN` | `faithfellows.com` (church sites live at `{slug}.faithfellows.com`) |
 | `DB_*` | the database above |
 | `QUEUE_CONNECTION` | `redis` (or `database`) |
 | `CACHE_STORE` / `SESSION_DRIVER` | `redis` |
@@ -82,9 +82,9 @@ sudo -u www-data php /var/www/faithfellows/current/artisan db:seed --force   # r
 | `PAYMENTS_SANDBOX` | `false` once gateways are live |
 | `MTN_MOMO_*`, `AIRTEL_*`, `IOTEC_*`, `STRIPE_*` | gateway credentials. A gateway without credentials stays in sandbox. ioTec Pay (`IOTEC_CLIENT_ID`, `IOTEC_CLIENT_SECRET`, `IOTEC_LIVE_WALLET_ID`, `IOTEC_IPN_SECRET`) can take both MTN and Airtel payments from the app; keep `IOTEC_SANDBOX=false` in production, `true` only with ioTec's test numbers |
 | `AFRICASTALKING_*`, `SMS_ENABLED`, `WHATSAPP_ENABLED`, `SMS_COST_UGX` | messaging |
-| `USSD_SECRET` | random string; register the USSD callback as `https://faithfellows.app/webhooks/ussd?secret=…` |
+| `USSD_SECRET` | random string; register the USSD callback as `https://faithfellows.com/webhooks/ussd?secret=…` |
 | `VAPID_*` | `php artisan ff:vapid` (generate once; changing the keys invalidates every browser subscription) |
-| `STREAMING_*` | `self_hosted` with `STREAMING_RTMP_URL=rtmp://live.faithfellows.app/live`, `STREAMING_HLS_BASE_URL=https://live.faithfellows.app/hls`, or Cloudflare Stream |
+| `STREAMING_*` | `self_hosted` with `STREAMING_RTMP_URL=rtmp://live.faithfellows.com/live`, `STREAMING_HLS_BASE_URL=https://live.faithfellows.com/hls`, or Cloudflare Stream |
 | `BROADCAST_CONNECTION` | `reverb` for real-time in-app notifications, otherwise `log` |
 | `SEED_SUPER_ADMIN_EMAIL` / `SEED_SUPER_ADMIN_PASSWORD` | first super admin. Change the password after the first login |
 
@@ -96,12 +96,12 @@ After editing, run `php artisan config:cache` (deploy.sh does this on every rele
 sudo cp deploy/nginx/faithfellows.conf /etc/nginx/sites-available/
 sudo ln -s /etc/nginx/sites-available/faithfellows.conf /etc/nginx/sites-enabled/
 sudo cp deploy/nginx/rtmp.conf /etc/nginx/rtmp.conf      # and add "include /etc/nginx/rtmp.conf;" at the top level of nginx.conf
-sudo certbot certonly --dns-cloudflare --dns-cloudflare-credentials /root/cf.ini -d faithfellows.app -d '*.faithfellows.app'
+sudo certbot certonly --dns-cloudflare --dns-cloudflare-credentials /root/cf.ini -d faithfellows.com -d '*.faithfellows.com'
 sudo nginx -t && sudo systemctl reload nginx
 ```
 
-- **Wildcard DNS:** `A faithfellows.app` and `A *.faithfellows.app` point to the server. `live.faithfellows.app` points to the streaming server.
-- **Custom church domains:** the church adds a CNAME to `faithfellows.app` (or an A record), and a super admin marks the domain verified. Then issue a certificate with `certbot --nginx -d www.church-domain.org`. The default server block serves it, and `ResolveCustomDomain` maps the host to the church.
+- **Wildcard DNS:** `A faithfellows.com` and `A *.faithfellows.com` point to the server. `live.faithfellows.com` points to the streaming server.
+- **Custom church domains:** the church adds a CNAME to `faithfellows.com` (or an A record), and a super admin marks the domain verified. Then issue a certificate with `certbot --nginx -d www.church-domain.org`. The default server block serves it, and `ResolveCustomDomain` maps the host to the church.
 - **Firewall:** `ufw allow 22,80,443,1935/tcp`.
 
 ## 7. Workers, scheduler and backups
@@ -123,11 +123,11 @@ Register these URLs with each provider. They are also shown on **Super admin →
 
 | Provider | Callback URL |
 |----------|--------------|
-| MTN MoMo | `https://faithfellows.app/webhooks/mtn-momo` |
-| Airtel Money | `https://faithfellows.app/webhooks/airtel` |
-| Iotec | `https://faithfellows.app/webhooks/iotec` |
-| Stripe | `https://faithfellows.app/webhooks/stripe` (events: `checkout.session.completed`, `checkout.session.expired`, `charge.refunded`) |
-| Africa's Talking USSD | `https://faithfellows.app/webhooks/ussd?secret=<USSD_SECRET>` |
+| MTN MoMo | `https://faithfellows.com/webhooks/mtn-momo` |
+| Airtel Money | `https://faithfellows.com/webhooks/airtel` |
+| Iotec | `https://faithfellows.com/webhooks/iotec` |
+| Stripe | `https://faithfellows.com/webhooks/stripe` (events: `checkout.session.completed`, `checkout.session.expired`, `charge.refunded`) |
+| Africa's Talking USSD | `https://faithfellows.com/webhooks/ussd?secret=<USSD_SECRET>` |
 
 Mobile-money callbacks are never trusted on their own: the app re-queries the gateway before marking a gift paid. `ff:payments-reconcile` re-checks pending payments every 5 minutes.
 

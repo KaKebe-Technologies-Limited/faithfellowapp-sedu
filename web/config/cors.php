@@ -9,7 +9,7 @@
 | admin tools and other browser clients.
 |
 | Development allows every origin. In production set CORS_ALLOWED_ORIGINS to a
-| comma-separated list (e.g. "https://faithfellows.app,https://app.faithfellows.app").
+| comma-separated list (e.g. "https://faithfellows.com,https://app.faithfellows.com").
 |
 | supports_credentials stays false on purpose: the API authenticates with a
 | Bearer token header, not cookies, and browsers reject "Allow-Credentials"

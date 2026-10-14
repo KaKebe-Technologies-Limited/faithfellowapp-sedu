@@ -101,7 +101,7 @@ echo.
 echo  Then open: http://127.0.0.1:8000
 echo.
 echo  Super admin login:
-echo    Email:    admin@faithfellows.app
+echo    Email:    admin@faithfellows.com
 echo    Password: ChangeMe!2026
 echo ============================================================
 echo.

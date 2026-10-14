@@ -164,7 +164,7 @@ Profiles in `eas.json`:
 
 | Profile | Gives | Talks to | Use it for |
 |---|---|---|---|
-| `preview` | `.apk` | the hosted site, `https://ff.bodaerp.site/api` | trying the app on any phone, on any network. This is the one to share with testers. |
+| `preview` | `.apk` | the hosted site, `https://faithfellows.com/api` | trying the app on any phone, on any network. This is the one to share with testers. |
 | `local-wifi` | `.apk` | the API on your computer over the home Wi-Fi, `http://192.168.0.103:8000/api` (plain http is allowed only in this build, through `ALLOW_CLEARTEXT=1` in `app.config.js`) | developing without Expo Go. The address is fixed in the build: change it in `eas.json` if the computer address changes, and run the API with `--host=0.0.0.0`. |
 | `production-apk` | `.apk` | the hosted site | handing the app to people outside the Play Store |
 | `production` | `.aab` | the hosted site | uploading to the Google Play Store |
