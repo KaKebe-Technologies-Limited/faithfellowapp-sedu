@@ -1,0 +1,36 @@
+{
+  "cli": {
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "preview": {
+      "distribution": "internal",
+      "android": { "buildType": "apk" },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "http://192.168.0.103:8000/api",
+        "EXPO_PUBLIC_APP_ENV": "development",
+        "ALLOW_CLEARTEXT": "1"
+      }
+    },
+    "production-apk": {
+      "distribution": "internal",
+      "autoIncrement": true,
+      "android": { "buildType": "apk" },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://faithfellows.app/api",
+        "EXPO_PUBLIC_APP_ENV": "production"
+      }
+    },
+    "production": {
+      "autoIncrement": true,
+      "android": { "buildType": "app-bundle" },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://faithfellows.app/api",
+        "EXPO_PUBLIC_APP_ENV": "production"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}

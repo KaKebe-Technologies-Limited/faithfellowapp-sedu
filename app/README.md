@@ -143,3 +143,28 @@ events, giving), then the feed. Kept short on purpose: each shortcut opens its o
   `POST /api/v1/auth/token`. "Continue with Google" (`lib/google.js`) is built but switched off; set
   `EXPO_PUBLIC_GOOGLE_SIGNIN=1` in `.env` to show it once the Google setup in `../web/docs/API.md` ("Google sign-in
   through the browser") is done.
+
+## Build an Android APK
+
+Builds are made in the cloud by EAS (Expo Application Services), so no Android Studio is needed. You need a free Expo account.
+
+```bash
+npx.cmd eas-cli login                          # once
+npx.cmd eas-cli init                           # once: creates the project and fills app.json -> extra.eas.projectId
+npx.cmd eas-cli build -p android --profile preview
+```
+
+The first build asks "Generate a new Android Keystore?": answer yes (EAS keeps the signing key for you). When it finishes
+(about 15 to 30 minutes on the free plan) it prints a link and a QR code to download the `.apk`; open it on the phone and
+allow "install unknown apps" for the browser.
+
+Profiles in `eas.json`:
+
+| Profile | Gives | Talks to | Use it for |
+|---|---|---|---|
+| `preview` | `.apk` | the API on your computer over the home Wi-Fi, `http://192.168.0.103:8000/api` (plain http is allowed only in this build, through `ALLOW_CLEARTEXT=1` in `app.config.js`) | trying the app on phones with no Expo Go. The address is fixed in the build: change it in `eas.json` if the computer address changes, and run the API with `--host=0.0.0.0`. |
+| `production-apk` | `.apk` | the live server, `https://faithfellows.app/api` | handing the app to people outside the Play Store |
+| `production` | `.aab` | the live server, `https://faithfellows.app/api` | uploading to the Google Play Store |
+
+`EXPO_PUBLIC_*` values in `app/.env` are not uploaded (the file is not in git), so the API address of each build is set in
+its profile in `eas.json`. Push notifications in an installed app also need a Firebase (FCM) key: see "Push notifications".
