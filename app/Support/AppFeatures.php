@@ -5,6 +5,7 @@ namespace App\Support;
 use App\Models\Church;
 use App\Models\User;
 use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * Which platform features a person sees in the app: podcasts, the hymn book and the gospel radio.
@@ -50,6 +51,12 @@ class AppFeatures
         }
 
         return collect(self::FEATURES)->map(fn (array $feature) => $churches->contains(fn (Church $church) => (bool) $church->getAttribute($feature['column'])))->all();
+    }
+
+    /** False until the database change that adds the switches has been applied. */
+    public static function switchesExist(): bool
+    {
+        return Schema::hasColumn('churches', self::FEATURES['podcasts']['column']);
     }
 
     public static function allows(?User $user, string $feature): bool

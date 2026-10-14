@@ -18,8 +18,12 @@ use Illuminate\View\View;
  */
 class AppFeatureController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request): View|RedirectResponse
     {
+        if ($wait = $this->waitingForUpdate()) {
+            return $wait;
+        }
+
         $q = trim((string) $request->query('q'));
         $active = Church::query()->where('status', 'active');
 
@@ -35,6 +39,10 @@ class AppFeatureController extends Controller
     /** Saves the churches shown on the page: a box ticked means the feature is on for that church. */
     public function update(Request $request): RedirectResponse
     {
+        if ($wait = $this->waitingForUpdate()) {
+            return $wait;
+        }
+
         $ids = collect((array) $request->input('ids', []))->map(fn ($id) => (int) $id)->filter()->unique()->values();
         $changed = 0;
 
@@ -57,6 +65,10 @@ class AppFeatureController extends Controller
     /** One feature on or off for every church at once. */
     public function all(Request $request): RedirectResponse
     {
+        if ($wait = $this->waitingForUpdate()) {
+            return $wait;
+        }
+
         $data = $request->validate(['feature' => ['required', Rule::in(array_keys(AppFeatures::FEATURES))], 'value' => ['required', 'boolean']]);
         $feature = AppFeatures::FEATURES[$data['feature']];
 
@@ -64,5 +76,15 @@ class AppFeatureController extends Controller
         Audit::log('church.features.all', null, __(':feature switched :state for every church', ['feature' => $feature['label'], 'state' => $data['value'] ? 'on' : 'off']));
 
         return back()->with('status', __(':feature is now :state for every church.', ['feature' => __($feature['label']), 'state' => $data['value'] ? __('on') : __('off')]));
+    }
+
+    /** The switches live in a database change that may not have been applied yet (hosting without a terminal): say so, do not fail. */
+    private function waitingForUpdate(): ?RedirectResponse
+    {
+        if (AppFeatures::switchesExist()) {
+            return null;
+        }
+
+        return redirect()->route('super-admin.updates.index')->with('status', __('The database change for these switches has not been applied yet. Apply it here, then open App features again.'));
     }
 }

@@ -104,7 +104,7 @@ Build one with `npx.cmd eas-cli build -p android --profile preview`. See `app/RE
    (the same thing `build.py` makes: production PHP packages, built styles, root `.htaccess`) and commits it to a branch
    called **`production`**. It takes about 3 minutes (see the Actions tab on GitHub). Only pushes that change `web/` start it.
 2. **Hostinger pulls that branch** into the site folder, either when you press **Deploy** in hPanel or by itself through the webhook.
-3. **The scheduler applies new database migrations** within a minute (`FF_AUTO_MIGRATE=true` in the server `.env`). Nothing else to do.
+3. **New database changes are applied** within a minute by the scheduler (`FF_AUTO_MIGRATE=true` in the server `.env`, and the `schedule:run` cron job from step 8). If you have no cron job, open **Super admin, Database updates** after an update that changes the database (the menu shows a number when something waits) and press **Apply now**. Until a change is applied, the screens that need it show a message instead of failing.
 
 The branch never contains `.env`, uploaded files, logs or caches, so a deploy cannot overwrite them. Keep the repository private.
 
@@ -140,6 +140,7 @@ uploaded files, so they stay), and run `php artisan migrate --force` if the upda
 | Symptom | Likely cause |
 |---|---|
 | **403 Forbidden** on the home page | The website folder holds the wrong files. The Git entry must deploy the **`production`** branch, never `main` (`main` is the source code: no `index.php` in the root, so the server refuses to list it). See "If the site shows 403" below. |
+| A Super admin page shows 500 right after an update | The update brought a database change that has not been applied. Open `/super-admin/updates` and press **Apply now** (or add the cron job, step 8). |
 | Error 500 / blank page | Read `storage/logs/laravel-<date>.log`. Usually a missing `.env`, a wrong PHP version (needs 8.2+) or a missing extension. |
 | "Access denied for user" | `DB_PASSWORD` in `.env` is wrong, or the database user is not attached to the database. |
 | "No application encryption key" | `.env` was not uploaded or is not named exactly `.env`. |
