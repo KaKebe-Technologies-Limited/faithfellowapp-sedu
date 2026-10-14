@@ -1,6 +1,7 @@
-// Home tab. From the top: greeting, the banner slider of your churches, "stories" (radio, podcasts, hymns, churches), a live-now
-// card, notices and campaigns, the verse of the day, quiz games, four small shortcuts (prayer wall, sermons, events, giving),
-// then the feed of everything your churches post. Pull down to refresh; scroll to the end to load older items.
+// Home tab, in a soft frosted style on the brand colours. From the top: a deep wine panel with the greeting and the banner slider
+// of your churches (or the welcome card), then on the pale surface: "Explore" (radio, podcasts, hymns, sermons, events, prayer,
+// giving, quiz), a live-now card, your churches, notices and campaigns, the verse of the day, the quiz card, and the feed of
+// everything your churches post. Pull down to refresh; scroll to the end to load older items.
 // Data: GET /api/v1/home (the banner and highlights) and GET /api/v1/feed (the list).
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, View } from 'react-native';
@@ -9,11 +10,11 @@ import AppText from '../../components/AppText';
 import Button from '../../components/Button';
 import FeedItem from '../../components/FeedItem';
 import ChurchStories from '../../components/home/ChurchStories';
+import ExploreGrid from '../../components/home/ExploreGrid';
 import Highlights from '../../components/home/Highlights';
 import HeroCarousel from '../../components/home/HeroCarousel';
-import HomeHeader from '../../components/home/HomeHeader';
+import HomeHero from '../../components/home/HomeHero';
 import LiveBanner from '../../components/home/LiveBanner';
-import QuickAccess from '../../components/home/QuickAccess';
 import QuizCard from '../../components/home/QuizCard';
 import SuggestedChurches from '../../components/home/SuggestedChurches';
 import VerseCard from '../../components/home/VerseCard';
@@ -21,6 +22,7 @@ import WelcomeBanner from '../../components/home/WelcomeBanner';
 import SectionHeader from '../../components/SectionHeader';
 import Skeleton from '../../components/Skeleton';
 import { COLORS, RADIUS, SHADOW, SPACING } from '../../constants/theme';
+import { SOFT } from '../../constants/soft';
 import api, { errorMessage } from '../../lib/api';
 import { useAuth } from '../../lib/auth';
 import { useFetch } from '../../lib/useFetch';
@@ -100,7 +102,9 @@ export default function HomeScreen() {
 
   const header = (
     <View>
-      <HomeHeader user={user} />
+      <HomeHero user={user}>
+        {data ? (slides.length ? <HeroCarousel slides={slides} /> : !hasChurches ? <WelcomeBanner /> : null) : null}
+      </HomeHero>
       {home.loading && !data ? <HomeSkeleton /> : null}
       {home.error && !data ? (
         <View style={{ paddingHorizontal: SPACING.md }}>
@@ -109,7 +113,6 @@ export default function HomeScreen() {
       ) : null}
       {data ? (
         <>
-          {slides.length ? <HeroCarousel slides={slides} /> : !hasChurches ? <WelcomeBanner /> : null}
           {!hasChurches ? (
             <SuggestedChurches
               onFollowed={() => {
@@ -118,16 +121,12 @@ export default function HomeScreen() {
               }}
             />
           ) : null}
-          <ChurchStories churches={data.churches} />
+          <ExploreGrid home={data} />
           <LiveBanner stream={liveNow} />
+          <ChurchStories churches={data.churches} />
           <Highlights home={data} />
           <VerseCard verse={data.verse} />
-          {hasChurches ? (
-            <>
-              <QuizCard quiz={data.quiz} />
-              <QuickAccess home={data} />
-            </>
-          ) : null}
+          {hasChurches ? <QuizCard quiz={data.quiz} /> : null}
           {items.length || status.loading ? <SectionHeader title="Latest from your churches" /> : null}
         </>
       ) : null}
@@ -188,6 +187,6 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  list: { flex: 1, backgroundColor: COLORS.canvas },
+  list: { flex: 1, backgroundColor: SOFT.surface },
   notice: { backgroundColor: COLORS.white, borderRadius: RADIUS.lg, padding: SPACING.md, ...SHADOW },
 });

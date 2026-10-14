@@ -5,6 +5,7 @@ namespace App\Http\Resources;
 use App\Models\Connection;
 use App\Models\DirectMessage;
 use App\Models\User;
+use App\Support\AppFeatures;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -40,6 +41,8 @@ class UserResource extends JsonResource
                 'quiet_hours' => $this->quiet_hours_start ? ['start' => substr($this->quiet_hours_start, 0, 5), 'end' => substr((string) $this->quiet_hours_end, 0, 5)] : null,
                 'low_bandwidth' => (bool) $this->low_bandwidth,
             ],
+            // Podcasts, hymns and radio: what the super admin switched on for this person's churches (everything for a new sign-up).
+            'features' => AppFeatures::for($this->resource),
             'churches' => ChurchSummaryResource::collection($this->whenLoaded('subscribedChurches')),
             'staff_of' => $this->staffMemberships()->where('status', 'active')->with('church')->get()->filter(fn ($s) => $s->church && $s->church->status !== 'archived')->map(fn ($s) => ['id' => $s->church->id, 'slug' => $s->church->slug, 'name' => $s->church->name])->values(),
             'unread_notifications' => $this->unreadNotifications()->count(),

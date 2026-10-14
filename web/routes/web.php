@@ -566,6 +566,11 @@ Route::prefix('super-admin')->name('super-admin.')
         Route::get('/audit-logs', [SuperAdmin\AuditLogController::class, 'index'])->name('audit-logs');
         Route::get('/audit-logs/export', [SuperAdmin\AuditLogController::class, 'export'])->name('audit-logs.export');
 
+        // Which churches' members see podcasts, the hymn book and the radio in the app
+        Route::get('/features', [SuperAdmin\AppFeatureController::class, 'index'])->name('features.index');
+        Route::put('/features', [SuperAdmin\AppFeatureController::class, 'update'])->name('features.update');
+        Route::post('/features/all', [SuperAdmin\AppFeatureController::class, 'all'])->name('features.all');
+
         // Gospel radio (songs played round the clock in the app)
         Route::get('/radio', [SuperAdmin\RadioController::class, 'index'])->name('radio.index');
         Route::post('/radio', [SuperAdmin\RadioController::class, 'store'])->name('radio.store');

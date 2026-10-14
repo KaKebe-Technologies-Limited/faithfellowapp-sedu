@@ -135,7 +135,7 @@ export default function HeroCarousel({ slides }) {
 
 const styles = StyleSheet.create({
   wrap: { marginBottom: SPACING.md },
-  card: { borderRadius: RADIUS.xl, overflow: 'hidden', backgroundColor: COLORS.primaryDark, ...SHADOW, shadowOpacity: 0.16 },
+  card: { borderRadius: 28, overflow: 'hidden', backgroundColor: COLORS.primaryDark, borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.25)', ...SHADOW, shadowOpacity: 0.3 },
   content: { position: 'absolute', left: 14, right: 14, bottom: 30, flexDirection: 'row', alignItems: 'flex-end', gap: 12 },
   badge: { width: 52, height: 52, borderRadius: 14, borderWidth: 2, borderColor: COLORS.white, backgroundColor: COLORS.white, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
   badgeImage: { width: '100%', height: '100%' },

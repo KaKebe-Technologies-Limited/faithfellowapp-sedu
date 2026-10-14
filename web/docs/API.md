@@ -306,7 +306,7 @@ One note per thing being read (`context`: `bible:JHN.3`, `sermon:12`, `devotiona
 
 ### My profile
 
-`GET /me` also returns `bio`, `city`, `country`, `gender`, `date_of_birth`, `interests`, `directory_opt_in`, `open_to_connect`, `unread_messages` and `connection_requests`.
+`GET /me` also returns `features` (`{ podcasts, hymns, radio }`, each true or false: which platform features this person sees, see "Who sees podcasts, hymns and radio" below), `bio`, `city`, `country`, `gender`, `date_of_birth`, `interests`, `directory_opt_in`, `open_to_connect`, `unread_messages` and `connection_requests`.
 `PATCH /me` `{ name?, phone?, country?, city?, gender?, date_of_birth?, bio?, interests?: [..8 words], directory_opt_in?, open_to_connect? }` saves them — turning either
 "find me" switch on needs a birth date of someone aged 18 or over (`422` on `date_of_birth` otherwise). `POST /me/avatar` (multipart `avatar`), `DELETE /me/avatar`,
 `PUT /me/password` `{ current_password, password, password_confirmation }` (other phones are signed out).
@@ -395,6 +395,16 @@ Everything a pastor or church worker does in the app. The rules are the website'
 Messages sent from the app (`POST /broadcasts`) go out as push and email, as each member prefers (never SMS or WhatsApp, which cost money).
 
 Left on the website on purpose: recording cash gifts, refunds and payouts, roles and billing, the church profile and slider photos, the payout set-up, and bulk imports and exports.
+
+## Who sees podcasts, hymns and radio 🔒
+
+Podcasts, the hymn book and the gospel radio belong to the whole platform. The super admin decides, church by church (Super admin, **App features**), whose members see them; everything is on for every church until it is switched off.
+
+- A person with **no church yet** (a new sign-up) always sees all three. A super admin too.
+- Someone who follows or works for churches sees a feature when **at least one** of those (active) churches has it on.
+- `GET /me` returns `features: { podcasts, hymns, radio }`; the app hides the tiles that are `false`.
+- The server enforces it: `/podcasts*`, `/podcast-episodes/*`, `/hymnals*`, `/hymns*` and `/radio` answer `403 { "message": "Podcasts are not switched on for your church yet.", "feature": "podcasts" }` for someone who does not see that feature.
+- Website, super admin: `GET /super-admin/features` (every church with three switches), `PUT /super-admin/features` (save the page: `ids[]` and `on[podcasts|hymns|radio][]`), `POST /super-admin/features/all` `{ feature, value }` (one feature on or off for every church). Changes are written to the audit log.
 
 ## Gospel radio 🔒
 

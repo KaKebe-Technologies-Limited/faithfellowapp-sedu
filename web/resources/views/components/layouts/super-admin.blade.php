@@ -17,6 +17,7 @@
             ['label' => __('Moderation'), 'icon' => 'bi-shield-exclamation', 'route' => 'super-admin.moderation.index', 'active' => 'super-admin.moderation.*'],
             ['label' => __('Podcasts'), 'icon' => 'bi-broadcast-pin', 'route' => 'super-admin.podcasts.index', 'active' => 'super-admin.podcasts.*', 'badge' => \App\Models\Podcast::where('status', 'pending')->count() ?: null],
             ['label' => __('Hymn book'), 'icon' => 'bi-journal-richtext', 'route' => 'super-admin.hymnals.index', 'active' => 'super-admin.hymnals.*'],
+            ['label' => __('App features'), 'icon' => 'bi-toggles', 'route' => 'super-admin.features.index', 'active' => 'super-admin.features.*'],
             ['label' => __('Gospel radio'), 'icon' => 'bi-music-note-beamed', 'route' => 'super-admin.radio.index', 'active' => 'super-admin.radio.*'],
             ['label' => __('Blog'), 'icon' => 'bi-journal-richtext', 'route' => 'super-admin.blog.index', 'active' => 'super-admin.blog.*'],
             ['label' => __('Contact inbox'), 'icon' => 'bi-inbox', 'route' => 'super-admin.messages.index', 'active' => 'super-admin.messages.*'],

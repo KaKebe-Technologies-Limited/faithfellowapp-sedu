@@ -26,7 +26,7 @@ export default function AppTabBar({ state, descriptors, navigation }) {
 
           return (
             <Pressable key={route.key} onPress={onPress} onLongPress={() => navigation.emit({ type: 'tabLongPress', target: route.key })} accessibilityRole="button" accessibilityState={{ selected: focused }} accessibilityLabel={label} style={styles.tab}>
-              {options.tabBarIcon?.({ focused, color, size: 24 })}
+              <View style={[styles.pill, focused && styles.pillOn]}>{options.tabBarIcon?.({ focused, color, size: 23 })}</View>
               <AppText style={[styles.label, { color }]}>{label}</AppText>
             </Pressable>
           );
@@ -37,7 +37,9 @@ export default function AppTabBar({ state, descriptors, navigation }) {
 }
 
 const styles = StyleSheet.create({
-  bar: { flexDirection: 'row', backgroundColor: COLORS.white, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: COLORS.gray100, paddingTop: 8 },
-  tab: { flex: 1, alignItems: 'center', justifyContent: 'flex-start', gap: 3 },
+  bar: { flexDirection: 'row', backgroundColor: COLORS.white, borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingTop: 8, shadowColor: '#A67C8E', shadowOpacity: 0.25, shadowRadius: 16, shadowOffset: { width: 0, height: -6 }, elevation: 14 },
+  tab: { flex: 1, alignItems: 'center', justifyContent: 'flex-start', gap: 2 },
+  pill: { width: 52, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  pillOn: { backgroundColor: COLORS.primaryMist },
   label: { fontFamily: FONTS.medium, fontSize: 11, lineHeight: 14 },
 });

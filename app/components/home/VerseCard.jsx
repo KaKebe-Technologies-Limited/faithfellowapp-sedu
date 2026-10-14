@@ -22,35 +22,38 @@ export default function VerseCard({ verse }) {
 
   return (
     <View style={styles.wrap}>
-      <LinearGradient colors={['#5E1030', '#A3223F', '#D1536C']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.card}>
-        <View style={styles.glowA} />
-        <View style={styles.glowB} />
-        <AppText style={styles.quoteMark}>“</AppText>
-        <View style={styles.label}>
-          <Ionicons name="sunny-outline" size={15} color="#FFD98A" />
-          <AppText style={styles.labelText}>VERSE OF THE DAY</AppText>
-        </View>
-        <AppText style={styles.text}>{verse.text}</AppText>
-        <AppText style={styles.reference}>
-          {verse.reference} <AppText style={styles.translation}>{verse.translation}</AppText>
-        </AppText>
-        <View style={styles.actions}>
-          <Pressable onPress={share} style={styles.action} accessibilityRole="button" accessibilityLabel="Share this verse">
-            <Ionicons name={copied ? 'checkmark' : 'share-social-outline'} size={17} color="#fff" />
-            <AppText style={styles.actionText}>{copied ? 'Copied' : 'Share'}</AppText>
-          </Pressable>
-          <Pressable onPress={() => router.push({ pathname: '/bible/[book]/[chapter]', params: { book: verse.book, chapter: String(verse.chapter) } })} style={[styles.action, styles.read]} accessibilityRole="button" accessibilityLabel={`Read ${verse.reference} in the Bible`}>
-            <Ionicons name="book-outline" size={17} color="#7A1832" />
-            <AppText style={[styles.actionText, { color: '#7A1832' }]}>Read chapter</AppText>
-          </Pressable>
-        </View>
-      </LinearGradient>
+      <View style={styles.shadow}>
+        <LinearGradient colors={['#5E1030', '#A3223F', '#D1536C']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.card}>
+          <View style={styles.glowA} />
+          <View style={styles.glowB} />
+          <AppText style={styles.quoteMark}>“</AppText>
+          <View style={styles.label}>
+            <Ionicons name="sunny-outline" size={15} color="#FFD98A" />
+            <AppText style={styles.labelText}>VERSE OF THE DAY</AppText>
+          </View>
+          <AppText style={styles.text}>{verse.text}</AppText>
+          <AppText style={styles.reference}>
+            {verse.reference} <AppText style={styles.translation}>{verse.translation}</AppText>
+          </AppText>
+          <View style={styles.actions}>
+            <Pressable onPress={share} style={styles.action} accessibilityRole="button" accessibilityLabel="Share this verse">
+              <Ionicons name={copied ? 'checkmark' : 'share-social-outline'} size={17} color="#fff" />
+              <AppText style={styles.actionText}>{copied ? 'Copied' : 'Share'}</AppText>
+            </Pressable>
+            <Pressable onPress={() => router.push({ pathname: '/bible/[book]/[chapter]', params: { book: verse.book, chapter: String(verse.chapter) } })} style={[styles.action, styles.read]} accessibilityRole="button" accessibilityLabel={`Read ${verse.reference} in the Bible`}>
+              <Ionicons name="book-outline" size={17} color="#7A1832" />
+              <AppText style={[styles.actionText, { color: '#7A1832' }]}>Read chapter</AppText>
+            </Pressable>
+          </View>
+        </LinearGradient>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: { paddingHorizontal: SPACING.md, marginBottom: SPACING.lg, shadowColor: '#5E1030', shadowOpacity: 0.28, shadowRadius: 18, shadowOffset: { width: 0, height: 10 }, elevation: 8 },
+  wrap: { paddingHorizontal: SPACING.md, marginBottom: SPACING.lg },
+  shadow: { borderRadius: 26, backgroundColor: '#8E1C37', shadowColor: '#5E1030', shadowOpacity: 0.3, shadowRadius: 18, shadowOffset: { width: 0, height: 10 }, elevation: 8 },
   card: { borderRadius: 26, padding: 22, overflow: 'hidden' },
   glowA: { position: 'absolute', right: -50, top: -50, width: 190, height: 190, borderRadius: 95, backgroundColor: 'rgba(255,255,255,0.1)' },
   glowB: { position: 'absolute', left: -40, bottom: -70, width: 170, height: 170, borderRadius: 85, backgroundColor: 'rgba(255,200,120,0.14)' },
