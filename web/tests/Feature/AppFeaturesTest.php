@@ -125,3 +125,19 @@ test('one feature can be switched on or off for every church at once', function 
     expect($b->fresh()->show_podcasts)->toBeTrue();
     $this->actingAs($admin)->post(route('super-admin.features.all'), ['feature' => 'nonsense', 'value' => 1])->assertSessionHasErrors('feature');
 });
+
+// ── Database updates (hosting without a terminal) ───────────────────────────────────────────────────────
+
+test('the database updates page says everything is applied, and only the super admin can use it', function () {
+    $this->actingAs(member())->get(route('super-admin.updates.index'))->assertForbidden();
+    $this->actingAs(member())->post(route('super-admin.updates.apply'))->assertForbidden();
+
+    $admin = superAdmin();
+    $this->actingAs($admin)->get(route('super-admin.updates.index'))->assertOk()->assertSee('The database is up to date');
+    $this->actingAs($admin)->post(route('super-admin.updates.apply'))->assertRedirect()->assertSessionHas('status', 'The database is already up to date.');
+});
+
+test('the app features page is reachable once its database change has been applied', function () {
+    expect(AppFeatures::switchesExist())->toBeTrue();
+    $this->actingAs(superAdmin())->get(route('super-admin.features.index'))->assertOk();
+});

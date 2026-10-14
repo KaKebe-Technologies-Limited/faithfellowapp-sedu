@@ -566,6 +566,10 @@ Route::prefix('super-admin')->name('super-admin.')
         Route::get('/audit-logs', [SuperAdmin\AuditLogController::class, 'index'])->name('audit-logs');
         Route::get('/audit-logs/export', [SuperAdmin\AuditLogController::class, 'export'])->name('audit-logs.export');
 
+        // Database changes that came with an update (for hosting without a terminal)
+        Route::get('/updates', [SuperAdmin\DatabaseUpdateController::class, 'index'])->name('updates.index');
+        Route::post('/updates', [SuperAdmin\DatabaseUpdateController::class, 'apply'])->middleware('throttle:6,1')->name('updates.apply');
+
         // Which churches' members see podcasts, the hymn book and the radio in the app
         Route::get('/features', [SuperAdmin\AppFeatureController::class, 'index'])->name('features.index');
         Route::put('/features', [SuperAdmin\AppFeatureController::class, 'update'])->name('features.update');

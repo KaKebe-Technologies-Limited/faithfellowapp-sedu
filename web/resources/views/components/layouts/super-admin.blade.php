@@ -26,6 +26,7 @@
         ['heading' => __('Platform'), 'items' => [
             ['label' => __('Settings'), 'icon' => 'bi-sliders', 'route' => 'super-admin.settings', 'active' => 'super-admin.settings'],
             ['label' => __('Payment gateways'), 'icon' => 'bi-credit-card-2-front', 'route' => 'super-admin.settings.gateways'],
+            ['label' => __('Database updates'), 'icon' => 'bi-database', 'route' => 'super-admin.updates.index', 'active' => 'super-admin.updates.*', 'badge' => count(\App\Support\DatabaseUpdates::pending()) ?: null],
         ]],
     ];
 @endphp
