@@ -3,6 +3,7 @@
     python deploy/shared-hosting/build.py            # both files below
     python deploy/shared-hosting/build.py sql        # only the database file
     python deploy/shared-hosting/build.py zip        # only the site
+    python deploy/shared-hosting/build.py stage DIR  # the finished site as a plain folder (for the git "production" branch)
 
 Run it from the web folder. The results are written to deploy/shared-hosting/out (never committed):
 
@@ -225,16 +226,47 @@ Options -Indexes
 """
 
 
-def build_zip():
-    OUT.mkdir(parents=True, exist_ok=True)
-    stage = OUT / 'stage'
-    target = OUT / 'faithfellows-site.zip'
+# What the production branch tracks: the finished site, but never the settings, uploads, logs or caches of the server.
+GIT_IGNORE = """/.env
+/.env.*
+!/.env.example
+/public/hot
+/public/storage
+/bootstrap/cache/*.php
+/storage/app/public/*
+/storage/app/private/*
+/storage/logs/*
+/storage/framework/cache/data/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+!.gitkeep
+"""
+
+
+def npm():
+    for name in ('npm.cmd', 'npm'):
+        if (NODE_DIR / name).exists():
+            return NODE_DIR / name
+    return shutil.which('npm') or 'npm'
+
+
+def composer():
+    return [PHP, COMPOSER] if pathlib.Path(COMPOSER).exists() else [shutil.which('composer') or 'composer']
+
+
+def build_stage(stage, for_git=False):
+    """The finished site in `stage`: code, built styles, production PHP packages, root .htaccess.
+
+    for_git=True also leaves out the package caches and writes a .gitignore for the production branch (which, unlike the
+    development .gitignore, tracks vendor/ and public/build).
+    """
+    stage = pathlib.Path(stage)
     if stage.exists():
         shutil.rmtree(stage)
 
     say('Building the styles and scripts (npm run build)')
     env = {**os.environ, 'PATH': str(NODE_DIR) + os.pathsep + os.environ['PATH']}
-    run([NODE_DIR / 'npm.cmd', 'run', 'build'], cwd=WEB, env=env, capture=True)
+    run([npm(), 'run', 'build'], cwd=WEB, env=env, capture=True)
 
     say('Copying the code')
     for src in WEB.rglob('*'):
@@ -262,7 +294,21 @@ def build_zip():
 
     say('Installing the PHP packages for production (no development tools)')
     env = {**os.environ, 'COMPOSER_PROCESS_TIMEOUT': '0', 'APP_KEY': 'base64:' + 'A' * 43 + '=', 'APP_ENV': 'production'}
-    run([PHP, COMPOSER, 'install', '--no-dev', '--optimize-autoloader', '--no-interaction', '--no-progress'], cwd=stage, env=env, capture=True)
+    run([*composer(), 'install', '--no-dev', '--optimize-autoloader', '--no-interaction', '--no-progress'], cwd=stage, env=env, capture=True)
+
+    if for_git:
+        for cache in (stage / 'bootstrap' / 'cache').glob('*.php'):
+            cache.unlink()
+        (stage / '.gitignore').write_text(GIT_IGNORE, encoding='utf-8', newline='\n')
+        (stage / '.gitattributes').write_text('* -text\n', encoding='utf-8', newline='\n')
+    print('site folder:', stage)
+
+
+def build_zip():
+    OUT.mkdir(parents=True, exist_ok=True)
+    stage = OUT / 'stage'
+    target = OUT / 'faithfellows-site.zip'
+    build_stage(stage)
 
     say('Zipping')
     if target.exists():
@@ -276,10 +322,16 @@ def build_zip():
 
 if __name__ == '__main__':
     what = sys.argv[1] if len(sys.argv) > 1 else 'all'
-    if what not in ('all', 'sql', 'zip'):
+    if what not in ('all', 'sql', 'zip', 'stage'):
         sys.exit(__doc__)
-    load_settings()
+    if what == 'stage':
+        # The finished site as a plain folder, for the production git branch (used by .github/workflows/production-branch.yml).
+        if len(sys.argv) < 3:
+            sys.exit('Usage: python deploy/shared-hosting/build.py stage <folder>')
+        build_stage(pathlib.Path(sys.argv[2]).resolve(), for_git=True)
+        sys.exit(0)
     if what in ('all', 'sql'):
+        load_settings()
         build_sql()
     if what in ('all', 'zip'):
         build_zip()
