@@ -110,8 +110,20 @@ export default function HymnScreen() {
               {hymn.number ? <AppText style={styles.number}>HYMN {hymn.number}</AppText> : null}
               <AppText style={styles.title}>{hymn.title}</AppText>
               <AppText style={styles.hymnal}>{hymn.hymnal?.name}</AppText>
-              {hymn.author ? <AppText style={styles.byline}>Words: {hymn.author}</AppText> : null}
-              {hymn.composer ? <AppText style={styles.byline}>Music: {hymn.composer}</AppText> : null}
+              {hymn.section ? (
+                <View style={styles.part}>
+                  <AppText style={styles.partText}>{hymn.section}</AppText>
+                  {hymn.section_meaning ? <AppText style={styles.partMeaning}>{hymn.section_meaning}</AppText> : null}
+                </View>
+              ) : null}
+              {hymn.author && hymn.author === hymn.composer ? (
+                <AppText style={styles.byline}>Words and music: {hymn.author}</AppText>
+              ) : (
+                <>
+                  {hymn.author ? <AppText style={styles.byline}>Words: {hymn.author}</AppText> : null}
+                  {hymn.composer ? <AppText style={styles.byline}>Music: {hymn.composer}</AppText> : null}
+                </>
+              )}
             </LinearGradient>
 
             <View style={styles.tools}>
@@ -217,6 +229,9 @@ const styles = StyleSheet.create({
   number: { fontFamily: FONTS.bold, fontSize: 12, letterSpacing: 1.6, color: 'rgba(255,255,255,0.8)' },
   title: { fontFamily: FONTS.bold, fontSize: 28, lineHeight: 35, color: '#fff', marginTop: 4 },
   hymnal: { fontFamily: FONTS.medium, fontSize: 14, color: 'rgba(255,255,255,0.85)', marginTop: 4 },
+  part: { alignSelf: 'flex-start', marginTop: 10, backgroundColor: 'rgba(255,255,255,0.16)', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 6 },
+  partText: { fontFamily: FONTS.bold, fontSize: 13, color: '#fff' },
+  partMeaning: { fontFamily: FONTS.regular, fontSize: 12, color: 'rgba(255,255,255,0.85)', marginTop: 1 },
   byline: { fontFamily: FONTS.regular, fontSize: 13.5, color: 'rgba(255,255,255,0.8)', marginTop: 2 },
   tools: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: SPACING.md, marginTop: 16 },
   sizer: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.white, borderRadius: RADIUS.full, paddingHorizontal: 4, ...SHADOW, shadowOpacity: 0.05 },

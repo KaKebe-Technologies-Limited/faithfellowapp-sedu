@@ -29,7 +29,7 @@ export default function HymnRow({ hymn, showHymnal = false, onToggle }) {
           </AppText>
         ) : null}
         <AppText style={styles.meta} numberOfLines={1}>
-          {[hymn.author, showHymnal ? hymn.hymnal?.name : null].filter(Boolean).join(' · ')}
+          {[hymn.author, showHymnal ? [hymn.hymnal?.name, hymn.section].filter(Boolean).join(', ') : null].filter(Boolean).join(' · ')}
         </AppText>
       </View>
     </Pressable>

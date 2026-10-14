@@ -14,10 +14,10 @@ class Hymn extends Model
 {
     use SoftDeletes;
 
-    public const COPYRIGHT = ['public_domain' => 'Public domain', 'licensed' => 'Used with permission', 'original' => 'Original, shared by its author'];
+    public const COPYRIGHT = ['public_domain' => 'Public domain', 'licensed' => 'Used with permission', 'original' => 'Original, shared by its author', 'hymnal' => 'From the printed hymn book'];
 
     protected $fillable = [
-        'hymnal_id', 'number', 'title', 'first_line', 'verses', 'refrain', 'search_text', 'author', 'translator', 'composer', 'arranger', 'tune', 'meter', 'key_signature',
+        'hymnal_id', 'number', 'section', 'section_order', 'title', 'first_line', 'verses', 'refrain', 'search_text', 'author', 'translator', 'composer', 'arranger', 'tune', 'meter', 'key_signature',
         'year_written', 'themes', 'scripture', 'copyright_status', 'credit_note', 'source_url', 'audio_url', 'sheet_music_url', 'status', 'favorites_count',
     ];
 
@@ -72,8 +72,14 @@ class Hymn extends Model
 
                 continue;
             }
+            if (preg_match('/^(coda|note|intro|introduction|response|call|text)\s*:\s*(.*)$/i', $lines[0], $m)) {
+                $lines[0] = trim($m[2]);
+                $verses[] = ['type' => 'text', 'label' => strtolower($m[1]) === 'text' ? '' : ucfirst(strtolower($m[1])), 'lines' => array_values(array_filter($lines, fn ($l) => $l !== ''))];
+
+                continue;
+            }
             $lines[0] = preg_replace('/^(verse\s*)?\d+[.):]\s*/i', '', $lines[0]);
-            $verses[] = ['number' => count($verses) + 1, 'lines' => array_values(array_filter($lines, fn ($l) => $l !== ''))];
+            $verses[] = ['number' => count(array_filter($verses, fn ($v) => ($v['type'] ?? 'verse') !== 'text')) + 1, 'lines' => array_values(array_filter($lines, fn ($l) => $l !== ''))];
         }
 
         return ['verses' => $verses, 'refrain' => $refrain];
@@ -84,7 +90,9 @@ class Hymn extends Model
     {
         $blocks = [];
         foreach ($this->verses ?? [] as $verse) {
-            $blocks[] = ($verse['number'] ?? count($blocks) + 1).'. '.implode("\n", $verse['lines']);
+            $blocks[] = ($verse['type'] ?? 'verse') === 'text'
+                ? (($verse['label'] ?? '') !== '' ? $verse['label'].': ' : 'Text: ').implode("\n", $verse['lines'])
+                : ($verse['number'] ?? count($blocks) + 1).'. '.implode("\n", $verse['lines']);
         }
         if ($this->refrain) {
             $blocks[] = "Refrain:\n".implode("\n", $this->refrain['lines']);
@@ -101,11 +109,22 @@ class Hymn extends Model
     public function sections(): array
     {
         $sections = [];
+        $hasRefrain = $this->refrain && ($this->refrain['lines'] ?? []);
         foreach ($this->verses ?? [] as $verse) {
+            if (($verse['type'] ?? 'verse') === 'text') {
+                // A block printed as it is in the book (an introduction, a coda, a call and response): no verse number, no refrain after it.
+                $sections[] = ['type' => 'text', 'label' => (string) ($verse['label'] ?? ''), 'lines' => $verse['lines']];
+
+                continue;
+            }
             $sections[] = ['type' => 'verse', 'label' => (string) ($verse['number'] ?? count($sections) + 1), 'lines' => $verse['lines']];
-            if ($this->refrain && ($this->refrain['lines'] ?? [])) {
+            if ($hasRefrain) {
                 $sections[] = ['type' => 'refrain', 'label' => __('Refrain'), 'lines' => $this->refrain['lines']];
             }
+        }
+        // A hymn made only of printed blocks still shows its refrain once.
+        if ($hasRefrain && ! collect($sections)->contains('type', 'verse')) {
+            array_unshift($sections, ['type' => 'refrain', 'label' => __('Refrain'), 'lines' => $this->refrain['lines']]);
         }
 
         return $sections;
@@ -121,18 +140,24 @@ class Hymn extends Model
     {
         $lines = [];
         $words = trim($this->author.($this->year_written ? ', '.$this->year_written : ''), ', ');
+        $same = $this->author && $this->composer && Str::lower(trim($this->author)) === Str::lower(trim($this->composer));
         if ($words !== '') {
-            $lines[] = ['label' => __('Words'), 'value' => $words];
+            $lines[] = ['label' => $same ? __('Words and music') : __('Words'), 'value' => $words];
+        } elseif (! $this->composer && $this->copyright_status === 'hymnal') {
+            $lines[] = ['label' => __('Words and music'), 'value' => __('Not named in the book')];
         }
         if ($this->translator) {
             $lines[] = ['label' => __('Translated by'), 'value' => $this->translator];
         }
-        $music = trim(($this->tune ? '“'.$this->tune.'”' : '').($this->composer ? ($this->tune ? ', ' : '').$this->composer : ''));
+        $music = trim(($this->tune ? '“'.$this->tune.'”' : '').($this->composer && ! $same ? ($this->tune ? ', ' : '').$this->composer : ''));
         if ($music !== '') {
             $lines[] = ['label' => __('Music'), 'value' => $music];
         }
         if ($this->arranger) {
             $lines[] = ['label' => __('Setting'), 'value' => $this->arranger];
+        }
+        if ($this->section) {
+            array_unshift($lines, ['label' => __('Part of the book'), 'value' => $this->section]);
         }
         $lines[] = ['label' => __('Copyright'), 'value' => __(self::COPYRIGHT[$this->copyright_status] ?? 'Public domain')];
         $source = $this->hymnal?->source_name;
@@ -147,10 +172,16 @@ class Hymn extends Model
     public function shareText(): string
     {
         $out = [];
-        $out[] = ($this->number ? $this->number.'. ' : '').$this->title;
+        $out[] = ($this->number ? $this->number.'. ' : '').$this->title.($this->section ? ' ('.$this->section.')' : '');
         foreach ($this->sections() as $s) {
             $out[] = '';
-            $out[] = $s['type'] === 'refrain' ? $s['label'].':' : $s['label'].'.';
+            if ($s['type'] === 'text') {
+                if ($s['label'] !== '') {
+                    $out[] = $s['label'].':';
+                }
+            } else {
+                $out[] = $s['type'] === 'refrain' ? $s['label'].':' : $s['label'].'.';
+            }
             array_push($out, ...$s['lines']);
         }
         $out[] = '';
@@ -169,7 +200,7 @@ class Hymn extends Model
 
     protected function buildSearchText(): string
     {
-        $lines = collect($this->verses ?? [])->pluck('lines')->flatten()->merge($this->refrain['lines'] ?? [])->push($this->title)->push((string) $this->author)->push((string) $this->composer);
+        $lines = collect($this->verses ?? [])->pluck('lines')->flatten()->merge($this->refrain['lines'] ?? [])->push($this->title)->push((string) $this->author)->push((string) $this->composer)->push((string) $this->section);
 
         return Str::lower(preg_replace('/[^\p{L}\p{N}\s\']+/u', ' ', $lines->implode(' ')) ?? '');
     }

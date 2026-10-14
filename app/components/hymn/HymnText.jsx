@@ -1,5 +1,7 @@
 // The words of a hymn, laid out to be read from an arm's length: a small numbered badge for each verse, a generous line
-// height, and the refrain set apart on a tinted card with an accent bar. `size` is the text size the member chose.
+// height, and the refrain set apart on a tinted card with an accent bar. Hymns of a printed book that could not be split into
+// numbered verses come as text blocks: the lines are shown just as the book prints them, with a small caption when it has one.
+// `size` is the text size the member chose.
 import { StyleSheet, View } from 'react-native';
 import { COLORS, FONTS } from '../../constants/theme';
 import AppText from '../AppText';
@@ -9,6 +11,7 @@ export default function HymnText({ sections = [], size = 22, dark = false }) {
   const soft = dark ? 'rgba(255,255,255,0.55)' : COLORS.primary;
   const line = Math.round(size * 1.45);
   const gap = Math.round(size * 0.3); // a clear step between two lines of the poem, so a wrapped line is not mistaken for a new one
+  const numbered = sections.some((s) => s.type === 'verse'); // text blocks line up with the verses when there are verse badges
 
   return (
     <View>
@@ -18,6 +21,15 @@ export default function HymnText({ sections = [], size = 22, dark = false }) {
             <AppText style={[styles.refrainLabel, { color: soft }]}>{(s.label || 'Refrain').toUpperCase()}</AppText>
             {s.lines.map((l, n) => (
               <AppText key={n} style={{ fontFamily: FONTS.medium, fontStyle: 'italic', fontSize: size, lineHeight: line, color: ink, marginBottom: gap }}>
+                {l}
+              </AppText>
+            ))}
+          </View>
+        ) : s.type === 'text' ? (
+          <View key={i} style={[styles.text, numbered && { marginLeft: 42 }]}>
+            {s.label ? <AppText style={[styles.caption, { color: soft }]}>{s.label.toUpperCase()}</AppText> : null}
+            {s.lines.map((l, n) => (
+              <AppText key={n} style={{ fontFamily: FONTS.regular, fontSize: size, lineHeight: line, color: ink, marginBottom: gap }}>
                 {l}
               </AppText>
             ))}
@@ -43,6 +55,8 @@ export default function HymnText({ sections = [], size = 22, dark = false }) {
 
 const styles = StyleSheet.create({
   verse: { flexDirection: 'row', gap: 14, marginBottom: 22 },
+  text: { marginBottom: 22 },
+  caption: { fontFamily: FONTS.bold, fontSize: 11, letterSpacing: 1.2, marginBottom: 4 },
   badge: { width: 28, height: 28, borderRadius: 14, backgroundColor: COLORS.primaryMist, alignItems: 'center', justifyContent: 'center', marginTop: 3 },
   badgeDark: { backgroundColor: 'rgba(255,255,255,0.1)' },
   badgeText: { fontFamily: FONTS.bold, fontSize: 13, lineHeight: 16 },

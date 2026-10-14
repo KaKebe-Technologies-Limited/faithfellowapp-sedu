@@ -23,7 +23,7 @@ async function searchSaved(q) {
   for (const { id } of await savedHymnals()) {
     const hymnal = await getSavedHymnal(id);
     for (const h of hymnal?.hymns ?? []) {
-      const hay = `${h.number} ${h.title} ${h.first_line} ${h.author} ${(h.sections ?? []).flatMap((s) => s.lines).join(' ')}`.toLowerCase();
+      const hay = `${h.number} ${h.title} ${h.first_line} ${h.author} ${h.section ?? ''} ${(h.sections ?? []).flatMap((s) => s.lines).join(' ')}`.toLowerCase();
       if (words.every((w) => hay.includes(w) || String(h.number) === w)) found.push({ ...h, hymnal: { id: hymnal.id, name: hymnal.name } });
     }
   }

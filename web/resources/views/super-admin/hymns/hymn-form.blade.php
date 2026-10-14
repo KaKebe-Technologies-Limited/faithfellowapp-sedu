@@ -7,6 +7,9 @@
         @csrf @if ($editing) @method('PUT') @endif
         <div class="row g-4">
             <div class="col-lg-7">
+                @if (collect($hymnal->sections)->isNotEmpty())
+                    <x-ff.select name="section" :label="__('Part of the book')" :options="['' => __('None')] + collect($hymnal->sections)->mapWithKeys(fn ($s) => [$s['name'] => $s['name'].($s['meaning'] ? ' · '.$s['meaning'] : '')])->all()" :value="$hymn->section" />
+                @endif
                 <div class="row">
                     <div class="col-4"><x-ff.input name="number" type="number" :label="__('Hymn number')" :value="$hymn->number" /></div>
                     <div class="col-8"><x-ff.input name="title" :label="__('Title')" :value="$hymn->title" required /></div>

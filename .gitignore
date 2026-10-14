@@ -58,3 +58,8 @@ yarn-error.log*
 
 # ===== Local tooling =====
 .claude/settings.local.json
+
+# ===== Copyrighted source books (never commit) =====
+# Hymn books of a denomination or publisher: keep the PDF and the converted text out of git.
+Luganda Hym Book*.pdf
+web/storage/app/private/hymnals/

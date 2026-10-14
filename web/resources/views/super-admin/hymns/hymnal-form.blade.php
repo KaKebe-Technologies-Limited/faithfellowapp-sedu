@@ -11,7 +11,9 @@
                     <div class="col-md-6"><x-ff.select name="language" :label="__('Language')" :options="\App\Models\Hymnal::LANGUAGES" :value="$hymnal->language ?: 'en'" required /></div>
                     <div class="col-md-6"><x-ff.input name="denomination" :label="__('Denomination (optional)')" :value="$hymnal->denomination" :help="__('Anglican, Catholic, Pentecostal, SDA…')" /></div>
                 </div>
-                <x-ff.textarea name="description" :label="__('About this hymnal')" :value="$hymnal->description" rows="3" />
+                <x-ff.textarea name="description" :label="__('About this hymnal')" :value="$hymnal->description" rows="4" :help="__('Credit the publisher, the committee and the approval here, for example: Nihil obstat, imprimatur, printed at…')" />
+                <x-ff.textarea name="sections_text" :label="__('Parts of the book (optional)')" :value="old('sections_text', $hymnal->sectionsForEditing())" rows="6"
+                    :help="__('Some hymn books are divided into parts. Write one per line, in book order: its name, then | and what it means. For example: Ez’Amayingira | Entrance hymns')" />
                 <div class="row">
                     <div class="col-md-6"><x-ff.input name="source_name" :label="__('Where the texts come from')" :value="$hymnal->source_name" :help="__('Shown as a credit: a publisher, a church or a website.')" /></div>
                     <div class="col-md-6"><x-ff.input name="source_url" type="url" :label="__('Source link (optional)')" :value="$hymnal->source_url" placeholder="https://" /></div>

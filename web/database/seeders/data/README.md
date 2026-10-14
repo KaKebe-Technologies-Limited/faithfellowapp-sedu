@@ -15,3 +15,14 @@ kept, hymns by living authors or composers were left out, and the hymns were num
 **Adding more.** Add hymnals and hymns on the website: Super admin, Hymn book. Do not copy modern worship songs (Hillsong,
 Bethel and the like) without a licence (for example CCLI), and do not copy a whole denominational hymnal without written
 permission from its publisher.
+
+## Printed hymn books (Luganda, Lango and others)
+
+A hymn book that is a PDF or a printed book is converted to JSON and loaded with `php artisan hymns:import file.json` (the
+file format is in `docs/API.md`, Hymn book). The importer keeps the parts of the book, the printed numbers and every credit,
+and can be run again with a corrected file. Convert the book once, read a sample of the hymns against the book, and only then
+publish it.
+
+These files are **not committed to git** (`storage/app/private/hymnals/`): a hymn book of a denomination or publisher is
+copyrighted, so keep its text out of the repository and get the publisher's written permission before members use it.
+Public-domain hymnals (like the one in this folder) are fine to commit.

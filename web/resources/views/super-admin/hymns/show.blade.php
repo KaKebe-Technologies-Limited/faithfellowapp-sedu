@@ -16,7 +16,7 @@
                     @forelse ($hymns as $hymn)
                         <tr>
                             <td class="fw-semibold">{{ $hymn->number }}</td>
-                            <td><div class="fw-semibold text-ff-black">{{ $hymn->title }}</div><div class="small-xs text-ff-muted">{{ $hymn->first_line }}</div></td>
+                            <td><div class="fw-semibold text-ff-black">{{ $hymn->title }}</div><div class="small-xs text-ff-muted">{{ $hymn->section ? $hymn->section.' · ' : '' }}{{ $hymn->first_line }}</div></td>
                             <td class="small">{{ $hymn->author }}@if ($hymn->composer)<div class="small-xs text-ff-muted">{{ __('Music') }}: {{ $hymn->composer }}</div>@endif</td>
                             <td class="small text-nowrap">{{ __(\App\Models\Hymn::COPYRIGHT[$hymn->copyright_status] ?? '') }}</td>
                             <td><x-ff.status :status="$hymn->status" /></td>

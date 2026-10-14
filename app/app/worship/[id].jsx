@@ -14,6 +14,9 @@ import { errorMessage } from '../../lib/api';
 import { getStored, setStored } from '../../lib/storage';
 import { loadHymn } from '../../lib/hymnStore';
 
+/** The small heading above what is on the screen: the verse number, REFRAIN, or the caption of a printed block (many have none). */
+const caption = (section) => (section.type === 'refrain' ? 'REFRAIN' : section.type === 'text' ? (section.label || '').toUpperCase() : `VERSE ${section.label}`);
+
 function Round({ icon, label, onPress, color }) {
   return (
     <Pressable onPress={onPress} hitSlop={8} accessibilityRole="button" accessibilityLabel={label} style={[styles.round, { backgroundColor: color }]}>
@@ -124,7 +127,7 @@ export default function WorshipScreen() {
                   </View>
                 ) : section ? (
                   <View style={{ alignItems: 'center' }}>
-                    <AppText style={[styles.label, { color: palette.accent }]}>{section.type === 'refrain' ? 'REFRAIN' : `VERSE ${section.label}`}</AppText>
+                    {caption(section) ? <AppText style={[styles.label, { color: palette.accent }]}>{caption(section)}</AppText> : null}
                     {section.lines.map((l, n) => (
                       <AppText key={n} style={{ fontFamily: section.type === 'refrain' ? FONTS.semibold : FONTS.medium, fontStyle: section.type === 'refrain' ? 'italic' : 'normal', fontSize: fitSize(section.lines), lineHeight: Math.round(fitSize(section.lines) * 1.38), color: palette.ink, textAlign: 'center' }}>
                         {l}

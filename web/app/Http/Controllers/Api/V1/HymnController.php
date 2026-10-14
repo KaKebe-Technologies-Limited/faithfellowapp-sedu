@@ -33,7 +33,7 @@ class HymnController extends Controller
         abort_unless($hymnal->is_published, 404);
         $request->validate(['q' => ['nullable', 'string', 'max:80'], 'theme' => ['nullable', 'string', 'max:60']]);
 
-        $all = $hymnal->hymns()->where('status', 'published')->orderByRaw('number is null')->orderBy('number')->orderBy('title')->get();
+        $all = $hymnal->hymns()->where('status', 'published')->orderBy('section_order')->orderByRaw('number is null')->orderBy('number')->orderBy('title')->get();
         $favorites = $request->user()->favoriteHymns()->pluck('hymns.id')->all();
         $themes = $all->pluck('themes')->flatten()->filter()->countBy()->sortDesc()->take(24)->map(fn ($n, $t) => ['name' => $t, 'count' => $n])->values();
 
@@ -42,6 +42,7 @@ class HymnController extends Controller
             ->when($request->filled('q'), fn ($c) => $c->filter(fn (Hymn $h) => $this->matches($h, (string) $request->query('q'))));
 
         return response()->json(['data' => $this->hymnalCard($hymnal) + [
+            'sections' => $hymnal->sectionList(),
             'themes' => $themes,
             'hymns' => $hymns->map(fn (Hymn $h) => $this->card($h, in_array($h->id, $favorites, true), $hymnal) + ['search' => $h->search_text])->values(),
         ]]);
@@ -55,7 +56,8 @@ class HymnController extends Controller
 
         return response()->json(['data' => $this->hymnalCard($hymnal) + [
             'downloaded_at' => now()->toIso8601String(),
-            'hymns' => $hymnal->hymns()->where('status', 'published')->orderByRaw('number is null')->orderBy('number')->orderBy('title')->get()
+            'sections' => $hymnal->sectionList(),
+            'hymns' => $hymnal->hymns()->where('status', 'published')->orderBy('section_order')->orderByRaw('number is null')->orderBy('number')->orderBy('title')->get()
                 ->map(fn (Hymn $h) => $this->detail($h->setRelation('hymnal', $hymnal), in_array($h->id, $favorites, true)))->values(),
         ]]);
     }
@@ -84,7 +86,7 @@ class HymnController extends Controller
         } else {
             $words->each(fn ($word) => $query->where('search_text', 'like', '%'.addcslashes($word, '%_').'%'));
         }
-        $found = $query->orderByRaw('title like ? desc', [Str::lower($q).'%'])->orderBy('number')->limit(40)->get();
+        $found = $query->orderByRaw('title like ? desc', [Str::lower($q).'%'])->orderBy('section_order')->orderBy('number')->limit(40)->get();
         $favorites = $request->user()->favoriteHymns()->pluck('hymns.id')->all();
 
         return response()->json(['data' => $found->map(fn (Hymn $h) => $this->card($h, in_array($h->id, $favorites, true)))->values()]);
@@ -149,7 +151,7 @@ class HymnController extends Controller
         $hymnal ??= $h->hymnal;
 
         return [
-            'id' => $h->id, 'number' => $h->number, 'title' => $h->title, 'first_line' => $h->first_line, 'author' => $h->author, 'themes' => $h->themes ?? [],
+            'id' => $h->id, 'number' => $h->number, 'section' => $h->section, 'title' => $h->title, 'first_line' => $h->first_line, 'author' => $h->author, 'themes' => $h->themes ?? [],
             'has_audio' => (bool) $h->audio_url, 'favorite' => $favorite,
             'hymnal' => $hymnal ? ['id' => $hymnal->id, 'name' => $hymnal->name, 'language' => $hymnal->language] : null,
         ];
@@ -160,6 +162,7 @@ class HymnController extends Controller
     {
         return $this->card($h, $favorite) + [
             'sections' => $h->sections(),
+            'section_meaning' => collect($h->hymnal?->sections ?? [])->firstWhere('name', $h->section)['meaning'] ?? null,
             'credits' => $h->creditLines(),
             'credit_note' => $h->credit_note,
             'translator' => $h->translator, 'composer' => $h->composer, 'arranger' => $h->arranger, 'tune' => $h->tune, 'meter' => $h->meter, 'key_signature' => $h->key_signature,
@@ -173,11 +176,9 @@ class HymnController extends Controller
     /** The hymns before and after this one in its hymnal, for the previous / next buttons. */
     protected function neighbours(Hymn $h): array
     {
-        $base = Hymn::where('hymnal_id', $h->hymnal_id)->where('status', 'published');
-        $number = $h->number;
-        $prev = $number !== null ? (clone $base)->where('number', '<', $number)->orderByDesc('number')->value('id') : null;
-        $next = $number !== null ? (clone $base)->where('number', '>', $number)->orderBy('number')->value('id') : null;
+        $order = Hymn::where('hymnal_id', $h->hymnal_id)->where('status', 'published')->orderBy('section_order')->orderByRaw('number is null')->orderBy('number')->orderBy('title')->pluck('id')->all();
+        $at = array_search($h->id, $order, true);
 
-        return ['prev_id' => $prev, 'next_id' => $next];
+        return ['prev_id' => $at !== false ? ($order[$at - 1] ?? null) : null, 'next_id' => $at !== false ? ($order[$at + 1] ?? null) : null];
     }
 }

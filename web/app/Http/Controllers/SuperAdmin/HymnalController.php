@@ -110,13 +110,16 @@ class HymnalController extends Controller
             'name' => ['required', 'string', 'max:160'],
             'language' => ['required', Rule::in(array_keys(Hymnal::LANGUAGES))],
             'denomination' => ['nullable', 'string', 'max:100'],
-            'description' => ['nullable', 'string', 'max:1000'],
+            'description' => ['nullable', 'string', 'max:2000'],
+            'sections_text' => ['nullable', 'string', 'max:6000'],
             'source_name' => ['nullable', 'string', 'max:160'],
             'source_url' => ['nullable', 'url:https,http', 'max:300'],
             'sort' => ['nullable', 'integer', 'between:0,999'],
         ]);
         $data['is_published'] = $request->boolean('is_published');
         $data['sort'] = (int) ($data['sort'] ?? 0);
+        $data['sections'] = Hymnal::parseSections($data['sections_text'] ?? null);
+        unset($data['sections_text']);
 
         return $data;
     }
@@ -125,10 +128,11 @@ class HymnalController extends Controller
     protected function validatedHymn(Request $request, Hymnal $hymnal, ?Hymn $hymn = null): array
     {
         $data = $request->validate([
-            'number' => ['nullable', 'integer', 'between:1,9999', Rule::unique('hymns', 'number')->where('hymnal_id', $hymnal->id)->whereNull('deleted_at')->ignore($hymn?->id)],
+            'section' => ['nullable', 'string', 'max:120'],
+            'number' => ['nullable', 'integer', 'between:1,9999', Rule::unique('hymns', 'number')->where('hymnal_id', $hymnal->id)->where(fn ($q) => $request->filled('section') ? $q->where('section', $request->input('section')) : $q->whereNull('section'))->whereNull('deleted_at')->ignore($hymn?->id)],
             'title' => ['required', 'string', 'max:200'],
             'lyrics' => ['required', 'string', 'max:20000'],
-            'author' => ['required', 'string', 'max:255'],
+            'author' => ['required_unless:copyright_status,hymnal', 'nullable', 'string', 'max:255'],
             'translator' => ['nullable', 'string', 'max:255'],
             'composer' => ['nullable', 'string', 'max:255'],
             'arranger' => ['nullable', 'string', 'max:255'],
@@ -146,6 +150,7 @@ class HymnalController extends Controller
             'status' => ['required', Rule::in(['draft', 'published'])],
         ], [
             'author.required' => __('Credit the author of the words (write “Unknown” or “Traditional” when it is not known).'),
+            'author.required_unless' => __('Credit the author of the words (write “Unknown” or “Traditional” when it is not known).'),
             'audio_url.url' => __('The audio link must start with https.'),
         ]);
 
@@ -157,6 +162,8 @@ class HymnalController extends Controller
 
         $data['themes'] = collect(explode(',', (string) ($data['themes'] ?? '')))->map(fn ($t) => trim($t))->filter()->unique()->take(8)->values()->all() ?: null;
 
-        return $data + ['verses' => $lyrics['verses'], 'refrain' => $lyrics['refrain'], 'first_line' => null];
+        $position = collect($hymnal->sections ?? [])->search(fn ($s) => $s['name'] === ($data['section'] ?? null));
+
+        return $data + ['verses' => $lyrics['verses'], 'refrain' => $lyrics['refrain'], 'first_line' => null, 'section_order' => $position === false ? 0 : $position + 1];
     }
 }
