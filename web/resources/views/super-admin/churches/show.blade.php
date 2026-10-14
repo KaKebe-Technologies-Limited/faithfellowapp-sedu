@@ -1,7 +1,7 @@
 <x-layouts.super-admin :title="$church->name">
     <x-ff.page-header :title="$church->name" :breadcrumbs="[__('Churches') => route('super-admin.churches.index'), $church->name => null]">
         <a href="{{ route('churches.show', $church) }}" target="_blank" class="btn btn-ff-ghost"><i class="bi bi-box-arrow-up-right"></i> {{ __('Public page') }}</a>
-        <a href="{{ route('church-admin.dashboard', $church) }}" class="btn btn-ff-outline"><i class="bi bi-speedometer2"></i> {{ __('Admin dashboard') }}</a>
+        <a href="{{ route('super-admin.churches.manage', $church) }}" class="btn btn-ff-primary"><i class="bi bi-box-arrow-in-right"></i> {{ __('Manage this church') }}</a>
     </x-ff.page-header>
 
     <div class="row g-4">

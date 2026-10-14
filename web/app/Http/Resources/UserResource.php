@@ -43,6 +43,7 @@ class UserResource extends JsonResource
             ],
             // Podcasts, hymns and radio: what the super admin switched on for this person's churches (everything for a new sign-up).
             'features' => AppFeatures::for($this->resource),
+            'is_super_admin' => $this->isSuperAdmin(),
             'churches' => ChurchSummaryResource::collection($this->whenLoaded('subscribedChurches')),
             'staff_of' => $this->staffMemberships()->where('status', 'active')->with('church')->get()->filter(fn ($s) => $s->church && $s->church->status !== 'archived')->map(fn ($s) => ['id' => $s->church->id, 'slug' => $s->church->slug, 'name' => $s->church->name])->values(),
             'unread_notifications' => $this->unreadNotifications()->count(),

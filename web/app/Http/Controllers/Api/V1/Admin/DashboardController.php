@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Church;
+use App\Models\ChurchRole;
 use App\Models\Donation;
 use App\Models\PrayerRequest;
 use Illuminate\Http\JsonResponse;
@@ -20,6 +21,10 @@ class DashboardController extends Controller
     {
         $user = $request->user();
 
+        if ($user->isSuperAdmin()) {
+            return response()->json(['data' => $this->allChurches($request)]);
+        }
+
         return response()->json(['data' => $user->staffMemberships()->where('status', 'active')->with('church.media')->get()
             ->filter(fn ($s) => $s->church && $s->church->status !== 'archived')
             ->map(fn ($s) => [
@@ -28,6 +33,22 @@ class DashboardController extends Controller
                 'is_admin' => (bool) $s->is_admin,
                 'permissions' => $user->churchPermissions($s->church) ?? [],
             ])->values()]);
+    }
+
+    /** A super admin can manage any church: the active ones, found by name or town, 40 at a time. */
+    protected function allChurches(Request $request): array
+    {
+        $q = trim((string) $request->query('q'));
+
+        return Church::query()->where('status', 'active')->with('media')
+            ->when($q !== '', fn ($query) => $query->where(fn ($w) => $w->where('name', 'like', "%{$q}%")->orWhere('city', 'like', "%{$q}%")->orWhere('district', 'like', "%{$q}%")))
+            ->orderBy('name')->limit(40)->get()
+            ->map(fn (Church $church) => [
+                'church' => ['id' => $church->id, 'slug' => $church->slug, 'name' => $church->name, 'logo_url' => $church->logo_url],
+                'title' => __('Super admin'),
+                'is_admin' => true,
+                'permissions' => ChurchRole::catalog(),
+            ])->values()->all();
     }
 
     public function dashboard(Request $request, Church $church): JsonResponse

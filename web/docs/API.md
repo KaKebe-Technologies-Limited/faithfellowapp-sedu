@@ -306,7 +306,7 @@ One note per thing being read (`context`: `bible:JHN.3`, `sermon:12`, `devotiona
 
 ### My profile
 
-`GET /me` also returns `features` (`{ podcasts, hymns, radio }`, each true or false: which platform features this person sees, see "Who sees podcasts, hymns and radio" below), `bio`, `city`, `country`, `gender`, `date_of_birth`, `interests`, `directory_opt_in`, `open_to_connect`, `unread_messages` and `connection_requests`.
+`GET /me` also returns `is_super_admin` (true for the platform owner, who can open any church's admin tools), `features` (`{ podcasts, hymns, radio }`, each true or false: which platform features this person sees, see "Who sees podcasts, hymns and radio" below), `bio`, `city`, `country`, `gender`, `date_of_birth`, `interests`, `directory_opt_in`, `open_to_connect`, `unread_messages` and `connection_requests`.
 `PATCH /me` `{ name?, phone?, country?, city?, gender?, date_of_birth?, bio?, interests?: [..8 words], directory_opt_in?, open_to_connect? }` saves them — turning either
 "find me" switch on needs a birth date of someone aged 18 or over (`422` on `date_of_birth` otherwise). `POST /me/avatar` (multipart `avatar`), `DELETE /me/avatar`,
 `PUT /me/password` `{ current_password, password, password_confirmation }` (other phones are signed out).
@@ -395,6 +395,10 @@ Everything a pastor or church worker does in the app. The rules are the website'
 Messages sent from the app (`POST /broadcasts`) go out as push and email, as each member prefers (never SMS or WhatsApp, which cost money).
 
 Left on the website on purpose: recording cash gifts, refunds and payouts, roles and billing, the church profile and slider photos, the payout set-up, and bulk imports and exports.
+
+## The super admin managing any church 🔒
+
+A super admin is not on any church's staff but holds every permission in every church. On the website, Super admin, Churches, **Manage** (or **Manage this church** on a church's page) opens that church's admin area (`/church/{slug}/admin`) with a bar that says whose church it is and a button back; each visit is written to the audit log (`church.managed`). In the app, `GET /admin/churches` returns every active church for a super admin (`?q=` finds by name or town, 40 at most) with title "Super admin", and all `/admin/{church}/...` calls work. Everyone else still gets only the churches they work for.
 
 ## Who sees podcasts, hymns and radio 🔒
 

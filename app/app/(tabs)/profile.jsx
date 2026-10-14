@@ -117,14 +117,14 @@ export default function ProfileScreen() {
           </Card>
         )}
 
-        {me?.staff_of?.length ? (
+        {me?.staff_of?.length || me?.is_super_admin ? (
           <Pressable onPress={() => router.push('/admin')} style={styles.admin} accessibilityRole="button" accessibilityLabel="Manage your church">
             <View style={styles.adminIcon}>
               <Ionicons name="shield-checkmark" size={22} color={COLORS.white} />
             </View>
             <View style={{ flex: 1 }}>
-              <AppText style={styles.adminTitle}>Manage {me.staff_of.length === 1 ? me.staff_of[0].name : 'your churches'}</AppText>
-              <AppText variant="caption">Announcements, events, prayer, quizzes, live and more</AppText>
+              <AppText style={styles.adminTitle}>{me.is_super_admin ? 'Manage any church' : `Manage ${me.staff_of.length === 1 ? me.staff_of[0].name : 'your churches'}`}</AppText>
+              <AppText variant="caption">{me.is_super_admin ? 'Open a church to update its announcements, events, prayer and more' : 'Announcements, events, prayer, quizzes, live and more'}</AppText>
             </View>
             <Ionicons name="chevron-forward" size={18} color={COLORS.primary} />
           </Pressable>
