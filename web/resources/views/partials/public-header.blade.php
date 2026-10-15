@@ -1,47 +1,26 @@
 @php
+    $appUrl = ff_app_download_url() ?: route('register');
     $nav = [
-        ['label' => __('Home'),     'route' => 'home'],
-        ['label' => __('About'),    'route' => 'about'],
-        ['label' => __('Services'), 'route' => 'services'],
-        ['label' => __('Churches'), 'route' => 'churches.index'],
-        ['label' => __('Pricing'),  'route' => 'pricing'],
-        ['label' => __('Blog'),     'route' => 'blog.index'],
-        ['label' => __('Contact'),  'route' => 'contact'],
+        ['label' => __('Features'),     'url' => route('home').'#features',  'route' => null],
+        ['label' => __('How it works'), 'url' => route('home').'#how',       'route' => null],
+        ['label' => __('Pricing'),      'url' => route('pricing'),           'route' => 'pricing'],
+        ['label' => __('Churches'),     'url' => Route::has('churches.index') ? route('churches.index') : null, 'route' => 'churches.index'],
+        ['label' => __('Blog'),         'url' => route('blog.index'),        'route' => 'blog.index'],
     ];
-    $company = config('faithfellows.company');
 @endphp
 
-<header class="ff-header-wrap">
-
-    {{-- ── Top contact bar ──────────────────────────────── --}}
-    <div class="ff-topbar d-none d-lg-block">
-        <div class="container">
-            <div class="d-flex justify-content-between align-items-center">
-                <div class="d-flex gap-4 align-items-center">
-                    <a href="tel:{{ $company['phone'] }}" class="ff-topbar-link">
-                        <i class="bi bi-telephone-fill"></i> {{ $company['phone'] }}
-                    </a>
-                    <a href="mailto:{{ $company['email'] }}" class="ff-topbar-link">
-                        <i class="bi bi-envelope-fill"></i> {{ $company['email'] }}
-                    </a>
-                    <span class="ff-topbar-link">
-                        <i class="bi bi-geo-alt-fill"></i> Lira City, Uganda
-                    </span>
-                </div>
-                <div class="d-flex align-items-center gap-3">
-                    <a href="https://www.facebook.com/" class="ff-topbar-social" aria-label="Facebook" target="_blank" rel="noopener"><i class="bi bi-facebook"></i></a>
-                    <a href="https://x.com/" class="ff-topbar-social" aria-label="X / Twitter" target="_blank" rel="noopener"><i class="bi bi-twitter-x"></i></a>
-                    <a href="https://www.instagram.com/" class="ff-topbar-social" aria-label="Instagram" target="_blank" rel="noopener"><i class="bi bi-instagram"></i></a>
-                    <a href="https://wa.me/256{{ ltrim($company['phone'], '0') }}" class="ff-topbar-social" aria-label="WhatsApp" target="_blank" rel="noopener"><i class="bi bi-whatsapp"></i></a>
-                </div>
-            </div>
-        </div>
+{{-- A slim line above the menu: one short message, nothing else. --}}
+<div class="ff-bar" role="note">
+    <div class="container d-flex justify-content-between align-items-center gap-3">
+        <span><i class="bi bi-lightning-charge-fill"></i> {{ __('FaithFellows is live. Worship, give and grow with your church.') }}</span>
+        <span class="d-none d-md-inline"><i class="bi bi-geo-alt-fill"></i> {{ __('Made in Uganda') }}</span>
     </div>
+</div>
 
-    {{-- ── Main navigation ───────────────────────────────── --}}
+<header class="ff-header-wrap">
     <nav class="ff-navbar navbar navbar-expand-lg" aria-label="{{ __('Main navigation') }}">
         <div class="container">
-            <x-logo :href="route('home')" :size="34" class="navbar-brand me-4" />
+            <x-logo :href="route('home')" :size="34" class="navbar-brand me-lg-5" />
 
             <button class="navbar-toggler border-0 shadow-none p-0" type="button"
                     data-bs-toggle="offcanvas" data-bs-target="#publicNav"
@@ -55,33 +34,29 @@
                     <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="{{ __('Close') }}"></button>
                 </div>
                 <div class="offcanvas-body align-items-lg-center">
-                    <ul class="navbar-nav me-auto gap-lg-1">
+                    <ul class="navbar-nav mx-lg-auto gap-lg-2">
                         @foreach ($nav as $item)
-                            @if (Route::has($item['route']))
-                                <li class="nav-item">
-                                    <a href="{{ route($item['route']) }}"
-                                       @class(['nav-link ff-nav-link', 'active' => request()->routeIs($item['route'])
-                                           || ($item['route'] !== 'home' && request()->routeIs($item['route'].'.*'))])
-                                       @if (request()->routeIs($item['route'])) aria-current="page" @endif>
-                                        {{ $item['label'] }}
-                                    </a>
-                                </li>
-                            @endif
+                            @continue(! $item['url'])
+                            <li class="nav-item">
+                                <a href="{{ $item['url'] }}" @class(['nav-link ff-nav-link', 'active' => $item['route'] && request()->routeIs($item['route'].'*')])
+                                   @if ($item['route'] && request()->routeIs($item['route'])) aria-current="page" @endif>
+                                    {{ $item['label'] }}
+                                </a>
+                            </li>
                         @endforeach
                     </ul>
-                    <div class="d-flex flex-column flex-lg-row gap-2 mt-4 mt-lg-0">
+                    <div class="d-flex flex-column flex-lg-row align-items-lg-center gap-2 mt-4 mt-lg-0">
                         @auth
                             <a href="{{ auth()->user()->homeUrl() }}" class="btn btn-ff-primary px-4">
                                 <i class="bi bi-grid-1x2 me-1"></i> {{ __('Dashboard') }}
                             </a>
                         @else
-                            <a href="{{ route('login') }}"   class="btn btn-ff-ghost px-4">{{ __('Log in') }}</a>
-                            <a href="{{ route('register') }}" class="btn btn-ff-primary px-4">{{ __('Get started') }}</a>
+                            <a href="{{ route('login') }}" class="ff-nav-login">{{ __('Log in') }}</a>
+                            <a href="{{ $appUrl }}" class="btn btn-ff-dark px-4" @if (ff_app_download_url()) rel="noopener" @endif>{{ __('Download app') }}</a>
                         @endauth
                     </div>
                 </div>
             </div>
         </div>
     </nav>
-
 </header>

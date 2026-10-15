@@ -4,7 +4,7 @@
         <div class="row g-5">
             <div class="col-lg-4">
                 <x-logo :size="36" white />
-                <p class="mt-3 mb-4" style="max-width: 340px">{{ config('faithfellows.brand.tagline') }}. {{ __('One email. One account. Many churches.') }}</p>
+                <p class="mt-3 mb-4 ff-footer-line">{{ config('faithfellows.brand.tagline') }}.</p>
                 <div class="d-flex gap-2">
                     <a href="https://www.facebook.com/" class="btn btn-icon btn-sm btn-outline-light border-0" aria-label="Facebook" rel="noopener" target="_blank"><i class="bi bi-facebook"></i></a>
                     <a href="https://x.com/" class="btn btn-icon btn-sm btn-outline-light border-0" aria-label="X" rel="noopener" target="_blank"><i class="bi bi-twitter-x"></i></a>
@@ -12,34 +12,29 @@
                     <a href="https://wa.me/256{{ ltrim($company['phone'], '0') }}" class="btn btn-icon btn-sm btn-outline-light border-0" aria-label="WhatsApp" rel="noopener" target="_blank"><i class="bi bi-whatsapp"></i></a>
                 </div>
             </div>
-            <div class="col-6 col-lg-2">
-                <h4>{{ __('Platform') }}</h4>
+            <div class="col-6 col-lg-2 offset-lg-1">
+                <h4>{{ __('Company') }}</h4>
                 <ul>
-                    <li><a href="{{ route('services') }}">{{ __('Services') }}</a></li>
+                    <li><a href="{{ route('about') }}">{{ __('About us') }}</a></li>
                     <li><a href="{{ route('pricing') }}">{{ __('Pricing') }}</a></li>
-                    @if (Route::has('churches.index'))<li><a href="{{ route('churches.index') }}">{{ __('Find a church') }}</a></li>@endif
+                    <li><a href="{{ route('blog.index') }}">{{ __('Blog') }}</a></li>
                     @if (Route::has('church.apply'))<li><a href="{{ route('church.apply') }}">{{ __('Register your church') }}</a></li>@endif
                 </ul>
             </div>
             <div class="col-6 col-lg-2">
-                <h4>{{ __('Company') }}</h4>
+                <h4>{{ __('Support') }}</h4>
                 <ul>
-                    <li><a href="{{ route('about') }}">{{ __('About us') }}</a></li>
-                    <li><a href="{{ route('blog.index') }}">{{ __('Blog & resources') }}</a></li>
                     <li><a href="{{ route('contact') }}">{{ __('Contact') }}</a></li>
                     <li><a href="{{ route('privacy') }}">{{ __('Privacy Policy') }}</a></li>
                     <li><a href="{{ route('terms') }}">{{ __('Terms of Service') }}</a></li>
                 </ul>
             </div>
-            <div class="col-lg-4">
+            <div class="col-lg-3">
                 <h4>{{ __('Get in touch') }}</h4>
                 <ul>
-                    <li class="d-flex gap-2"><i class="bi bi-geo-alt"></i><span>Lira City, Uganda</span></li>
                     <li class="d-flex gap-2"><i class="bi bi-telephone"></i><a href="tel:{{ $company['phone'] }}">{{ $company['phone'] }}</a></li>
                     <li class="d-flex gap-2"><i class="bi bi-envelope"></i><a href="mailto:{{ $company['email'] }}">{{ $company['email'] }}</a></li>
-                    <li class="d-flex gap-2"><i class="bi bi-globe2"></i>
-                        <span>@foreach ($company['websites'] as $site)<a href="{{ $site }}" target="_blank" rel="noopener">{{ Str::after($site, '://') }}</a>@if (! $loop->last) | @endif @endforeach</span>
-                    </li>
+                    <li class="d-flex gap-2"><i class="bi bi-geo-alt"></i><span>Lira City, Uganda</span></li>
                 </ul>
             </div>
         </div>

@@ -29,6 +29,7 @@ class SettingsController extends Controller
         'support_email' => ['Support email', 'email', 'Shown to churches on the support page.'],
         'support_phone' => ['Support phone', 'text', null],
         'trial_months' => ['Free trial length (months)', 'number', 'Applies to newly approved churches.'],
+        'android_app_url' => ['App download link', 'url', 'The “Download the app” buttons on the website open this link: a Play Store link, or the link of the latest Android build.'],
         'maintenance_note' => ['Maintenance notice for admins', 'text', 'Shown on church admin dashboards only.'],
         'dormancy_warn_days' => ['Warn a quiet church after (days)', 'number', 'No staff sign-in, nothing published and no new followers for this long: the church gets a warning. Default 30.'],
         'dormancy_block_days' => ['Block it after the warning (days)', 'number', 'If it is still quiet this long after the warning, the church is blocked. Default 14.'],
@@ -58,6 +59,7 @@ class SettingsController extends Controller
             'support_email' => ['nullable', 'email'],
             'support_phone' => ['nullable', 'string', 'max:40'],
             'trial_months' => ['nullable', 'integer', 'min:0', 'max:24'],
+            'android_app_url' => ['nullable', 'url:https,http', 'max:500'],
             'maintenance_note' => ['nullable', 'string', 'max:300'],
             'dormancy_warn_days' => ['nullable', 'integer', 'min:7', 'max:365'],
             'dormancy_block_days' => ['nullable', 'integer', 'min:3', 'max:180'],
@@ -121,6 +123,7 @@ class SettingsController extends Controller
             'support_email' => config('faithfellows.company.email'),
             'support_phone' => config('faithfellows.company.phone'),
             'trial_months' => '12',
+            'android_app_url' => (string) config('faithfellows.app.android_url'),
             'dormancy_warn_days' => (string) config('faithfellows.dormancy.warn_days'),
             'dormancy_block_days' => (string) config('faithfellows.dormancy.block_days'),
         ];

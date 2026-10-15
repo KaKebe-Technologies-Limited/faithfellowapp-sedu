@@ -51,6 +51,12 @@ return [
     // later. The super admin can change both in Settings.
     'dormancy' => ['warn_days' => (int) env('FF_DORMANT_WARN_DAYS', 30), 'block_days' => (int) env('FF_DORMANT_BLOCK_DAYS', 14)],
 
+    // Where the "Download the app" buttons on the website go. Super admin → Settings can change it without a code change
+    // (a Play Store link when the app is published, or the APK link of the latest build).
+    'app' => [
+        'android_url' => env('FF_ANDROID_URL', 'https://expo.dev/artifacts/eas/kJ2-sK0H5y23g0z66gVQkRb9hL6_XvJQnWThWuCarrA.apk'),
+    ],
+
     'pricing' => [
         'plan_price' => (int) env('FF_PLAN_PRICE', 60000),
         'domain_price' => (int) env('FF_DOMAIN_PRICE', 60000),
