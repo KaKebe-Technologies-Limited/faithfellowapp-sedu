@@ -1,7 +1,7 @@
 // All upcoming events at the churches you follow (GET /api/v1/events). Tapping a card opens the event in the app.
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import AppText from '../components/AppText';
 import { EventListCard } from '../components/ListCards';
 import PagedScreen from '../components/PagedScreen';

@@ -1,6 +1,6 @@
 // One hymn in a list: its number in a round badge, the title, the first line and who wrote it, and a star for favourites.
 import { Pressable, StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import { COLORS, FONTS, RADIUS, SHADOW } from '../../constants/theme';
 import AppText from '../AppText';

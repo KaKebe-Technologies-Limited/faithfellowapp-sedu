@@ -3,7 +3,7 @@
 // from your mobile money. For more choices (repeat, note, another way to pay) "More options" opens the full give screen.
 import { useEffect, useState } from 'react';
 import { Platform, Pressable, StyleSheet, Switch, TextInput, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import { COLORS, FONTS, RADIUS, SPACING, MAX_FONT_SCALE } from '../constants/theme';
 import api, { errorMessage, fieldErrors } from '../lib/api';

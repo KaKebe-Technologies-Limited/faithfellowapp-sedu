@@ -3,7 +3,7 @@
 // at once and works with no internet; changes made offline are sent when you are back online.
 import { useState } from 'react';
 import { FlatList, Pressable, RefreshControl, StyleSheet, TextInput, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import AppText from '../components/AppText';
 import ScreenHeader from '../components/ScreenHeader';

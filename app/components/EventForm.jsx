@@ -3,7 +3,7 @@
 // Used by the Events list (create) and the event screen (edit). Data: /api/v1/admin/{church}/events.
 import { useEffect, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Switch, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
 import AppText from './AppText';
 import Button from './Button';

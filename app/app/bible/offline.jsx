@@ -3,7 +3,7 @@
 // Downloads carry on while you read or leave this screen. Data: GET /api/v1/bible and GET /api/v1/bible/download/{book}.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useFocusEffect } from 'expo-router';
 import AppText from '../../components/AppText';
 import Button from '../../components/Button';

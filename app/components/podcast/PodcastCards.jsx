@@ -1,7 +1,7 @@
 // The building blocks of the podcast screens: a square tile for horizontal shelves, a row for a podcast in a list, and
 // a row for an episode with a play button (it shows the pause icon and a pink name while that episode is playing).
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { COLORS, FONTS, RADIUS, SHADOW } from '../../constants/theme';

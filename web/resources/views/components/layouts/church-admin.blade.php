@@ -7,6 +7,7 @@
         ['heading' => null, 'items' => [
             ['label' => __('Dashboard'), 'icon' => 'bi-speedometer2', 'route' => 'church-admin.dashboard', 'params' => $p],
             ['label' => __('Analytics'), 'icon' => 'bi-graph-up-arrow', 'route' => 'church-admin.analytics', 'params' => $p, 'show' => $can('analytics.view')],
+            ['label' => __('Subscribers'), 'icon' => 'bi-people', 'route' => 'church-admin.subscribers', 'params' => $p, 'show' => $can('analytics.view')],
         ]],
         ['heading' => __('Content'), 'items' => [
             ['label' => __('Sermons'), 'icon' => 'bi-mic', 'route' => 'church-admin.sermons.index', 'params' => $p, 'active' => ['church-admin.sermons.*', 'church-admin.series.*'], 'show' => $can('content.manage')],

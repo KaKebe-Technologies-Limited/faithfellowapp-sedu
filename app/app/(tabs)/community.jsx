@@ -3,7 +3,7 @@
 // when one is on, your study groups, and tiles for churches, events, sermons, prayer, devotionals and campaigns.
 import { useCallback } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useFocusEffect } from 'expo-router';
 import AppText from '../../components/AppText';

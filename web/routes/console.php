@@ -6,8 +6,10 @@ use App\Services\BillingService;
 use App\Services\CareService;
 use App\Services\ChurchArtworkService;
 use App\Services\ContentPublisher;
+use App\Services\DormancyService;
 use App\Services\EventService;
 use App\Services\GivingScheduler;
+use App\Services\InspirationBroadcaster;
 use App\Services\Notifications\BroadcastService;
 use App\Services\Notifications\DigestService;
 use App\Services\PodcastFeedService;
@@ -74,6 +76,19 @@ Schedule::command('ff:process-recurring')->dailyAt('07:00')->withoutOverlapping(
 Schedule::command('ff:pledge-reminders')->dailyAt('09:00');
 Schedule::command('ff:payments-reconcile')->everyFiveMinutes()->withoutOverlapping();
 Schedule::command('ff:billing')->dailyAt('06:00');
+
+Artisan::command('ff:dormancy', function (DormancyService $dormancy) {
+    $r = $dormancy->run();
+    $this->info("Warned: {$r['warned']}; blocked: {$r['blocked']}; back to life: {$r['cleared']}");
+})->purpose('Warn churches that stay dormant, then block them if they stay quiet');
+
+Schedule::command('ff:dormancy')->dailyAt('06:30');
+
+Artisan::command('ff:inspiration', function (InspirationBroadcaster $inspiration) {
+    $this->info('Sent '.$inspiration->sendDue().' inspiring message(s) to phones.');
+})->purpose('Push the morning, mid-morning and evening inspiring message to phones at their set times');
+
+Schedule::command('ff:inspiration')->everyMinute()->withoutOverlapping();
 
 Artisan::command('ff:care-digest', function (CareService $care) {
     $this->info('Sent '.$care->sendWeeklyDigests().' pastoral care digest(s).');

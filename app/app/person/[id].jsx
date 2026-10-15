@@ -2,7 +2,7 @@
 // one action that matters — Say Hey (ask to connect), or Message once connected. You can also disconnect or block.
 // Only adults who chose to be found are ever shown; no email, phone or birthday.
 import { Alert, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import AppText from '../../components/AppText';

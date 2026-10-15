@@ -1,7 +1,7 @@
 // Shared loading / error / empty states. Every screen wraps its content in <StateView> so
 // the three states look and behave the same everywhere.
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { COLORS, SPACING } from '../constants/theme';
 import AppText from './AppText';
 import Button from './Button';

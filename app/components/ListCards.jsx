@@ -2,7 +2,7 @@
 // details underneath. One card per kind — event, campaign, sermon, devotional — so every list in the app looks
 // like it belongs to the same family. Tapping opens the matching in-app screen.
 import { Pressable, StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';

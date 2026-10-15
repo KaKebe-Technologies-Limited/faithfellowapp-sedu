@@ -3,7 +3,7 @@
 // Data: GET /reading-plans/{id}?day=, POST …/start, …/complete, …/circles; DELETE leaves the plan.
 import { useState } from 'react';
 import { Alert, Modal, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AppText from '../../components/AppText';

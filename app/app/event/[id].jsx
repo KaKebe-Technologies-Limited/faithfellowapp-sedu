@@ -3,7 +3,7 @@
 // Once you are going, the sticky bar turns into "View ticket" and shows the QR code the door scans.
 import { useState } from 'react';
 import { Alert, Linking, Modal, Platform, Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import QRCode from 'react-native-qrcode-svg';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';

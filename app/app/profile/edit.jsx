@@ -3,7 +3,7 @@
 // adults only; nobody ever sees your email, phone number or birthday. Saved with PATCH /api/v1/me.
 import { useEffect, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Switch, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import AppText from '../../components/AppText';

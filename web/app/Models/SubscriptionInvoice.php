@@ -17,14 +17,14 @@ class SubscriptionInvoice extends Model implements Payable
 
     protected $fillable = [
         'church_id', 'plan_id', 'number', 'period_start', 'period_end', 'items', 'subtotal', 'total', 'currency',
-        'due_date', 'status', 'reference', 'provider_ref', 'method', 'paid_at', 'reminded_at',
+        'due_date', 'status', 'reference', 'provider_ref', 'method', 'paid_at', 'reminded_at', 'issued_notified_at', 'due_soon_notified_at',
     ];
 
     protected function casts(): array
     {
         return [
             'period_start' => 'date', 'period_end' => 'date', 'due_date' => 'date', 'items' => 'array',
-            'subtotal' => 'decimal:2', 'total' => 'decimal:2', 'paid_at' => 'datetime', 'reminded_at' => 'datetime',
+            'subtotal' => 'decimal:2', 'total' => 'decimal:2', 'paid_at' => 'datetime', 'reminded_at' => 'datetime', 'issued_notified_at' => 'datetime', 'due_soon_notified_at' => 'datetime',
         ];
     }
 

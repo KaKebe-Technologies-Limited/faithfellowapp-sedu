@@ -2,7 +2,7 @@
 // pin the best one, hide it, or delete it. Followers are told about a new post. Data: /api/v1/admin/{church}/posts.
 import { useCallback, useState } from 'react';
 import { Alert, FlatList, Platform, Pressable, StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
 import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import AppText from '../../../components/AppText';

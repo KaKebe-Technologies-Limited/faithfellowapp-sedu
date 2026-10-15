@@ -2,7 +2,7 @@
 // and shortcuts to take notes, read the Bible or open your groups while it keeps playing. What plays next is below.
 // The episode carries on when you close this screen, switch apps or lock the phone.
 import { Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';

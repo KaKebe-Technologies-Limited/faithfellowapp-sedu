@@ -3,7 +3,7 @@
 // screen so you can keep listening while you read or chat.
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams } from 'expo-router';

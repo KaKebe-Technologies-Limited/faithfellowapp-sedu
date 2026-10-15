@@ -1,6 +1,6 @@
 // Heading above a section of the home screen, with an optional "See all" link on the right.
 import { Pressable, StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { COLORS, SPACING } from '../constants/theme';
 import AppText from './AppText';
 

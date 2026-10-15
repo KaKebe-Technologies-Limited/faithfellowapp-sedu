@@ -2,7 +2,7 @@
 // requests. "Ask for prayer" opens the in-app form; each card has the "I prayed" button.
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import AppText from '../../components/AppText';
 import PagedScreen from '../../components/PagedScreen';

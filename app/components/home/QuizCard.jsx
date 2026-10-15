@@ -2,7 +2,7 @@
 // with your own record. Both open the Games screen, where you start a game, join one with its code, or answer an invitation.
 import { useEffect, useRef } from 'react';
 import { Animated, Pressable, StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { FONTS, SPACING } from '../../constants/theme';

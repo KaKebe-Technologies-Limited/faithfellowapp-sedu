@@ -1,7 +1,7 @@
 // "My tickets": the events you are going to (and seats held until you pay). Each opens the event, where the
 // QR ticket is one tap away.
 import { Pressable, StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import AppText from '../components/AppText';
 import Pill from '../components/Pill';

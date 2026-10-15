@@ -1,6 +1,34 @@
 <x-layouts.church-admin :church="$church" :title="__('Billing & plan')">
     <x-ff.page-header :title="__('Billing & plan')" :subtitle="__('Your FaithFellows subscription, usage and invoices.')" />
 
+    {{-- The next payment, always in view: when, how much, and what happens if it is missed. --}}
+    @php($tone = ['overdue' => 'danger', 'suspended' => 'danger', 'free' => 'success', 'paid' => 'success'][$next['state']] ?? 'success')
+    <div class="ff-card mb-4 border-start border-4 border-{{ $tone }}">
+        <div class="row g-3 align-items-center">
+            <div class="col-md-7">
+                <div class="small text-ff-muted text-uppercase fw-semibold">{{ $next['state'] === 'free' ? __('Free until') : ($next['state'] === 'overdue' ? __('Payment overdue since') : __('Next payment')) }}</div>
+                <div class="fs-3 fw-bold text-ff-black">
+                    {{ $next['date']?->format('l, j F Y') ?? '—' }}
+                </div>
+                <div class="small text-ff-muted">
+                    @if ($next['date'] === null) {{ __('Your first invoice is issued before the free period ends.') }}
+                    @elseif ($next['days'] > 0) {{ trans_choice('in :n day|in :n days', $next['days'], ['n' => $next['days']]) }}
+                    @elseif ($next['days'] === 0) {{ __('today') }}
+                    @else {{ trans_choice(':n day ago|:n days ago', abs($next['days']), ['n' => abs($next['days'])]) }} @endif
+                    · {{ __(':amount every :interval', ['amount' => ff_money($next['amount'], $next['currency']), 'interval' => __($next['interval'])]) }}
+                </div>
+                <p class="small text-ff-muted mt-2 mb-0">{{ __('This monthly fee covers the servers, the daily running of the platform and support, so your church portal and the app keep working. We email you a week before each payment day.') }}</p>
+            </div>
+            <div class="col-md-5 text-md-end">
+                @if ($next['invoice'])
+                    <button class="btn btn-ff-primary btn-lg" data-bs-toggle="modal" data-bs-target="#pay{{ $next['invoice']->id }}"><i class="bi bi-phone"></i> {{ __('Pay :amount with mobile money', ['amount' => ff_money($next['invoice']->total, $next['invoice']->currency)]) }}</button>
+                @else
+                    <span class="small text-ff-muted"><i class="bi bi-check-circle text-success"></i> {{ __('Nothing to pay right now.') }}</span>
+                @endif
+            </div>
+        </div>
+    </div>
+
     <div class="row g-4 mb-4">
         <div class="col-lg-5">
             <div class="ff-card h-100 bg-ff-gradient border-0">
@@ -94,12 +122,9 @@
             <x-ff.modal :id="'pay'.$invoice->id" :title="__('Pay invoice :n', ['n' => $invoice->number])">
                 <form method="POST" action="{{ route('church-admin.billing.pay', [$church, $invoice]) }}" id="payForm{{ $invoice->id }}" x-data="givingForm({ amount: {{ (float) $invoice->total }}, method: 'mtn_momo' })">@csrf
                     <p class="fs-4 fw-bold text-ff-black">{{ ff_money($invoice->total) }}</p>
-                    <div class="d-grid gap-2 mb-3">
-                        @foreach (['mtn_momo' => 'MTN MoMo', 'airtel_money' => 'Airtel Money', 'stripe' => __('Card')] as $m => $l)
-                            <label class="ff-method-option"><input type="radio" class="form-check-input mt-0" name="method" value="{{ $m }}" x-model="method"><strong class="text-ff-black">{{ $l }}</strong></label>
-                        @endforeach
-                    </div>
-                    <div x-show="needsPhone"><x-ff.input name="phone" type="tel" :label="__('Mobile money number')" :value="$church->phone" :id="'phone'.$invoice->id" /></div>
+                    <input type="hidden" name="method" value="mtn_momo">
+                    <p class="small text-ff-muted">{{ __('You pay with mobile money (MTN or Airtel). Enter the number to charge: a prompt appears on that phone, and you approve it with your PIN.') }}</p>
+                    <x-ff.input name="phone" type="tel" :label="__('Mobile money number')" :value="$church->phone" :id="'phone'.$invoice->id" required />
                 </form>
                 <x-slot:footer><button form="payForm{{ $invoice->id }}" class="btn btn-ff-primary px-4">{{ __('Pay now') }}</button></x-slot:footer>
             </x-ff.modal>

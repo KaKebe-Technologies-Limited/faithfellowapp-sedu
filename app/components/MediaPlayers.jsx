@@ -4,7 +4,7 @@
 //  - AudioPlayerCard: sermon audio (expo-audio) with play/pause, back 15 s, forward 30 s and a progress bar
 import { useEffect, useRef } from 'react';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import { WebView } from 'react-native-webview';

@@ -3,7 +3,7 @@
 // says "Requested", and once connected "Message".
 import { useState } from 'react';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import { COLORS, FONTS, RADIUS, SHADOW } from '../constants/theme';
 import api, { errorMessage } from '../lib/api';

@@ -3,7 +3,7 @@
 // A member can follow at most 3 churches; the server's message is shown if the limit is hit.
 import { useState } from 'react';
 import { Alert, FlatList, Pressable, RefreshControl, StyleSheet, TextInput, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import AppText from '../components/AppText';
 import Button from '../components/Button';

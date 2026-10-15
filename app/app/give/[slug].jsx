@@ -4,7 +4,7 @@
 // The same screen opens from the Give tab, a church page and a campaign (which arrives with ?campaign=<id>).
 import { useEffect, useMemo, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, Switch, TextInput, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useLocalSearchParams } from 'expo-router';
 import AppText from '../../components/AppText';
 import Button from '../../components/Button';

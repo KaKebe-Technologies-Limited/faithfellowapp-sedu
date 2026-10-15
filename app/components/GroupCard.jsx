@@ -1,7 +1,7 @@
 // A study group / cell / fellowship as a card: a cover picture, what kind of group it is, when and where it meets,
 // who leads it and how many are in it. Tapping opens the group.
 import { Pressable, StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';

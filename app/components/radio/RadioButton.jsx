@@ -1,7 +1,7 @@
 // The big round play / stop button of the gospel radio: a white button inside a glowing orange-to-pink ring, with a
 // black stop square while the music plays and a play triangle when it does not. Tap to join the live radio or stop it.
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { COLORS } from '../../constants/theme';
 import { toggleRadio, useRadio } from '../../lib/radio';

@@ -3,7 +3,7 @@
 // Data: GET /api/v1/reading-plans, POST /reading-circles/join.
 import { useCallback, useState } from 'react';
 import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, TextInput, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
 import { router, useFocusEffect } from 'expo-router';
 import AppText from '../components/AppText';

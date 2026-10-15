@@ -3,7 +3,7 @@
 // it never takes room. The counts come from GET /api/v1/me and refresh each time the screen is shown.
 import { useCallback, useEffect, useRef } from 'react';
 import { Animated, Easing, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';

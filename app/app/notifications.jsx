@@ -1,7 +1,7 @@
 // Notification centre: everything your churches and your connections told you, newest first. Tapping one opens the
 // right screen inside the app and marks it read; "Mark all read" clears the badge. Data: GET /api/v1/notifications.
 import { Pressable, StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import AppText from '../components/AppText';
 import PagedScreen from '../components/PagedScreen';
 import { COLORS, FONTS, RADIUS, SPACING } from '../constants/theme';

@@ -29,6 +29,7 @@ export function routeFor(notification) {
   if (notification.kind === 'message' && notification.ref) return { pathname: '/chat/[id]', params: { id: String(notification.ref) } };
   if (notification.kind === 'post' && notification.ref) return { pathname: '/post/[id]', params: { id: String(notification.ref) } };
   if (notification.kind === 'test') return '/settings/notifications';
+  if (notification.kind === 'inspiration') return '/(tabs)';
   if (notification.kind === 'game' && notification.ref) return { pathname: '/game/[id]', params: { id: String(notification.ref) } };
   if (notification.kind === 'connection_accepted' && notification.ref) return { pathname: '/person/[id]', params: { id: String(notification.ref) } };
 

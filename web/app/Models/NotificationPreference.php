@@ -20,6 +20,7 @@ class NotificationPreference extends Model
         'reading' => ['database', 'webpush'],
         'games' => ['database', 'webpush'],
         'social' => ['database', 'webpush'],
+        'inspiration' => ['database', 'webpush'],
     ];
 
     protected $fillable = ['user_id', 'church_id', 'category', 'channels', 'enabled'];

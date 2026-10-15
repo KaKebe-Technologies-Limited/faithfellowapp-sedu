@@ -3,7 +3,7 @@
 // to the next or previous chapter. Your highlights and the chapter you stopped at are remembered.
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Modal, Platform, Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Clipboard from 'expo-clipboard';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -13,6 +13,7 @@ import ScreenHeader, { HeaderAction } from '../../../components/ScreenHeader';
 import StateView from '../../../components/StateView';
 import VerseList from '../../../components/VerseList';
 import { COLORS, FONTS, RADIUS, SHADOW, SPACING } from '../../../constants/theme';
+import { shareMessage, trackCount, useReadingTimer } from '../../../lib/activity';
 import api, { errorMessage } from '../../../lib/api';
 import { HIGHLIGHTS, getFontSize, referenceLabel, setFontSize, setLastRead, shareText } from '../../../lib/bible';
 import { setHighlight, useChapter } from '../../../lib/bibleOffline';
@@ -62,8 +63,10 @@ export default function ReaderScreen() {
   // A new chapter or translation starts at the top; the same chapter refreshing (a copy from the phone replaced by the
   // server's answer, with your highlights) only updates the verses, so the page does not jump while you read.
   const chapterKey = chapterInfo ? `${chapterInfo.translation}/${chapterInfo.book}/${chapterInfo.chapter}` : null;
+  useReadingTimer(!!chapterInfo); // the minutes you spend reading count towards your Bible ring on your profile
   useEffect(() => {
     if (!chapterInfo) return;
+    trackCount('chapters');
     setSelected(new Set());
     setLastRead(chapterInfo.book, chapterInfo.chapter, chapterInfo.book_name);
     scroller.current?.scrollTo({ y: 0, animated: false });
@@ -97,7 +100,7 @@ export default function ReaderScreen() {
     await Clipboard.setStringAsync(message).catch(() => {});
     setNotice('Copied. Paste it anywhere.');
     setTimeout(() => setNotice(null), 2600);
-    if (Platform.OS !== 'web') await Share.share({ message }).catch(() => {});
+    await shareMessage(message, 'share_scripture');
     setSelected(new Set());
   }
 

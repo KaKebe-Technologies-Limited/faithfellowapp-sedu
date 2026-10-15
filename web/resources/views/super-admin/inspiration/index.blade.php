@@ -13,6 +13,40 @@
         @endforeach
     </div>
 
+    <div class="ff-card mb-4">
+        <div class="d-flex align-items-center gap-2 mb-1">
+            <h2 class="h6 mb-0">{{ __('Send to phones') }}</h2>
+            <span class="ff-badge {{ $push['auto'] ? 'ff-badge-success' : '' }}">{{ $push['auto'] ? __('Scheduled sending is on') : __('Scheduled sending is off') }}</span>
+        </div>
+        <p class="small text-ff-muted">{{ __('The message of each part of the day is pushed to everyone who has the app on a phone (:n people) at the time you set. Members can switch it off under Notification settings, “Daily inspiration”.', ['n' => number_format($push['audience'])]) }}</p>
+        <form method="POST" action="{{ route('super-admin.inspiration.schedule') }}" class="row g-2 align-items-end">
+            @csrf @method('PUT')
+            @foreach (\App\Models\Inspiration::SLOTS as $key => $label)
+                <div class="col-sm-4 col-md-2">
+                    <label class="form-label small fw-semibold" for="time-{{ $key }}">{{ __($label) }}</label>
+                    <input id="time-{{ $key }}" type="time" name="times[{{ $key }}]" value="{{ old('times.'.$key, $push['times'][$key]) }}" class="form-control" required>
+                    @if ($push['last'][$key])<div class="small-xs text-ff-muted mt-1">{{ __('Last sent :t', ['t' => \Illuminate\Support\Carbon::parse($push['last'][$key])->diffForHumans()]) }}</div>@endif
+                </div>
+            @endforeach
+            <div class="col-sm-12 col-md-3">
+                <div class="form-check form-switch mb-2"><input class="form-check-input" type="checkbox" role="switch" id="auto" name="auto" value="1" @checked($push['auto'])><label class="form-check-label" for="auto">{{ __('Send automatically') }}</label></div>
+                <button class="btn btn-ff-primary w-100"><i class="bi bi-check2"></i> {{ __('Save schedule') }}</button>
+            </div>
+        </form>
+        @if ($now)
+            <hr>
+            <div class="d-flex flex-wrap align-items-center gap-2">
+                <div class="small flex-grow-1"><strong>{{ __('Now') }}:</strong> “{{ $now['body'] }}”@if ($now['reference']) <span class="text-ff-muted">({{ $now['reference'] }})</span>@endif</div>
+                @php($current = \App\Models\Inspiration::where('slot', $now['slot'])->where('body', $now['body'])->first())
+                @if ($current)
+                    <form method="POST" action="{{ route('super-admin.inspiration.send', $current) }}" onsubmit="return confirm('{{ __('Send this message to everyone now?') }}')">@csrf
+                        <button class="btn btn-ff-ghost"><i class="bi bi-send"></i> {{ __('Send this now') }}</button>
+                    </form>
+                @endif
+            </div>
+        @endif
+    </div>
+
     <form method="POST" action="{{ route('super-admin.inspiration.store') }}" class="ff-card mb-4">
         @csrf
         <h2 class="h6 mb-3">{{ __('Add a message') }}</h2>
@@ -49,8 +83,10 @@
                                     <input name="reference" value="{{ $m->reference }}" class="form-control form-control-sm" style="width:150px" maxlength="80" placeholder="{{ __('Reference') }}" aria-label="{{ __('Bible reference') }}">
                                     <div class="form-check form-switch m-0"><input class="form-check-input" type="checkbox" role="switch" name="is_active" value="1" @checked($m->is_active) aria-label="{{ __('On') }}"></div>
                                     <button class="btn btn-sm btn-ff-soft">{{ __('Save') }}</button>
+                                    <button class="btn btn-sm btn-ff-ghost" form="send-{{ $m->id }}" onclick="return confirm('{{ __('Send this message to everyone now?') }}')" title="{{ __('Send now') }}" aria-label="{{ __('Send now') }}"><i class="bi bi-send"></i></button>
                                     <button class="btn btn-sm btn-outline-danger" form="del-{{ $m->id }}" onclick="return confirm('{{ __('Remove this message?') }}')"><i class="bi bi-trash"></i></button>
                                 </form>
+                                <form id="send-{{ $m->id }}" method="POST" action="{{ route('super-admin.inspiration.send', $m) }}" class="d-none">@csrf</form>
                                 <form id="del-{{ $m->id }}" method="POST" action="{{ route('super-admin.inspiration.destroy', $m) }}" class="d-none">@csrf @method('DELETE')</form>
                             </td>
                         </tr>

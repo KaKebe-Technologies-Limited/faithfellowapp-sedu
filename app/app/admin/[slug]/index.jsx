@@ -2,7 +2,7 @@
 // and shortcuts to everything staff do — only the ones their role allows. Data: GET /api/v1/admin/{church}/dashboard.
 import { useCallback } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import AppText from '../../../components/AppText';

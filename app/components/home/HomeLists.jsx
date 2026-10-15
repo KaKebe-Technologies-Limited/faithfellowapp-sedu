@@ -1,7 +1,7 @@
 // Two short lists at the end of Home, each with "See all": the top four podcasts and four sermons. Plain rows with a small
 // picture, a name and one line of detail. Podcasts come from GET /api/v1/home `podcasts`, sermons from `sermons`.
 import { Pressable, StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';

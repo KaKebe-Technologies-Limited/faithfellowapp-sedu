@@ -4,7 +4,7 @@
 // licence and where the text was collected. Opened hymns are remembered, so they open with no internet too.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as WebBrowser from 'expo-web-browser';
 import { router, useLocalSearchParams } from 'expo-router';

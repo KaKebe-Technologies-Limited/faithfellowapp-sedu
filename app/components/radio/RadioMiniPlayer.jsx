@@ -1,7 +1,7 @@
 // The radio bar that stays at the bottom of every screen while the music plays (above the tabs on the main screens):
 // the song's cover, title and artist, and a stop button. Tap the bar for the full player.
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { FONTS } from '../../constants/theme';

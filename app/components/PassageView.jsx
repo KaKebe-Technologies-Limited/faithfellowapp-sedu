@@ -1,9 +1,10 @@
 // A passage such as "Matthew 3–5" or "John 3:16" read in place: each chapter section with its verses (your
 // highlights shown), and an "Open chapter" link into the full reader. Used by search results and reading-plan days.
 import { Platform, Pressable, Share, StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Clipboard from 'expo-clipboard';
 import { router } from 'expo-router';
+import { shareMessage } from '../lib/activity';
 import { scriptureMessage } from '../lib/bible';
 import { COLORS, FONTS, RADIUS } from '../constants/theme';
 import { usePassage } from '../lib/bibleOffline';
@@ -27,7 +28,7 @@ export default function PassageView({ reference, fontSize = 17 }) {
                     onPress={async () => {
                       const message = scriptureMessage({ reference: section.label, translation: passage.translation, verses: section.verses });
                       await Clipboard.setStringAsync(message).catch(() => {});
-                      if (Platform.OS !== 'web') await Share.share({ message }).catch(() => {});
+                      await shareMessage(message, 'share_scripture');
                     }}
                     accessibilityRole="button"
                     accessibilityLabel={`Share ${section.label}`}

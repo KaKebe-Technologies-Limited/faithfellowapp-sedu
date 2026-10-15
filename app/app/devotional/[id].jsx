@@ -1,10 +1,11 @@
 // A devotional, made for reading: the scripture first in a soft pink card, the message in comfortable type,
 // then a closing prayer. If the church recorded an audio version it plays right on the page.
 import { Platform, ScrollView, Share, StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Clipboard from 'expo-clipboard';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Pressable } from 'react-native';
+import { shareMessage } from '../../lib/activity';
 import AppText from '../../components/AppText';
 import ChurchAvatar from '../../components/ChurchAvatar';
 import CoverHero from '../../components/CoverHero';
@@ -28,7 +29,7 @@ export default function DevotionalScreen() {
       ? scriptureMessage({ reference: d.scripture || d.title, verses: [{ v: 1, t: d.scripture_text }] })
       : `📖 ${d.title}${d.scripture ? ` — ${d.scripture}` : ''}\n\n✝️ Shared from FaithFellows`;
     await Clipboard.setStringAsync(message).catch(() => {});
-    if (Platform.OS !== 'web') await Share.share({ message }).catch(() => {});
+    await shareMessage(message, 'share_inspiration');
   };
 
   return (

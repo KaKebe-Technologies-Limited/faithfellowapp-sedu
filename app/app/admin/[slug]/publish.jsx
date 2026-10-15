@@ -2,7 +2,7 @@
 // when it goes live. Recent ones are listed below with a delete button. Data: /api/v1/admin/{church}/devotionals|sermons.
 import { useState } from 'react';
 import { Alert, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useLocalSearchParams } from 'expo-router';
 import AppText from '../../../components/AppText';
 import Button from '../../../components/Button';

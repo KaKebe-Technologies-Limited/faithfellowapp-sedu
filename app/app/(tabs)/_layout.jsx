@@ -1,7 +1,7 @@
 // Bottom tab bar for the signed-in app: Home, Bible, Community, Give, Me.
 // Sends signed-out visitors (or an expired session) back to the login screen.
 import { Redirect, Tabs } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AppTabBar from '../../components/AppTabBar';
 import { COLORS, FONTS } from '../../constants/theme';

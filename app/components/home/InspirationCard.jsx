@@ -1,8 +1,9 @@
 // "Inspiration": one short, strong message for this part of the day (morning, mid-morning or evening), on a soft background that
 // changes with the hour. The message comes from GET /api/v1/home (`inspiration`) and the super admin looks after the library.
 import { Pressable, Share, StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { shareMessage } from '../../lib/activity';
 import { COLORS, FONTS, SPACING } from '../../constants/theme';
 import { SOFT, SOFT_SHADOW } from '../../constants/soft';
 import AppText from '../AppText';
@@ -17,7 +18,7 @@ export default function InspirationCard({ inspiration }) {
   if (!inspiration?.body) return null;
   const look = LOOK[inspiration.slot] ?? LOOK.morning;
 
-  const share = () => Share.share({ message: `“${inspiration.body}”${inspiration.reference ? ` (${inspiration.reference})` : ''}\n\nFaithFellows` }).catch(() => {});
+  const share = () => shareMessage(`“${inspiration.body}”${inspiration.reference ? ` (${inspiration.reference})` : ''}\n\nFaithFellows`, 'share_inspiration');
 
   return (
     <View style={styles.wrap}>

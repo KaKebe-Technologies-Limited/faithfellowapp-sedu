@@ -2,7 +2,7 @@
 // series and description under it. Video plays inline (file or YouTube page); audio has its own player card.
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AppText from '../../components/AppText';

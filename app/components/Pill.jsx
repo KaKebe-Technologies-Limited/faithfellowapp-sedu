@@ -1,7 +1,7 @@
 // Small rounded label with an optional icon: the "Event" / "Sermon" / "Urgent" tags on cards.
 // Tones: soft (pink, default), urgent (red tint), live (solid red), dark (on photos).
 import { StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { COLORS, FONTS, RADIUS } from '../constants/theme';
 import AppText from './AppText';
 

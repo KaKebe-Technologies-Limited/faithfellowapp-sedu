@@ -2,7 +2,7 @@
 // published now or kept as a draft. Publishing tells your followers. Data: /api/v1/admin/{church}/announcements.
 import { useState } from 'react';
 import { Alert, FlatList, Platform, Pressable, StyleSheet, Switch, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useLocalSearchParams } from 'expo-router';
 import AppText from '../../../components/AppText';
 import Button from '../../../components/Button';

@@ -2,6 +2,7 @@
 // Wrap the app in <AuthProvider> and read it anywhere with useAuth().
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { Platform } from 'react-native';
+import { forgetActivity } from './activity';
 import api from './api';
 import { signInWithGoogleBrowser } from './google';
 import { readJson, removeFile, writeJson } from './localFiles';
@@ -121,6 +122,7 @@ export function AuthProvider({ children }) {
       // Even if the server cannot be reached, sign out on this device.
     }
     await forgetEverything().catch(() => {});
+    forgetActivity();
     removeFile(USER_FILE);
     await clearToken();
     setTokenState(null);

@@ -2,9 +2,14 @@
   "expo": {
     "name": "FaithFellows",
     "slug": "faithfellows",
-    "version": "1.1.0",
-    "runtimeVersion": { "policy": "appVersion" },
-    "updates": { "url": "https://u.expo.dev/dde3d075-b0ff-46a1-af51-ccd15ea0d2ca", "fallbackToCacheTimeout": 0 },
+    "version": "1.1.1",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/dde3d075-b0ff-46a1-af51-ccd15ea0d2ca",
+      "fallbackToCacheTimeout": 0
+    },
     "orientation": "portrait",
     "scheme": "faithfellows",
     "userInterfaceStyle": "light",
@@ -76,6 +81,17 @@
         "expo-image-picker",
         {
           "photosPermission": "FaithFellows needs your photos so you can choose a profile or event picture."
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "buildArchs": [
+              "arm64-v8a",
+              "armeabi-v7a"
+            ]
+          }
         }
       ]
     ],

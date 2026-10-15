@@ -1,7 +1,7 @@
 // A gift receipt, read in the app: church, amount, what it was for, how it was paid and the receipt number.
 // "Share" sends the receipt as text through the phone's share sheet (WhatsApp, email, …).
 import { ScrollView, Share, StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useLocalSearchParams } from 'expo-router';
 import AppText from '../../components/AppText';
 import Button from '../../components/Button';

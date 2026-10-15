@@ -2,7 +2,7 @@
 // opens the sermon in the app, where the video or audio plays right on the page.
 import { useState } from 'react';
 import { FlatList, RefreshControl, StyleSheet, TextInput, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { SermonListCard } from '../components/ListCards';
 import ScreenHeader from '../components/ScreenHeader';
 import StateView from '../components/StateView';

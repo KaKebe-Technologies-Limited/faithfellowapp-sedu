@@ -2,7 +2,7 @@
 // and an inline message if something goes wrong. Used on the login and sign-up screens.
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import { COLORS, FONTS, RADIUS, SPACING } from '../constants/theme';
 import { errorMessage } from '../lib/api';

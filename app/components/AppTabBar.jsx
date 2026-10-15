@@ -1,16 +1,17 @@
 // The bottom bar: a floating dark wine pill with a round crimson button that rises out of a soft notch over the tab you are on, and
-// glides to the next tab when you change. The radio / podcast bar sits on top of it while something plays, so the player stays in view
+// glides to the next tab when you change. Every tab has its name under its icon (the active one under the raised button). The radio / podcast bar sits on top of it while something plays, so the player stays in view
 // on every main screen. It draws the same Home / Bible / Community / Give / Me tabs the navigator describes.
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
+import AppText from './AppText';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Defs, LinearGradient as SvgGradient, Path, Stop } from 'react-native-svg';
-import { COLORS } from '../constants/theme';
+import { COLORS, FONTS } from '../constants/theme';
 import { SOFT } from '../constants/soft';
 import NowPlayingBar from './NowPlayingBar';
 
-const HEIGHT = 66; // the pill
+const HEIGHT = 74; // the pill
 const RISE = 24; // how far the round button rises above the pill
 const SIDE = 14; // space left and right of the pill
 
@@ -101,7 +102,10 @@ export default function AppTabBar({ state, descriptors, navigation }) {
                   accessibilityLabel={label}
                   style={styles.tab}
                 >
-                  {focused ? null : options.tabBarIcon?.({ focused: false, color: 'rgba(255,255,255,0.66)', size: 24 })}
+                  {focused ? null : options.tabBarIcon?.({ focused: false, color: 'rgba(255,255,255,0.7)', size: 22 })}
+                  <AppText allowFontScaling={false} numberOfLines={1} style={[styles.label, focused && styles.labelOn]}>
+                    {label}
+                  </AppText>
                 </Pressable>
               );
             })}
@@ -118,5 +122,7 @@ const styles = StyleSheet.create({
   bubble: { position: 'absolute', top: 0, width: 58, height: 58, borderRadius: 29, padding: 4, backgroundColor: COLORS.canvas, shadowColor: COLORS.primary, shadowOpacity: 0.5, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 14 },
   bubbleFill: { flex: 1, borderRadius: 25, alignItems: 'center', justifyContent: 'center' },
   row: { position: 'absolute', left: 0, right: 0, bottom: 0, flexDirection: 'row' },
-  tab: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  tab: { flex: 1, alignItems: 'center', justifyContent: 'flex-end', gap: 3, paddingBottom: 10 },
+  label: { fontFamily: FONTS.semibold, fontSize: 11, color: 'rgba(255,255,255,0.72)' },
+  labelOn: { fontFamily: FONTS.bold, color: '#FFFFFF' },
 });

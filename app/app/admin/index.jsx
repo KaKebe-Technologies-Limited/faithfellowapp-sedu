@@ -3,7 +3,7 @@
 // checks every action).
 import { useState } from 'react';
 import { FlatList, Pressable, StyleSheet, TextInput, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { Redirect, router } from 'expo-router';
 import AppText from '../../components/AppText';
 import ChurchAvatar from '../../components/ChurchAvatar';

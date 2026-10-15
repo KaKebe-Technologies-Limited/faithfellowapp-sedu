@@ -2,7 +2,7 @@
 // screens): the cover, the episode and podcast names, play / pause and a close button, with a thin progress line on
 // top. Tap the bar for the full player. You can read, write notes or chat while it plays.
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { FONTS } from '../../constants/theme';

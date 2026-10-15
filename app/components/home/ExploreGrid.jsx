@@ -3,7 +3,7 @@
 // them off for a church (see lib/features.js), and a new sign-up with no church sees all of them.
 // A little number on a tile says what is waiting (prayer requests to pray for).
 import { Pressable, StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { COLORS, FONTS, SPACING } from '../../constants/theme';

@@ -15,6 +15,7 @@ import {
 } from '@expo-google-fonts/clarity-city';
 import NowPlayingBar from '../components/NowPlayingBar';
 import { COLORS } from '../constants/theme';
+import { useActivityTracking } from '../lib/activity';
 import { AuthProvider, useAuth } from '../lib/auth';
 import { useOfflineSync } from '../lib/outbox';
 import { syncNotes } from '../lib/notesSync';
@@ -29,6 +30,7 @@ function Navigator({ fontsLoaded }) {
   usePushSetup(user);
   useOfflineSync(user, syncNotes);
   useRadioLifecycle();
+  useActivityTracking(user); // the figures on your profile: minutes reading and listening, what you shared
   useAppUpdates();
   const segments = useSegments();
   const insets = useSafeAreaInsets();

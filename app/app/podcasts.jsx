@@ -2,7 +2,7 @@
 // and the newest episodes, and open a podcast to listen. Playing an episode keeps going while you move around the app.
 import { useEffect, useState } from 'react';
 import { FlatList, RefreshControl, ScrollView, StyleSheet, TextInput, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import AppText from '../components/AppText';
 import Chip from '../components/Chip';
 import { EpisodeRow, PodcastRow, PodcastTile } from '../components/podcast/PodcastCards';

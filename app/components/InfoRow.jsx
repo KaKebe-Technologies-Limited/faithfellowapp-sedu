@@ -1,7 +1,7 @@
 // One line of facts on a detail screen: a pink round icon, a bold line and a lighter line under it
 // ("Saturday, 24 October" / "9:00 AM – 1:00 PM"). Pass onPress to make it tappable (for example a map address).
 import { Pressable, StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { COLORS, FONTS } from '../constants/theme';
 import AppText from './AppText';
 

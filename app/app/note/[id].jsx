@@ -4,7 +4,7 @@
 // in the header. Notes are private to you.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useLocalSearchParams } from 'expo-router';
 import AppText from '../../components/AppText';
 import ScreenHeader, { HeaderAction, goBack } from '../../components/ScreenHeader';

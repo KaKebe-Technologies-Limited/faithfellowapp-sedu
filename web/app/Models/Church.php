@@ -48,7 +48,7 @@ class Church extends Model implements HasMedia
         'languages', 'country', 'district', 'city', 'address', 'lat', 'lng', 'phone', 'email', 'website',
         'brand_color', 'website_blocks', 'settings', 'custom_domain', 'custom_domain_verified',
         'status', 'application_notes', 'status_reason', 'approved_at', 'approved_by', 'setup_completed_at',
-        'requires_member_approval', 'is_featured', 'show_podcasts', 'show_hymns', 'show_radio', 'plan_id', 'billing_status', 'trial_ends_at', 'paid_until', 'domain_addon',
+        'requires_member_approval', 'is_featured', 'show_podcasts', 'show_hymns', 'show_radio', 'plan_id', 'billing_status', 'trial_ends_at', 'paid_until', 'domain_addon', 'dormant_warned_at', 'dormant_blocked_at',
     ];
 
     protected $attributes = [
@@ -75,6 +75,8 @@ class Church extends Model implements HasMedia
             'show_radio' => 'boolean',
             'trial_ends_at' => 'date',
             'paid_until' => 'date',
+            'dormant_warned_at' => 'datetime',
+            'dormant_blocked_at' => 'datetime',
             'domain_addon' => 'boolean',
         ];
     }
@@ -167,6 +169,14 @@ class Church extends Model implements HasMedia
     }
 
     // ── Relationships ────────────────────────────────────────────────────
+
+    /** The people who hear about the church's payments and its standing: the owner and the staff who are admins (with an email). */
+    public function billingContacts(): Collection
+    {
+        $ids = $this->staffMembers()->where('status', 'active')->where('is_admin', true)->pluck('user_id')->push($this->owner_id)->filter()->unique();
+
+        return User::whereIn('id', $ids)->whereNotNull('email')->where('status', 'active')->get();
+    }
 
     public function owner(): BelongsTo
     {

@@ -3,12 +3,13 @@
 // Data: GET /giving/summary, /giving, /campaigns. Giving itself is the in-app screen /give/[slug].
 import { useCallback } from 'react';
 import { Alert, FlatList, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useFocusEffect } from 'expo-router';
 import AppText from '../../components/AppText';
 import ChurchAvatar from '../../components/ChurchAvatar';
 import SectionHeader from '../../components/SectionHeader';
+import Skeleton from '../../components/Skeleton';
 import StateView from '../../components/StateView';
 import TabTitle from '../../components/TabTitle';
 import { COLORS, FONTS, RADIUS, SHADOW, SPACING } from '../../constants/theme';
@@ -40,7 +41,9 @@ export default function GiveTab() {
   const campaigns = useFetch('/campaigns');
   const s = summary.data?.data;
   const list = gifts.data?.data ?? [];
-  const churches = user?.churches ?? [];
+  // The churches you follow come with the giving summary itself, so the tab always knows them (the copy kept at sign-in can be old).
+  const churches = s?.churches ?? user?.churches ?? [];
+  const waiting = summary.loading && !s && !churches.length;
 
   // Come back to fresh numbers after giving.
   useFocusEffect(
@@ -84,7 +87,22 @@ export default function GiveTab() {
       </LinearGradient>
 
       <SectionHeader title="Give to a church" />
-      {churches.length ? (
+      {waiting ? (
+        <View style={{ paddingHorizontal: SPACING.md }}>
+          <Skeleton height={86} radius={RADIUS.lg + 2} />
+        </View>
+      ) : churches.length === 1 ? (
+        <Pressable onPress={() => router.push({ pathname: '/give/[slug]', params: { slug: churches[0].slug } })} style={styles.mine} accessibilityRole="button" accessibilityLabel={`Give to ${churches[0].name}`}>
+          <ChurchAvatar church={churches[0]} size={56} />
+          <View style={{ flex: 1 }}>
+            <AppText style={styles.mineName} numberOfLines={2}>{churches[0].name}</AppText>
+            <AppText variant="caption">Your church</AppText>
+          </View>
+          <View style={styles.giveChip}>
+            <AppText style={styles.giveChipText}>Give</AppText>
+          </View>
+        </Pressable>
+      ) : churches.length ? (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.rail}>
           {churches.map((c) => (
             <Pressable key={c.id} onPress={() => router.push({ pathname: '/give/[slug]', params: { slug: c.slug } })} style={styles.church} accessibilityRole="button" accessibilityLabel={`Give to ${c.name}`}>
@@ -245,6 +263,8 @@ const styles = StyleSheet.create({
   churchName: { fontFamily: FONTS.semibold, fontSize: 13, lineHeight: 17, color: COLORS.black, textAlign: 'center', minHeight: 34 },
   giveChip: { backgroundColor: COLORS.primary, borderRadius: RADIUS.full, paddingHorizontal: 18, paddingVertical: 6 },
   giveChipText: { fontFamily: FONTS.bold, fontSize: 12.5, color: COLORS.white },
+  mine: { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: COLORS.white, borderRadius: RADIUS.lg + 2, padding: 14, marginHorizontal: SPACING.md, ...SHADOW },
+  mineName: { fontFamily: FONTS.bold, fontSize: 16.5, lineHeight: 21, color: COLORS.black },
   empty: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: COLORS.primaryMist, borderRadius: RADIUS.lg, padding: 14, marginHorizontal: SPACING.md },
   campaign: { width: 232, backgroundColor: COLORS.white, borderRadius: RADIUS.lg + 2, overflow: 'hidden', ...SHADOW },
   campaignCover: { height: 100, backgroundColor: COLORS.primaryDark },

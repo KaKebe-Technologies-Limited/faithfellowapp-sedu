@@ -2,7 +2,7 @@
 // and an optional action on the right. `goBack` falls back to the home tab when there is nothing to go back to
 // (for instance after opening the app from a notification).
 import { Pressable, StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, FONTS, SHADOW, SPACING } from '../constants/theme';

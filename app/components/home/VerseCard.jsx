@@ -2,11 +2,12 @@
 // buttons: share it as a neat message (copy and send anywhere) or read the whole chapter in the Bible.
 import { useState } from 'react';
 import { Pressable, Share, StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Clipboard from 'expo-clipboard';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { FONTS, SPACING } from '../../constants/theme';
+import { shareMessage } from '../../lib/activity';
 import { scriptureMessage } from '../../lib/bible';
 import AppText from '../AppText';
 
@@ -17,7 +18,7 @@ export default function VerseCard({ verse }) {
   async function share() {
     const message = scriptureMessage({ reference: verse.reference, translation: verse.translation, verses: [{ v: verse.verse, t: verse.text }] });
     Clipboard.setStringAsync(message).then(() => setCopied(true)).catch(() => {});
-    Share.share({ message }).catch(() => {});
+    shareMessage(message, 'share_scripture');
   }
 
   return (

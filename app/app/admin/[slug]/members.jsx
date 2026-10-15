@@ -3,7 +3,7 @@
 // Data: /api/v1/admin/{church}/members.
 import { useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useLocalSearchParams } from 'expo-router';
 import AppText from '../../../components/AppText';
 import Avatar from '../../../components/Avatar';

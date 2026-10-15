@@ -3,7 +3,7 @@
 // behave the same. Methods come from GET /churches/{slug}/giving ({ type, label, needs_phone }).
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { COLORS, FONTS, RADIUS, SPACING } from '../constants/theme';
 import AppText from './AppText';
 import Button from './Button';
