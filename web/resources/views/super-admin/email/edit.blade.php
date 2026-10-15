@@ -20,11 +20,11 @@
                 </div>
 
                 <div class="row g-3">
-                    <div class="col-md-8"><x-ff.input name="username" :label="__('Gmail address')" :value="old('username', $v['username'])" required type="email" :help="__('The account that sends. For FaithFellows this is faithfellowsofficial@gmail.com.')" /></div>
+                    <div class="col-md-8"><x-ff.input name="username" :label="__('Gmail address')" :value="old('username', $v['username'])" required type="email" autocomplete="off" data-lpignore="true" data-1p-ignore :help="__('The account that sends. For FaithFellows this is faithfellowsofficial@gmail.com.')" /></div>
                     <div class="col-md-4"><x-ff.input name="from_name" :label="__('Sender name')" :value="old('from_name', $v['from_name'])" required /></div>
                     <div class="col-12">
                         <label class="form-label small fw-semibold" for="mail-password">{{ __('App Password') }}</label>
-                        <input id="mail-password" type="password" name="password" class="form-control @error('password') is-invalid @enderror" autocomplete="new-password" placeholder="{{ $v['has_password'] ? '••••••••••••••••  '.__('(saved; leave empty to keep it)') : __('16 letters, for example abcd efgh ijkl mnop') }}">
+                        <input id="mail-password" type="password" name="password" class="form-control @error('password') is-invalid @enderror" autocomplete="new-password" data-lpignore="true" data-1p-ignore placeholder="{{ $v['has_password'] ? '••••••••••••••••  '.__('(:n characters saved; leave empty to keep it)', ['n' => $v['password_length']]) : __('16 letters, for example abcd efgh ijkl mnop') }}">
                         @error('password')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         <div class="form-text">{{ __('Made in the Google account: Security → 2-Step Verification → App passwords. It is saved encrypted and never shown again.') }}</div>
                     </div>

@@ -6,6 +6,7 @@ use App\Models\Church;
 use App\Models\DeviceToken;
 use App\Models\Inspiration;
 use App\Models\NotificationPreference;
+use App\Models\PlatformSetting;
 use App\Models\SubscriptionInvoice;
 use App\Models\User;
 use App\Notifications\Admin\NewSignup;
@@ -18,6 +19,7 @@ use App\Services\BillingService;
 use App\Services\DevicePushService;
 use App\Services\DormancyService;
 use App\Services\InspirationBroadcaster;
+use App\Services\MailSettings;
 use App\Services\Messaging\ExpoPushSender;
 use App\Services\SignupAlerts;
 use App\Services\SubscriberStats;
@@ -330,4 +332,30 @@ test('the push test shows what Expo said, and explains a missing Firebase key', 
     $this->actingAs($admin)->post(route('super-admin.push.send'), ['email' => member(['email' => 'nophone@example.com'])->email])->assertSessionHasErrors('email');
 
     $this->actingAs(member())->get(route('super-admin.push.index'))->assertForbidden();
+});
+
+// ── Gmail: a wrong password is caught before it is saved, and a refusal says which account was tried ───────────
+
+test('a password that is not a Gmail App Password is turned away before it is saved', function () {
+    $admin = superAdmin();
+    $form = ['enabled' => 1, 'host' => 'smtp.gmail.com', 'port' => 587, 'username' => 'faithfellowsofficial@gmail.com', 'from_address' => 'faithfellowsofficial@gmail.com', 'from_name' => 'FaithFellows'];
+
+    // A normal account password (what a browser might fill in) is not 16 letters.
+    $this->actingAs($admin)->put(route('super-admin.email.update'), $form + ['password' => 'MySuperAdminPass!2026'])->assertSessionHasErrors('password');
+    expect(PlatformSetting::get('mail.password'))->toBeNull();
+
+    // The App Password, with or without the spaces Google shows, is accepted and saved as 16 letters.
+    $this->actingAs($admin)->put(route('super-admin.email.update'), $form + ['password' => 'abcd efgh ijkl mnop'])->assertSessionHasNoErrors();
+    expect(PlatformSetting::get('mail.password'))->toBe('abcdefghijklmnop');
+    $this->actingAs($admin)->get(route('super-admin.email.edit'))->assertOk()->assertSee('16 characters saved');
+});
+
+test('when Google refuses the sign-in the message names the account and says if the password is the wrong length', function () {
+    $refusal = new RuntimeException('Expected response code "235" but got code "535", with message "535-5.7.8 Username and Password not accepted."');
+
+    $wrongLength = MailSettings::explain($refusal, 'admin@faithfellows.com', 21);
+    expect($wrongLength)->toContain('admin@faithfellows.com')->toContain('21 characters')->toContain('exactly 16 letters');
+
+    $rightLength = MailSettings::explain($refusal, 'faithfellowsofficial@gmail.com', 16);
+    expect($rightLength)->toContain('faithfellowsofficial@gmail.com')->not->toContain('characters')->toContain('Yes, it was me');
 });
