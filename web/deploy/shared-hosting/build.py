@@ -279,6 +279,8 @@ def build_stage(stage, for_git=False):
             continue
         if parts[0] == 'public' and (src.name == 'hot' or parts[1:2] == ('storage',)):
             continue
+        if parts[:2] == ('docs', 'documentation'):  # the printed documentation (PDF and screenshots) stays in the repository
+            continue
         if parts[:2] == ('bootstrap', 'cache') and src.suffix == '.php':
             continue
         if src.suffix == '.log':
