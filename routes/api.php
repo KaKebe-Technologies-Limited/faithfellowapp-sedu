@@ -38,6 +38,7 @@ Route::prefix('v1')->name('api.v1.')->middleware('throttle:api')->group(function
     Route::middleware(['auth:sanctum', 'api.active'])->group(function () {
         Route::delete('/auth/token', [V1\AuthController::class, 'revoke'])->name('auth.revoke');
         Route::get('/me', [V1\AuthController::class, 'me'])->name('me');
+        Route::delete('/me', [V1\AuthController::class, 'destroy'])->middleware('throttle:5,1')->name('me.destroy');
 
         Route::post('/churches/{church}/subscription', [V1\ChurchController::class, 'subscribe'])->name('churches.subscribe');
         Route::delete('/churches/{church}/subscription', [V1\ChurchController::class, 'unsubscribe'])->name('churches.unsubscribe');

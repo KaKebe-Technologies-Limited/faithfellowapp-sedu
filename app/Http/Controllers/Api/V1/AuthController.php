@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
+use App\Services\AccountDeletion;
 use App\Services\Auth\GoogleAccounts;
 use App\Services\Auth\GoogleIdTokenVerifier;
 use App\Services\RegistrationService;
@@ -133,5 +134,24 @@ class AuthController extends Controller
     public function me(Request $request): UserResource
     {
         return new UserResource($request->user()->load('subscribedChurches.media'));
+    }
+
+    /**
+     * Delete the signed-in member's account from the app. The member confirms by typing their email address (Google sign-in accounts have
+     * no password to ask for). Personal data is removed and gifts stay without a name; see AccountDeletion.
+     */
+    public function destroy(Request $request, AccountDeletion $deletion): JsonResponse
+    {
+        $user = $request->user();
+        $data = $request->validate(['email' => ['required', 'string']]);
+
+        if (strcasecmp(trim($data['email']), $user->email) !== 0) {
+            throw ValidationException::withMessages(['email' => __('That is not the email address of this account.')]);
+        }
+        abort_if(($reason = $deletion->blocker($user)) !== null, 403, (string) $reason);
+
+        $deletion->delete($user);
+
+        return response()->json(['message' => __('Your account has been deleted.')]);
     }
 }

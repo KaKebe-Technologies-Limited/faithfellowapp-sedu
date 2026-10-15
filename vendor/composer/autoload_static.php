@@ -985,6 +985,7 @@ class ComposerStaticInit6b61fb820dd7281d49fc501460ab603f
         'App\\Providers\\AppServiceProvider' => __DIR__ . '/../..' . '/app/Providers/AppServiceProvider.php',
         'App\\Rules\\NoContactDetails' => __DIR__ . '/../..' . '/app/Rules/NoContactDetails.php',
         'App\\Rules\\WithinStorageQuota' => __DIR__ . '/../..' . '/app/Rules/WithinStorageQuota.php',
+        'App\\Services\\AccountDeletion' => __DIR__ . '/../..' . '/app/Services/AccountDeletion.php',
         'App\\Services\\Ai\\TranscriptionService' => __DIR__ . '/../..' . '/app/Services/Ai/TranscriptionService.php',
         'App\\Services\\AnalyticsService' => __DIR__ . '/../..' . '/app/Services/AnalyticsService.php',
         'App\\Services\\Auth\\GoogleAccounts' => __DIR__ . '/../..' . '/app/Services/Auth/GoogleAccounts.php',

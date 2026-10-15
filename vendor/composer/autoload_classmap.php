@@ -390,6 +390,7 @@ return array(
     'App\\Providers\\AppServiceProvider' => $baseDir . '/app/Providers/AppServiceProvider.php',
     'App\\Rules\\NoContactDetails' => $baseDir . '/app/Rules/NoContactDetails.php',
     'App\\Rules\\WithinStorageQuota' => $baseDir . '/app/Rules/WithinStorageQuota.php',
+    'App\\Services\\AccountDeletion' => $baseDir . '/app/Services/AccountDeletion.php',
     'App\\Services\\Ai\\TranscriptionService' => $baseDir . '/app/Services/Ai/TranscriptionService.php',
     'App\\Services\\AnalyticsService' => $baseDir . '/app/Services/AnalyticsService.php',
     'App\\Services\\Auth\\GoogleAccounts' => $baseDir . '/app/Services/Auth/GoogleAccounts.php',

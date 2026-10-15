@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfilePreferencesRequest;
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Services\AccountDeletion;
 use App\Services\UserDataExporter;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -99,7 +100,7 @@ class ProfileController extends Controller
         );
     }
 
-    public function destroy(Request $request): RedirectResponse
+    public function destroy(Request $request, AccountDeletion $deletion): RedirectResponse
     {
         $request->validateWithBag('userDeletion', [
             'password' => ['required', 'current_password'],
@@ -107,21 +108,14 @@ class ProfileController extends Controller
 
         $user = $request->user();
 
+        if ($reason = $deletion->blocker($user)) {
+            return back()->withErrors(['password' => $reason], 'userDeletion');
+        }
+
         Auth::logout();
 
-        // Anonymise personal data, keep financial records intact for churches' books.
-        $user->forceFill([
-            'name' => 'Deleted user',
-            'email' => 'deleted-'.$user->id.'-'.Str::random(6).'@deleted.faithfellows.com',
-            'phone' => null,
-            'bio' => null,
-            'date_of_birth' => null,
-            'wedding_anniversary' => null,
-            'status' => 'suspended',
-        ])->save();
-        $user->clearMediaCollection('avatar');
-        $user->tokens()->delete();
-        $user->delete();
+        // Personal data goes; gifts and receipts stay without a name, for the churches' books (see AccountDeletion).
+        $deletion->delete($user);
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();

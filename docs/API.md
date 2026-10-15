@@ -310,6 +310,7 @@ One note per thing being read (`context`: `bible:JHN.3`, `sermon:12`, `devotiona
 `PATCH /me` `{ name?, phone?, country?, city?, gender?, date_of_birth?, bio?, interests?: [..8 words], directory_opt_in?, open_to_connect? }` saves them — turning either
 "find me" switch on needs a birth date of someone aged 18 or over (`422` on `date_of_birth` otherwise). `POST /me/avatar` (multipart `avatar`), `DELETE /me/avatar`,
 `PUT /me/password` `{ current_password, password, password_confirmation }` (other phones are signed out).
+`DELETE /me` `{ email }` deletes the signed-in member's account (the member confirms by typing their own email address; `422` on `email` if it is not theirs, `403` with a message for church owners and platform accounts, who must contact support). Personal data is removed and the token stops working; gifts and receipts stay without a name. Same rules as the website's Delete account and the public page `/delete-account`.
 
 ### Finding and connecting with people
 
