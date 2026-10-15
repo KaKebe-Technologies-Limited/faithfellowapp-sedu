@@ -11,6 +11,7 @@ Google changes its rules often. Where a screen in Play Console looks different f
 - **Permissions trimmed:** the microphone permission was removed (the camera only scans QR tickets). What is left: internet, camera (church staff scanning tickets), approximate and precise location (optional, "believers near you"), notifications, and media playback in the background (radio and podcasts).
 - **Android 16 (API 36)**, which Google now requires for new apps, is what this Expo/React Native version builds for.
 - **Pictures:** `icon-512.png`, `feature-graphic-1024x500.png`, `screenshots/phone-01.png` … `phone-08.png`.
+- **Tablet pictures** (Play asks for them too): `tablet-7/` and `tablet-10/`, eight real screenshots of the app at tablet size in each, all 1080 × 1920.
 
 ## 1. Build the file Google wants (an .aab)
 
