@@ -480,6 +480,7 @@ Route::prefix('church/{church}/admin')->name('church-admin.')
         // Analytics & reports
         Route::middleware('church.can:analytics.view')->group(function () {
             Route::get('/analytics', [ChurchAdmin\AnalyticsController::class, 'index'])->name('analytics');
+            Route::get('/subscribers', [ChurchAdmin\SubscriberController::class, 'index'])->name('subscribers');
             Route::get('/analytics/report.pdf', [ChurchAdmin\AnalyticsController::class, 'pdf'])->name('analytics.pdf');
             Route::get('/analytics/export/{dataset}', [ChurchAdmin\AnalyticsController::class, 'export'])
                 ->whereIn('dataset', ['members', 'engagement', 'attendance', 'giving', 'notifications'])->name('analytics.export');
@@ -543,6 +544,8 @@ Route::prefix('super-admin')->name('super-admin.')
         Route::put('/plans/{plan}', [SuperAdmin\BillingController::class, 'savePlan'])->name('plans.update');
 
         // Analytics
+        Route::get('/subscribers', [SuperAdmin\SubscriberController::class, 'index'])->name('subscribers.index');
+        Route::get('/subscribers/{church:id}', [SuperAdmin\SubscriberController::class, 'show'])->name('subscribers.show');
         Route::get('/analytics', [SuperAdmin\AnalyticsController::class, 'index'])->name('analytics');
         Route::get('/analytics/report.pdf', [SuperAdmin\AnalyticsController::class, 'pdf'])->name('analytics.pdf');
         Route::get('/analytics/churches.csv', [SuperAdmin\AnalyticsController::class, 'export'])->name('analytics.export');
@@ -574,13 +577,19 @@ Route::prefix('super-admin')->name('super-admin.')
         Route::get('/audit-logs/export', [SuperAdmin\AuditLogController::class, 'export'])->name('audit-logs.export');
 
         // The short inspiring messages on the home screen (morning, mid-morning, evening)
+        Route::get('/push', [SuperAdmin\PushTestController::class, 'index'])->name('push.index');
+        Route::post('/push/send', [SuperAdmin\PushTestController::class, 'send'])->middleware('throttle:10,1')->name('push.send');
+        Route::post('/push/receipts', [SuperAdmin\PushTestController::class, 'receipts'])->middleware('throttle:20,1')->name('push.receipts');
         Route::get('/google', [SuperAdmin\GoogleSettingsController::class, 'edit'])->name('google.edit');
         Route::put('/google', [SuperAdmin\GoogleSettingsController::class, 'update'])->name('google.update');
         Route::get('/email', [SuperAdmin\EmailSettingsController::class, 'edit'])->name('email.edit');
         Route::put('/email', [SuperAdmin\EmailSettingsController::class, 'update'])->name('email.update');
         Route::post('/email/test', [SuperAdmin\EmailSettingsController::class, 'test'])->middleware('throttle:10,1')->name('email.test');
+        Route::put('/email/alerts', [SuperAdmin\EmailSettingsController::class, 'alerts'])->name('email.alerts');
         Route::get('/inspiration', [SuperAdmin\InspirationController::class, 'index'])->name('inspiration.index');
         Route::post('/inspiration', [SuperAdmin\InspirationController::class, 'store'])->name('inspiration.store');
+        Route::put('/inspiration/schedule', [SuperAdmin\InspirationController::class, 'schedule'])->name('inspiration.schedule');
+        Route::post('/inspiration/{inspiration}/send', [SuperAdmin\InspirationController::class, 'send'])->middleware('throttle:10,1')->name('inspiration.send');
         Route::put('/inspiration/{inspiration}', [SuperAdmin\InspirationController::class, 'update'])->name('inspiration.update');
         Route::delete('/inspiration/{inspiration}', [SuperAdmin\InspirationController::class, 'destroy'])->name('inspiration.destroy');
 

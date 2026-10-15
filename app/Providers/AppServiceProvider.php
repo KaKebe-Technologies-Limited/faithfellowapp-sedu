@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Jobs\SendSignupAlert;
+use App\Models\User;
 use App\Notifications\Channels\ExpoPushChannel;
 use App\Notifications\Channels\SmsChannel;
 use App\Notifications\Channels\TenantDatabaseChannel;
@@ -49,6 +51,14 @@ class AppServiceProvider extends ServiceProvider
         Gate::before(fn ($user, string $ability) => $user->isSuperAdmin() && $ability !== 'viewNotes' ? true : null);
 
         $this->configureRateLimiting();
+
+        // Every new account is announced to the platform owner by email. Only real sign-ups count: accounts made by seeders, imports and the
+        // console stay quiet (the tests switch this on with faithfellows.signup_alerts_in_console).
+        User::created(function (User $user) {
+            if (! app()->runningInConsole() || config('faithfellows.signup_alerts_in_console')) {
+                rescue(fn () => SendSignupAlert::dispatch($user->id)->afterResponse(), report: false);
+            }
+        });
 
         // The email account saved by the super admin (Super admin → Email) replaces the server's mail settings. A queue worker that
         // has been running for a while looks again before each job, so a change on the website reaches it without a restart.

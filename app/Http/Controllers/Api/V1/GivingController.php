@@ -50,6 +50,8 @@ class GivingController extends Controller
             'year' => now()->year,
             'currency' => config('faithfellows.currency'),
             'year_total' => (float) $totals->sum(),
+            // The churches this member gives to: the ones they follow (or serve), so the Give tab never asks them to follow one they already do.
+            'churches' => Church::whereIn('id', $user->memberChurchIds() ?: [0])->active()->with('media')->orderBy('name')->get()->map(fn (Church $c) => ['id' => $c->id, 'slug' => $c->slug, 'name' => $c->name, 'logo_url' => $c->logo_url])->values(),
             'by_church' => Church::whereIn('id', $totals->keys())->with('media')->get()->map(fn (Church $c) => [
                 'church' => ['id' => $c->id, 'slug' => $c->slug, 'name' => $c->name, 'logo_url' => $c->logo_url], 'total' => (float) $totals[$c->id],
             ])->values(),

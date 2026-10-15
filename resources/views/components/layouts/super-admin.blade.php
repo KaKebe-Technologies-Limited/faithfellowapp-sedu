@@ -7,6 +7,7 @@
         ]],
         ['heading' => __('Tenants'), 'items' => [
             ['label' => __('Churches'), 'icon' => 'bi-buildings', 'route' => 'super-admin.churches.index', 'active' => 'super-admin.churches.*', 'badge' => ($pendingChurches ?? 0) ?: null],
+            ['label' => __('Subscribers'), 'icon' => 'bi-people-fill', 'route' => 'super-admin.subscribers.index', 'active' => 'super-admin.subscribers.*'],
             ['label' => __('Subscriptions'), 'icon' => 'bi-arrow-repeat', 'route' => 'super-admin.subscriptions.index', 'active' => 'super-admin.subscriptions.*'],
             ['label' => __('Invoices'), 'icon' => 'bi-receipt', 'route' => 'super-admin.invoices.index', 'active' => 'super-admin.invoices.*'],
             ['label' => __('Plans'), 'icon' => 'bi-box-seam', 'route' => 'super-admin.plans.index', 'active' => 'super-admin.plans.*'],
@@ -20,6 +21,7 @@
             ['label' => __('App features'), 'icon' => 'bi-toggles', 'route' => 'super-admin.features.index', 'active' => 'super-admin.features.*'],
             ['label' => __('Inspiration'), 'icon' => 'bi-stars', 'route' => 'super-admin.inspiration.index', 'active' => 'super-admin.inspiration.*'],
             ['label' => __('Email'), 'icon' => 'bi-envelope-at', 'route' => 'super-admin.email.edit', 'active' => 'super-admin.email.*'],
+            ['label' => __('Push test'), 'icon' => 'bi-bell', 'route' => 'super-admin.push.index', 'active' => 'super-admin.push.*'],
             ['label' => __('Google sign-in'), 'icon' => 'bi-google', 'route' => 'super-admin.google.edit', 'active' => 'super-admin.google.*'],
             ['label' => __('Gospel radio'), 'icon' => 'bi-music-note-beamed', 'route' => 'super-admin.radio.index', 'active' => 'super-admin.radio.*'],
             ['label' => __('Blog'), 'icon' => 'bi-journal-richtext', 'route' => 'super-admin.blog.index', 'active' => 'super-admin.blog.*'],

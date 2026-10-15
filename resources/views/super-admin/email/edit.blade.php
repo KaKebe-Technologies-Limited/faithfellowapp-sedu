@@ -42,6 +42,18 @@
         </div>
 
         <div class="col-xl-5">
+            <form method="POST" action="{{ route('super-admin.email.alerts') }}" class="ff-card mb-3">
+                @csrf @method('PUT')
+                <h2 class="h6 mb-2">{{ __('New sign-up emails') }}</h2>
+                <p class="small text-ff-muted">{{ __('Get an email every time someone creates an account.') }}</p>
+                <div class="form-check form-switch mb-3"><input class="form-check-input" type="checkbox" role="switch" id="alerts-on" name="enabled" value="1" @checked(old('enabled', $alerts['enabled']))><label class="form-check-label" for="alerts-on">{{ __('Email me about new accounts') }}</label></div>
+                <label class="form-label small fw-semibold" for="alerts-emails">{{ __('Send to') }}</label>
+                <textarea id="alerts-emails" name="emails" rows="2" class="form-control @error('emails') is-invalid @enderror" placeholder="you@example.com, partner@example.com">{{ old('emails', $alerts['emails']) }}</textarea>
+                @error('emails')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                <div class="form-text">{{ __('Leave empty to send to every super admin: :list', ['list' => implode(', ', $alerts['sending_to']) ?: '—']) }}</div>
+                <button class="btn btn-ff-ghost mt-2"><i class="bi bi-check2"></i> {{ __('Save') }}</button>
+            </form>
+
             <form method="POST" action="{{ route('super-admin.email.test') }}" class="ff-card mb-3">
                 @csrf
                 <h2 class="h6 mb-2">{{ __('Send a test email') }}</h2>

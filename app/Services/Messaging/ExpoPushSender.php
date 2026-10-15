@@ -88,6 +88,67 @@ class ExpoPushSender
     }
 
     /**
+     * Sends one message to each device and reports exactly what the push service answered, so a problem (for Android: Expo has no
+     * Firebase key, or the phone's token is dead) can be seen instead of guessed. Used by the super admin's push test.
+     *
+     * @param  iterable<DeviceToken>  $devices
+     * @param  array<string, mixed>  $message
+     * @return array<int, array{device: DeviceToken, status: string, error: ?string, message: ?string, ticket: ?string}>
+     */
+    public function diagnose(iterable $devices, array $message): array
+    {
+        $rows = [];
+        foreach ($devices as $device) {
+            $row = ['device' => $device, 'status' => 'error', 'error' => null, 'message' => null, 'ticket' => null];
+            try {
+                $response = $this->http()->post(self::ENDPOINT, [array_filter([
+                    'to' => $device->token,
+                    'title' => $message['title'] ?? null,
+                    'body' => $message['body'] ?? null,
+                    'data' => $message['data'] ?? null,
+                    'channelId' => $message['channelId'] ?? 'default',
+                    'sound' => 'default',
+                    'priority' => 'high',
+                ], fn ($v) => $v !== null)]);
+                $ticket = (array) ($response->json('data.0') ?? []);
+                if (! $response->successful() && $ticket === []) {
+                    $row['message'] = 'The push service answered '.$response->status().'.';
+                } else {
+                    $row['status'] = (string) ($ticket['status'] ?? 'error');
+                    $row['ticket'] = $ticket['id'] ?? null;
+                    $row['error'] = $ticket['details']['error'] ?? null;
+                    $row['message'] = $ticket['message'] ?? null;
+                }
+            } catch (\Throwable $e) {
+                $row['message'] = 'The push service could not be reached: '.$e->getMessage();
+            }
+            $rows[] = $row;
+        }
+
+        return $rows;
+    }
+
+    /**
+     * What Google and Apple finally said about earlier tickets (ticket id => status, error and message).
+     *
+     * @param  array<int, string>  $ids
+     * @return array<string, array{status: string, error: ?string, message: ?string}>
+     */
+    public function receipts(array $ids): array
+    {
+        if ($ids === []) {
+            return [];
+        }
+        try {
+            $data = (array) $this->http()->post(self::RECEIPTS, ['ids' => array_values($ids)])->json('data', []);
+        } catch (\Throwable) {
+            return [];
+        }
+
+        return collect($data)->map(fn ($r) => ['status' => (string) ($r['status'] ?? 'unknown'), 'error' => $r['details']['error'] ?? null, 'message' => $r['message'] ?? null])->all();
+    }
+
+    /**
      * Receipts for earlier tickets; tokens whose phone is gone are deleted.
      *
      * @param  array<string, string>  $tickets  ticket id => token

@@ -44,6 +44,13 @@ return [
 
     'currency' => env('FF_DEFAULT_CURRENCY', 'UGX'),
 
+    // Tests switch this on to check the "new sign-up" email; the console (seeders, imports) never announces accounts otherwise.
+    'signup_alerts_in_console' => false,
+
+    // A church that stays dormant (no staff sign-in, nothing published, no new followers) is warned after warn_days and blocked block_days
+    // later. The super admin can change both in Settings.
+    'dormancy' => ['warn_days' => (int) env('FF_DORMANT_WARN_DAYS', 30), 'block_days' => (int) env('FF_DORMANT_BLOCK_DAYS', 14)],
+
     'pricing' => [
         'plan_price' => (int) env('FF_PLAN_PRICE', 60000),
         'domain_price' => (int) env('FF_DOMAIN_PRICE', 60000),
@@ -172,6 +179,7 @@ return [
         'reading' => 'Reading partners',
         'games' => 'Quizzes & games',
         'social' => 'People & messages',
+        'inspiration' => 'Daily inspiration',
     ],
 
     'notification_channels' => [

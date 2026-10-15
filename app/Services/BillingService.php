@@ -6,11 +6,15 @@ use App\Models\Church;
 use App\Models\Plan;
 use App\Models\PlatformSetting;
 use App\Models\SubscriptionInvoice;
+use App\Notifications\Billing\InvoiceIssued;
+use App\Notifications\Billing\InvoicePaid;
+use App\Notifications\Billing\PaymentDueSoon;
 use App\Notifications\Billing\SubscriptionExpiring;
 use App\Services\Payments\PaymentResult;
 use App\Support\Audit;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 
 /**
  * Church plan billing (paid to Kakebe Technologies).
@@ -120,6 +124,21 @@ class BillingService
             }
         });
 
+        // A week before the payment day the church is told what and when; the day before, reminded once more.
+        SubscriptionInvoice::with('church')->where('status', 'unpaid')->whereNull('issued_notified_at')->each(function (SubscriptionInvoice $invoice) {
+            if ($invoice->church && $invoice->period_start->lte(today()->addDays(7))) {
+                Notification::send($invoice->church->billingContacts(), new InvoiceIssued($invoice->church, $invoice));
+                $invoice->forceFill(['issued_notified_at' => now()])->save();
+            }
+        });
+        SubscriptionInvoice::with('church')->where('status', 'unpaid')->whereNull('due_soon_notified_at')->whereNotNull('issued_notified_at')->where('issued_notified_at', '<=', now()->subDays(2))
+            ->whereDate('period_start', '<=', today()->addDay())->each(function (SubscriptionInvoice $invoice) {
+                if ($invoice->church) {
+                    Notification::send($invoice->church->billingContacts(), new PaymentDueSoon($invoice->church, $invoice));
+                    $invoice->forceFill(['due_soon_notified_at' => now()])->save();
+                }
+            });
+
         // Churches whose trial is ending in 7 days get a heads-up.
         Church::with('owner')->where('billing_status', 'trial')->whereDate('trial_ends_at', today()->addDays(7))->each(
             fn (Church $church) => $church->owner?->notify(new SubscriptionExpiring($church, null))
@@ -161,7 +180,7 @@ class BillingService
 
     public function markInvoicePaid(SubscriptionInvoice $invoice, ?string $providerRef = null, ?string $method = null): void
     {
-        DB::transaction(function () use ($invoice, $providerRef, $method) {
+        $paid = DB::transaction(function () use ($invoice, $providerRef, $method) {
             $invoice = SubscriptionInvoice::whereKey($invoice->id)->lockForUpdate()->first();
             if ($invoice->status === 'paid') {
                 return;
@@ -179,7 +198,37 @@ class BillingService
                 'status_reason' => $hasOtherOverdue ? $church->status_reason : null,
             ]);
             Audit::log('billing.invoice_paid', $invoice, $invoice->number, [], [], $church->id);
+
+            return [$church->fresh(), $invoice->fresh()];
         });
+
+        // Thank the church (outside the transaction, so a mail problem never undoes a payment).
+        if ($paid) {
+            rescue(fn () => Notification::send($paid[0]->billingContacts(), new InvoicePaid($paid[0], $paid[1])), report: true);
+        }
+    }
+
+    /**
+     * What the church sees as its next payment: the date, the amount and how many days are left. It is the open invoice when one has been
+     * issued, otherwise the day the paid period or the free period ends, at the plan's fee.
+     *
+     * @return array{date: ?Carbon, days: ?int, amount: float, currency: string, interval: string, invoice: ?SubscriptionInvoice, state: string}
+     */
+    public function nextPayment(Church $church): array
+    {
+        $plan = $church->plan ?? Plan::default();
+        $open = $church->invoices()->whereIn('status', ['unpaid', 'overdue'])->orderBy('period_start')->first();
+        $date = $open?->period_start ?? $church->paid_until ?? $church->trial_ends_at;
+
+        return [
+            'date' => $date?->copy(),
+            'days' => $date ? (int) today()->diffInDays($date, false) : null,
+            'amount' => (float) ($open?->total ?? $plan?->price ?? config('faithfellows.pricing.plan_price')),
+            'currency' => $open?->currency ?? $plan?->currency ?? config('faithfellows.currency'),
+            'interval' => $plan?->interval ?? 'month',
+            'invoice' => $open,
+            'state' => $church->status === 'suspended' ? 'suspended' : ($open?->status === 'overdue' ? 'overdue' : ($church->billing_status === 'trial' ? 'free' : 'paid')),
+        ];
     }
 
     public function changePlan(Church $church, Plan $plan): void

@@ -26,7 +26,14 @@ class InspirationService
     public function current(?Carbon $time = null): ?array
     {
         $time ??= now();
-        $slot = $this->slotAt($time);
+
+        return $this->forSlot($this->slotAt($time), $time);
+    }
+
+    /** The message of one part of the day on the day of `$time` (the same for everyone), or null when that part has none switched on. */
+    public function forSlot(string $slot, ?Carbon $time = null): ?array
+    {
+        $time ??= now();
         $messages = Inspiration::where('slot', $slot)->where('is_active', true)->orderBy('id')->get();
         if ($messages->isEmpty()) {
             return null;

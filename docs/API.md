@@ -470,3 +470,5 @@ Breaking changes go to `/api/v2`, and v1 keeps working for at least 12 months af
 
 **Home.** `GET /home` adds `highlights` (slider items with a picture each), `inspiration` (`slot`, `label`, `body`, `reference`) and `podcasts` (the top four); `sermons` falls back to public sermons for a member with no church yet.
 
+**My statistics.** `POST /me/activity {events: [{kind, seconds | count, day?}]}` reports small pieces of activity (kinds: `read`, `radio`, `podcast` in seconds; `chapters`, `share_scripture`, `share_inspiration`, `open` as counts; at most 40 events, an hour of seconds each, days within the last week). `GET /me/stats?period=week|month|all` answers `totals` (minutes read and listened, chapters, shares, opens), `rings` (Bible, Listening and Sharing as percents of gentle goals), `week` (day by day), `streak`, `other` (highlights, notes, games, prayers, given this year, churches, connections), the latest three `notes`, and `profile` (`percent`, `missing`, `phone_missing`). `GET /giving/summary` now also lists the member's `churches`, so the Give tab can name the church they follow.
+

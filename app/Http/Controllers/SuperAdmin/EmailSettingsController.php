@@ -4,6 +4,7 @@ namespace App\Http\Controllers\SuperAdmin;
 
 use App\Http\Controllers\Controller;
 use App\Services\MailSettings;
+use App\Services\SignupAlerts;
 use App\Support\Audit;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -15,9 +16,10 @@ use Illuminate\View\View;
  */
 class EmailSettingsController extends Controller
 {
-    public function edit(): View
+    public function edit(SignupAlerts $alerts): View
     {
         return view('super-admin.email.edit', [
+            'alerts' => ['enabled' => $alerts->enabled(), 'emails' => $alerts->listed(), 'sending_to' => $alerts->recipients()],
             'v' => MailSettings::values(),
             'active' => MailSettings::active(),
             'driver' => config('mail.default'),
@@ -42,6 +44,21 @@ class EmailSettingsController extends Controller
         Audit::log('platform.email_settings_updated', null, $data['from_address'], [], ['enabled' => $data['enabled'], 'host' => $data['host'], 'port' => $data['port'], 'username' => $data['username'], 'password_changed' => filled($data['password'] ?? null)]);
 
         return back()->with('success', $data['enabled'] ? __('Email settings saved. Send a test email to check them.') : __('Email settings saved, but sending from this account is switched off.'));
+    }
+
+    /** Who is told about every new account. */
+    public function alerts(Request $request, SignupAlerts $alerts): RedirectResponse
+    {
+        $data = $request->validate(['emails' => ['nullable', 'string', 'max:500']]);
+        $bad = collect(preg_split('/[\s,;]+/', (string) ($data['emails'] ?? ''), -1, PREG_SPLIT_NO_EMPTY))->reject(fn ($e) => filter_var($e, FILTER_VALIDATE_EMAIL));
+        if ($bad->isNotEmpty()) {
+            return back()->withInput()->withErrors(['emails' => __(':e is not an email address.', ['e' => $bad->first()])]);
+        }
+
+        $alerts->save($request->boolean('enabled'), (string) ($data['emails'] ?? ''));
+        Audit::log('platform.signup_alerts_updated', null, $request->boolean('enabled') ? __('on') : __('off'));
+
+        return back()->with('success', $request->boolean('enabled') ? __('Saved. You will get an email for every new account.') : __('Saved. Sign-up emails are off.'));
     }
 
     public function test(Request $request): RedirectResponse

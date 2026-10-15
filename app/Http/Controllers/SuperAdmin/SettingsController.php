@@ -30,6 +30,8 @@ class SettingsController extends Controller
         'support_phone' => ['Support phone', 'text', null],
         'trial_months' => ['Free trial length (months)', 'number', 'Applies to newly approved churches.'],
         'maintenance_note' => ['Maintenance notice for admins', 'text', 'Shown on church admin dashboards only.'],
+        'dormancy_warn_days' => ['Warn a quiet church after (days)', 'number', 'No staff sign-in, nothing published and no new followers for this long: the church gets a warning. Default 30.'],
+        'dormancy_block_days' => ['Block it after the warning (days)', 'number', 'If it is still quiet this long after the warning, the church is blocked. Default 14.'],
     ];
 
     public function edit(AfricasTalking $sms, WebPushSender $push): View
@@ -57,6 +59,8 @@ class SettingsController extends Controller
             'support_phone' => ['nullable', 'string', 'max:40'],
             'trial_months' => ['nullable', 'integer', 'min:0', 'max:24'],
             'maintenance_note' => ['nullable', 'string', 'max:300'],
+            'dormancy_warn_days' => ['nullable', 'integer', 'min:7', 'max:365'],
+            'dormancy_block_days' => ['nullable', 'integer', 'min:3', 'max:180'],
         ]);
 
         foreach (array_keys(self::SETTINGS) as $key) {
@@ -117,6 +121,8 @@ class SettingsController extends Controller
             'support_email' => config('faithfellows.company.email'),
             'support_phone' => config('faithfellows.company.phone'),
             'trial_months' => '12',
+            'dormancy_warn_days' => (string) config('faithfellows.dormancy.warn_days'),
+            'dormancy_block_days' => (string) config('faithfellows.dormancy.block_days'),
         ];
     }
 }

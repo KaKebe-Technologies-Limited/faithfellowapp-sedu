@@ -16,7 +16,7 @@ use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 /**
- * The church's own FaithFellows plan: usage, invoices, paying with MoMo/card.
+ * The church's own FaithFellows plan: the monthly fee and its next payment day, usage, invoices, and paying with mobile money.
  */
 class BillingController extends Controller
 {
@@ -28,6 +28,7 @@ class BillingController extends Controller
 
         return view('church-admin.billing.index', [
             'church' => $church,
+            'next' => $this->billing->nextPayment($church),
             'plans' => Plan::where('is_active', true)->orderBy('sort')->get(),
             'invoices' => $church->invoices()->latest('period_start')->paginate(12),
             'usage' => [
@@ -42,7 +43,8 @@ class BillingController extends Controller
     public function pay(Request $request, Church $church, SubscriptionInvoice $invoice): RedirectResponse
     {
         $data = $request->validate([
-            'method' => ['required', Rule::in(['mtn_momo', 'airtel_money', 'iotec', 'stripe'])],
+            // The church's fee is paid with mobile money only.
+            'method' => ['required', Rule::in(['mtn_momo', 'airtel_money', 'iotec'])],
             'phone' => ['nullable', 'required_if:method,iotec,mtn_momo,airtel_money', MobileMoneyPhone::rule()],
         ]);
 

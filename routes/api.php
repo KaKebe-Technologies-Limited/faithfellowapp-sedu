@@ -138,6 +138,8 @@ Route::prefix('v1')->name('api.v1.')->middleware('throttle:api')->group(function
         Route::delete('/reading-circles/{readingCircle}/leave', [V1\StudyController::class, 'leaveCircle'])->name('circles.leave');
 
         Route::patch('/me', [V1\ProfileController::class, 'update'])->name('me.update');
+        Route::post('/me/activity', [V1\MemberActivityController::class, 'store'])->middleware('throttle:120,1')->name('me.activity');
+        Route::get('/me/stats', [V1\MemberActivityController::class, 'show'])->name('me.stats');
         Route::put('/me/location', [V1\ProfileController::class, 'location'])->middleware('throttle:20,1')->name('me.location');
         Route::delete('/me/location', [V1\ProfileController::class, 'removeLocation'])->name('me.location.remove');
         Route::post('/me/avatar', [V1\ProfileController::class, 'avatar'])->middleware('throttle:10,1')->name('me.avatar');

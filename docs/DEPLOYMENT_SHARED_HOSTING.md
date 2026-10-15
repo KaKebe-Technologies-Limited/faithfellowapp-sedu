@@ -170,3 +170,8 @@ Three things are set up once, by the super admin, on the website (nothing needs 
 3. **ESV Bible.** Get a free key at https://api.esv.org/account/ and put `ESV_API_KEY=…` in the server `.env`. Until then the app reads the King James Version. The ESV is licensed text: it is never stored on the server or the phones, and Crossway's terms apply (non-commercial use).
 
 New database changes (giving reasons, community games and the 25 sample games, inspiration) are applied by the scheduler, or from Super admin, **Database updates**. Members need the 1.1.0 app (a new APK) for the new icon and bottom bar; the screens themselves also update over the air once their phone has 1.1.0.
+
+### Money, quiet churches, sign-up emails and inspiration pushes
+
+All of these run from the one `schedule:run` cron job (every minute) and the `queue:work` job: the billing reminders (`ff:billing`, 06:00), the dormant-church check (`ff:dormancy`, 06:30) and the inspiration pushes (`ff:inspiration`, every minute, sends at the times set in Super admin, Inspiration). Set the monthly fee under Super admin, Plans, and how long a quiet church waits under Settings. **Super admin, Push test** sends a test notification to a member's phone and shows why it did not arrive. **Super admin, Email** lists who is emailed about every new account.
+

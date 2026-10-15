@@ -47,7 +47,7 @@ class SubscriptionExpiring extends Notification implements ShouldQueue
 
         return $mail->subject(__('Invoice :n is overdue', ['n' => $this->invoice->number]))
             ->line(__('Invoice :n for :amount was due on :due.', ['n' => $this->invoice->number, 'amount' => ff_money($this->invoice->total), 'due' => $this->invoice->due_date->format('j M Y')]))
-            ->line(__('To avoid interruption, please pay before :date. You can pay with mobile money or card.', ['date' => $suspendOn->format('j M Y')]))
+            ->line(__('To avoid interruption, please pay before :date. You pay with mobile money: you get a prompt on your phone.', ['date' => $suspendOn->format('j M Y')]))
             ->action(__('Pay now'), route('church-admin.billing.index', $this->church));
     }
 
