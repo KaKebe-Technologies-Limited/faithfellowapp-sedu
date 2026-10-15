@@ -41,3 +41,16 @@ test('the super admin can change the download link', function () {
 
     $this->put(route('super-admin.settings.update'), ['android_app_url' => 'not a link'])->assertSessionHasErrors('android_app_url');
 });
+
+test('the privacy policy is a complete public page and the app reads the same text', function () {
+    $this->get(route('privacy'))->assertOk()
+        ->assertSee('The short version')
+        ->assertSee('Google sign-in')
+        ->assertSee('does not use your microphone')
+        ->assertSee(route('account.delete'), false);
+
+    $this->getJson('/api/v1/pages/privacy')->assertOk()
+        ->assertJsonPath('data.title', 'Privacy Policy')
+        ->assertJsonFragment(['text' => 'The short version'])
+        ->assertJsonFragment(['updated' => 'Last updated: 16 October 2026']);
+});
