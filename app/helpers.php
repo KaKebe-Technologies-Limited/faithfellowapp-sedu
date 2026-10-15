@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\PlatformSetting;
 use Illuminate\Support\Str;
 
 if (! function_exists('ff_money')) {
@@ -86,6 +87,19 @@ if (! function_exists('ff_safe_html')) {
         $clean = preg_replace('/\sstyle\s*=\s*("[^"]*"|\'[^\']*\')/i', '', $clean);
 
         return $clean;
+    }
+}
+
+if (! function_exists('ff_app_download_url')) {
+    /**
+     * Where the "Download the app" buttons go: the link saved in Super admin → Settings, else the one in the server
+     * configuration. Null when neither is set (the buttons then lead to the sign-up page).
+     */
+    function ff_app_download_url(): ?string
+    {
+        $url = rescue(fn () => PlatformSetting::get('android_app_url'), null, false) ?: config('faithfellows.app.android_url');
+
+        return filled($url) ? (string) $url : null;
     }
 }
 
