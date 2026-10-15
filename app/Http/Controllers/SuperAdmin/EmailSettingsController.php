@@ -40,6 +40,11 @@ class EmailSettingsController extends Controller
         ]);
         $data['enabled'] = $request->boolean('enabled');
 
+        // A Gmail App Password is exactly 16 letters. Anything else is a different password (a browser may fill in one it saved), which Google refuses.
+        if (filled($data['password'] ?? null) && stripos($data['host'], 'gmail') !== false && ! MailSettings::looksLikeAppPassword($data['password'])) {
+            return back()->withInput($request->except('password'))->withErrors(['password' => __('That is not a Gmail App Password. It is exactly 16 letters (Google shows them as four groups of four). It looks like another password was typed or filled in by your browser. Make an App Password in the Google account (Security, 2-Step Verification, App passwords) and type it here.')]);
+        }
+
         MailSettings::save($data);
         Audit::log('platform.email_settings_updated', null, $data['from_address'], [], ['enabled' => $data['enabled'], 'host' => $data['host'], 'port' => $data['port'], 'username' => $data['username'], 'password_changed' => filled($data['password'] ?? null)]);
 

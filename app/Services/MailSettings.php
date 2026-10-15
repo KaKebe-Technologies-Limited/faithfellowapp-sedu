@@ -33,7 +33,15 @@ class MailSettings
             'from_address' => (string) $get('from_address'),
             'from_name' => (string) $get('from_name'),
             'has_password' => filled(PlatformSetting::get('mail.password')),
+            // Only how long it is, so a wrong one (a real Gmail App Password is exactly 16 letters) can be spotted without showing it.
+            'password_length' => mb_strlen((string) PlatformSetting::get('mail.password')),
         ];
+    }
+
+    /** Whether this looks like a Gmail App Password: 16 letters, spaces aside (Google shows them in four groups of four). */
+    public static function looksLikeAppPassword(string $password): bool
+    {
+        return (bool) preg_match('/^[a-z]{16}$/i', preg_replace('/\s+/', '', $password));
     }
 
     /** Whether sending through the account saved on the website is switched on and complete. */
@@ -97,19 +105,24 @@ class MailSettings
                 $message->to($to)->subject(__('FaithFellows test email'));
             });
         } catch (\Throwable $e) {
-            return self::explain($e);
+            return self::explain($e, (string) config('mail.mailers.smtp.username'), mb_strlen((string) config('mail.mailers.smtp.password')));
         }
 
         return null;
     }
 
-    /** A plain-words reason for a failed send (never includes the password). */
-    protected static function explain(\Throwable $e): string
+    /** A plain-words reason for a failed send. It names the account that was tried and how long the password is, never the password. */
+    public static function explain(\Throwable $e, string $username = '', int $length = 0): string
     {
         $text = $e->getMessage();
 
         return match (true) {
-            str_contains($text, '535') || stripos($text, 'Username and Password not accepted') !== false => __('Google refused the sign-in. Check that the Gmail address is right and that the App Password is the 16-letter one made for this account (2-Step Verification must be on).'),
+            str_contains($text, '535') || stripos($text, 'Username and Password not accepted') !== false => __('Google refused the sign-in for :user. :hint', [
+                'user' => $username ?: __('this account'),
+                'hint' => $length > 0 && $length !== 16
+                    ? __('The saved password has :n characters, but a Gmail App Password is exactly 16 letters, so it is not the right one (your browser may have filled in a password it had saved). Type the App Password again.', ['n' => $length])
+                    : __('Check that the Gmail address is right, that 2-Step Verification is on, and that the App Password was made for this account. Make a new one and type it again. If Google emailed a security alert about a blocked sign-in, open it and press “Yes, it was me”.'),
+            ]),
             stripos($text, 'Connection could not be established') !== false || stripos($text, 'timed out') !== false => __('The server could not reach the mail host. Check the host and port (Gmail: smtp.gmail.com, 587).'),
             default => __('The email could not be sent: :reason', ['reason' => mb_substr(preg_replace('/\s+/', ' ', $text), 0, 220)]),
         };
