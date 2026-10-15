@@ -35,6 +35,7 @@ Route::get('/about', [Public\PageController::class, 'about'])->name('about');
 Route::get('/services', [Public\PageController::class, 'services'])->name('services');
 Route::get('/pricing', [Public\PageController::class, 'pricing'])->name('pricing');
 Route::get('/privacy', [Public\PageController::class, 'privacy'])->name('privacy');
+Route::get('/delete-account', [Public\PageController::class, 'deleteAccount'])->name('account.delete');
 Route::get('/pay/return/{reference}', function (Request $request, string $reference) {
     return view('pay.return', ['reference' => $reference, 'cancelled' => $request->boolean('cancelled')]);
 })->where('reference', '[A-Za-z0-9_-]+')->name('pay.return');

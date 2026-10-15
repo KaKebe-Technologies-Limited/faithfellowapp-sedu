@@ -37,6 +37,7 @@ const MENU = [
   { icon: 'key-outline', label: 'Change password', path: '/password' },
   { icon: 'document-text-outline', label: 'Terms of Service', path: '/legal/terms' },
   { icon: 'shield-checkmark-outline', label: 'Privacy Policy', path: '/legal/privacy' },
+  { icon: 'trash-outline', label: 'Delete my account', path: '/delete-account' },
 ];
 
 const RING_COLORS = { bible: COLORS.primary, listening: COLORS.success, sharing: COLORS.info };

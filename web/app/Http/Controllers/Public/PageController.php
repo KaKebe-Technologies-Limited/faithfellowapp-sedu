@@ -45,6 +45,12 @@ class PageController extends Controller
         return view('public.terms');
     }
 
+    /** The public page Google Play asks for: how to delete an account and what happens to the data. */
+    public function deleteAccount(): View
+    {
+        return view('public.delete-account');
+    }
+
     public function offline(): View
     {
         return view('public.offline');

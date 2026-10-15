@@ -27,6 +27,7 @@
                     <li><a href="{{ route('contact') }}">{{ __('Contact') }}</a></li>
                     <li><a href="{{ route('privacy') }}">{{ __('Privacy Policy') }}</a></li>
                     <li><a href="{{ route('terms') }}">{{ __('Terms of Service') }}</a></li>
+                    <li><a href="{{ route('account.delete') }}">{{ __('Delete your account') }}</a></li>
                 </ul>
             </div>
             <div class="col-lg-3">

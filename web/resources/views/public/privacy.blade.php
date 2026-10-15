@@ -4,7 +4,7 @@
         <div class="container" style="max-width: 860px">
             <span class="ff-eyebrow">{{ __('Legal') }}</span>
             <h1 class="mt-3">{{ __('Privacy Policy') }}</h1>
-            <p class="text-ff-muted mb-0">{{ __('Last updated: :date', ['date' => '11 October 2026']) }}</p>
+            <p class="text-ff-muted mb-0">{{ __('Last updated: :date', ['date' => '16 October 2026']) }}</p>
         </div>
     </section>
     <section class="ff-section pt-4">
@@ -21,6 +21,16 @@
                 <li><strong>Giving data:</strong> amounts, categories, dates, payment method type and provider references. <strong>We never store card numbers</strong> — card payments are handled by PCI-compliant providers (Stripe). Mobile money is processed by MTN, Airtel or Iotec.</li>
                 <li><strong>Technical data:</strong> IP address, device and browser type, sessions and basic usage analytics used to secure and improve the service.</li>
             </ul>
+            <p><strong>In the mobile app</strong> we also use:</p>
+            <ul>
+                <li><strong>Google sign-in</strong> (optional): your name and email address from your Google account. We never see your Google password.</li>
+                <li><strong>Approximate location</strong> (optional, only while you use the app and only if you allow it): to show churches and believers near you. Other members see roughly how far away you are, never where you are.</li>
+                <li><strong>Camera</strong> (church staff only): to scan guests’ QR tickets at events. Pictures are not kept.</li>
+                <li><strong>Photos</strong> you choose yourself, for your profile or an event.</li>
+                <li><strong>Notifications:</strong> a code that identifies your phone so we can send you notifications you have switched on.</li>
+                <li><strong>Your own figures</strong> (minutes with the Bible, listening time, shares, days opened): shown to you only; churches see anonymous totals.</li>
+            </ul>
+            <p>We do not show ads and we do not sell your data.</p>
 
             <h2>3. How we use it</h2>
             <ul>
@@ -37,6 +47,7 @@
 
             <h2>6. Retention</h2>
             <p>We keep account data while your account is active. Financial records are retained as required for church accounting and law, and are anonymised when you delete your account.</p>
+            <p>You can delete your account yourself in the app (Me → Delete my account) or on the website; <a href="{{ route('account.delete') }}">here is how, and what is removed and what is kept</a>.</p>
 
             <h2>7. Your rights</h2>
             <p>You can access, correct, export (Profile → Data & privacy → Export my data) and delete your data, withdraw consent, and control notifications per church, including quiet hours. To make a request or complaint, email <a href="mailto:{{ $c['email'] }}">{{ $c['email'] }}</a>. You may also contact the Personal Data Protection Office of Uganda.</p>
