@@ -103,7 +103,7 @@ Questions? service@kakebe.tech
 - **Encrypted in transit:** Yes (https). **Users can ask for deletion:** Yes. **Deletion web address:** https://faithfellows.com/delete-account
 - **Audio, contacts, calendar, health, web history:** not collected.
 
-**Financial features:** the app lets members give to churches with mobile money. Declare it honestly, choosing the closest option on screen (payments / donations / other). It is not a bank, loan or investment product. Donations to churches and tickets for real events do not need Google Play billing.
+**Financial features:** Google's list is about financial products: banking and loans, mobile payments and digital wallets, money transfer, buy now pay later, crypto, stock trading, "crowdfunding and chit funds", credit, advice, insurance, other. FaithFellows is none of these: it does not hold, lend, invest or transfer anyone's money. A member only asks their own mobile money to pay a donation to their church, and MTN, Airtel and ioTec process it. The closest honest answer is **"My app doesn't provide any financial features"**. Do not tick wallet, money transfer or crowdfunding: some financial declarations make Google ask for an *organisation* account (policy "Play Console Requirements": banking, lending, trading and investment, crypto, health, VPN and government apps). If Google still flags the app, explain this in the appeal. Donations to churches and tickets for real events do not need Google Play billing.
 
 **Advertising ID:** No.
 
