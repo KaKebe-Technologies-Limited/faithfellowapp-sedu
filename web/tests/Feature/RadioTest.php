@@ -201,3 +201,69 @@ test('songs can be added from the command line too', function () {
     expect(RadioTrack::sole()->title)->toBe('Great Is Thy Faithfulness')->and(RadioTrack::sole()->artist)->toBe('Old Hymn');
     @unlink($path);
 });
+
+// ── Big songs arrive in pieces ──────────────────────────────────────────────────────────────────────────
+
+/** Sends a song to the radio in pieces, the way the page does; returns the last response. */
+function sendInPieces($test, $admin, string $content, string $name, int $pieces, string $id = 'abcdef0123456789abcd')
+{
+    $size = (int) ceil(strlen($content) / $pieces);
+    $response = null;
+    for ($i = 0; $i < $pieces; $i++) {
+        $response = $test->actingAs($admin)->postJson(route('super-admin.radio.chunk'), [
+            'upload_id' => $id, 'index' => $i, 'total' => $pieces, 'name' => $name,
+            'chunk' => UploadedFile::fake()->createWithContent('piece', substr($content, $i * $size, $size)),
+        ]);
+        if (! $response->isOk()) {
+            break; // like the page: it stops at the first piece the server refuses
+        }
+    }
+
+    return $response;
+}
+
+test('a song sent in pieces is put together and added to the radio', function () {
+    $admin = superAdmin();
+
+    $last = sendInPieces($this, $admin, tinyMp3(400), 'Great Is Thy Faithfulness - Test Choir.mp3', 3)->assertOk()->assertJson(['ok' => true, 'title' => 'Great Is Thy Faithfulness']);
+
+    $track = RadioTrack::sole();
+    expect($track->artist)->toBe('Test Choir')->and($track->size)->toBe(strlen(tinyMp3(400)))->and($track->uploaded_by)->toBe($admin->id);
+    Storage::disk('local')->assertExists($track->file_path);
+    expect(Storage::disk('local')->directories('radio-uploads'))->toBe([]);
+});
+
+test('the pieces of a song are not accepted past the platform admin limit', function () {
+    config(['faithfellows.limits.max_admin_audio_mb' => 1]);
+    $admin = superAdmin();
+
+    // 3 pieces of about 0.5 MB: the third one takes the song over 1 MB.
+    $content = str_repeat('x', 1_600_000);
+    $response = sendInPieces($this, $admin, $content, 'huge.mp3', 3);
+
+    $response->assertStatus(422)->assertJsonPath('message', 'A song can be up to 1 MB.');
+    expect(RadioTrack::count())->toBe(0)->and(Storage::disk('local')->directories('radio-uploads'))->toBe([]);
+});
+
+test('a song with a missing piece is refused and cleaned up', function () {
+    $admin = superAdmin();
+
+    // Only the last of two pieces arrives.
+    $this->actingAs($admin)->postJson(route('super-admin.radio.chunk'), [
+        'upload_id' => 'abcdef0123456789abcd', 'index' => 1, 'total' => 2, 'name' => 'lost.mp3',
+        'chunk' => UploadedFile::fake()->createWithContent('piece', tinyMp3(10)),
+    ])->assertStatus(422);
+
+    expect(RadioTrack::count())->toBe(0)->and(Storage::disk('local')->directories('radio-uploads'))->toBe([]);
+});
+
+test('only the super admin can send pieces, and a piece needs a safe upload id', function () {
+    $piece = ['upload_id' => 'abcdef0123456789abcd', 'index' => 0, 'total' => 1, 'name' => 'a.mp3', 'chunk' => UploadedFile::fake()->createWithContent('piece', tinyMp3(10))];
+
+    $this->actingAs(member())->postJson(route('super-admin.radio.chunk'), $piece)->assertForbidden();
+    $this->actingAs(superAdmin())->postJson(route('super-admin.radio.chunk'), [...$piece, 'upload_id' => '../../etc'])->assertStatus(422);
+});
+
+test('the radio page tells the platform admin the song limit', function () {
+    $this->actingAs(superAdmin())->get(route('super-admin.radio.index'))->assertOk()->assertSee('Up to 400 MB per song');
+});

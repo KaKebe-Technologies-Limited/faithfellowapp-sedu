@@ -27,7 +27,7 @@ class DevotionalRequest extends FormRequest
             'publish_date' => ['required', 'date'],
             'status' => ['required', Rule::in(['draft', 'published'])],
             'visibility' => ['required', Rule::in(['public', 'members'])],
-            'audio' => ['nullable', 'file', 'mimetypes:audio/mpeg,audio/mp3,audio/mp4,audio/x-m4a,audio/aac,audio/ogg,audio/webm', 'max:51200', new WithinStorageQuota($this->route('church'))],
+            'audio' => ['nullable', 'file', 'mimetypes:audio/mpeg,audio/mp3,audio/mp4,audio/x-m4a,audio/aac,audio/ogg,audio/webm', 'max:'.(ff_audio_upload_mb($this->user()) * 1024), new WithinStorageQuota($this->route('church'))],
             'audio_url' => ['nullable', 'url', 'max:500'],
         ];
     }
