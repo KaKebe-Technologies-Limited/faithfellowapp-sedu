@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\PlatformSetting;
+use App\Models\RadioStation;
 use App\Models\RadioTrack;
 use App\Models\User;
 use Carbon\CarbonInterface;
@@ -12,53 +13,75 @@ use Illuminate\Support\Str;
 use InvalidArgumentException;
 
 /**
- * The FaithFellows gospel radio: one station for the whole app that plays the songs the super admin has added,
- * in order, round the clock. Everyone hears the same song at the same moment, because "what is playing now" is
- * worked out from the clock: the loop's total length and the time since a fixed starting point.
+ * The FaithFellows radio channels: the platform's Gospel radio (songs) and Podcast radio (teaching), and one channel for each church. A channel plays
+ * what has been added to it, in order, round the clock, in a loop. Everyone hears the same thing at the same moment, because "what is playing now"
+ * is worked out from the clock: the loop's total length and the time since a fixed starting point.
  */
 class RadioService
 {
-    /** The station's clock starts here; changing it would shuffle where every listener is in the loop. */
+    /** The clock starts here; changing it would shuffle where every listener is in every loop. */
     public const EPOCH = '2026-01-01 00:00:00';
 
     /** Formats phones can play without extra codecs. */
     public const EXTENSIONS = ['mp3' => 'audio/mpeg', 'm4a' => 'audio/mp4', 'aac' => 'audio/aac', 'wav' => 'audio/wav'];
 
-    public function enabled(): bool
+    // The Gospel radio keeps its name and its switch in the platform settings (as it always did); every other channel keeps them in its own row.
+
+    public function enabled(?RadioStation $station = null): bool
     {
-        return (bool) PlatformSetting::get('radio_enabled', '1');
+        $station ??= RadioStation::gospel();
+
+        return $station->isGospel() ? (bool) PlatformSetting::get('radio_enabled', '1') : (bool) $station->is_enabled;
     }
 
-    public function name(): string
+    /** On, and not switched off by the platform (a church channel can be blocked by the super admin). */
+    public function available(?RadioStation $station = null): bool
     {
-        return (string) (PlatformSetting::get('radio_name') ?: 'FaithFellows Radio');
+        $station ??= RadioStation::gospel();
+
+        return $this->enabled($station) && ! $station->is_blocked;
     }
 
-    public function saveSettings(string $name, bool $enabled): void
+    public function name(?RadioStation $station = null): string
     {
-        PlatformSetting::put('radio_name', trim($name) ?: 'FaithFellows Radio');
-        PlatformSetting::put('radio_enabled', $enabled ? '1' : '0');
+        $station ??= RadioStation::gospel();
+
+        return $station->isGospel() ? (string) (PlatformSetting::get('radio_name') ?: 'FaithFellows Radio') : (string) $station->name;
     }
 
-    /** @return Collection<int, RadioTrack> the songs in the loop, in order */
-    public function tracks(): Collection
+    public function saveSettings(string $name, bool $enabled, ?RadioStation $station = null): void
     {
-        return RadioTrack::onAir()->get()->values();
+        $station ??= RadioStation::gospel();
+        $name = trim($name);
+        if ($station->isGospel()) {
+            PlatformSetting::put('radio_name', $name ?: 'FaithFellows Radio');
+            PlatformSetting::put('radio_enabled', $enabled ? '1' : '0');
+
+            return;
+        }
+        $station->update(['name' => $name ?: $station->name, 'is_enabled' => $enabled]);
     }
 
-    public function loopSeconds(): int
+    /** @return Collection<int, RadioTrack> what is in the channel's loop, in order */
+    public function tracks(?RadioStation $station = null): Collection
     {
-        return (int) RadioTrack::onAir()->sum('duration_seconds');
+        return RadioTrack::onAir()->ofStation($station ?? RadioStation::gospel())->get()->values();
+    }
+
+    public function loopSeconds(?RadioStation $station = null): int
+    {
+        return (int) RadioTrack::onAir()->ofStation($station ?? RadioStation::gospel())->sum('duration_seconds');
     }
 
     /**
-     * What the station is playing at a moment (default: now), with the songs that follow and the ones just played.
+     * What a channel is playing at a moment (default: now), with the tracks that follow and the ones just played.
      *
-     * @return array<string, mixed>|null null when the radio is off or has no songs
+     * @return array<string, mixed>|null null when the channel is off or has nothing in it
      */
-    public function nowPlaying(?CarbonInterface $at = null, int $upcoming = 4, int $recent = 5): ?array
+    public function nowPlaying(?CarbonInterface $at = null, int $upcoming = 4, int $recent = 5, ?RadioStation $station = null): ?array
     {
-        $tracks = $this->enabled() ? $this->tracks() : collect();
+        $station ??= RadioStation::gospel();
+        $tracks = $this->available($station) ? $this->tracks($station) : collect();
         if ($tracks->isEmpty()) {
             return null;
         }
@@ -108,15 +131,80 @@ class RadioService
         ];
     }
 
+    /**
+     * Everything the app needs to show one channel: its name, what is on and what is next.
+     *
+     * @return array<string, mixed>
+     */
+    public function payload(RadioStation $station): array
+    {
+        $now = $this->nowPlaying(null, 4, 5, $station);
+
+        return [
+            'id' => $station->exists ? $station->id : null,
+            'slug' => $station->slug,
+            'kind' => $station->kind,
+            'enabled' => $now !== null,
+            'name' => $this->name($station),
+            'tagline' => $station->tagline(),
+            'church' => $station->church_id && $station->relationLoaded('church') && $station->church
+                ? ['id' => $station->church->id, 'name' => $station->church->name]
+                : null,
+            'now' => $now,
+            'songs' => $this->tracks($station)->count(),
+            'server_time' => now()->toIso8601String(),
+        ];
+    }
+
+    /**
+     * The channels this person can listen to: the platform's, and the channels of the churches they follow or work for. Only channels that are on
+     * and have something in them. The Gospel radio comes first.
+     *
+     * @return Collection<int, RadioStation>
+     */
+    public function stationsFor(?User $user): Collection
+    {
+        $stations = collect([RadioStation::gospel()]);
+        if (RadioStation::ready()) {
+            $stations->push(RadioStation::podcast());
+            $churchIds = $this->churchIdsOf($user);
+            if ($churchIds->isNotEmpty()) {
+                $stations = $stations->merge(RadioStation::whereIn('church_id', $churchIds)->with('church')->orderBy('name')->get());
+            }
+        }
+
+        return $stations->filter(fn (RadioStation $s) => $this->available($s) && $this->tracks($s)->isNotEmpty())->values();
+    }
+
+    /** The platform's channels are for everyone; a church's channel is for the people who follow that church or work for it. */
+    public function canListen(?User $user, RadioStation $station): bool
+    {
+        if ($station->isPlatform()) {
+            return true;
+        }
+
+        return $user !== null && ($user->isSuperAdmin() || $this->churchIdsOf($user)->contains($station->church_id));
+    }
+
+    /** @return Collection<int, int> the churches a person follows or works for */
+    protected function churchIdsOf(?User $user): Collection
+    {
+        return $user
+            ? $user->subscribedChurches()->pluck('churches.id')->merge($user->staffMemberships()->where('status', 'active')->pluck('church_id'))->unique()->values()
+            : collect();
+    }
+
     // ── Adding and arranging songs ──────────────────────────────────────────────────────────────────────
 
     /**
-     * Adds a song file to the loop. Title, artist, length and cover picture are read from the file itself.
+     * Adds an audio file to a channel's loop (the Gospel radio unless a channel is given). Title, artist, length and cover picture are read from
+     * the file itself.
      *
-     * @throws InvalidArgumentException when the file is not a song the phones can play
+     * @throws InvalidArgumentException when the file is not audio the phones can play
      */
-    public function addFile(string $path, string $originalName, ?User $by = null, ?string $title = null, ?string $artist = null): RadioTrack
+    public function addFile(string $path, string $originalName, ?User $by = null, ?string $title = null, ?string $artist = null, ?RadioStation $station = null): RadioTrack
     {
+        $station ??= RadioStation::gospel();
         $extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
         if (! isset(self::EXTENSIONS[$extension])) {
             throw new InvalidArgumentException(__('Use an MP3, M4A, AAC or WAV file.'));
@@ -138,6 +226,7 @@ class RadioService
         Storage::disk('local')->put($stored, fopen($path, 'rb'));
 
         return RadioTrack::create([
+            ...($station->exists ? ['station_id' => $station->id] : []),
             'title' => Str::limit($title ?: pathinfo($originalName, PATHINFO_FILENAME), 160, ''),
             'artist' => $artist !== '' ? Str::limit($artist, 160, '') : null,
             'file_path' => $stored,
@@ -145,16 +234,16 @@ class RadioService
             'size' => filesize($path),
             'duration_seconds' => $seconds,
             'cover_path' => $this->saveCover($info['comments']['picture'][0]['data'] ?? null, $name),
-            'position' => (int) RadioTrack::max('position') + 1,
+            'position' => (int) RadioTrack::ofStation($station)->max('position') + 1,
             'is_active' => true,
             'uploaded_by' => $by?->id,
         ]);
     }
 
-    /** Moves a song one place earlier or later in the loop. */
+    /** Moves a track one place earlier or later in its channel's loop. */
     public function move(RadioTrack $track, string $direction): void
     {
-        $ids = RadioTrack::orderBy('position')->orderBy('id')->pluck('id')->all();
+        $ids = RadioTrack::ofStation($track->channel())->orderBy('position')->orderBy('id')->pluck('id')->all();
         $i = array_search($track->id, $ids, true);
         $j = $direction === 'up' ? $i - 1 : $i + 1;
         if ($i === false || ! isset($ids[$j])) {
@@ -166,9 +255,10 @@ class RadioService
 
     public function delete(RadioTrack $track): void
     {
+        $channel = $track->channel();
         Storage::disk('local')->delete(array_filter([$track->file_path, $track->cover_path]));
         $track->delete();
-        $this->renumber(RadioTrack::orderBy('position')->orderBy('id')->pluck('id')->all());
+        $this->renumber(RadioTrack::ofStation($channel)->orderBy('position')->orderBy('id')->pluck('id')->all());
     }
 
     /** @param  array<int, int>  $ids */

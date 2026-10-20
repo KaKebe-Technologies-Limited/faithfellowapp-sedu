@@ -384,6 +384,14 @@ Route::prefix('church/{church}/admin')->name('church-admin.')
             Route::get('/media', [ChurchAdmin\MediaLibraryController::class, 'index'])->name('media.index');
             Route::post('/media', [ChurchAdmin\MediaLibraryController::class, 'store'])->name('media.store');
             Route::delete('/media/{mediaId}', [ChurchAdmin\MediaLibraryController::class, 'destroy'])->whereNumber('mediaId')->name('media.destroy');
+
+            // The church's own radio channel: audio that plays round the clock, in a loop, for the members who follow the church
+            Route::get('/radio', [ChurchAdmin\RadioController::class, 'index'])->name('radio.index');
+            Route::post('/radio/chunk', [ChurchAdmin\RadioController::class, 'chunk'])->middleware('throttle:1500,1')->name('radio.chunk');
+            Route::put('/radio/settings', [ChurchAdmin\RadioController::class, 'settings'])->name('radio.settings');
+            Route::put('/radio/{trackId}', [ChurchAdmin\RadioController::class, 'update'])->whereNumber('trackId')->name('radio.update');
+            Route::post('/radio/{trackId}/move', [ChurchAdmin\RadioController::class, 'move'])->whereNumber('trackId')->name('radio.move');
+            Route::delete('/radio/{trackId}', [ChurchAdmin\RadioController::class, 'destroy'])->whereNumber('trackId')->name('radio.destroy');
         });
 
         // Members
@@ -608,6 +616,7 @@ Route::prefix('super-admin')->name('super-admin.')
         Route::post('/radio', [SuperAdmin\RadioController::class, 'store'])->name('radio.store');
         Route::post('/radio/chunk', [SuperAdmin\RadioController::class, 'chunk'])->middleware('throttle:1500,1')->name('radio.chunk');
         Route::put('/radio/settings', [SuperAdmin\RadioController::class, 'settings'])->name('radio.settings');
+        Route::put('/radio/channels/{station}/block', [SuperAdmin\RadioController::class, 'block'])->whereNumber('station')->name('radio.block');
         Route::put('/radio/{track}', [SuperAdmin\RadioController::class, 'update'])->name('radio.update');
         Route::post('/radio/{track}/move', [SuperAdmin\RadioController::class, 'move'])->name('radio.move');
         Route::delete('/radio/{track}', [SuperAdmin\RadioController::class, 'destroy'])->name('radio.destroy');

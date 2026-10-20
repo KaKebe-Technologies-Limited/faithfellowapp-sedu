@@ -23,7 +23,7 @@
             ['label' => __('Email'), 'icon' => 'bi-envelope-at', 'route' => 'super-admin.email.edit', 'active' => 'super-admin.email.*'],
             ['label' => __('Push test'), 'icon' => 'bi-bell', 'route' => 'super-admin.push.index', 'active' => 'super-admin.push.*'],
             ['label' => __('Google sign-in'), 'icon' => 'bi-google', 'route' => 'super-admin.google.edit', 'active' => 'super-admin.google.*'],
-            ['label' => __('Gospel radio'), 'icon' => 'bi-music-note-beamed', 'route' => 'super-admin.radio.index', 'active' => 'super-admin.radio.*'],
+            ['label' => __('Radio'), 'icon' => 'bi-music-note-beamed', 'route' => 'super-admin.radio.index', 'active' => 'super-admin.radio.*'],
             ['label' => __('Blog'), 'icon' => 'bi-journal-richtext', 'route' => 'super-admin.blog.index', 'active' => 'super-admin.blog.*'],
             ['label' => __('Contact inbox'), 'icon' => 'bi-inbox', 'route' => 'super-admin.messages.index', 'active' => 'super-admin.messages.*'],
             ['label' => __('Audit logs'), 'icon' => 'bi-clipboard-data', 'route' => 'super-admin.audit-logs', 'active' => 'super-admin.audit-logs*'],

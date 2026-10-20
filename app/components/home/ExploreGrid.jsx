@@ -65,8 +65,9 @@ function RadioCell() {
 export default function ExploreGrid({ home }) {
   const features = useFeatures();
   useStationInfo();
-  const { station } = useRadio();
-  const radio = features.radio && !!station?.enabled && station.songs > 0;
+  const { station, stations } = useRadio();
+  // The Radio tile shows when any channel has something on (the Gospel radio, the Podcast radio or a church's channel).
+  const radio = features.radio && (stations.length > 0 || (!!station?.enabled && station.songs > 0));
   const church = home?.churches?.[0];
   const several = (home?.churches?.length ?? 0) > 1;
 

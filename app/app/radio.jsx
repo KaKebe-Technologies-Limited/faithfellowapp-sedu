@@ -1,6 +1,8 @@
-// The full radio player: the song on air with a big cover, the glowing play / stop button, what comes next and what was
-// just played. The radio keeps playing when you close this screen, switch apps or lock the phone.
-import { ScrollView, Share, StyleSheet, View } from 'react-native';
+// The full radio player: the track on air with a big cover, the glowing play / stop button, what comes next and what was
+// just played. Above it, the channels to choose from: the Gospel radio, the Podcast radio and the channel of each church you follow.
+// The radio keeps playing when you close this screen, switch apps or lock the phone.
+import { Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -10,7 +12,7 @@ import { BackButton } from '../components/ScreenHeader';
 import { FONTS, SPACING } from '../constants/theme';
 import { mediaUrl } from '../lib/api';
 import { timeAgo } from '../lib/format';
-import { useRadio, useStationInfo } from '../lib/radio';
+import { selectStation, useRadio, useStationInfo } from '../lib/radio';
 
 const clock = (iso) => new Date(iso).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
 
@@ -34,7 +36,7 @@ function Row({ track, note }) {
 export default function RadioScreen() {
   useStationInfo();
   const insets = useSafeAreaInsets();
-  const { station, track, phase, upcoming, recent, error } = useRadio();
+  const { station, stations, stationId, track, phase, upcoming, recent, error } = useRadio();
   const live = phase === 'playing';
 
   return (
@@ -47,8 +49,24 @@ export default function RadioScreen() {
             <AppText style={styles.onAir}>{live ? 'ON AIR' : 'LISTEN LIVE'}</AppText>
             <AppText style={styles.station}>{station?.name ?? 'FaithFellows Radio'}</AppText>
           </View>
-          <RoundIconButton icon="share-social-outline" label="Share the radio" onPress={() => Share.share({ message: `Listen to ${station?.name ?? 'FaithFellows Radio'}: gospel music, day and night, on FaithFellows.` }).catch(() => {})} />
+          <RoundIconButton icon="share-social-outline" label="Share the radio" onPress={() => Share.share({ message: `Listen to ${station?.name ?? 'FaithFellows Radio'}: ${(station?.tagline ?? 'Gospel music, day and night').toLowerCase()}, on FaithFellows.` }).catch(() => {})} />
         </View>
+
+        {stations.length > 1 ? (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll} contentContainerStyle={styles.chips}>
+            {stations.map((s) => {
+              const on = s.slug === stationId;
+              return (
+                <Pressable key={s.slug} onPress={() => selectStation(s.slug)} accessibilityRole="button" accessibilityState={{ selected: on }} accessibilityLabel={`Channel: ${s.name}`} style={[styles.chip, on && styles.chipOn]}>
+                  <Ionicons name={s.kind === 'music' ? 'musical-notes' : s.church ? 'business' : 'mic'} size={14} color={on ? '#fff' : 'rgba(255,255,255,0.75)'} />
+                  <AppText style={[styles.chipText, on && { color: '#fff' }]} numberOfLines={1}>
+                    {s.name}
+                  </AppText>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        ) : null}
 
         {track ? (
           <>
@@ -62,10 +80,10 @@ export default function RadioScreen() {
             <View style={styles.buttonRow}>
               <RadioButton size={92} />
             </View>
-            <AppText style={styles.hint}>{error ? error : live ? 'Playing live. Keeps going when you lock your phone.' : phase === 'loading' ? 'Joining the radio…' : 'Tap play to join the live radio.'}</AppText>
+            <AppText style={styles.hint}>{error ? error : live ? 'Playing live. Keeps going when you lock your phone.' : phase === 'loading' ? 'Joining the radio…' : 'Tap play to join live.'}</AppText>
           </>
         ) : (
-          <AppText style={[styles.hint, { marginTop: 80 }]}>{station && !station.enabled ? 'The radio is switched off for now.' : 'The radio is quiet right now. Check again soon.'}</AppText>
+          <AppText style={[styles.hint, { marginTop: 80 }]}>{station && !station.enabled ? 'This channel is quiet or switched off for now.' : 'This channel is quiet right now. Check again soon.'}</AppText>
         )}
 
         {upcoming.length ? (
@@ -93,6 +111,11 @@ export default function RadioScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: '#17171C' },
   top: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  chipScroll: { marginTop: 18, marginHorizontal: -SPACING.md },
+  chips: { gap: 8, paddingHorizontal: SPACING.md },
+  chip: { flexDirection: 'row', alignItems: 'center', gap: 6, maxWidth: 220, paddingVertical: 8, paddingHorizontal: 14, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.1)' },
+  chipOn: { backgroundColor: '#BC2649' },
+  chipText: { fontFamily: FONTS.semibold, fontSize: 13.5, color: 'rgba(255,255,255,0.75)' },
   onAir: { fontFamily: FONTS.bold, fontSize: 11.5, letterSpacing: 1.4, color: '#FF8AA0' },
   station: { fontFamily: FONTS.semibold, fontSize: 15, color: '#fff', marginTop: 1 },
   coverWrap: { alignSelf: 'center', marginTop: 26, borderRadius: 28, shadowColor: '#000', shadowOpacity: 0.5, shadowRadius: 24, shadowOffset: { width: 0, height: 14 }, elevation: 14 },

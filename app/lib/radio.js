@@ -1,8 +1,10 @@
-// The FaithFellows gospel radio: songs the super admin added play round the clock, in a loop, and everyone hears the
-// same song at the same moment. The server says what is on air and how far into the song it is (GET /api/v1/radio);
-// this module plays it, moves on to the next song by itself, keeps playing with the screen locked or the app in the
-// background, and shows the song on the lock screen. One player lives here for the whole app, so the music carries on
-// while you move between screens; the home card, the bar above the tabs and the full player all read the same state.
+// The FaithFellows radio: channels that play round the clock, in a loop, and everyone hears the same thing at the same
+// moment. There is the Gospel radio (songs), the Podcast radio (teaching), and a channel for each church the member follows.
+// The server says which channels there are (GET /api/v1/radio/stations) and what is on air on one of them and how far
+// into it it is (GET /api/v1/radio/stations/{slug}; the Gospel radio is also GET /api/v1/radio); this module plays it, moves
+// on to the next track by itself, keeps playing with the screen locked or the app in the background, and shows the track on
+// the lock screen. One player lives here for the whole app, so the audio carries on while you move between screens; the home
+// card, the bar above the tabs and the full player all read the same state.
 import { useEffect, useSyncExternalStore } from 'react';
 import { AppState, Platform } from 'react-native';
 import { createAudioPlayer, setAudioModeAsync } from 'expo-audio';
@@ -11,7 +13,9 @@ import { claimAudio, registerAudio } from './audioFocus';
 
 let snapshot = {
   phase: 'idle', // idle | loading | playing | paused
-  station: null, // { enabled, name, tagline, songs }
+  stationId: 'gospel', // the channel that is selected: 'gospel', 'podcast' or 'church-{id}'
+  stations: [], // the channels this member can hear: [{ slug, kind, name, tagline, church, songs }]
+  station: null, // the selected channel: { enabled, name, tagline, songs, kind, slug, church }
   track: null, // the song that is on
   upcoming: [],
   recent: [],
@@ -67,17 +71,47 @@ function onStatus(status) {
   }
 }
 
-/** Fetches what is on air. Keeps the clock difference so the song position is right even if the phone's clock is off. */
+/** Fetches what is on air on the selected channel. Keeps the clock difference so the position is right even if the phone's clock is off. */
 export async function loadStation() {
-  const { data } = await api.get('/radio');
+  const slug = snapshot.stationId;
+  const { data } = await api.get(slug === 'gospel' ? '/radio' : `/radio/stations/${slug}`);
   const info = data.data;
+  if (slug !== snapshot.stationId) return info; // another channel was chosen while this one was loading
   skew = info.server_time ? Date.parse(info.server_time) - Date.now() : 0;
   set({
-    station: { enabled: info.enabled, name: info.name, tagline: info.tagline, songs: info.songs },
+    station: { enabled: info.enabled, name: info.name, tagline: info.tagline, songs: info.songs, kind: info.kind ?? 'music', slug: info.slug ?? slug, church: info.church ?? null },
     ...(info.now ? { upcoming: info.now.upcoming, recent: info.now.recent } : { upcoming: [], recent: [] }),
     ...(snapshot.phase === 'idle' || snapshot.phase === 'loading' ? { track: info.now?.track ?? null, startedAt: info.now?.started_at ?? null } : {}),
   });
   return info;
+}
+
+/** Fetches the channels this member can hear. An older server only has the Gospel radio, which is fine: the list stays empty. */
+export async function loadStations() {
+  try {
+    const { data } = await api.get('/radio/stations');
+    const list = data.data ?? [];
+    set({ stations: list });
+    // The selected channel is gone or empty (a church was unfollowed, a channel was switched off): move to the first one that has something on.
+    if (list.length && !list.some((s) => s.slug === snapshot.stationId)) selectStation(list[0].slug);
+  } catch {
+    // Keep what we have.
+  }
+}
+
+/** Switches channel. If the radio was playing, the new channel starts playing at once. */
+export async function selectStation(slug) {
+  if (!slug || slug === snapshot.stationId) return;
+  const wasPlaying = snapshot.phase === 'playing' || snapshot.phase === 'loading';
+  if (wasPlaying) stopRadio();
+  queue = [];
+  set({ stationId: slug, station: null, track: null, startedAt: null, upcoming: [], recent: [], error: null });
+  try {
+    await loadStation();
+  } catch {
+    // The screen shows the channel as quiet until it can be reached.
+  }
+  if (wasPlaying) playRadio();
 }
 
 function lockScreen(track) {
@@ -156,7 +190,7 @@ export async function playRadio() {
     if (!info.enabled || !info.now) {
       userStopped = true;
       clearTimeout(watchdog);
-      return set({ phase: 'idle', error: 'The radio is quiet right now. Try again soon.' });
+      return set({ phase: 'idle', error: 'This channel is quiet right now. Try again soon.' });
     }
     queue = [...info.now.upcoming];
     const elapsed = (Date.now() + skew - Date.parse(info.server_time)) / 1000;
@@ -199,7 +233,11 @@ export function useRadioLifecycle() {
 export function useStationInfo() {
   useEffect(() => {
     let alive = true;
-    const run = () => alive && snapshot.phase === 'idle' && loadStation().catch(() => {});
+    const run = () => {
+      if (!alive) return;
+      loadStations();
+      if (snapshot.phase === 'idle') loadStation().catch(() => {});
+    };
     run();
     const timer = setInterval(run, 60000);
     return () => {

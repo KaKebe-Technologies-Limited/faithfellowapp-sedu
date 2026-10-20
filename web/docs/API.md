@@ -419,6 +419,17 @@ One station for the whole app. The super admin adds the songs at `/super-admin/r
 - `GET /radio/stream/{id}` (not under `/api`, no sign-in) streams a song with byte-range support, so a phone can start part-way into it. `GET /radio/cover/{id}` is the cover picture; a song without one gets a drawn worship scene (`/art/radio/{id}`).
 - Website (super admin): `GET/POST /super-admin/radio` (upload, one song per request), `PUT /super-admin/radio/{song}` (title, artist, on or off), `POST /super-admin/radio/{song}/move` `{ direction: up|down }`, `DELETE /super-admin/radio/{song}`, `PUT /super-admin/radio/settings` `{ name, enabled }`. From the command line: `php artisan radio:add "song.mp3" --title= --artist=`.
 
+### Radio channels
+
+The radio is now several channels, each playing round the clock in a loop, the same for everyone at the same moment: the platform's **Gospel radio** (songs) and **Podcast radio** (teaching, filled by the super admin), and one channel for **each church** (filled by the church). `GET /radio` is still the Gospel radio, exactly as above.
+
+- `GET /radio/stations` → the channels this person can hear, Gospel radio first: `[{ id, slug, kind: music|talk, name, tagline, church: {id, name}|null, songs }]`. Only channels that are on and have something in them. A church's channel (`slug: church-{id}`) is listed for the people who follow that church or work for it.
+- `GET /radio/stations/{slug}` (`gospel`, `podcast` or `church-{id}`) → the same shape as `GET /radio` for that channel (`now` is `null` when it is off or empty), plus `id`, `slug`, `kind` and `church`. `404` for a church channel the person does not follow.
+- Website, super admin: `GET /super-admin/radio?station=gospel|podcast` (the page for a platform channel); the upload (`POST /super-admin/radio/chunk`, in 4 MB pieces: `upload_id`, `index`, `total`, `name`, `chunk`, `station`), `PUT /super-admin/radio/settings` (`station`, `name`, `enabled`) and `PUT /super-admin/radio/channels/{id}/block` (switch a church's channel off or back on; the church cannot undo it).
+- Website, church (permission `media.manage`): `GET /church/{church}/admin/radio` (the church's channel is made the first time the page opens), `POST …/radio/chunk` (pieces, up to 150 MB per file, counted in the church's storage), `PUT …/radio/settings` `{ name, enabled }`, `PUT …/radio/{id}`, `POST …/radio/{id}/move`, `DELETE …/radio/{id}`.
+- Files are streamed by `GET /radio/stream/{id}` as before. Until the database update that adds channels has been applied, only the Gospel radio exists.
+
+
 ---
 
 ## Hymn book 🔒
