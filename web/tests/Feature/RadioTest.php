@@ -265,5 +265,7 @@ test('only the super admin can send pieces, and a piece needs a safe upload id',
 });
 
 test('the radio page tells the platform admin the song limit', function () {
-    $this->actingAs(superAdmin())->get(route('super-admin.radio.index'))->assertOk()->assertSee('Up to 400 MB per song');
+    $this->actingAs(superAdmin())->get(route('super-admin.radio.index'))->assertOk()->assertSee('Up to 400 MB per song')
+        // The progress card for each song: a ring, the FaithFellows mark inside it, and the percentage.
+        ->assertSee('id="radio-card"', false)->assertSee('ff-upload-ring', false)->assertSee('ff-logo-mark', false);
 });
