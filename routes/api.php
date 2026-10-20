@@ -86,6 +86,8 @@ Route::prefix('v1')->name('api.v1.')->middleware('throttle:api')->group(function
         });
         Route::middleware('feature:radio')->group(function () {
             Route::get('/radio', [V1\RadioController::class, 'show'])->middleware('throttle:120,1')->name('radio');
+            Route::get('/radio/stations', [V1\RadioController::class, 'stations'])->middleware('throttle:120,1')->name('radio.stations');
+            Route::get('/radio/stations/{slug}', [V1\RadioController::class, 'station'])->where('slug', '[a-z0-9-]+')->middleware('throttle:240,1')->name('radio.station');
         });
         Route::get('/posts/{post}', [V1\ContentController::class, 'post'])->name('posts.show');
         Route::get('/announcements/{announcement}', [V1\ReadingController::class, 'announcement'])->name('announcements.show');

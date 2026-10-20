@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Storage;
  */
 class RadioTrack extends Model
 {
-    protected $fillable = ['title', 'artist', 'file_path', 'mime', 'size', 'duration_seconds', 'cover_path', 'position', 'is_active', 'uploaded_by'];
+    protected $fillable = ['station_id', 'title', 'artist', 'file_path', 'mime', 'size', 'duration_seconds', 'cover_path', 'position', 'is_active', 'uploaded_by'];
 
     protected function casts(): array
     {
@@ -24,6 +24,35 @@ class RadioTrack extends Model
     public function uploader(): BelongsTo
     {
         return $this->belongsTo(User::class, 'uploaded_by');
+    }
+
+    public function station(): BelongsTo
+    {
+        return $this->belongsTo(RadioStation::class, 'station_id');
+    }
+
+    /** The channel this track plays on (the Gospel radio when it has none). */
+    public function channel(): RadioStation
+    {
+        return ($this->station_id && RadioStation::ready() ? $this->station : null) ?? RadioStation::gospel();
+    }
+
+    /**
+     * The tracks of one channel. The Gospel radio also owns the songs added before channels existed (no channel), and a channel that has
+     * not been saved yet (before the database update) is every track.
+     */
+    public function scopeOfStation(Builder $query, RadioStation $station): Builder
+    {
+        if (! $station->exists) {
+            return $query;
+        }
+
+        return $query->where(function (Builder $q) use ($station) {
+            $q->where('station_id', $station->id);
+            if ($station->isGospel()) {
+                $q->orWhereNull('station_id');
+            }
+        });
     }
 
     /** Songs that are in the loop, in order. */

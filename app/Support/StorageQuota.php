@@ -12,7 +12,11 @@ class StorageQuota
 {
     public static function usedBytes(Church $church): int
     {
-        return (int) DB::table('media')->where('church_id', $church->id)->sum('size');
+        // The audio on the church's own radio channel counts too (the table exists once the radio channels update has been applied).
+        $radio = rescue(fn () => (int) DB::table('radio_tracks')->join('radio_stations', 'radio_stations.id', '=', 'radio_tracks.station_id')
+            ->where('radio_stations.church_id', $church->id)->sum('radio_tracks.size'), 0, false);
+
+        return (int) DB::table('media')->where('church_id', $church->id)->sum('size') + $radio;
     }
 
     public static function usedMb(Church $church): float
