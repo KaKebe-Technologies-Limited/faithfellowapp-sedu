@@ -209,6 +209,9 @@ return [
         'admins' => (int) env('FF_DEFAULT_ADMINS', 10),
         'branches' => (int) env('FF_DEFAULT_BRANCHES', 5),
         'max_upload_mb' => (int) env('FF_MAX_UPLOAD_MB', 200),
+        // Songs and other audio: the platform admin (the gospel radio) may upload bigger files than church staff and everyone else.
+        'max_audio_mb' => (int) env('FF_MAX_AUDIO_MB', 150),
+        'max_admin_audio_mb' => (int) env('FF_MAX_ADMIN_AUDIO_MB', 400),
         // A member can follow at most this many churches at a time (staff roles don't count).
         'subscriptions' => (int) env('FF_MAX_SUBSCRIPTIONS', 3),
         // The member home slider shows a church once it has this many slider photos.

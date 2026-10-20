@@ -43,7 +43,7 @@
     {{-- Add songs --}}
     <div class="ff-card mb-4" id="radio-upload">
         <h2 class="h6 mb-1">{{ __('Add songs') }}</h2>
-        <p class="small text-ff-muted">{{ __('MP3, M4A, AAC or WAV. The title, artist, length and cover picture are read from the file. Up to :limit per song. Only upload music you have the right to broadcast.', ['limit' => $limit]) }}</p>
+        <p class="small text-ff-muted">{{ __('MP3, M4A, AAC or WAV. The title, artist, length and cover picture are read from the file. Up to :limit MB per song. Big songs are sent in pieces, so keep this page open until each one shows a tick. Only upload music you have the right to broadcast.', ['limit' => $limitMb]) }}</p>
         <div class="d-flex flex-wrap gap-2 align-items-center">
             <input type="file" id="radio-files" class="form-control" accept=".mp3,.m4a,.aac,.wav,audio/*" multiple style="max-width:420px">
             <button type="button" id="radio-send" class="btn btn-ff-primary"><i class="bi bi-cloud-arrow-up"></i> {{ __('Upload') }}</button>
@@ -98,12 +98,33 @@
 
     @push('scripts')
         <script>
-            // Sends the chosen songs one at a time, so a long list never hits the server's upload limit.
+            // Sends the chosen songs one at a time, each cut into 4 MB pieces: a big song never meets the server's upload size limit,
+            // and a piece that fails on a weak connection is simply sent again.
             (() => {
                 const input = document.getElementById('radio-files');
                 const list = document.getElementById('radio-progress');
                 const button = document.getElementById('radio-send');
                 const token = document.querySelector('meta[name="csrf-token"]')?.content;
+                const url = @json(route('super-admin.radio.chunk'));
+                const PIECE = 4 * 1024 * 1024;
+                const LIMIT = {{ (int) $limitMb }} * 1024 * 1024;
+                const newId = () => ((crypto.randomUUID ? crypto.randomUUID() : Date.now() + Math.random().toString(36).slice(2)) + 'xxxxxxxxxxxxxxxx').replace(/[^A-Za-z0-9_-]/g, '').slice(0, 40);
+
+                async function sendPiece(body) {
+                    let last;
+                    for (let attempt = 1; attempt <= 4; attempt++) {
+                        try {
+                            const res = await fetch(url, { method: 'POST', body, headers: { 'X-CSRF-TOKEN': token, Accept: 'application/json' } });
+                            const data = await res.json().catch(() => ({}));
+                            last = { res, data };
+                            // Done, or a clear "no" from the server (not worth repeating).
+                            if (res.ok || (res.status >= 400 && res.status < 500 && ![408, 419, 429].includes(res.status))) return last;
+                        } catch (e) { last = { res: { ok: false }, data: { message: 'the connection was lost' } }; }
+                        await new Promise((r) => setTimeout(r, 1000 * attempt));
+                    }
+                    return last;
+                }
+
                 button.addEventListener('click', async () => {
                     const files = [...input.files];
                     if (!files.length) return input.click();
@@ -111,16 +132,26 @@
                     let added = 0;
                     for (const file of files) {
                         const row = document.createElement('li');
-                        row.textContent = file.name + ' … uploading';
+                        row.textContent = file.name + ' … 0%';
                         list.appendChild(row);
-                        const body = new FormData();
-                        body.append('track', file);
-                        try {
-                            const res = await fetch(@json(route('super-admin.radio.store')), { method: 'POST', body, headers: { 'X-CSRF-TOKEN': token, Accept: 'application/json' } });
-                            const data = await res.json().catch(() => ({}));
-                            if (res.ok) { row.textContent = '✓ ' + (data.title || file.name) + ' added'; row.className = 'text-success'; added++; }
-                            else { row.textContent = '✗ ' + file.name + ': ' + (data.errors?.track?.[0] || data.message || 'could not be added'); row.className = 'text-danger'; }
-                        } catch (e) { row.textContent = '✗ ' + file.name + ': the upload failed'; row.className = 'text-danger'; }
+                        const fail = (why) => { row.textContent = '✗ ' + file.name + ': ' + why; row.className = 'text-danger'; };
+                        if (file.size > LIMIT) { fail('this song is bigger than {{ (int) $limitMb }} MB'); continue; }
+                        const total = Math.max(1, Math.ceil(file.size / PIECE));
+                        const id = newId();
+                        let outcome = null;
+                        for (let i = 0; i < total; i++) {
+                            const body = new FormData();
+                            body.append('upload_id', id);
+                            body.append('index', i);
+                            body.append('total', total);
+                            body.append('name', file.name);
+                            body.append('chunk', file.slice(i * PIECE, (i + 1) * PIECE), 'piece');
+                            outcome = await sendPiece(body);
+                            if (!outcome.res.ok) break;
+                            row.textContent = file.name + ' … ' + Math.round(((i + 1) / total) * 100) + '%' + (i + 1 === total ? ' (adding it to the radio)' : '');
+                        }
+                        if (outcome?.res.ok) { row.textContent = '✓ ' + (outcome.data.title || file.name) + ' added'; row.className = 'text-success'; added++; }
+                        else { fail(outcome?.data?.errors?.chunk?.[0] || outcome?.data?.message || 'could not be added'); }
                     }
                     button.disabled = false;
                     if (added) setTimeout(() => location.reload(), 900);

@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\PlatformSetting;
+use App\Models\User;
 use Illuminate\Support\Str;
 
 if (! function_exists('ff_money')) {
@@ -87,6 +88,19 @@ if (! function_exists('ff_safe_html')) {
         $clean = preg_replace('/\sstyle\s*=\s*("[^"]*"|\'[^\']*\')/i', '', $clean);
 
         return $clean;
+    }
+}
+
+if (! function_exists('ff_audio_upload_mb')) {
+    /**
+     * The biggest audio file (a song, a sermon or devotional recording) this person may upload, in MB: more for the platform admin,
+     * less for everyone else. Set in config/faithfellows.php (FF_MAX_ADMIN_AUDIO_MB, FF_MAX_AUDIO_MB).
+     */
+    function ff_audio_upload_mb(?User $user = null): int
+    {
+        $user ??= auth()->user();
+
+        return (int) config($user?->isSuperAdmin() ? 'faithfellows.limits.max_admin_audio_mb' : 'faithfellows.limits.max_audio_mb');
     }
 }
 

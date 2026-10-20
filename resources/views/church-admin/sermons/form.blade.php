@@ -21,7 +21,7 @@
 
             <div class="ff-card">
                 <h2 class="h6">{{ __('Media') }}</h2>
-                <p class="small text-ff-muted">{{ __('Upload audio (MP3 at 64 kbps keeps it small for members on mobile data) and/or link a video. Max :mb MB per file.', ['mb' => config('faithfellows.limits.max_upload_mb')]) }}</p>
+                <p class="small text-ff-muted">{{ __('Upload audio (MP3 at 64 kbps keeps it small for members on mobile data) and/or link a video. Audio up to :audio MB, video up to :video MB per file.', ['audio' => ff_audio_upload_mb(auth()->user()), 'video' => config('faithfellows.limits.max_upload_mb')]) }}</p>
                 <div class="row">
                     <div class="col-md-6">
                         <label class="form-label" for="audio">{{ __('Audio file') }}</label>

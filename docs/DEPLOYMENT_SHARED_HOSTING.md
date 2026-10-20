@@ -35,7 +35,10 @@ A different admin email or a new `DEMO_PASSWORD` is changed in `.env.production`
    nameservers or DNS at Hostinger). Its folder is `domains/faithfellows.com/public_html`. A new website shows a "Default page": that is normal.
 2. **PHP.** Websites, Manage, Advanced, PHP Configuration: choose **PHP 8.2 or 8.3**. Make sure these extensions are ticked:
    `curl, dom, exif, fileinfo, gd, iconv, mbstring, openssl, pdo_mysql, tokenizer, zip` (and `intl` if offered).
-   Options: `upload_max_filesize 64M`, `post_max_size 64M`, `memory_limit 256M`, `max_execution_time 120`.
+   Options: `upload_max_filesize 420M`, `post_max_size 440M`, `memory_limit 256M`, `max_execution_time 900` (the site also ships
+   `public/.user.ini` with the upload and time values; hPanel wins if it sets lower ones, so raise them here too). Church staff can upload audio
+   up to 150 MB and video up to 200 MB in one form; the platform admin's songs (up to 400 MB each, Super admin → Gospel radio) are sent in 4 MB
+   pieces and do not depend on `upload_max_filesize`. The limits are `FF_MAX_AUDIO_MB`, `FF_MAX_ADMIN_AUDIO_MB` and `FF_MAX_UPLOAD_MB`.
 3. **Upload the site** (skip this when you use Git, see below). File Manager, open `public_html`, delete the default page, upload
    `faithfellows-site.zip`, **Extract** it there, then delete the zip. `artisan`, `.htaccess`, `app` and `public` sit directly in `public_html`.
 4. **Settings.** Upload `.env.production` into the same folder and rename it to exactly `.env` (turn on "show hidden files").

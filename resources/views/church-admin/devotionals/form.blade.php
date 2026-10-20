@@ -28,6 +28,7 @@
                 <p class="small text-ff-muted">{{ __('Data-light: record 3–5 minutes at 16–32 kbps.') }}</p>
                 <input type="file" name="audio" accept="audio/*" class="form-control mb-2 @error('audio') is-invalid @enderror" aria-label="{{ __('Audio file') }}">
                 @error('audio')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                <div class="form-text mb-2">{{ __('Up to :mb MB.', ['mb' => ff_audio_upload_mb(auth()->user())]) }}</div>
                 <x-ff.input name="audio_url" type="url" :label="__('…or audio URL')" :value="$devotional->audio_url" />
             </div>
         </div>
