@@ -48,7 +48,21 @@
             <input type="file" id="radio-files" class="form-control" accept=".mp3,.m4a,.aac,.wav,audio/*" multiple style="max-width:420px">
             <button type="button" id="radio-send" class="btn btn-ff-primary"><i class="bi bi-cloud-arrow-up"></i> {{ __('Upload') }}</button>
         </div>
-        <ul id="radio-progress" class="list-unstyled small mt-3 mb-0"></ul>
+        <div id="radio-progress" class="ff-upload-list" aria-live="polite"></div>
+        <template id="radio-card">
+            <div class="ff-upload is-working">
+                <div class="ff-upload-ring" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                    <svg viewBox="0 0 80 80" aria-hidden="true"><circle class="track" cx="40" cy="40" r="35"/><circle class="arc" cx="40" cy="40" r="35"/></svg>
+                    <span class="ff-upload-logo"><x-logo-mark :size="30" class="text-ff-primary" /></span>
+                    <span class="ff-upload-state" aria-hidden="true"></span>
+                </div>
+                <div class="ff-upload-info">
+                    <div class="ff-upload-name"></div>
+                    <div class="ff-upload-status"></div>
+                </div>
+                <div class="ff-upload-pct">0%</div>
+            </div>
+        </template>
         @error('track')<div class="text-danger small mt-2">{{ $message }}</div>@enderror
     </div>
 
@@ -99,62 +113,105 @@
     @push('scripts')
         <script>
             // Sends the chosen songs one at a time, each cut into 4 MB pieces: a big song never meets the server's upload size limit,
-            // and a piece that fails on a weak connection is simply sent again.
+            // and a piece that fails on a weak connection is simply sent again. Each song gets a card with a ring, the FaithFellows
+            // mark in the middle and the percentage, so the person sees how far it has got.
             (() => {
                 const input = document.getElementById('radio-files');
                 const list = document.getElementById('radio-progress');
                 const button = document.getElementById('radio-send');
+                const card = document.getElementById('radio-card');
                 const token = document.querySelector('meta[name="csrf-token"]')?.content;
                 const url = @json(route('super-admin.radio.chunk'));
                 const PIECE = 4 * 1024 * 1024;
                 const LIMIT = {{ (int) $limitMb }} * 1024 * 1024;
+                const CIRCLE = 2 * Math.PI * 35;
+                const mb = (bytes) => (bytes / 1048576).toFixed(bytes >= 10485760 ? 0 : 1);
                 const newId = () => ((crypto.randomUUID ? crypto.randomUUID() : Date.now() + Math.random().toString(36).slice(2)) + 'xxxxxxxxxxxxxxxx').replace(/[^A-Za-z0-9_-]/g, '').slice(0, 40);
+                const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
-                async function sendPiece(body) {
-                    let last;
-                    for (let attempt = 1; attempt <= 4; attempt++) {
-                        try {
-                            const res = await fetch(url, { method: 'POST', body, headers: { 'X-CSRF-TOKEN': token, Accept: 'application/json' } });
-                            const data = await res.json().catch(() => ({}));
-                            last = { res, data };
-                            // Done, or a clear "no" from the server (not worth repeating).
-                            if (res.ok || (res.status >= 400 && res.status < 500 && ![408, 419, 429].includes(res.status))) return last;
-                        } catch (e) { last = { res: { ok: false }, data: { message: 'the connection was lost' } }; }
-                        await new Promise((r) => setTimeout(r, 1000 * attempt));
-                    }
-                    return last;
+                function makeCard(file) {
+                    const el = card.content.firstElementChild.cloneNode(true);
+                    const ring = el.querySelector('.ff-upload-ring');
+                    const arc = el.querySelector('.arc');
+                    arc.style.strokeDasharray = CIRCLE;
+                    const ui = {
+                        el,
+                        set(percent, status, state) {
+                            const value = Math.max(0, Math.min(100, Math.round(percent)));
+                            arc.style.strokeDashoffset = CIRCLE * (1 - value / 100);
+                            ring.setAttribute('aria-valuenow', value);
+                            el.querySelector('.ff-upload-pct').textContent = value + '%';
+                            if (status !== undefined) el.querySelector('.ff-upload-status').textContent = status;
+                            if (state) { el.classList.remove('is-working', 'is-adding', 'is-done', 'is-error'); el.classList.add(state); }
+                        },
+                    };
+                    el.querySelector('.ff-upload-name').textContent = file.name;
+                    ui.set(0, 'Waiting… ' + mb(file.size) + ' MB', 'is-working');
+                    list.appendChild(el);
+                    return ui;
+                }
+
+                // One piece, with live progress; resolves {ok, status, data}. Tries again when the connection drops or the server hiccups.
+                function sendPiece(makeBody, onProgress) {
+                    const once = () => new Promise((resolve) => {
+                        const xhr = new XMLHttpRequest();
+                        xhr.open('POST', url);
+                        xhr.setRequestHeader('X-CSRF-TOKEN', token);
+                        xhr.setRequestHeader('Accept', 'application/json');
+                        xhr.upload.onprogress = (e) => { if (e.lengthComputable) onProgress(e.loaded, e.total); };
+                        xhr.onload = () => { let data = {}; try { data = JSON.parse(xhr.responseText); } catch (e) { /* not JSON */ } resolve({ ok: xhr.status >= 200 && xhr.status < 300, status: xhr.status, data }); };
+                        xhr.onerror = xhr.ontimeout = () => resolve({ ok: false, status: 0, data: { message: 'the connection was lost' } });
+                        xhr.send(makeBody());
+                    });
+                    return (async () => {
+                        let last;
+                        for (let attempt = 1; attempt <= 4; attempt++) {
+                            last = await once();
+                            if (last.ok || (last.status >= 400 && last.status < 500 && ![408, 419, 429].includes(last.status))) return last;
+                            await wait(1000 * attempt);
+                        }
+                        return last;
+                    })();
                 }
 
                 button.addEventListener('click', async () => {
                     const files = [...input.files];
                     if (!files.length) return input.click();
                     button.disabled = true;
+                    list.innerHTML = '';
+                    const cards = files.map(makeCard);
                     let added = 0;
-                    for (const file of files) {
-                        const row = document.createElement('li');
-                        row.textContent = file.name + ' … 0%';
-                        list.appendChild(row);
-                        const fail = (why) => { row.textContent = '✗ ' + file.name + ': ' + why; row.className = 'text-danger'; };
-                        if (file.size > LIMIT) { fail('this song is bigger than {{ (int) $limitMb }} MB'); continue; }
+                    for (const [n, file] of files.entries()) {
+                        const ui = cards[n];
+                        if (file.size > LIMIT) { ui.set(0, 'This song is bigger than {{ (int) $limitMb }} MB.', 'is-error'); continue; }
                         const total = Math.max(1, Math.ceil(file.size / PIECE));
                         const id = newId();
                         let outcome = null;
+                        ui.set(0, 'Uploading… 0 of ' + mb(file.size) + ' MB', 'is-working');
                         for (let i = 0; i < total; i++) {
-                            const body = new FormData();
-                            body.append('upload_id', id);
-                            body.append('index', i);
-                            body.append('total', total);
-                            body.append('name', file.name);
-                            body.append('chunk', file.slice(i * PIECE, (i + 1) * PIECE), 'piece');
-                            outcome = await sendPiece(body);
-                            if (!outcome.res.ok) break;
-                            row.textContent = file.name + ' … ' + Math.round(((i + 1) / total) * 100) + '%' + (i + 1 === total ? ' (adding it to the radio)' : '');
+                            const slice = file.slice(i * PIECE, (i + 1) * PIECE);
+                            const before = i * PIECE;
+                            outcome = await sendPiece(() => {
+                                const body = new FormData();
+                                body.append('upload_id', id);
+                                body.append('index', i);
+                                body.append('total', total);
+                                body.append('name', file.name);
+                                body.append('chunk', slice, 'piece');
+                                return body;
+                            }, (loaded, all) => {
+                                // The last piece is on its way in full: now the server joins the song and adds it to the radio.
+                                if (i + 1 === total && loaded >= all) { ui.set(100, 'Adding it to the radio…', 'is-adding'); return; }
+                                const sent = before + Math.min(slice.size, slice.size * (loaded / all));
+                                ui.set(Math.min(99, (sent / file.size) * 100), 'Uploading… ' + mb(sent) + ' of ' + mb(file.size) + ' MB', 'is-working');
+                            });
+                            if (!outcome.ok) break;
                         }
-                        if (outcome?.res.ok) { row.textContent = '✓ ' + (outcome.data.title || file.name) + ' added'; row.className = 'text-success'; added++; }
-                        else { fail(outcome?.data?.errors?.chunk?.[0] || outcome?.data?.message || 'could not be added'); }
+                        if (outcome?.ok) { ui.set(100, (outcome.data.title || file.name) + ' is on the radio', 'is-done'); added++; }
+                        else { ui.set(Number(ui.el.querySelector('.ff-upload-ring').getAttribute('aria-valuenow')) || 0, outcome?.data?.errors?.chunk?.[0] || outcome?.data?.message || 'Could not be added.', 'is-error'); }
                     }
                     button.disabled = false;
-                    if (added) setTimeout(() => location.reload(), 900);
+                    if (added) setTimeout(() => location.reload(), 1800);
                 });
             })();
         </script>

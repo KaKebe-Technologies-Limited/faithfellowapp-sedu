@@ -1489,3 +1489,35 @@ a.btn:hover, .nav-link:hover, .dropdown-item:hover, .ff-card-link:hover, .list-g
     .fh-phone { width: 46%; border-width: 5px; border-radius: 26px; }
     .fh-chip { left: 2%; bottom: 14%; font-size: .78rem; padding: 8px 12px; }
 }
+
+/* ── Upload progress cards: a ring that fills, the FaithFellows mark inside it, and the percentage ─────────────────── */
+
+.ff-upload-list { display: grid; gap: 12px; margin-top: 18px; }
+.ff-upload-list:empty { display: none; }
+.ff-upload { display: flex; align-items: center; gap: 16px; padding: 14px 18px; background: #fff; border: 1px solid #EFE6EA; border-radius: 20px; box-shadow: 0 6px 18px rgba(74, 15, 41, .06); }
+.ff-upload-ring { position: relative; width: 76px; height: 76px; flex: none; }
+.ff-upload-ring > svg { display: block; width: 100%; height: 100%; transform: rotate(-90deg); }
+.ff-upload-ring circle { fill: none; stroke-width: 5; }
+.ff-upload-ring .track { stroke: #F5DCE6; }
+.ff-upload-ring .arc { stroke: var(--ff-primary); stroke-linecap: round; transition: stroke-dashoffset .3s ease, stroke .3s ease; }
+.ff-upload-logo svg { width: 32px; height: 32px; }
+.ff-upload-logo, .ff-upload-state { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+.ff-upload-state { display: none; font-size: 1.8rem; font-weight: 700; line-height: 1; }
+.ff-upload.is-working .ff-upload-logo, .ff-upload.is-adding .ff-upload-logo { animation: ff-upload-breathe 1.6s ease-in-out infinite; }
+.ff-upload.is-adding .arc { animation: ff-upload-glow 1.2s ease-in-out infinite; }
+.ff-upload.is-done .arc { stroke: #1E9E5A; }
+.ff-upload.is-done .ff-upload-logo, .ff-upload.is-error .ff-upload-logo { display: none; }
+.ff-upload.is-done .ff-upload-state, .ff-upload.is-error .ff-upload-state { display: flex; }
+.ff-upload.is-done .ff-upload-state::before { content: '✓'; color: #1E9E5A; }
+.ff-upload.is-error .arc { stroke: #D63031; }
+.ff-upload.is-error .ff-upload-state::before { content: '!'; color: #D63031; }
+.ff-upload-info { flex: 1; min-width: 0; }
+.ff-upload-name { font-weight: 600; color: var(--ff-black); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ff-upload-status { font-size: var(--ff-text-sm); color: var(--ff-gray-700); }
+.ff-upload.is-done .ff-upload-status { color: #1E9E5A; }
+.ff-upload.is-error .ff-upload-status { color: #D63031; }
+.ff-upload-pct { min-width: 4.2ch; text-align: right; font-size: 1.6rem; font-weight: 700; color: var(--ff-black); font-variant-numeric: tabular-nums; }
+@keyframes ff-upload-breathe { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(.86); opacity: .7; } }
+@keyframes ff-upload-glow { 0%, 100% { opacity: 1; } 50% { opacity: .4; } }
+@media (prefers-reduced-motion: reduce) { .ff-upload * { animation: none !important; transition: none !important; } }
+@media (max-width: 575.98px) { .ff-upload { padding: 12px; gap: 12px; } .ff-upload-ring { width: 64px; height: 64px; } .ff-upload-pct { font-size: 1.3rem; } }
