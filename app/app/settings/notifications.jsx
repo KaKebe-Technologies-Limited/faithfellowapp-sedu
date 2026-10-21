@@ -69,7 +69,7 @@ export default function NotificationSettings() {
     if (result.status === 'denied') {
       Alert.alert('Notifications are blocked', 'Allow notifications for FaithFellows in your phone settings, then come back.', [{ text: 'Not now', style: 'cancel' }, { text: 'Open settings', onPress: openSystemSettings }]);
     } else if (result.status === 'unsupported') {
-      Alert.alert('Not available here', result.error ? `This phone could not be set up for push.\n\n${result.error}` : 'Push notifications work in the installed app on a real phone.');
+      Alert.alert('Not available right now', result.error ? 'This phone could not be set up for notifications right now. Please check your internet connection and try again.' : 'Push notifications work in the installed app on a real phone.');
     }
   }
 

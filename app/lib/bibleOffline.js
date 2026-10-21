@@ -271,7 +271,7 @@ export async function startDownload(translation, books, label) {
     }
     setJob({ running: false, finished: true, label });
   } catch (e) {
-    setJob({ running: false, error: e?.code === 'ERR_CANCELED' ? null : isOffline(e) ? 'The connection was lost. Your progress is saved; start again to continue.' : (e?.response ? errorMessage(e) : e.message) });
+    setJob({ running: false, error: e?.code === 'ERR_CANCELED' ? null : isOffline(e) ? 'The connection was lost. Your progress is saved; start again to continue.' : errorMessage(e) });
   } finally {
     controller = null;
   }

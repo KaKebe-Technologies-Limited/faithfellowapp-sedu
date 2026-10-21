@@ -3,6 +3,7 @@
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { COLORS, SPACING } from '../constants/theme';
+import { isConnectionMessage } from '../lib/errors';
 import AppText from './AppText';
 import Button from './Button';
 
@@ -26,13 +27,15 @@ export default function StateView({
   }
 
   if (error) {
+    const offline = isConnectionMessage(error);
+
     return (
       <View style={styles.center}>
         <View style={styles.icon}>
           <Ionicons name="cloud-offline-outline" size={30} color={COLORS.primary} />
         </View>
         <AppText variant="heading" style={styles.title}>
-          Something went wrong
+          {offline ? 'No internet connection' : 'Something went wrong'}
         </AppText>
         <AppText style={styles.message}>{error}</AppText>
         {onRetry ? <Button title="Try again" variant="outline" small onPress={onRetry} style={styles.action} /> : null}

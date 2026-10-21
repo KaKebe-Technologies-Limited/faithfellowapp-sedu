@@ -57,30 +57,8 @@ export async function ping() {
   return { ...data, ms: Date.now() - started };
 }
 
-/** A human-readable message for any request error (validation, throttling, network…). */
-export function errorMessage(error, fallback = 'Something went wrong. Please try again.') {
-  const res = error?.response;
-  if (!res) {
-    if (error?.code === 'ECONNABORTED') return 'The server took too long to answer. Please try again.';
-    if (error?.message === 'Network Error') return `Cannot reach the server at ${API_ROOT || 'the API'}. Check your Wi-Fi and the address in app/.env.`;
-    return error?.message || fallback;
-  }
-  if (res.status === 422) {
-    const first = Object.values(res.data?.errors || {})[0];
-    return (Array.isArray(first) ? first[0] : first) || res.data?.message || fallback;
-  }
-  if (res.status === 429) return 'Too many attempts. Please wait a moment and try again.';
-  if (res.status >= 500) return 'The server had a problem. Please try again shortly.';
-  return res.data?.message || fallback;
-}
-
-/** Field-level validation errors from a 422: { email: 'The email is invalid.' }. */
-export function fieldErrors(error) {
-  if (error?.response?.status !== 422) return {};
-  return Object.fromEntries(
-    Object.entries(error.response.data?.errors || {}).map(([field, messages]) => [field, Array.isArray(messages) ? messages[0] : messages]),
-  );
-}
+// The words members see when something fails (never the server's address): see errors.js.
+export { errorMessage, fieldErrors, isConnectionMessage, OFFLINE_MESSAGE, SLOW_MESSAGE } from './errors';
 
 /**
  * Media URLs come from the server's APP_URL. While testing on a phone that is often
