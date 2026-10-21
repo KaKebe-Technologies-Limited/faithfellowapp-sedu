@@ -4,6 +4,7 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <x-ff.head :title="$title" :noindex="true" />
+    <script>try { if (localStorage.getItem('ff-sidebar-collapsed') === '1') document.documentElement.classList.add('ff-sidebar-collapsed'); } catch (e) { /* the menu simply starts open */ }</script>
 </head>
 <body @class(['ff-app', 'ff-area-'.$area, 'ff-lite' => $ffLite ?? false])>
     <a href="#main" class="ff-skip-link">{{ __('Skip to content') }}</a>
@@ -35,7 +36,7 @@
                 <button type="button" class="btn-close d-lg-none" data-bs-dismiss="offcanvas" data-bs-target="#appSidebar" aria-label="{{ __('Close') }}"></button>
             </div>
             @isset($sidebarTop)
-                <div class="px-3 pt-3">{{ $sidebarTop }}</div>
+                <div class="px-3 pt-3 ff-sidebar-top">{{ $sidebarTop }}</div>
             @endisset
             <nav class="ff-sidebar-nav" aria-label="{{ __('Section navigation') }}">
                 @foreach ($nav as $section)
@@ -46,9 +47,9 @@
                         @endif
                         @foreach ($items as $item)
                             @php($active = request()->routeIs(...(array) ($item['active'] ?? $item['route'])))
-                            <a href="{{ route($item['route'], $item['params'] ?? []) }}" @class(['ff-nav-link', 'active' => $active]) @if ($active) aria-current="page" @endif>
+                            <a href="{{ route($item['route'], $item['params'] ?? []) }}" @class(['ff-nav-link', 'active' => $active]) title="{{ $item['label'] }}" @if ($active) aria-current="page" @endif>
                                 <i class="bi {{ $item['icon'] }}" aria-hidden="true"></i>
-                                <span>{{ $item['label'] }}</span>
+                                <span class="ff-nav-label">{{ $item['label'] }}</span>
                                 @if (! empty($item['badge']))
                                     <span class="badge rounded-pill text-bg-primary">{{ $item['badge'] }}</span>
                                 @endif
@@ -59,9 +60,14 @@
             </nav>
             <div class="ff-sidebar-footer">
                 {{ $sidebarFooter ?? '' }}
-                <a href="#" class="ff-nav-link mb-0" data-ff-lite-toggle>
+                <a href="#" class="ff-nav-link mb-1 d-none d-lg-flex" data-ff-sidebar-toggle title="{{ __('Collapse the menu') }}">
+                    <i class="bi bi-chevron-bar-left ff-when-open" aria-hidden="true"></i>
+                    <i class="bi bi-chevron-bar-right ff-when-collapsed" aria-hidden="true"></i>
+                    <span class="ff-nav-label ff-when-open">{{ __('Collapse menu') }}</span>
+                </a>
+                <a href="#" class="ff-nav-link mb-0" data-ff-lite-toggle title="{{ ($ffLite ?? false) ? __('Full mode') : __('Data-saver mode') }}">
                     <i class="bi bi-reception-{{ ($ffLite ?? false) ? '4' : '2' }}"></i>
-                    <span>{{ ($ffLite ?? false) ? __('Full mode') : __('Data-saver mode') }}</span>
+                    <span class="ff-nav-label">{{ ($ffLite ?? false) ? __('Full mode') : __('Data-saver mode') }}</span>
                 </a>
             </div>
         </div>
@@ -71,6 +77,10 @@
         <header class="ff-topbar">
             <button class="btn btn-ff-ghost btn-icon d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#appSidebar" aria-controls="appSidebar" aria-label="{{ __('Open menu') }}">
                 <i class="bi bi-list fs-4"></i>
+            </button>
+            <button class="btn btn-ff-ghost btn-icon d-none d-lg-inline-flex ff-sidebar-toggle" type="button" data-ff-sidebar-toggle aria-controls="appSidebar" aria-expanded="true" aria-label="{{ __('Collapse the menu') }}" title="{{ __('Collapse the menu') }}">
+                <i class="bi bi-chevron-bar-left fs-5 ff-when-open" aria-hidden="true"></i>
+                <i class="bi bi-chevron-bar-right fs-5 ff-when-collapsed" aria-hidden="true"></i>
             </button>
 
             @if ($searchAction)
@@ -134,6 +144,25 @@
     </div>
 
     @include('partials.flash')
+    <script>
+        // Collapse the menu to a rail of icons (and open it again). The choice is remembered on this device.
+        (() => {
+            const root = document.documentElement;
+            const buttons = document.querySelectorAll('[data-ff-sidebar-toggle]');
+            const words = { collapse: @json(__('Collapse the menu')), expand: @json(__('Expand the menu')) };
+            const show = () => {
+                const collapsed = root.classList.contains('ff-sidebar-collapsed');
+                buttons.forEach((b) => { b.setAttribute('aria-expanded', String(!collapsed)); b.title = collapsed ? words.expand : words.collapse; if (b.matches('button')) b.setAttribute('aria-label', b.title); });
+            };
+            buttons.forEach((b) => b.addEventListener('click', (e) => {
+                e.preventDefault();
+                root.classList.toggle('ff-sidebar-collapsed');
+                try { localStorage.setItem('ff-sidebar-collapsed', root.classList.contains('ff-sidebar-collapsed') ? '1' : '0'); } catch (err) { /* not remembered */ }
+                show();
+            }));
+            show();
+        })();
+    </script>
     @stack('scripts')
 </body>
 </html>
