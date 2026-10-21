@@ -7,7 +7,9 @@ use App\Models\Inspiration;
 use App\Models\PlatformSetting;
 use App\Services\InspirationBroadcaster;
 use App\Services\InspirationService;
+use App\Services\VerseBroadcaster;
 use App\Support\Audit;
+use App\Support\VerseOfTheDay;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -20,7 +22,7 @@ use Illuminate\View\View;
  */
 class InspirationController extends Controller
 {
-    public function index(Request $request, InspirationService $service, InspirationBroadcaster $push): View
+    public function index(Request $request, InspirationService $service, InspirationBroadcaster $push, VerseBroadcaster $verse): View
     {
         $slot = $request->query('slot');
 
@@ -32,6 +34,7 @@ class InspirationController extends Controller
                 'last' => collect(array_keys(Inspiration::SLOTS))->mapWithKeys(fn ($s) => [$s => PlatformSetting::get("inspiration_last_{$s}")])->all(),
                 'last_instant' => PlatformSetting::get('inspiration_last_instant'),
             ],
+            'verse' => ['auto' => $verse->auto(), 'time' => $verse->time(), 'last' => PlatformSetting::get('verse_push_last'), 'today' => VerseOfTheDay::reference()],
             'messages' => Inspiration::query()->when(array_key_exists((string) $slot, Inspiration::SLOTS), fn ($q) => $q->where('slot', $slot))->orderBy('slot')->orderBy('id')->get(),
             'counts' => Inspiration::where('is_active', true)->selectRaw('slot, count(*) as n')->groupBy('slot')->pluck('n', 'slot'),
             'slot' => $slot,
@@ -50,6 +53,29 @@ class InspirationController extends Controller
         Audit::log('inspiration.schedule_saved', null, $request->boolean('auto') ? __('Scheduled sends on') : __('Scheduled sends off'));
 
         return back()->with('status', $request->boolean('auto') ? __('Saved. The messages go out by themselves at these times.') : __('Saved. Scheduled sending is off; you can still send a message by hand.'));
+    }
+
+    /** The verse of the day on phones: on or off, and the time it goes out each morning. */
+    public function verseSchedule(Request $request, VerseBroadcaster $verse): RedirectResponse
+    {
+        $data = $request->validate(['time' => ['required', 'date_format:H:i']]);
+        $verse->save($request->boolean('auto'), $data['time']);
+        Audit::log('inspiration.verse_schedule_saved', null, $request->boolean('auto') ? __('Verse of the day on') : __('Verse of the day off'));
+
+        return back()->with('status', $request->boolean('auto') ? __('Saved. The verse of the day goes to phones at :time every morning.', ['time' => $data['time']]) : __('Saved. The verse of the day is not sent to phones; you can still send it by hand.'));
+    }
+
+    /** Sends today’s verse to everyone's phones now (twice within five minutes is refused). */
+    public function verseSend(VerseBroadcaster $verse): RedirectResponse
+    {
+        if (! Cache::add('verse-instant', 1, now()->addMinutes(5))) {
+            return back()->with('status', __('The verse was just sent. Wait a few minutes before sending it again.'));
+        }
+
+        $people = $verse->sendNow();
+        Audit::log('inspiration.verse_sent', null, __('Sent to :n phones', ['n' => $people]));
+
+        return back()->with('status', __('Sent. Today’s verse is on its way to :n people who have the app on a phone and “Verse of the day” switched on.', ['n' => $people]));
     }
 
     /** Send one message to everyone's phones right now (twice within five minutes is refused, so a double tap does not buzz everyone twice). */

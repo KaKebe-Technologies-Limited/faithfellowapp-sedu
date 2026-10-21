@@ -186,6 +186,8 @@ return [
         'games' => 'Quizzes & games',
         'social' => 'People & messages',
         'inspiration' => 'Daily inspiration',
+        'verse' => 'Verse of the day',
+        'podcast' => 'New podcasts',
     ],
 
     'notification_channels' => [

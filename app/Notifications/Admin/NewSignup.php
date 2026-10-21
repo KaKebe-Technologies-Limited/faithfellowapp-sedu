@@ -21,6 +21,22 @@ class NewSignup extends Notification implements ShouldQueue
         return ['mail'];
     }
 
+    /** "Uganda" for "UG" (the code when this server cannot say the name). */
+    protected function country(): ?string
+    {
+        $code = (string) $this->user->country;
+
+        return $code === '' ? null : ((class_exists(\Locale::class) ? \Locale::getDisplayRegion('-'.$code, 'en') : null) ?: $code);
+    }
+
+    /** The churches the person already follows, if any (usually none yet: they pick one after signing up). */
+    protected function churches(): ?string
+    {
+        $names = rescue(fn () => $this->user->subscribedChurches()->pluck('churches.name')->take(3)->implode(', '), '', false);
+
+        return $names !== '' ? $names : null;
+    }
+
     public function toMail(object $notifiable): MailMessage
     {
         $how = $this->user->google_id ? __('Google') : __('Email and password');
@@ -34,9 +50,14 @@ class NewSignup extends Notification implements ShouldQueue
                 __('Email') => $this->user->email,
                 __('Phone') => $this->user->phone,
                 __('Signed up with') => $how,
+                __('Country') => $this->country(),
+                __('Town') => $this->user->city,
+                __('Language') => $this->user->language ? (config('faithfellows.languages.'.$this->user->language) ?: $this->user->language) : null,
+                __('Follows') => $this->churches(),
+                __('Member number') => '#'.number_format($this->total),
                 __('When') => $this->user->created_at?->timezone(config('app.timezone'))->format('j F Y, H:i'),
             ]),
-            ['label' => __('See the members'), 'url' => route('super-admin.users.index')],
+            ['label' => __('Open this member'), 'url' => route('super-admin.users.show', $this->user)],
             __('You get this email for every new account. Change who receives it in Super admin, Email.'),
         );
     }

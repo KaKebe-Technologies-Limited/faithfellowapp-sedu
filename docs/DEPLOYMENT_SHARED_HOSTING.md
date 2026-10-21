@@ -21,7 +21,7 @@ loading them into a throwaway database first:
 | File | What it is |
 |---|---|
 | `faithfellows-database.sql` | Every table, the roles and plans, the first super admin, the blog, the public-domain Classic Hymns **and sample data** (five churches, members, sermons, events, giving, prayer, quizzes) so the site is not empty. |
-| `hymnal-mujje-tutendereze-omukama.sql` | Optional. The Luganda Catholic hymn book, loaded **hidden**. It stays out of the app until you publish it (see "Hymn book" below). |
+| `hymnal-mujje-tutendereze-omukama.sql` | Optional. The Luganda Catholic hymn book, loaded **showing** in the hymn list (see "Hymn book" below). |
 | `faithfellows-site.zip` | The website: code, built styles, the PHP packages for production, and a root `.htaccess` that serves the `public` folder. |
 
 `web/.env.production` is the settings file for the server. Everything in it is filled in, including the database (`u850523537_FaithFello`).
@@ -43,7 +43,7 @@ A different admin email or a new `DEMO_PASSWORD` is changed in `.env.production`
    `faithfellows-site.zip`, **Extract** it there, then delete the zip. `artisan`, `.htaccess`, `app` and `public` sit directly in `public_html`.
 4. **Settings.** Upload `.env.production` into the same folder and rename it to exactly `.env` (turn on "show hidden files").
 5. **Database.** hPanel, Databases, phpMyAdmin, open `u850523537_FaithFello`, **Import**, choose `faithfellows-database.sql`.
-   Import the Luganda file next, only if you want the hymn book in the database (still hidden). Import each file **once**:
+   Import the Luganda file next, only if you want the hymn book in the database (it shows in the hymn list). Import each file **once**:
    they replace the tables, so importing again would erase everything entered since.
 6. **Secure connection.** Websites, SSL: make sure the certificate for `faithfellows.com` is active and turn on **Force HTTPS**.
 7. **Uploaded pictures and files.** Run once: `php artisan storage:link` (SSH), or add a one-time cron job with the command
@@ -95,8 +95,8 @@ Build one with `npx.cmd eas-cli build -p android --profile preview`. See `app/RE
 - **Google sign-in.** Add `https://faithfellows.com/auth/google/app/callback` to the authorised redirect URIs in Google Cloud.
 - **Church subdomains** (`grace-lira.faithfellows.com`) need a wildcard subdomain: in Hostinger add `*` under the domain's subdomains (and
   a wildcard certificate). Not needed for the app. Until then links to a church's own site do not open.
-- **Hymn book.** The Luganda hymn book is under copyright. It is hidden. Publish it in Super admin, Hymn book, only with the
-  publisher's written permission (the Inter-Diocesan Committee, Archdiocese of Kampala).
+- **Hymn book.** The Luganda hymn book shows in the hymn list (the update `2026_01_25_000001` publishes it where it was loaded hidden). It is under
+  copyright: keep the publisher's written permission (the Inter-Diocesan Committee, Archdiocese of Kampala) on file. Hide it any time in Super admin, Hymn book.
 - **Sample data.** The churches and people are fictional. Before real churches use the site, build a database without them: take the `DemoSeeder` step (and the password re-hash that follows it) out of `build_sql()` in `deploy/shared-hosting/build.py`, then import into a fresh database.
 
 ## Updating the site later

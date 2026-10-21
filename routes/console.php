@@ -14,6 +14,7 @@ use App\Services\Notifications\BroadcastService;
 use App\Services\Notifications\DigestService;
 use App\Services\PodcastFeedService;
 use App\Services\ReadingCircleService;
+use App\Services\VerseBroadcaster;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -89,6 +90,12 @@ Artisan::command('ff:inspiration', function (InspirationBroadcaster $inspiration
 })->purpose('Push the morning, mid-morning and evening inspiring message to phones at their set times');
 
 Schedule::command('ff:inspiration')->everyMinute()->withoutOverlapping();
+
+Artisan::command('ff:verse-push', function (VerseBroadcaster $verse) {
+    $this->info($verse->sendDue() ? 'Sent the verse of the day to phones.' : 'Nothing to send now.');
+})->purpose('Push the verse of the day to phones each morning');
+
+Schedule::command('ff:verse-push')->everyMinute()->withoutOverlapping();
 
 Artisan::command('ff:care-digest', function (CareService $care) {
     $this->info('Sent '.$care->sendWeeklyDigests().' pastoral care digest(s).');
