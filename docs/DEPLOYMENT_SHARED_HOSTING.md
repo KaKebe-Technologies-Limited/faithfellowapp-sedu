@@ -54,6 +54,9 @@ A different admin email or a new `DEMO_PASSWORD` is changed in `.env.production`
    php /home/u850523537/domains/faithfellows.com/public_html/artisan queue:work --stop-when-empty --max-time=50
    ```
    Use the `php` command Hostinger shows in the cron form if it gives a full path such as `/usr/bin/php`.
+   **If you add only the first job, it is enough:** the scheduler also empties the queue every minute, and the inspiration, verse-of-the-day, chat and
+   podcast pushes and the new-account emails are sent right after the request that causes them, so none of them waits for a worker. The second job just makes
+   queued mail and church news a little quicker.
 
 Check it: open `https://faithfellows.com/up` (a green page), then `https://faithfellows.com/api/ping`, then the home page.
 

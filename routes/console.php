@@ -157,6 +157,12 @@ Artisan::command('ff:vapid {--write : Write the keys into .env}', function () {
     return 0;
 })->purpose('Generate VAPID keys for web push notifications');
 
+// Emails, pushes and receipts wait in the queue. A shared server often has no worker running, so the scheduler (the one cron job every site has) empties
+// the queue each minute too; a real worker, if there is one, simply finds it empty.
+if (config('queue.default') !== 'sync') {
+    Schedule::command('queue:work --stop-when-empty --max-time=50 --tries=2')->everyMinute()->withoutOverlapping(2)->runInBackground();
+}
+
 Schedule::command('ff:send-broadcasts')->everyMinute()->withoutOverlapping();
 Schedule::command('ff:send-digests')->dailyAt('18:00');
 Schedule::command('model:prune', ['--model' => [NotificationDelivery::class]])->daily();
