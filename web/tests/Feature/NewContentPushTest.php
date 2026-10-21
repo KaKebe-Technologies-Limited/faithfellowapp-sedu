@@ -97,7 +97,10 @@ test('the super admin sets the time of the verse, switches it off and sends it b
     expect(app(VerseBroadcaster::class)->time())->toBe('05:30')->and(app(VerseBroadcaster::class)->auto())->toBeTrue();
     $this->actingAs($admin)->put(route('super-admin.inspiration.verse'), ['time' => '5:30'])->assertSessionHasErrors('time');
 
-    $this->actingAs($admin)->post(route('super-admin.inspiration.verse-send'))->assertRedirect()->assertSessionHas('status');
+    member();
+    member();
+    $this->actingAs($admin)->post(route('super-admin.inspiration.verse-send'))->assertRedirect()
+        ->assertSessionHas('status', fn ($text) => str_contains($text, 'on its way to 1 member ') && str_contains($text, '3 other members have not turned notifications on'));
     Bus::assertDispatchedAfterResponse(SendPushBatch::class, fn ($job) => $job->category === 'verse' && count($job->userIds) === 1);
 
     // A double tap is not sent twice, and members cannot do this.

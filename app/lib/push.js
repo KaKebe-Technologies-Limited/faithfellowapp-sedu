@@ -13,6 +13,8 @@ import { getStored, setStored } from './storage';
 
 const TOKEN_KEY = 'push_token';
 const ASKED_KEY = 'push_asked';
+const REGISTERED_AT_KEY = 'push_registered_at';
+const REFRESH_EVERY_MS = 6 * 60 * 60 * 1000;
 
 /** Push needs a phone, and not Expo Go on Android. */
 export const pushSupported = Platform.OS === 'ios' || (Platform.OS === 'android' && Constants.executionEnvironment !== ExecutionEnvironment.StoreClient);
@@ -96,6 +98,7 @@ export async function enablePush({ ask = false } = {}) {
     const { data: token } = await N.getExpoPushTokenAsync(projectId() ? { projectId: projectId() } : undefined);
     await api.post('/devices', { token, platform: Platform.OS, name: Constants.deviceName ?? undefined, app_version: Constants.expoConfig?.version });
     await setStored(TOKEN_KEY, token);
+    await setStored(REGISTERED_AT_KEY, Date.now());
     return { status: 'on', token };
   } catch (e) {
     return { status: 'unsupported', error: e?.message ?? String(e) };
@@ -114,6 +117,16 @@ export const isRegistered = async () => Boolean(await getStored(TOKEN_KEY, null)
 
 /** Opens the phone's own settings, for a member who said no earlier. */
 export const openSystemSettings = () => Linking.openSettings().catch(() => {});
+
+/**
+ * A phone that is allowed notifications keeps itself registered: the server forgets a phone it could not reach, and the token can change. Looks again
+ * whenever the app comes forward, at most every six hours, so members who allowed notifications are never left out of a message to everyone.
+ */
+async function refreshRegistration() {
+  if (!notifications()) return;
+  if (Date.now() - (await getStored(REGISTERED_AT_KEY, 0)) < REFRESH_EVERY_MS) return;
+  if ((await pushPermission()) === 'granted') await enablePush();
+}
 
 /** Keeps the app icon's badge equal to what is unread. */
 export async function syncBadge() {
@@ -160,7 +173,11 @@ export function usePushSetup(user) {
       handled.current = response.notification.request.identifier;
       openNotification(response.notification.request.content.data ?? {});
     });
-    const state = AppState.addEventListener('change', (s) => s === 'active' && syncBadge());
+    const state = AppState.addEventListener('change', (s) => {
+      if (s !== 'active') return;
+      syncBadge();
+      refreshRegistration();
+    });
 
     return () => {
       cancelled = true;

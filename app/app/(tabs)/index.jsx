@@ -15,6 +15,7 @@ import HomeHero from '../../components/home/HomeHero';
 import { LatestSermons, TopPodcasts } from '../../components/home/HomeLists';
 import InspirationCard from '../../components/home/InspirationCard';
 import LiveBanner from '../../components/home/LiveBanner';
+import NotificationsPrompt from '../../components/home/NotificationsPrompt';
 import QuizCard from '../../components/home/QuizCard';
 import VerseCard from '../../components/home/VerseCard';
 import WelcomeBanner from '../../components/home/WelcomeBanner';
@@ -98,6 +99,7 @@ export default function HomeScreen() {
       {data ? (
         <>
           <ExploreGrid home={data} />
+          <NotificationsPrompt />
           {!hasChurches ? (
             <View style={{ paddingHorizontal: SPACING.md, marginBottom: SPACING.lg }}>
               <Notice title="Find your church family" message="Follow a church to get its sermons, events and prayer requests." actionTitle="Find churches" onAction={() => router.push('/churches')} />
