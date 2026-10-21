@@ -18,16 +18,30 @@ export function isEmbed(url = '') {
   return /youtube|youtu\.be|facebook\.com|vimeo|\/embed\//i.test(url) && !/\.(mp4|m3u8|mov|webm)(\?|$)/i.test(url);
 }
 
-export function VideoPlayer({ url, autoPlay = true, style }) {
+/** The page address of a YouTube video from its embed address, so a member can open it in YouTube when the embedded player will not play it. */
+export function youtubeWatchUrl(url = '') {
+  const id = String(url).match(/(?:youtube(?:-nocookie)?\.com\/(?:embed\/|watch\?v=|live\/)|youtu\.be\/)([\w-]{11})/)?.[1];
+
+  return id ? `https://www.youtube.com/watch?v=${id}` : null;
+}
+
+/** `onProblem` is called when the video cannot be played (the picture never starts, or the page says no), so the screen can offer the audio instead. */
+export function VideoPlayer({ url, autoPlay = true, style, onProblem }) {
   const source = mediaUrl(url);
   const player = useVideoPlayer(source, (p) => {
     if (autoPlay) p.play();
   });
 
+  useEffect(() => {
+    const sub = player.addListener('statusChange', ({ status }) => status === 'error' && onProblem?.());
+
+    return () => sub.remove();
+  }, [player, onProblem]);
+
   return <VideoView player={player} style={[styles.video, style]} nativeControls allowsFullscreen allowsPictureInPicture contentFit="contain" />;
 }
 
-export function EmbedPlayer({ url, style }) {
+export function EmbedPlayer({ url, style, onProblem }) {
   if (Platform.OS === 'web') {
     return (
       <View style={[styles.video, style]}>
@@ -38,7 +52,7 @@ export function EmbedPlayer({ url, style }) {
   }
   return (
     <View style={[styles.video, style]}>
-      <WebView source={{ uri: url }} allowsInlineMediaPlayback allowsFullscreenVideo mediaPlaybackRequiresUserAction={false} javaScriptEnabled style={{ backgroundColor: '#000' }} />
+      <WebView source={{ uri: url }} allowsInlineMediaPlayback allowsFullscreenVideo mediaPlaybackRequiresUserAction={false} javaScriptEnabled onError={() => onProblem?.()} onHttpError={() => onProblem?.()} style={{ backgroundColor: '#000' }} />
     </View>
   );
 }

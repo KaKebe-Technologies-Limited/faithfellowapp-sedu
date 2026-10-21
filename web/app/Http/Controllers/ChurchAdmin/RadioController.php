@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\ChurchAdmin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\RadioScheduleRequest;
 use App\Models\Church;
+use App\Models\RadioSchedule;
 use App\Models\RadioStation;
 use App\Models\RadioTrack;
 use App\Services\RadioService;
@@ -40,6 +42,7 @@ class RadioController extends Controller
             'station' => $station,
             'tracks' => RadioTrack::ofStation($station)->orderBy('position')->orderBy('id')->get(),
             'now' => $this->radio->nowPlaying(null, 4, 5, $station),
+            'schedules' => $this->radio->scheduleList($station),
             'name' => $this->radio->name($station),
             'enabled' => $this->radio->enabled($station),
             'loopSeconds' => $this->radio->loopSeconds($station),
@@ -103,6 +106,23 @@ class RadioController extends Controller
         $this->radio->playNow($track);
 
         return back()->with('success', __('“:title” is on air now. Listeners move to it within a few seconds.', ['title' => $track->title]));
+    }
+
+    /** Puts one of the church's episodes on air at a set time (once, every day or every week). */
+    public function schedule(RadioScheduleRequest $request, Church $church): RedirectResponse
+    {
+        abort_unless(RadioSchedule::ready(), 503, __('Scheduling is being set up. Please try again in a few minutes.'));
+        $track = $this->track($church, (int) $request->validated('track'));
+        $schedule = $this->radio->schedule($track, $request->startsAt(), $request->validated('repeat'), $request->user());
+
+        return back()->with('success', __('“:title” will go on air :when (:zone).', ['title' => $track->title, 'when' => $schedule->starts_at->format('D j M, g:i a'), 'zone' => __('East Africa Time')]));
+    }
+
+    public function unschedule(Church $church, int $scheduleId): RedirectResponse
+    {
+        $this->radio->cancelSchedule(RadioSchedule::where('station', $this->station($church)->slug)->findOrFail($scheduleId));
+
+        return back()->with('success', __('The schedule was removed.'));
     }
 
     public function destroy(Church $church, int $trackId): RedirectResponse

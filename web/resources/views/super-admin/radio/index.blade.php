@@ -28,6 +28,8 @@
         'stationField' => $station->slug,
         'urls' => ['settings' => route('super-admin.radio.settings'), 'chunk' => route('super-admin.radio.chunk')],
         'trackUrl' => fn (string $action, $track) => route('super-admin.radio.'.$action, $track),
+        'schedules' => $schedules,
+        'scheduleUrl' => fn (string $action, $schedule = null) => $action === 'store' ? route('super-admin.radio.schedule') : route('super-admin.radio.unschedule', $schedule),
     ])
 
     {{-- Church channels: each church fills its own; here a channel can be switched off --}}

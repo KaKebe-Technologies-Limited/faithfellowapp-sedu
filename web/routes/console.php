@@ -97,6 +97,18 @@ Artisan::command('ff:verse-push', function (VerseBroadcaster $verse) {
 
 Schedule::command('ff:verse-push')->everyMinute()->withoutOverlapping();
 
+// Uploaded pictures are served from /storage through a link that `php artisan storage:link` makes. On a shared server it is easily missing, so this
+// makes it when it can (the app serves the pictures by itself in the meantime: see Public\StorageController).
+Artisan::command('ff:storage-link', function () {
+    if (file_exists(public_path('storage')) || is_link(public_path('storage'))) {
+        return $this->info('The storage link is there.');
+    }
+    rescue(fn () => Artisan::call('storage:link'), null, false);
+    $this->info(file_exists(public_path('storage')) ? 'Made the storage link.' : 'The storage link could not be made here; the app serves the pictures itself.');
+})->purpose('Make the public/storage link for uploaded pictures when it is missing');
+
+Schedule::command('ff:storage-link')->hourly();
+
 Artisan::command('ff:care-digest', function (CareService $care) {
     $this->info('Sent '.$care->sendWeeklyDigests().' pastoral care digest(s).');
 })->purpose('Monday digest to pastors: birthdays, anniversaries and follow-ups');

@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Church;
+use App\Models\RadioSchedule;
 use App\Models\RadioStation;
 use App\Models\RadioTrack;
 use App\Services\RadioService;
@@ -368,4 +369,128 @@ test('when the song that was put on air is taken off the loop, the radio goes ba
     $two->update(['is_active' => false]);
     expect($radio->nowPlaying())->not->toBeNull();   // Song 1 is the only one left, so it is on
     $this->actingAs(superAdmin())->get(route('super-admin.radio.index'))->assertOk()->assertSee('Play now');
+});
+
+// ── Scheduled songs ─────────────────────────────────────────────────────────────────────────────────────
+
+function kampala(string $time): Carbon\Carbon
+{
+    return Carbon\Carbon::parse($time, 'Africa/Kampala');
+}
+
+test('a scheduled song goes on air at its time, to the second, and the loop carries on from it', function () {
+    [$one, $two, $three] = loopOf(RadioStation::gospel(), [100, 200, 300]);
+    $radio = app(RadioService::class);
+    // What the clock alone would have on air a second before 4 pm, noted before anything is scheduled.
+    $this->travelTo(kampala('2026-10-21 15:59:59'));
+    $clock = $radio->nowPlaying();
+    $this->travelTo(kampala('2026-10-21 12:00:00'));
+
+    $this->actingAs(superAdmin())->post(route('super-admin.radio.schedule'), ['track' => $three->id, 'starts_at' => '2026-10-21T16:00', 'repeat' => 'none'])
+        ->assertRedirect()->assertSessionHas('success', fn ($m) => str_contains($m, 'Song 3') && str_contains($m, '4:00 pm'));
+
+    // Not yet 4 pm: the radio is as it was. The player is told what is coming.
+    $this->travelTo(kampala('2026-10-21 15:59:59'));
+    expect($radio->nowPlaying()['track']['title'])->toBe($clock['track']['title'])->and($radio->nowPlaying()['offset'])->toBe($clock['offset'])
+        ->and($radio->payload(RadioStation::gospel())['scheduled'])->toMatchArray(['starts_at' => kampala('2026-10-21 16:00:00')->toIso8601String()])
+        ->and($radio->payload(RadioStation::gospel())['scheduled']['track']['title'])->toBe('Song 3');
+
+    // At 4 pm it is on, from its start; then the next in the loop follows it.
+    $this->travelTo(kampala('2026-10-21 16:00:00'));
+    expect($radio->nowPlaying()['track']['title'])->toBe('Song 3')->and($radio->nowPlaying()['offset'])->toBe(0);
+    $this->travelTo(kampala('2026-10-21 16:02:00'));
+    expect($radio->nowPlaying()['track']['title'])->toBe('Song 3')->and($radio->nowPlaying()['offset'])->toBe(120);
+    $this->travelTo(kampala('2026-10-21 16:05:20'));
+    expect($radio->nowPlaying()['track']['title'])->toBe('Song 1')->and($radio->nowPlaying()['offset'])->toBe(20)
+        ->and($radio->payload(RadioStation::gospel())['scheduled'])->toBeNull();
+});
+
+test('a daily schedule keeps coming back and the player is told the next time', function () {
+    [$one, $two, $three] = loopOf(RadioStation::gospel(), [100, 200, 300]);
+    $radio = app(RadioService::class);
+    $this->travelTo(kampala('2026-10-21 12:00:00'));
+    $this->actingAs(superAdmin())->post(route('super-admin.radio.schedule'), ['track' => $two->id, 'starts_at' => '2026-10-21T16:00', 'repeat' => 'daily'])->assertRedirect();
+
+    foreach (['2026-10-21 16:00:30', '2026-10-22 16:00:30', '2026-10-25 16:00:30'] as $moment) {
+        $this->travelTo(kampala($moment));
+        expect($radio->nowPlaying()['track']['title'])->toBe('Song 2')->and($radio->nowPlaying()['offset'])->toBe(30);
+    }
+    $this->travelTo(kampala('2026-10-25 17:00:00'));
+    expect($radio->payload(RadioStation::gospel())['scheduled']['starts_at'])->toBe(kampala('2026-10-26 16:00:00')->toIso8601String());
+
+    // Every week: the same day and time of the following weeks.
+    $weekly = $radio->schedule($three, kampala('2026-10-28 09:00:00'), 'weekly');
+    expect($weekly->occurrenceAt(kampala('2026-11-11 09:00:30'))->toDateTimeString())->toBe('2026-11-11 09:00:00')
+        ->and($weekly->occurrenceAt(kampala('2026-11-10 23:00:00'))->toDateTimeString())->toBe('2026-11-04 09:00:00')
+        ->and($weekly->nextAfter(kampala('2026-11-11 09:00:30'))->toDateTimeString())->toBe('2026-11-18 09:00:00');
+});
+
+test('the newest of a Play now and a schedule decides what is on air', function () {
+    [$one, $two, $three] = loopOf(RadioStation::gospel(), [100, 200, 300]);
+    $radio = app(RadioService::class);
+    $this->travelTo(kampala('2026-10-21 12:00:00'));
+    $this->actingAs(superAdmin())->post(route('super-admin.radio.schedule'), ['track' => $three->id, 'starts_at' => '2026-10-21T16:00', 'repeat' => 'none'])->assertRedirect();
+
+    $this->travelTo(kampala('2026-10-21 14:00:00'));
+    $this->actingAs(superAdmin())->post(route('super-admin.radio.play', $two))->assertRedirect();
+    expect($radio->nowPlaying()['track']['title'])->toBe('Song 2')->and($radio->nowPlaying()['offset'])->toBe(0);
+
+    $this->travelTo(kampala('2026-10-21 16:00:10'));
+    expect($radio->nowPlaying()['track']['title'])->toBe('Song 3');   // the schedule comes after the Play now
+
+    $this->travelTo(kampala('2026-10-21 16:30:00'));
+    $this->actingAs(superAdmin())->post(route('super-admin.radio.play', $one))->assertRedirect();
+    expect($radio->nowPlaying()['track']['title'])->toBe('Song 1');   // and a Play now after it wins again
+});
+
+test('removing the schedule that is on air keeps its song on air', function () {
+    [$one, $two, $three] = loopOf(RadioStation::gospel(), [100, 200, 300]);
+    $radio = app(RadioService::class);
+    $this->travelTo(kampala('2026-10-21 12:00:00'));
+    $schedule = $radio->schedule($three, kampala('2026-10-21 16:00:00'));
+
+    $this->travelTo(kampala('2026-10-21 16:01:00'));
+    $this->actingAs(superAdmin())->delete(route('super-admin.radio.unschedule', $schedule))->assertRedirect();
+
+    expect(RadioSchedule::count())->toBe(0)->and($radio->nowPlaying()['track']['title'])->toBe('Song 3')->and($radio->nowPlaying()['offset'])->toBe(60);
+});
+
+test('a schedule needs a time that is still ahead, a song of this channel, and the right person', function () {
+    [$one] = loopOf(RadioStation::gospel(), [100]);
+    [$talk] = loopOf(RadioStation::podcast(), [100]);
+    $this->travelTo(kampala('2026-10-21 12:00:00'));
+    $admin = superAdmin();
+
+    $this->actingAs($admin)->post(route('super-admin.radio.schedule'), ['track' => $one->id, 'starts_at' => '2026-10-21T11:00', 'repeat' => 'none'])->assertSessionHasErrors('starts_at');
+    $this->actingAs($admin)->post(route('super-admin.radio.schedule'), ['track' => $one->id, 'starts_at' => 'tomorrow', 'repeat' => 'none'])->assertSessionHasErrors('starts_at');
+    $this->actingAs($admin)->post(route('super-admin.radio.schedule'), ['track' => $one->id, 'starts_at' => '2026-10-21T13:00', 'repeat' => 'hourly'])->assertSessionHasErrors('repeat');
+    // A Podcast radio song cannot be put on the Gospel radio's schedule.
+    $this->actingAs($admin)->post(route('super-admin.radio.schedule'), ['track' => $talk->id, 'starts_at' => '2026-10-21T13:00', 'repeat' => 'none'])->assertNotFound();
+    $this->actingAs($admin)->post(route('super-admin.radio.schedule'), ['track' => $talk->id, 'station' => 'podcast', 'starts_at' => '2026-10-21T13:00', 'repeat' => 'none'])->assertRedirect()->assertSessionHasNoErrors();
+    expect(RadioSchedule::where('station', 'podcast')->count())->toBe(1)->and(RadioSchedule::where('station', 'gospel')->count())->toBe(0);
+
+    $this->actingAs(member())->post(route('super-admin.radio.schedule'), ['track' => $one->id, 'starts_at' => '2026-10-21T13:00', 'repeat' => 'none'])->assertForbidden();
+});
+
+test('the admin pages list the schedules, and a church schedules only its own episodes', function () {
+    [$church, $admin, $follower] = channelChurch();
+    [$otherChurch] = channelChurch();
+    [$mine] = loopOf(RadioStation::forChurch($church), [100, 200]);
+    [$theirs] = loopOf(RadioStation::forChurch($otherChurch), [100]);
+    $this->travelTo(kampala('2026-10-21 12:00:00'));
+
+    $this->actingAs($admin)->post(route('church-admin.radio.schedule', $church), ['track' => $mine->id, 'starts_at' => '2026-10-21T16:00', 'repeat' => 'weekly'])->assertRedirect()->assertSessionHas('success');
+    $this->actingAs($admin)->post(route('church-admin.radio.schedule', $church), ['track' => $theirs->id, 'starts_at' => '2026-10-21T16:00', 'repeat' => 'none'])->assertNotFound();
+    $this->actingAs($follower)->post(route('church-admin.radio.schedule', $church), ['track' => $mine->id, 'starts_at' => '2026-10-21T17:00', 'repeat' => 'none'])->assertForbidden();
+
+    $this->actingAs($admin)->get(route('church-admin.radio.index', $church))->assertOk()->assertSee('Schedule an episode')->assertSee('Today, 4:00 pm')->assertSee('Every week');
+    $schedule = RadioSchedule::sole();
+    $this->actingAs($admin)->delete(route('church-admin.radio.unschedule', [$church, $schedule->id]))->assertRedirect();
+    expect(RadioSchedule::count())->toBe(0);
+
+    // One church cannot remove another church's schedule.
+    $other = app(RadioService::class)->schedule($theirs, kampala('2026-10-22 10:00:00'));
+    $this->actingAs($admin)->delete(route('church-admin.radio.unschedule', [$church, $other->id]))->assertNotFound();
+
+    $this->actingAs(superAdmin())->get(route('super-admin.radio.index'))->assertOk()->assertSee('Schedule a song');
 });

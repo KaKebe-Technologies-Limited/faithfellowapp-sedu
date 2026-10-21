@@ -279,7 +279,7 @@ def build_stage(stage, for_git=False):
             continue
         if parts[0] == 'public' and (src.name == 'hot' or parts[1:2] == ('storage',)):
             continue
-        if parts[:2] in (('docs', 'documentation'), ('docs', 'play-store')):  # printed documentation and store pictures stay in the repository
+        if parts[:2] in (('docs', 'documentation'), ('docs', 'play-store'), ('docs', 'app-store')):  # printed documentation and store pictures stay in the repository
             continue
         if parts[:2] == ('bootstrap', 'cache') and src.suffix == '.php':
             continue

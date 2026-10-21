@@ -19,6 +19,7 @@ let snapshot = {
   track: null, // the song that is on
   upcoming: [],
   recent: [],
+  scheduled: null, // a song an admin has scheduled to go on air later: { track, starts_at }
   error: null,
 };
 const listeners = new Set();
@@ -83,6 +84,7 @@ export async function loadStation() {
     ...(info.fallback && info.slug ? { stationId: info.slug } : {}),
     station: { enabled: info.enabled, name: info.name, tagline: info.tagline, songs: info.songs, kind: info.kind ?? 'music', slug: info.slug ?? slug, church: info.church ?? null, fallbackFor: info.fallback ? info.fallback_for : null },
     ...(info.now ? { upcoming: info.now.upcoming, recent: info.now.recent } : { upcoming: [], recent: [] }),
+    scheduled: info.scheduled ?? null,
     ...(snapshot.phase === 'idle' || snapshot.phase === 'loading' ? { track: info.now?.track ?? null, startedAt: info.now?.started_at ?? null } : {}),
   });
   return info;
@@ -107,7 +109,7 @@ export async function selectStation(slug) {
   const wasPlaying = snapshot.phase === 'playing' || snapshot.phase === 'loading';
   if (wasPlaying) stopRadio();
   queue = [];
-  set({ stationId: slug, station: null, track: null, startedAt: null, upcoming: [], recent: [], error: null });
+  set({ stationId: slug, station: null, track: null, startedAt: null, upcoming: [], recent: [], scheduled: null, error: null });
   try {
     await loadStation();
   } catch {

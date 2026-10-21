@@ -16,6 +16,15 @@ import { selectStation, useRadio, useStationInfo } from '../lib/radio';
 
 const clock = (iso) => new Date(iso).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
 
+/** "Today 4:00 pm", "Tomorrow 9:00 am" or "Sun 26 Oct, 4:00 pm". */
+function dayAndClock(iso) {
+  const at = new Date(iso);
+  const days = Math.round((new Date(at.getFullYear(), at.getMonth(), at.getDate()) - new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate())) / 86400000);
+  const day = days === 0 ? 'Today' : days === 1 ? 'Tomorrow' : at.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
+
+  return `${day} ${clock(iso)}`;
+}
+
 function Row({ track, note }) {
   return (
     <View style={styles.row}>
@@ -36,7 +45,7 @@ function Row({ track, note }) {
 export default function RadioScreen() {
   useStationInfo();
   const insets = useSafeAreaInsets();
-  const { station, stations, stationId, track, phase, upcoming, recent, error } = useRadio();
+  const { station, stations, stationId, track, phase, upcoming, recent, scheduled, error } = useRadio();
   const live = phase === 'playing';
 
   return (
@@ -91,8 +100,15 @@ export default function RadioScreen() {
           <AppText style={[styles.hint, { marginTop: 80 }]}>{station && !station.enabled ? 'This channel is quiet or switched off for now.' : 'This channel is quiet right now. Check again soon.'}</AppText>
         )}
 
+        {scheduled ? (
+          <View style={{ marginTop: 30 }}>
+            <AppText style={styles.section}>Scheduled</AppText>
+            <Row track={scheduled.track} note={dayAndClock(scheduled.starts_at)} />
+          </View>
+        ) : null}
+
         {upcoming.length ? (
-          <View style={{ marginTop: 34 }}>
+          <View style={{ marginTop: scheduled ? 26 : 34 }}>
             <AppText style={styles.section}>Up next</AppText>
             {upcoming.slice(0, 3).map((t, i) => (
               <Row key={`${t.id}-${i}`} track={t} note={t.starts_at ? clock(t.starts_at) : null} />

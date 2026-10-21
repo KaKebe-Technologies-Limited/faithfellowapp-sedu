@@ -105,6 +105,11 @@ function lockScreen(episode) {
   }
 }
 
+/** Counts one play: a podcast episode, or a sermon (which feeds "most listened" on Home and on the Sermons page). */
+function countPlay(episode) {
+  api.post(episode.source === 'sermon' ? `/sermons/${episode.sermon_id}/listen` : `/podcast-episodes/${episode.id}/played`).catch(() => {});
+}
+
 /** Plays an episode. `list` is the episodes shown with it, newest first; the one after it in the list plays next. */
 export async function playEpisode(episode, list = []) {
   if (snapshot.episode?.id === episode.id && (snapshot.phase === 'paused' || snapshot.phase === 'playing')) return togglePodcast();
@@ -127,7 +132,7 @@ export async function playEpisode(episode, list = []) {
     player.setPlaybackRate(snapshot.rate);
     player.play();
     lockScreen(episode);
-    api.post(`/podcast-episodes/${episode.id}/played`).catch(() => {});
+    countPlay(episode);
   } catch {
     clearTimeout(watchdog);
     set({ phase: 'idle', episode: null, error: 'This episode could not start.' });
@@ -181,7 +186,7 @@ export function nextEpisode(auto = false) {
     player.setPlaybackRate(snapshot.rate);
     player.play();
     lockScreen(next);
-    api.post(`/podcast-episodes/${next.id}/played`).catch(() => {});
+    countPlay(next);
   });
 }
 

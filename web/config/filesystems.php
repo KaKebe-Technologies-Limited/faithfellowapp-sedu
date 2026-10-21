@@ -33,7 +33,8 @@ return [
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),
-            'serve' => true,
+            // Nothing here is served by address: the framework's own /storage route for this disk would only get in the way of the public disk's pictures.
+            'serve' => false,
             'throw' => false,
             'report' => false,
         ],

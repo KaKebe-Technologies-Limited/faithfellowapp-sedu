@@ -3,11 +3,14 @@
 namespace App\Services;
 
 use App\Models\PlatformSetting;
+use App\Models\RadioSchedule;
 use App\Models\RadioStation;
 use App\Models\RadioTrack;
 use App\Models\User;
 use Carbon\CarbonInterface;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
@@ -82,13 +85,107 @@ class RadioService
      */
     protected function secondsIntoLoop(RadioStation $station, Collection $tracks, CarbonInterface $at): int
     {
-        $anchor = $this->anchor($station);
-        $index = $anchor ? $tracks->search(fn (RadioTrack $t) => $t->id === $anchor['track']) : false;
-        if ($index === false) {
-            return $at->getTimestamp() - strtotime(self::EPOCH.' UTC');
+        foreach ($this->anchors($station, $at) as $anchor) {
+            $index = $tracks->search(fn (RadioTrack $t) => $t->id === $anchor['track']);
+            if ($index !== false) {
+                return (int) $tracks->take($index)->sum('duration_seconds') + $at->getTimestamp() - $anchor['at'];
+            }
         }
 
-        return (int) $tracks->take($index)->sum('duration_seconds') + $at->getTimestamp() - $anchor['at'];
+        return $at->getTimestamp() - strtotime(self::EPOCH.' UTC');
+    }
+
+    /**
+     * The moments a track was put on air at or before this time, newest first: the last "Play now", and every schedule that has come due (a schedule that
+     * repeats counts from its latest time). The newest one whose track is still in the loop decides what is playing, so a scheduled song takes over at
+     * its time by itself, to the second, with no job that has to run.
+     *
+     * @return list<array{track: int, at: int, schedule: int|null}>
+     */
+    public function anchors(RadioStation $station, CarbonInterface $at): array
+    {
+        $list = [];
+        if (($manual = $this->anchor($station)) && $manual['at'] <= $at->getTimestamp()) {
+            $list[] = $manual + ['schedule' => null];
+        }
+        foreach ($this->activeSchedules($station) as $schedule) {
+            if ($when = $schedule->occurrenceAt($at)) {
+                $list[] = ['track' => (int) $schedule->radio_track_id, 'at' => $when->getTimestamp(), 'schedule' => (int) $schedule->id];
+            }
+        }
+        usort($list, fn (array $a, array $b) => [$b['at'], (int) $b['schedule']] <=> [$a['at'], (int) $a['schedule']]);
+
+        return $list;
+    }
+
+    /** @return Collection<int, RadioSchedule> */
+    protected function activeSchedules(RadioStation $station): Collection
+    {
+        if (! RadioSchedule::ready()) {
+            return collect();
+        }
+
+        return Cache::remember('radio-schedules:'.$station->slug, 300, fn () => RadioSchedule::where('station', $station->slug)->where('is_active', true)->get());
+    }
+
+    /** Puts a track on air at a set time, once or every day or every week. */
+    public function schedule(RadioTrack $track, CarbonInterface $startsAt, string $repeat = 'none', ?User $by = null): RadioSchedule
+    {
+        $schedule = RadioSchedule::create([
+            'station' => $track->channel()->slug, 'radio_track_id' => $track->id, 'starts_at' => $startsAt,
+            'repeat' => array_key_exists($repeat, RadioSchedule::REPEATS) ? $repeat : 'none', 'is_active' => true, 'created_by' => $by?->id,
+        ]);
+        Cache::forget('radio-schedules:'.$schedule->station);
+
+        return $schedule;
+    }
+
+    /** Removes a schedule. If it is the one that put the song on air now, the song stays on air: it becomes a plain "Play now" from the time it started. */
+    public function cancelSchedule(RadioSchedule $schedule): void
+    {
+        $station = RadioStation::ready() ? RadioStation::where('slug', $schedule->station)->first() : ($schedule->station === RadioStation::GOSPEL ? RadioStation::gospel() : null);
+        if ($station) {
+            $tracks = $this->tracks($station);
+            $current = collect($this->anchors($station, now()))->first(fn (array $a) => $tracks->contains('id', $a['track']));
+            if ($current && $current['schedule'] === (int) $schedule->id) {
+                PlatformSetting::put('radio_anchor_'.$station->slug, $current['track'].':'.$current['at']);
+            }
+        }
+        $schedule->delete();
+        Cache::forget('radio-schedules:'.$schedule->station);
+    }
+
+    /**
+     * Every schedule of a channel for the admin's list: the ones still to come first (soonest first), then the ones that have finished.
+     *
+     * @return list<array{schedule: RadioSchedule, track: RadioTrack, next: Carbon|null, last: Carbon|null}>
+     */
+    public function scheduleList(RadioStation $station, ?CarbonInterface $now = null): array
+    {
+        if (! RadioSchedule::ready()) {
+            return [];
+        }
+        $now ??= now();
+        $rows = RadioSchedule::where('station', $station->slug)->with('track')->get()->filter(fn (RadioSchedule $s) => $s->track)
+            ->map(fn (RadioSchedule $s) => ['schedule' => $s, 'track' => $s->track, 'next' => $s->nextAfter($now), 'last' => $s->occurrenceAt($now)]);
+
+        return $rows->filter(fn (array $r) => $r['next'])->sortBy(fn (array $r) => $r['next']->getTimestamp())
+            ->concat($rows->reject(fn (array $r) => $r['next'])->sortByDesc(fn (array $r) => $r['last']?->getTimestamp()))->values()->all();
+    }
+
+    /** The soonest song still to be put on air by a schedule, for the player ("At 4:00 pm: Don Moen Nonstop"), or null. */
+    protected function nextScheduled(RadioStation $station, Collection $tracks, CarbonInterface $now): ?array
+    {
+        $best = null;
+        foreach ($this->activeSchedules($station) as $schedule) {
+            $track = $tracks->firstWhere('id', $schedule->radio_track_id);
+            $next = $track ? $schedule->nextAfter($now) : null;
+            if ($next && (! $best || $next->lt($best['at']))) {
+                $best = ['at' => $next, 'track' => $track];
+            }
+        }
+
+        return $best ? ['track' => $best['track']->toPayload(), 'starts_at' => $best['at']->toIso8601String()] : null;
     }
 
     /** @return array{track: int, at: int}|null the track an admin last put on air, and when */
@@ -199,6 +296,7 @@ class RadioService
                 ? ['id' => $station->church->id, 'name' => $station->church->name]
                 : null,
             'now' => $now,
+            'scheduled' => $now !== null ? $this->nextScheduled($station, $this->tracks($station), now()) : null,
             'songs' => $this->tracks($station)->count(),
             'server_time' => now()->toIso8601String(),
         ];
@@ -308,6 +406,7 @@ class RadioService
     public function delete(RadioTrack $track): void
     {
         $channel = $track->channel();
+        Cache::forget('radio-schedules:'.$channel->slug);
         Storage::disk('local')->delete(array_filter([$track->file_path, $track->cover_path]));
         $track->delete();
         $this->renumber(RadioTrack::ofStation($channel)->orderBy('position')->orderBy('id')->pluck('id')->all());

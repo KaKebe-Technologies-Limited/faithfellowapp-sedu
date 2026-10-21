@@ -22,5 +22,7 @@
         'stationField' => null,
         'urls' => ['settings' => route('church-admin.radio.settings', $church), 'chunk' => route('church-admin.radio.chunk', $church)],
         'trackUrl' => fn (string $action, $track) => route('church-admin.radio.'.$action, [$church, $track->id]),
+        'schedules' => $schedules,
+        'scheduleUrl' => fn (string $action, $schedule = null) => $action === 'store' ? route('church-admin.radio.schedule', $church) : route('church-admin.radio.unschedule', [$church, $schedule->id]),
     ])
 </x-layouts.church-admin>

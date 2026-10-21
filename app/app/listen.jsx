@@ -64,7 +64,8 @@ export default function ListenScreen() {
   const playing = phase === 'playing';
   const total = duration || episode.duration || 0;
   const podcast = episode.podcast;
-  const note = () => router.push({ pathname: '/note/[id]', params: { id: 'new', context: `podcast:${episode.id}`, reference: `${podcast?.name ?? 'Podcast'}: ${episode.title}` } });
+  const sermon = episode.source === 'sermon';
+  const note = () => router.push({ pathname: '/note/[id]', params: { id: 'new', context: sermon ? `sermon:${episode.sermon_id}` : `podcast:${episode.id}`, reference: `${podcast?.name ?? (sermon ? 'Sermon' : 'Podcast')}: ${episode.title}` } });
 
   return (
     <View style={styles.screen}>
@@ -73,12 +74,12 @@ export default function ListenScreen() {
         <View style={styles.top}>
           <BackButton onDark icon="chevron-down" onPress={goBack} />
           <View style={{ flex: 1, alignItems: 'center' }}>
-            <AppText style={styles.eyebrow}>{playing ? 'NOW PLAYING' : 'PODCAST'}</AppText>
+            <AppText style={styles.eyebrow}>{playing ? 'NOW PLAYING' : sermon ? 'SERMON' : 'PODCAST'}</AppText>
             <AppText style={styles.station} numberOfLines={1}>
               {podcast?.name}
             </AppText>
           </View>
-          <RoundIconButton icon="share-social-outline" label="Share this episode" onPress={() => Share.share({ message: `Listening to "${episode.title}" on ${podcast?.name}, a podcast on FaithFellows.` }).catch(() => {})} />
+          <RoundIconButton icon="share-social-outline" label="Share this episode" onPress={() => Share.share({ message: sermon ? `Listening to the sermon "${episode.title}"${podcast?.name ? ` by ${podcast.name}` : ''} on FaithFellows.` : `Listening to "${episode.title}" on ${podcast?.name}, a podcast on FaithFellows.` }).catch(() => {})} />
         </View>
 
         <View style={styles.coverWrap}>

@@ -46,6 +46,7 @@ Route::prefix('v1')->name('api.v1.')->middleware('throttle:api')->group(function
         Route::get('/home', V1\HomeController::class)->name('home');
         Route::get('/feed', [V1\ContentController::class, 'feed'])->name('feed');
         Route::get('/sermons', [V1\ContentController::class, 'sermons'])->name('sermons.index');
+        Route::get('/sermons/browse', [V1\ContentController::class, 'sermonsBrowse'])->name('sermons.browse');
         Route::get('/sermons/{sermon}', [V1\ContentController::class, 'sermon'])->name('sermons.show');
         Route::post('/sermons/{sermon}/listen', [V1\ContentController::class, 'listen'])->middleware('throttle:60,1')->name('sermons.listen');
         Route::get('/events', [V1\ContentController::class, 'events'])->name('events.index');

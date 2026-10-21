@@ -64,3 +64,32 @@ test('the sermon form tells staff their audio limit', function () {
 
     $this->actingAs($admin)->get(route('church-admin.sermons.create', $church))->assertOk()->assertSee('Audio up to 1 MB');
 });
+
+test('the sermon form shows its upload progress card and answers JSON to the progress script', function () {
+    [$church, $admin] = audioChurch();
+
+    $this->actingAs($admin)->get(route('church-admin.sermons.create', $church))->assertOk()
+        ->assertSee('data-ff-upload', false)->assertSee('ff-upload-overlay', false)->assertSee('Keep this page open until it says it is done.');
+
+    $post = ['title' => 'Sunday word', 'language' => 'en', 'status' => 'draft', 'visibility' => 'public', 'audio' => sermonUploadMp3()];
+    $this->actingAs($admin)->postJson(route('church-admin.sermons.store', $church), $post)->assertOk()
+        ->assertJson(['redirect' => route('church-admin.sermons.index', $church), 'message' => 'Sermon saved as draft.']);
+    expect($church->sermons()->where('title', 'Sunday word')->exists())->toBeTrue();
+
+    // The message waits for the list page the person is taken to.
+    $this->actingAs($admin)->get(route('church-admin.sermons.index', $church))->assertOk()->assertSee('Sermon saved as draft.');
+});
+
+test('a sermon sent by the progress script that has a problem answers with the fields to fix', function () {
+    [$church, $admin] = audioChurch();
+
+    $this->actingAs($admin)->postJson(route('church-admin.sermons.store', $church), ['title' => '', 'language' => 'en', 'status' => 'draft', 'visibility' => 'public', 'audio' => sermonUploadMp3()])
+        ->assertUnprocessable()->assertJsonValidationErrors('title');
+    expect($church->sermons()->count())->toBe(0);
+});
+
+/** A real MP3 of a second or two, small enough for a quick test. */
+function sermonUploadMp3(): UploadedFile
+{
+    return UploadedFile::fake()->createWithContent('word.mp3', str_repeat(hex2bin('fffb9000').str_repeat(chr(0), 413), 60));
+}

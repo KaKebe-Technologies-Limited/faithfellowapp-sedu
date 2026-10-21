@@ -14,6 +14,7 @@ use App\Models\LiveStream;
 use App\Models\Post;
 use App\Models\Sermon;
 use App\Services\FeedService;
+use App\Services\SermonBrowser;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -93,7 +94,15 @@ class ContentController extends Controller
             ->published()->visibleTo($memberIds)
             ->whereIn('church_id', $request->filled('church') ? [(int) $request->query('church')] : ($memberIds ?: [0]))
             ->when($request->filled('q'), fn ($q) => $q->where(fn ($w) => $w->where('title', 'like', '%'.$request->query('q').'%')->orWhere('preacher', 'like', '%'.$request->query('q').'%')))
-            ->latest('published_at')->paginate(20)->withQueryString());
+            ->when($request->filled('preacher'), fn ($q) => $q->where('preacher', (string) $request->query('preacher')))
+            ->when($request->filled('series'), fn ($q) => $q->where('sermon_series_id', (int) $request->query('series')))
+            ->latest('published_at')->paginate(min(50, max(1, (int) $request->query('per_page', 20))))->withQueryString());
+    }
+
+    /** The Sermons page in one request: the banner, the preachers, the newest, the most listened and the series. */
+    public function sermonsBrowse(Request $request, SermonBrowser $browser): JsonResponse
+    {
+        return response()->json(['data' => $browser->sections($request->user(), $request)]);
     }
 
     public function sermon(Request $request, Sermon $sermon): SermonResource

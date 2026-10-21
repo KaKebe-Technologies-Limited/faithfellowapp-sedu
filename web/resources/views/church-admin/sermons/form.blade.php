@@ -3,7 +3,7 @@
         :breadcrumbs="[__('Sermons') => route('church-admin.sermons.index', $church), ($sermon->exists ? $sermon->title : __('New')) => null]" />
 
     @php($transcript = $sermon->exists ? $sermon->transcripts->firstWhere('language', $sermon->language) : null)
-    <form method="POST" enctype="multipart/form-data" action="{{ $sermon->exists ? route('church-admin.sermons.update', [$church, $sermon]) : route('church-admin.sermons.store', $church) }}" class="row g-4" novalidate>
+    <form method="POST" enctype="multipart/form-data" action="{{ $sermon->exists ? route('church-admin.sermons.update', [$church, $sermon]) : route('church-admin.sermons.store', $church) }}" class="row g-4" novalidate data-ff-upload>
         @csrf
         @if ($sermon->exists) @method('PUT') @endif
         <div class="col-lg-8 d-grid gap-4 align-content-start">
@@ -88,4 +88,6 @@
     @if ($sermon->exists)
         <form method="POST" action="{{ route('church-admin.sermons.transcribe', [$church, $sermon]) }}" id="transcribeForm">@csrf</form>
     @endif
+
+    @include('partials.upload-progress')
 </x-layouts.church-admin>

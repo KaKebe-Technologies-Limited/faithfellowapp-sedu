@@ -31,6 +31,20 @@ def show_text(commit, path):
     return result.stdout if result.returncode == 0 else None
 
 
+def comparable(expo, key):
+    """What an installed app contains for this key. The export-compliance flag in ios.infoPlist is only read when a build is uploaded to App Store
+    Connect, so adding or changing it never needs a new build."""
+    value = expo.get(key)
+    if key == 'ios' and isinstance(value, dict):
+        value = dict(value)
+        plist = {k: v for k, v in (value.get('infoPlist') or {}).items() if k != 'ITSAppUsesNonExemptEncryption'}
+        value.pop('infoPlist', None)
+        if plist:
+            value['infoPlist'] = plist
+
+    return value
+
+
 def main(before, after):
     if not before or set(before) == {'0'}:
         print('First push of the branch: nothing to compare.')
@@ -58,7 +72,7 @@ def main(before, after):
         reasons.append('google-services.json changed (the Firebase settings inside the APK)')
     old_expo, new_expo = old_app.get('expo', {}), new_app.get('expo', {})
     for key in NATIVE_KEYS:
-        if old_expo.get(key) != new_expo.get(key):
+        if comparable(old_expo, key) != comparable(new_expo, key):
             reasons.append(f'app.json changed "{key}"')
 
     if not reasons:
