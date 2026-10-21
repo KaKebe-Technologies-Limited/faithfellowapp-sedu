@@ -391,6 +391,7 @@ Route::prefix('church/{church}/admin')->name('church-admin.')
             Route::put('/radio/settings', [ChurchAdmin\RadioController::class, 'settings'])->name('radio.settings');
             Route::put('/radio/{trackId}', [ChurchAdmin\RadioController::class, 'update'])->whereNumber('trackId')->name('radio.update');
             Route::post('/radio/{trackId}/move', [ChurchAdmin\RadioController::class, 'move'])->whereNumber('trackId')->name('radio.move');
+            Route::post('/radio/{trackId}/play', [ChurchAdmin\RadioController::class, 'play'])->whereNumber('trackId')->middleware('throttle:30,1')->name('radio.play');
             Route::delete('/radio/{trackId}', [ChurchAdmin\RadioController::class, 'destroy'])->whereNumber('trackId')->name('radio.destroy');
         });
 
@@ -621,6 +622,7 @@ Route::prefix('super-admin')->name('super-admin.')
         Route::put('/radio/channels/{station}/block', [SuperAdmin\RadioController::class, 'block'])->whereNumber('station')->name('radio.block');
         Route::put('/radio/{track}', [SuperAdmin\RadioController::class, 'update'])->name('radio.update');
         Route::post('/radio/{track}/move', [SuperAdmin\RadioController::class, 'move'])->name('radio.move');
+        Route::post('/radio/{track}/play', [SuperAdmin\RadioController::class, 'play'])->middleware('throttle:30,1')->name('radio.play');
         Route::delete('/radio/{track}', [SuperAdmin\RadioController::class, 'destroy'])->name('radio.destroy');
 
         // Podcasts made by members: review before they show in the app

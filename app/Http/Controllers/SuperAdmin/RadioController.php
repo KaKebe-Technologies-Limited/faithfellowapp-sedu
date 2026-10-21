@@ -98,6 +98,14 @@ class RadioController extends Controller
         return back();
     }
 
+    /** Puts this song on air right now; the live radio moves to it for everyone who is listening. */
+    public function play(RadioTrack $track): RedirectResponse
+    {
+        $this->radio->playNow($track);
+
+        return back()->with('success', __('“:title” is on air now. Listeners move to it within a few seconds.', ['title' => $track->title]));
+    }
+
     public function destroy(RadioTrack $track): RedirectResponse
     {
         $this->radio->delete($track);

@@ -26,7 +26,7 @@ class ProfileUpdateRequest extends FormRequest
             'date_of_birth' => ['nullable', 'date', 'before:today'],
             'wedding_anniversary' => ['nullable', 'date', 'before_or_equal:today'],
             'bio' => ['nullable', 'string', 'max:500'],
-            'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:6144'],
         ];
     }
 }

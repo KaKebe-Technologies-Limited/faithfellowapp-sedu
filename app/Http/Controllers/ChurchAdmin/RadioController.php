@@ -96,6 +96,15 @@ class RadioController extends Controller
         return back();
     }
 
+    /** Puts this episode on air right now; the church's channel moves to it for everyone who is listening. */
+    public function play(Church $church, int $trackId): RedirectResponse
+    {
+        $track = $this->track($church, $trackId);
+        $this->radio->playNow($track);
+
+        return back()->with('success', __('“:title” is on air now. Listeners move to it within a few seconds.', ['title' => $track->title]));
+    }
+
     public function destroy(Church $church, int $trackId): RedirectResponse
     {
         $this->radio->delete($this->track($church, $trackId));
