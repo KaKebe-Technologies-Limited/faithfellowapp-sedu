@@ -42,9 +42,11 @@ async function uploadAvatar(asset) {
 }
 
 export default function EditProfile() {
-  const { setUser } = useAuth();
+  const { user: signedIn, setUser } = useAuth();
   const me = useFetch('/me');
   const user = me.data?.data;
+  // The photo shown here is the signed-in member's own copy, which changes the moment a new photo is saved (the copy fetched above would keep showing the old one).
+  const photoOf = signedIn ?? user;
   const [form, setForm] = useState(null);
   const [placeBusy, setPlaceBusy] = useState(false);
   const [placeError, setPlaceError] = useState(null);
@@ -125,10 +127,10 @@ export default function EditProfile() {
       <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
         <KeyboardScroll contentContainerStyle={{ padding: SPACING.md, paddingBottom: 60 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
           <View style={styles.photo}>
-            <Avatar person={user} size={96} />
+            <Avatar person={photoOf} size={96} />
             <View style={{ gap: 8, alignItems: 'flex-start' }}>
               <Button title={photoBusy ? 'Uploading…' : 'Change photo'} small variant="outline" onPress={pickPhoto} loading={photoBusy} />
-              {user?.avatar_url ? (
+              {photoOf?.avatar_url ? (
                 <Pressable onPress={removePhoto} accessibilityRole="button">
                   <AppText style={{ color: COLORS.gray700, textDecorationLine: 'underline', fontSize: 13 }}>Remove photo</AppText>
                 </Pressable>

@@ -328,3 +328,13 @@ test('a member sets a photo and changes the password', function () {
     $this->putJson(route('api.v1.me.password'), ['current_password' => 'old-password-1', 'password' => 'brand-new-pass-9', 'password_confirmation' => 'brand-new-pass-9'])->assertOk();
     expect(Hash::check('brand-new-pass-9', $user->fresh()->password))->toBeTrue();
 });
+
+test('a new photo replaces the old one and /me serves the new picture straight away', function () {
+    actingMember(member());
+
+    $first = $this->postJson(route('api.v1.me.avatar'), ['avatar' => UploadedFile::fake()->image('one.jpg', 300, 300)])->assertOk()->json('data.avatar_url');
+    $second = $this->postJson(route('api.v1.me.avatar'), ['avatar' => UploadedFile::fake()->image('two.png', 400, 400)])->assertOk()->json('data.avatar_url');
+
+    expect($second)->not->toBe($first);
+    $this->getJson(route('api.v1.me'))->assertOk()->assertJsonPath('data.avatar_url', $second);
+});

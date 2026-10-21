@@ -15,7 +15,8 @@ use InvalidArgumentException;
 /**
  * The FaithFellows radio channels: the platform's Gospel radio (songs) and Podcast radio (teaching), and one channel for each church. A channel plays
  * what has been added to it, in order, round the clock, in a loop. Everyone hears the same thing at the same moment, because "what is playing now"
- * is worked out from the clock: the loop's total length and the time since a fixed starting point.
+ * is worked out from the clock: the loop's total length and the time since a fixed starting point. "Play now" puts a chosen track on air at once by
+ * anchoring the channel to it: the loop then runs from that track, from that moment, so every listener moves to it together.
  */
 class RadioService
 {
@@ -74,6 +75,43 @@ class RadioService
     }
 
     /**
+     * Where in the loop the channel is at a moment: from the track an admin put on air with "Play now" (and the time they did it) when that track is
+     * still in the loop, otherwise from the fixed starting point of the clock.
+     *
+     * @param  Collection<int, RadioTrack>  $tracks
+     */
+    protected function secondsIntoLoop(RadioStation $station, Collection $tracks, CarbonInterface $at): int
+    {
+        $anchor = $this->anchor($station);
+        $index = $anchor ? $tracks->search(fn (RadioTrack $t) => $t->id === $anchor['track']) : false;
+        if ($index === false) {
+            return $at->getTimestamp() - strtotime(self::EPOCH.' UTC');
+        }
+
+        return (int) $tracks->take($index)->sum('duration_seconds') + $at->getTimestamp() - $anchor['at'];
+    }
+
+    /** @return array{track: int, at: int}|null the track an admin last put on air, and when */
+    public function anchor(RadioStation $station): ?array
+    {
+        [$track, $at] = array_pad(explode(':', (string) PlatformSetting::get('radio_anchor_'.$station->slug), 2), 2, null);
+
+        return ctype_digit((string) $track) && ctype_digit((string) $at) ? ['track' => (int) $track, 'at' => (int) $at] : null;
+    }
+
+    /**
+     * "Play now": puts this track on air this second. It is switched on if it was off, the channel carries on from it in loop order, and every
+     * phone that is listening moves to it within a few seconds.
+     */
+    public function playNow(RadioTrack $track): void
+    {
+        if (! $track->is_active) {
+            $track->update(['is_active' => true]);
+        }
+        PlatformSetting::put('radio_anchor_'.$track->channel()->slug, $track->id.':'.now()->getTimestamp());
+    }
+
+    /**
      * What a channel is playing at a moment (default: now), with the tracks that follow and the ones just played.
      *
      * @return array<string, mixed>|null null when the channel is off or has nothing in it
@@ -88,7 +126,7 @@ class RadioService
 
         $at ??= now();
         $total = (int) $tracks->sum('duration_seconds');
-        $phase = (($at->getTimestamp() - strtotime(self::EPOCH.' UTC')) % $total + $total) % $total;
+        $phase = ($this->secondsIntoLoop($station, $tracks, $at) % $total + $total) % $total;
 
         $index = 0;
         $offset = 0;

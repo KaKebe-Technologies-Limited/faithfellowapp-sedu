@@ -286,3 +286,86 @@ test('the Podcast radio page tells the admin about the fallback', function () {
     $this->actingAs(superAdmin())->get(route('super-admin.radio.index', ['station' => 'podcast']))->assertOk()->assertSee('also plays whenever the Gospel radio or a church channel has nothing on');
     $this->actingAs(superAdmin())->get(route('super-admin.radio.index'))->assertOk()->assertDontSee('also plays whenever the Gospel radio');
 });
+
+// ── Play now ────────────────────────────────────────────────────────────────────────────────────────────
+
+function loopOf(RadioStation $station, array $seconds): array
+{
+    return collect($seconds)->map(fn ($s, $i) => RadioTrack::create(['station_id' => $station->id, 'title' => 'Song '.($i + 1), 'file_path' => "radio/p{$station->id}-{$i}.mp3", 'duration_seconds' => $s, 'position' => $i + 1]))->all();
+}
+
+test('Play now puts a song on air this second and the loop carries on from it', function () {
+    [$one, $two, $three] = loopOf(RadioStation::gospel(), [100, 200, 300]);
+    $radio = app(RadioService::class);
+    $this->travelTo(Carbon\Carbon::parse(RadioService::EPOCH.' UTC')->addDays(5)->addSeconds(50));
+
+    $this->actingAs(superAdmin())->post(route('super-admin.radio.play', $three))->assertRedirect()->assertSessionHas('success');
+
+    $now = $radio->nowPlaying();
+    expect($now['track']['title'])->toBe('Song 3')->and($now['offset'])->toBe(0)->and($now['upcoming'][0]['title'])->toBe('Song 1');
+
+    $this->travelTo(now()->addSeconds(120));
+    expect($radio->nowPlaying()['track']['title'])->toBe('Song 3')->and($radio->nowPlaying()['offset'])->toBe(120);
+
+    // The song is 300 seconds long: after it, the loop goes on with the song that follows it, then the next.
+    $this->travelTo(now()->addSeconds(200));
+    expect($radio->nowPlaying()['track']['title'])->toBe('Song 1')->and($radio->nowPlaying()['offset'])->toBe(20);
+    $this->travelTo(now()->addSeconds(100));
+    expect($radio->nowPlaying()['track']['title'])->toBe('Song 2')->and($radio->nowPlaying()['offset'])->toBe(20);
+
+    // Another one on air: the channel moves at once, wherever it was.
+    $this->actingAs(superAdmin())->post(route('super-admin.radio.play', $two))->assertRedirect();
+    expect($radio->nowPlaying()['track']['title'])->toBe('Song 2')->and($radio->nowPlaying()['offset'])->toBe(0);
+});
+
+test('Play now on a song that is off switches it on, and the answer phones poll shows it', function () {
+    [$one, $two] = loopOf(RadioStation::gospel(), [100, 200]);
+    $two->update(['is_active' => false]);
+
+    $this->actingAs(superAdmin())->post(route('super-admin.radio.play', $two))->assertRedirect();
+
+    expect($two->fresh()->is_active)->toBeTrue();
+    Sanctum::actingAs(member(), ['member']);
+    $this->getJson(route('api.v1.radio'))->assertOk()->assertJsonPath('data.now.track.title', 'Song 2')->assertJsonPath('data.now.offset', 0);
+});
+
+test('Play now works on the Podcast radio without touching the Gospel radio', function () {
+    [$gospel] = loopOf(RadioStation::gospel(), [100, 200]);
+    [, $talk] = loopOf(RadioStation::podcast(), [100, 200]);
+    $radio = app(RadioService::class);
+    $this->travelTo(Carbon\Carbon::parse(RadioService::EPOCH.' UTC')->addDays(2)->addSeconds(10));
+    $gospelBefore = $radio->nowPlaying()['track']['title'];
+
+    $this->actingAs(superAdmin())->post(route('super-admin.radio.play', $talk))->assertRedirect();
+
+    expect($radio->nowPlaying(null, 4, 5, RadioStation::podcast())['track']['title'])->toBe('Song 2')
+        ->and($radio->nowPlaying()['track']['title'])->toBe($gospelBefore);
+});
+
+test('a church puts only its own episode on air, and members cannot', function () {
+    [$church, $admin, $follower] = channelChurch();
+    [$otherChurch] = channelChurch();
+    [, $mine] = loopOf(RadioStation::forChurch($church), [100, 200]);
+    [$theirs] = loopOf(RadioStation::forChurch($otherChurch), [100, 200]);
+    $this->travelTo(Carbon\Carbon::parse(RadioService::EPOCH.' UTC')->addDays(3)->addSeconds(10));
+
+    $this->actingAs($admin)->post(route('church-admin.radio.play', [$church, $mine->id]))->assertRedirect()->assertSessionHas('success');
+    expect(app(RadioService::class)->nowPlaying(null, 4, 5, RadioStation::forChurch($church))['track']['title'])->toBe('Song 2');
+
+    $this->actingAs($admin)->post(route('church-admin.radio.play', [$church, $theirs->id]))->assertNotFound();
+    $this->actingAs($follower)->post(route('church-admin.radio.play', [$church, $mine->id]))->assertForbidden();
+});
+
+test('when the song that was put on air is taken off the loop, the radio goes back to the clock', function () {
+    [$one, $two] = loopOf(RadioStation::gospel(), [100, 200]);
+    $radio = app(RadioService::class);
+    $this->travelTo(Carbon\Carbon::parse(RadioService::EPOCH.' UTC')->addSeconds(50));
+    $clock = $radio->nowPlaying()['track']['title'];  // Song 1
+
+    $this->actingAs(superAdmin())->post(route('super-admin.radio.play', $two))->assertRedirect();
+    expect($radio->nowPlaying()['track']['title'])->toBe('Song 2');
+
+    $two->update(['is_active' => false]);
+    expect($radio->nowPlaying())->not->toBeNull();   // Song 1 is the only one left, so it is on
+    $this->actingAs(superAdmin())->get(route('super-admin.radio.index'))->assertOk()->assertSee('Play now');
+});

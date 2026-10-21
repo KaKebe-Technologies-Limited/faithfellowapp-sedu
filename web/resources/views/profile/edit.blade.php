@@ -28,7 +28,7 @@
                                 <label for="avatar" class="form-label mb-1">{{ __('Profile photo') }}</label>
                                 <input type="file" name="avatar" id="avatar" accept="image/jpeg,image/png,image/webp" class="form-control form-control-sm @error('avatar') is-invalid @enderror">
                                 @error('avatar')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                                <div class="form-text">{{ __('JPG, PNG or WebP · max 2 MB') }}</div>
+                                <div class="form-text">{{ __('JPG, PNG or WebP · max 6 MB') }}</div>
                             </div>
                         </div>
                         <div class="row g-x-3">

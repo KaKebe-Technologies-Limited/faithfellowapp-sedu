@@ -21,6 +21,7 @@
                         <div class="fs-5 fw-semibold text-ff-black text-truncate">{{ $now['track']['title'] }}</div>
                         <div class="text-ff-muted text-truncate">{{ $now['track']['artist'] ?: '—' }}</div>
                         <div class="small-xs text-ff-muted mt-1">{{ __('Started :time', ['time' => \Illuminate\Support\Carbon::parse($now['started_at'])->diffForHumans()]) }} · {{ __('then') }} <strong>{{ $now['upcoming'][0]['title'] ?? '' }}</strong></div>
+                        <div class="small-xs text-ff-muted">{{ __('Press Play now on any :noun below to put it on air at once; the radio carries on from it.', ['noun' => $noun]) }}</div>
                     </div>
                 </div>
             @else
@@ -81,11 +82,11 @@
     <div class="ff-table-toolbar"><strong>{{ __('The loop, in order') }}</strong></div>
     <div class="table-responsive">
         <table class="table ff-table align-middle">
-            <thead><tr><th style="width:56px">#</th><th>{{ ucfirst($noun) }}</th><th>{{ __('Length') }}</th><th>{{ __('On air') }}</th><th>{{ __('Preview') }}</th><th></th></tr></thead>
+            <thead><tr><th style="width:56px">#</th><th>{{ ucfirst($noun) }}</th><th>{{ __('Length') }}</th><th>{{ __('In the loop') }}</th><th>{{ __('Preview') }}</th><th></th></tr></thead>
             <tbody>
                 @forelse ($tracks as $track)
                     <tr @class(['text-ff-muted' => ! $track->is_active])>
-                        <td class="fw-semibold">{{ $loop->iteration }}</td>
+                        <td class="fw-semibold">{{ $loop->iteration }}@if ($now && $now['track']['id'] === $track->id)<div><span class="ff-badge ff-badge-success"><i class="bi bi-broadcast"></i> {{ __('On air') }}</span></div>@endif</td>
                         <td>
                             <form method="POST" action="{{ $trackUrl('update', $track) }}" class="d-flex align-items-center gap-2">@csrf @method('PUT')
                                 <img src="{{ $track->coverUrl() }}" alt="" class="rounded-2 ff-cover" style="width:48px;height:48px;object-fit:cover">
@@ -105,6 +106,7 @@
                         </td>
                         <td><audio controls preload="none" src="{{ $track->streamUrl() }}" style="height:34px;max-width:220px"></audio></td>
                         <td class="text-end text-nowrap">
+                            <form method="POST" action="{{ $trackUrl('play', $track) }}" class="d-inline" data-ff-confirm="{{ __('Put this :noun on air now? Everyone listening moves to it.', ['noun' => $noun]) }}">@csrf<button class="btn btn-sm btn-ff-primary"><i class="bi bi-play-fill"></i> {{ __('Play now') }}</button></form>
                             <form method="POST" action="{{ $trackUrl('move', $track) }}" class="d-inline">@csrf<input type="hidden" name="direction" value="up"><button class="btn btn-sm btn-ff-ghost" aria-label="{{ __('Move up') }}" @disabled($loop->first)><i class="bi bi-arrow-up"></i></button></form>
                             <form method="POST" action="{{ $trackUrl('move', $track) }}" class="d-inline">@csrf<input type="hidden" name="direction" value="down"><button class="btn btn-sm btn-ff-ghost" aria-label="{{ __('Move down') }}" @disabled($loop->last)><i class="bi bi-arrow-down"></i></button></form>
                             <form method="POST" action="{{ $trackUrl('destroy', $track) }}" class="d-inline" data-ff-confirm="{{ __('Remove this :noun from the radio?', ['noun' => $noun]) }}">@csrf @method('DELETE')

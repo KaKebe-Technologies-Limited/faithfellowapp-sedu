@@ -223,11 +223,18 @@ registerAudio('radio', () => {
 
 export const toggleRadio = () => (snapshot.phase === 'idle' || snapshot.phase === 'paused' ? playRadio() : stopRadio());
 
-/** Mount once in the signed-in app: re-checks the station clock whenever the app comes back to the front. */
+/**
+ * Mount once in the signed-in app: re-checks the station clock whenever the app comes back to the front, and every few seconds while the radio plays, so
+ * when an admin presses "Play now" on a song, listeners move to it at once instead of at the end of the song they are on.
+ */
 export function useRadioLifecycle() {
   useEffect(() => {
     const sub = AppState.addEventListener('change', (s) => s === 'active' && snapshot.phase === 'playing' && resync());
-    return () => sub.remove();
+    const timer = setInterval(() => snapshot.phase === 'playing' && resync(), 10000);
+    return () => {
+      sub.remove();
+      clearInterval(timer);
+    };
   }, []);
 }
 
