@@ -238,3 +238,51 @@ test('the channel pages show how long one round lasts, also when the page has ot
     RadioTrack::create(['station_id' => RadioStation::forChurch($church)->id, 'title' => 'Church talk', 'file_path' => 'radio/c.mp3', 'duration_seconds' => 1200, 'position' => 1]);
     $this->actingAs($admin)->get(route('church-admin.radio.index', $church))->assertOk()->assertSee('20 min')->assertSee('72.0');
 });
+
+// ── The Podcast radio plays when nothing else is on ─────────────────────────────────────────────────────
+
+test('when the Gospel radio has nothing on, the Podcast radio plays instead', function () {
+    $this->actingAs(superAdmin())->postJson(route('super-admin.radio.store'), ['track' => channelFile('Hope in Hard Times - Pastor Okello.mp3'), 'station' => 'podcast'])->assertOk();
+    Sanctum::actingAs(member(), ['member']);
+
+    // The Gospel radio is empty: the old call and the new one both answer with the Podcast radio, and say why.
+    foreach ([route('api.v1.radio'), route('api.v1.radio.station', 'gospel')] as $url) {
+        $this->getJson($url)->assertOk()
+            ->assertJsonPath('data.fallback', true)->assertJsonPath('data.fallback_for.slug', 'gospel')->assertJsonPath('data.fallback_for.name', 'FaithFellows Radio')
+            ->assertJsonPath('data.slug', 'podcast')->assertJsonPath('data.enabled', true)->assertJsonPath('data.now.track.title', 'Hope in Hard Times');
+    }
+
+    // Once a song is added, the Gospel radio plays again and there is no fallback.
+    $this->actingAs(superAdmin())->postJson(route('super-admin.radio.store'), ['track' => channelFile('Amazing Grace - Test Choir.mp3')])->assertOk();
+    $this->getJson(route('api.v1.radio'))->assertJsonPath('data.fallback', false)->assertJsonPath('data.slug', 'gospel')->assertJsonPath('data.now.track.title', 'Amazing Grace');
+
+    // A switched-off Gospel radio falls back too.
+    app(RadioService::class)->saveSettings('FaithFellows Radio', false);
+    $this->getJson(route('api.v1.radio'))->assertJsonPath('data.fallback', true)->assertJsonPath('data.now.track.title', 'Hope in Hard Times');
+});
+
+test('an empty church channel falls back to the Podcast radio for its followers only', function () {
+    [$church, , $follower] = channelChurch();
+    $this->actingAs(superAdmin())->postJson(route('super-admin.radio.store'), ['track' => channelFile('Hope in Hard Times - Pastor Okello.mp3'), 'station' => 'podcast'])->assertOk();
+    $station = RadioStation::forChurch($church);
+
+    Sanctum::actingAs($follower, ['member']);
+    $this->getJson(route('api.v1.radio.station', $station->slug))->assertOk()
+        ->assertJsonPath('data.fallback', true)->assertJsonPath('data.fallback_for.slug', $station->slug)->assertJsonPath('data.now.track.title', 'Hope in Hard Times');
+
+    // Someone who does not follow the church still cannot ask for its channel.
+    Sanctum::actingAs(member(), ['member']);
+    $this->getJson(route('api.v1.radio.station', $station->slug))->assertNotFound();
+});
+
+test('with nothing on the Podcast radio either, the radio is simply quiet', function () {
+    Sanctum::actingAs(member(), ['member']);
+
+    $this->getJson(route('api.v1.radio'))->assertOk()->assertJsonPath('data.fallback', false)->assertJsonPath('data.enabled', false)->assertJsonPath('data.now', null);
+    expect(app(RadioService::class)->stationsFor(null))->toHaveCount(0);
+});
+
+test('the Podcast radio page tells the admin about the fallback', function () {
+    $this->actingAs(superAdmin())->get(route('super-admin.radio.index', ['station' => 'podcast']))->assertOk()->assertSee('also plays whenever the Gospel radio or a church channel has nothing on');
+    $this->actingAs(superAdmin())->get(route('super-admin.radio.index'))->assertOk()->assertDontSee('also plays whenever the Gospel radio');
+});

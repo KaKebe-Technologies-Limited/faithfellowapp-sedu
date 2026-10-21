@@ -79,7 +79,9 @@ export async function loadStation() {
   if (slug !== snapshot.stationId) return info; // another channel was chosen while this one was loading
   skew = info.server_time ? Date.parse(info.server_time) - Date.now() : 0;
   set({
-    station: { enabled: info.enabled, name: info.name, tagline: info.tagline, songs: info.songs, kind: info.kind ?? 'music', slug: info.slug ?? slug, church: info.church ?? null },
+    // Nothing is on the channel that was asked for, so the server answers with the Podcast radio: the selection moves there too.
+    ...(info.fallback && info.slug ? { stationId: info.slug } : {}),
+    station: { enabled: info.enabled, name: info.name, tagline: info.tagline, songs: info.songs, kind: info.kind ?? 'music', slug: info.slug ?? slug, church: info.church ?? null, fallbackFor: info.fallback ? info.fallback_for : null },
     ...(info.now ? { upcoming: info.now.upcoming, recent: info.now.recent } : { upcoming: [], recent: [] }),
     ...(snapshot.phase === 'idle' || snapshot.phase === 'loading' ? { track: info.now?.track ?? null, startedAt: info.now?.started_at ?? null } : {}),
   });

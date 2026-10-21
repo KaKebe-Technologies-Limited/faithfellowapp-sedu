@@ -13,6 +13,10 @@
         @endforeach
     </ul>
 
+    @if ($station->slug === 'podcast')
+        <div class="alert alert-info small"><i class="bi bi-info-circle"></i> {{ __('The Podcast radio also plays whenever the Gospel radio or a church channel has nothing on (no songs, or switched off), so the Radio button in the app always has something to play.') }}</div>
+    @endif
+
     @include('partials.radio-manager', [
         'station' => $station,
         'tracks' => $tracks,

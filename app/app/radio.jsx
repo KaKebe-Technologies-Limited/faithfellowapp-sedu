@@ -81,6 +81,11 @@ export default function RadioScreen() {
               <RadioButton size={92} />
             </View>
             <AppText style={styles.hint}>{error ? error : live ? 'Playing live. Keeps going when you lock your phone.' : phase === 'loading' ? 'Joining the radio…' : 'Tap play to join live.'}</AppText>
+            {station?.fallbackFor ? (
+              <AppText style={styles.notice}>
+                Nothing is on {station.fallbackFor.name} right now, so here is {station.name}.
+              </AppText>
+            ) : null}
           </>
         ) : (
           <AppText style={[styles.hint, { marginTop: 80 }]}>{station && !station.enabled ? 'This channel is quiet or switched off for now.' : 'This channel is quiet right now. Check again soon.'}</AppText>
@@ -124,6 +129,7 @@ const styles = StyleSheet.create({
   artist: { fontFamily: FONTS.medium, fontSize: 16.5, color: 'rgba(255,255,255,0.7)', textAlign: 'center', marginTop: 4 },
   buttonRow: { alignItems: 'center', marginTop: 24 },
   hint: { fontFamily: FONTS.medium, fontSize: 13.5, color: 'rgba(255,255,255,0.6)', textAlign: 'center', marginTop: 16 },
+  notice: { fontFamily: FONTS.medium, fontSize: 12.5, color: 'rgba(255,255,255,0.45)', textAlign: 'center', marginTop: 6 },
   section: { fontFamily: FONTS.bold, fontSize: 18, color: '#fff', marginBottom: 10 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#25252B', borderRadius: 14, padding: 8, marginBottom: 8 },
   thumb: { width: 54, height: 54, borderRadius: 10, backgroundColor: '#3A3A44' },

@@ -136,11 +136,21 @@ class RadioService
      *
      * @return array<string, mixed>
      */
-    public function payload(RadioStation $station): array
+    public function payload(RadioStation $station, bool $allowFallback = true): array
     {
         $now = $this->nowPlaying(null, 4, 5, $station);
 
+        // Nothing is on this channel (it is empty or switched off): the Podcast radio plays instead, so the radio always has something to hear.
+        if ($now === null && $allowFallback && $station->slug !== RadioStation::PODCAST && RadioStation::ready()) {
+            $podcast = RadioStation::podcast();
+            if ($this->nowPlaying(null, 1, 0, $podcast) !== null) {
+                return array_merge($this->payload($podcast, false), ['fallback' => true, 'fallback_for' => ['slug' => $station->slug, 'name' => $this->name($station)]]);
+            }
+        }
+
         return [
+            'fallback' => false,
+            'fallback_for' => null,
             'id' => $station->exists ? $station->id : null,
             'slug' => $station->slug,
             'kind' => $station->kind,
