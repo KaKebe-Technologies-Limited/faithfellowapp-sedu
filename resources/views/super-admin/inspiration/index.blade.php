@@ -18,7 +18,7 @@
             <h2 class="h6 mb-0">{{ __('Send to phones') }}</h2>
             <span class="ff-badge {{ $push['auto'] ? 'ff-badge-success' : '' }}">{{ $push['auto'] ? __('Scheduled sending is on') : __('Scheduled sending is off') }}</span>
         </div>
-        <p class="small text-ff-muted">{{ __('The message of each part of the day is pushed to everyone who has the app on a phone (:n people) at the time you set. Members can switch it off under Notification settings, “Daily inspiration”.', ['n' => number_format($push['audience'])]) }}</p>
+        <p class="small text-ff-muted">{{ __('The message of each part of the day is pushed to everyone who has the app on a phone (:n of :total members) at the time you set. A message can only pop up on a phone that has notifications turned on; the app asks members to do that. Members can switch it off under Notification settings, “Daily inspiration”.', ['n' => number_format($push['audience']), 'total' => number_format($push['members'])]) }}</p>
         <form method="POST" action="{{ route('super-admin.inspiration.schedule') }}" class="row g-2 align-items-end">
             @csrf @method('PUT')
             @foreach (\App\Models\Inspiration::SLOTS as $key => $label)
@@ -52,7 +52,7 @@
             <h2 class="h6 mb-0">{{ __('Verse of the day on phones') }}</h2>
             <span class="ff-badge {{ $verse['auto'] ? 'ff-badge-success' : '' }}">{{ $verse['auto'] ? __('Sent every morning') : __('Off') }}</span>
         </div>
-        <p class="small text-ff-muted">{{ __('Each morning the verse of the day pops up on every phone that has the app (:n people), with the reference and the words. Today’s verse is :ref. Members can switch it off under Notification settings, “Verse of the day”.', ['n' => number_format($push['audience']), 'ref' => $verse['today']]) }}</p>
+        <p class="small text-ff-muted">{{ __('Each morning the verse of the day pops up on every phone that has the app (:n of :total members), with the reference and the words. Today’s verse is :ref. Members can switch it off under Notification settings, “Verse of the day”.', ['n' => number_format($push['audience']), 'total' => number_format($push['members']), 'ref' => $verse['today']]) }}</p>
         <form method="POST" action="{{ route('super-admin.inspiration.verse') }}" class="row g-2 align-items-end">
             @csrf @method('PUT')
             <div class="col-sm-4 col-md-2">

@@ -7,6 +7,7 @@ use App\Models\Inspiration;
 use App\Models\PlatformSetting;
 use App\Services\InspirationBroadcaster;
 use App\Services\InspirationService;
+use App\Services\PushBroadcaster;
 use App\Services\VerseBroadcaster;
 use App\Support\Audit;
 use App\Support\VerseOfTheDay;
@@ -31,6 +32,7 @@ class InspirationController extends Controller
                 'auto' => $push->auto(),
                 'times' => $push->times(),
                 'audience' => $push->audience(),
+                'members' => app(PushBroadcaster::class)->members(),
                 'last' => collect(array_keys(Inspiration::SLOTS))->mapWithKeys(fn ($s) => [$s => PlatformSetting::get("inspiration_last_{$s}")])->all(),
                 'last_instant' => PlatformSetting::get('inspiration_last_instant'),
             ],
@@ -75,7 +77,7 @@ class InspirationController extends Controller
         $people = $verse->sendNow();
         Audit::log('inspiration.verse_sent', null, __('Sent to :n phones', ['n' => $people]));
 
-        return back()->with('status', __('Sent. Today’s verse is on its way to :n people who have the app on a phone and “Verse of the day” switched on.', ['n' => $people]));
+        return back()->with('status', $this->sentMessage($people, __('Today’s verse')));
     }
 
     /** Send one message to everyone's phones right now (twice within five minutes is refused, so a double tap does not buzz everyone twice). */
@@ -88,7 +90,21 @@ class InspirationController extends Controller
         $people = $push->sendNow($inspiration);
         Audit::log('inspiration.sent', $inspiration, __('Sent to :n phones', ['n' => $people]));
 
-        return back()->with('status', __('Sent. It is on its way to :n people who have the app on a phone and daily inspiration switched on.', ['n' => $people]));
+        return back()->with('status', $this->sentMessage($people, __('The message')));
+    }
+
+    /**
+     * What the super admin is told after a send: how many phones it went to (every member who has the app on a phone; no church is involved) and,
+     * when it is fewer than all members, why: a message can only pop up on a phone that is set up for notifications.
+     */
+    protected function sentMessage(int $phones, string $what): string
+    {
+        $others = max(0, app(PushBroadcaster::class)->members() - $phones);
+        $text = __(':what is on its way to :people who have the app on a phone (anyone who switched this kind off is skipped).', ['what' => $what, 'people' => trans_choice('{1} :n member|[0,*] :n members', $phones, ['n' => $phones])]);
+
+        return $others > 0
+            ? $text.' '.trans_choice('{1} :m other member has not|[2,*] :m other members have not', $others, ['m' => $others]).' '.__('turned notifications on in the app yet; they still see it on their Home screen, and the app now asks them to turn notifications on.')
+            : $text;
     }
 
     public function store(Request $request): RedirectResponse

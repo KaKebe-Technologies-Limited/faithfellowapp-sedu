@@ -37,6 +37,12 @@ class PushBroadcaster
         return $this->send(collect($userIds)->unique()->values(), $category, $message, $except);
     }
 
+    /** How many members could be reached if every one of them had the app on a phone. */
+    public function members(): int
+    {
+        return User::where('status', 'active')->count();
+    }
+
     /** How many people have the app on a phone. */
     public function audience(): int
     {
