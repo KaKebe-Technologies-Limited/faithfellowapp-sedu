@@ -209,7 +209,7 @@ test('a connection request and its acceptance are pushed to the phone', function
     Http::assertSent(fn ($r) => $r[0]['to'] === 'ExponentPushToken[cccccccccccccccccccccc]' && $r[0]['data']['kind'] === 'connection_accepted');
 });
 
-test('a chat message is pushed once a minute per conversation and never in quiet hours', function () {
+test('a chat message pops up on the other phone, a burst within seconds makes one buzz, and never in quiet hours', function () {
     Cache::flush();
     $church = pushChurch();
     $ann = pushMember($church, ['name' => 'Ann Akello']);

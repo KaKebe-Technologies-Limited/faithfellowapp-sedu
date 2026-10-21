@@ -108,8 +108,12 @@ class PodcastService
 
     public function approve(Podcast $podcast): void
     {
+        $first = $podcast->approved_at === null;
         $podcast->update(['status' => 'approved', 'review_note' => null, 'approved_at' => $podcast->approved_at ?? now()]);
         $this->tell($podcast, 'approved');
+        if ($first) {
+            rescue(fn () => app(ContentPushes::class)->podcast($podcast), 0, false);
+        }
     }
 
     public function reject(Podcast $podcast, string $reason): void

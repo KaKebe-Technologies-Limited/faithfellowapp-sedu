@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Podcast;
 use App\Models\PodcastEpisode;
 use App\Rules\NoContactDetails;
+use App\Services\ContentPushes;
 use App\Services\PodcastService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -28,7 +29,8 @@ class PodcastEpisodeController extends Controller
     public function store(Request $request, Podcast $podcast): RedirectResponse
     {
         $this->own($request, $podcast);
-        $podcast->episodes()->create($this->validated($request));
+        $episode = $podcast->episodes()->create($this->validated($request));
+        rescue(fn () => app(ContentPushes::class)->episode($episode), 0, false);
 
         return redirect()->route('podcasts.show', $podcast)->with('success', $podcast->isListed() ? __('Episode added. It is in the app now.') : __('Episode added. It will appear in the app once your podcast is approved.'));
     }

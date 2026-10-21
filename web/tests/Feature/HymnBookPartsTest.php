@@ -180,3 +180,12 @@ test('the super admin sets the parts of a book and puts each hymn in a part, num
     $this->actingAs($admin)->post(route('super-admin.hymns.store', $book), ['number' => 7, 'title' => 'Anonymous', 'author' => '', 'copyright_status' => 'hymnal'] + $payload)->assertSessionHasNoErrors();
     $this->actingAs($admin)->post(route('super-admin.hymns.store', $book), ['number' => 8, 'title' => 'Anonymous too', 'author' => ''] + $payload)->assertSessionHasErrors('author');
 });
+
+test('the update that shows the Luganda hymn book publishes it where it was loaded hidden, and leaves other books alone', function () {
+    $luganda = Hymnal::create(['name' => 'Mujje Tutendereze Omukama', 'slug' => 'mujje-tutendereze-omukama', 'language' => 'lg', 'is_published' => false]);
+    $other = Hymnal::create(['name' => 'Another book', 'slug' => 'another-book', 'language' => 'en', 'is_published' => false]);
+
+    (require base_path('database/migrations/2026_01_25_000001_publish_luganda_hymnal.php'))->up();
+
+    expect($luganda->fresh()->is_published)->toBeTrue()->and($other->fresh()->is_published)->toBeFalse();
+});

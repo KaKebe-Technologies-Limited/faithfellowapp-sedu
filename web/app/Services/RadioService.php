@@ -235,7 +235,7 @@ class RadioService
         $stored = "radio/{$name}.{$extension}";
         Storage::disk('local')->put($stored, fopen($path, 'rb'));
 
-        return RadioTrack::create([
+        $track = RadioTrack::create([
             ...($station->exists ? ['station_id' => $station->id] : []),
             'title' => Str::limit($title ?: pathinfo($originalName, PATHINFO_FILENAME), 160, ''),
             'artist' => $artist !== '' ? Str::limit($artist, 160, '') : null,
@@ -248,6 +248,10 @@ class RadioService
             'is_active' => true,
             'uploaded_by' => $by?->id,
         ]);
+        // A new teaching on the Podcast radio pops up on members' phones.
+        rescue(fn () => app(ContentPushes::class)->radioTrack($track), 0, false);
+
+        return $track;
     }
 
     /** Moves a track one place earlier or later in its channel's loop. */

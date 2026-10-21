@@ -293,6 +293,8 @@ class PodcastFeedService
     protected function apply(Podcast $podcast, array $items): array
     {
         $result = ['added' => 0, 'updated' => 0, 'removed' => 0, 'skipped' => 0];
+        $firstRead = $podcast->feed_synced_at === null;
+        $added = collect();
         $known = $podcast->episodes()->withTrashed()->whereNotNull('guid')->get()->keyBy('guid');
         $seen = [];
 
@@ -311,7 +313,7 @@ class PodcastFeedService
 
             $episode = $known[$item['guid']] ?? null;
             if (! $episode) {
-                $podcast->episodes()->create($fields + ['guid' => $item['guid'], 'status' => 'published']);
+                $added->push($podcast->episodes()->create($fields + ['guid' => $item['guid'], 'status' => 'published']));
                 $result['added']++;
             } elseif (! $episode->trashed()) {
                 // The host is the source of truth; an episode the podcaster put back on after the host removed it is published again.
@@ -333,6 +335,11 @@ class PodcastFeedService
             }
         }
         $podcast->refreshCounts();
+
+        // A podcast read for the first time is not news; after that the newest new episode pops up on members' phones.
+        if (! $firstRead && $added->isNotEmpty()) {
+            rescue(fn () => app(ContentPushes::class)->episode($added->sortByDesc('published_at')->first()), 0, false);
+        }
 
         return $result;
     }

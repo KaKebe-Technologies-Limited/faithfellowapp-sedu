@@ -47,6 +47,30 @@
         @endif
     </div>
 
+    <div class="ff-card mb-4">
+        <div class="d-flex align-items-center gap-2 mb-1">
+            <h2 class="h6 mb-0">{{ __('Verse of the day on phones') }}</h2>
+            <span class="ff-badge {{ $verse['auto'] ? 'ff-badge-success' : '' }}">{{ $verse['auto'] ? __('Sent every morning') : __('Off') }}</span>
+        </div>
+        <p class="small text-ff-muted">{{ __('Each morning the verse of the day pops up on every phone that has the app (:n people), with the reference and the words. Today’s verse is :ref. Members can switch it off under Notification settings, “Verse of the day”.', ['n' => number_format($push['audience']), 'ref' => $verse['today']]) }}</p>
+        <form method="POST" action="{{ route('super-admin.inspiration.verse') }}" class="row g-2 align-items-end">
+            @csrf @method('PUT')
+            <div class="col-sm-4 col-md-2">
+                <label class="form-label small fw-semibold" for="verse-time">{{ __('Time') }}</label>
+                <input id="verse-time" type="time" name="time" value="{{ old('time', $verse['time']) }}" class="form-control" required>
+                @if ($verse['last'])<div class="small-xs text-ff-muted mt-1">{{ __('Last sent :t', ['t' => \Illuminate\Support\Carbon::parse($verse['last'])->diffForHumans()]) }}</div>@endif
+            </div>
+            <div class="col-sm-8 col-md-4">
+                <div class="form-check form-switch mb-2"><input class="form-check-input" type="checkbox" role="switch" id="verse-auto" name="auto" value="1" @checked($verse['auto'])><label class="form-check-label" for="verse-auto">{{ __('Send automatically') }}</label></div>
+                <button class="btn btn-ff-primary w-100"><i class="bi bi-check2"></i> {{ __('Save') }}</button>
+            </div>
+        </form>
+        <hr>
+        <form method="POST" action="{{ route('super-admin.inspiration.verse-send') }}" onsubmit="return confirm('{{ __('Send today’s verse to everyone now?') }}')">@csrf
+            <button class="btn btn-ff-ghost"><i class="bi bi-send"></i> {{ __('Send today’s verse now') }}</button>
+        </form>
+    </div>
+
     <form method="POST" action="{{ route('super-admin.inspiration.store') }}" class="ff-card mb-4">
         @csrf
         <h2 class="h6 mb-3">{{ __('Add a message') }}</h2>

@@ -598,6 +598,8 @@ Route::prefix('super-admin')->name('super-admin.')
         Route::get('/inspiration', [SuperAdmin\InspirationController::class, 'index'])->name('inspiration.index');
         Route::post('/inspiration', [SuperAdmin\InspirationController::class, 'store'])->name('inspiration.store');
         Route::put('/inspiration/schedule', [SuperAdmin\InspirationController::class, 'schedule'])->name('inspiration.schedule');
+        Route::put('/inspiration/verse', [SuperAdmin\InspirationController::class, 'verseSchedule'])->name('inspiration.verse');
+        Route::post('/inspiration/verse/send', [SuperAdmin\InspirationController::class, 'verseSend'])->middleware('throttle:10,1')->name('inspiration.verse-send');
         Route::post('/inspiration/{inspiration}/send', [SuperAdmin\InspirationController::class, 'send'])->middleware('throttle:10,1')->name('inspiration.send');
         Route::put('/inspiration/{inspiration}', [SuperAdmin\InspirationController::class, 'update'])->name('inspiration.update');
         Route::delete('/inspiration/{inspiration}', [SuperAdmin\InspirationController::class, 'destroy'])->name('inspiration.destroy');

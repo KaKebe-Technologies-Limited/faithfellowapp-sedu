@@ -50,11 +50,12 @@ class SignupAlerts
             return 0;
         }
 
-        $to = array_values(array_diff($this->recipients(), [mb_strtolower((string) $user->email)]));
-        foreach ($to as $address) {
-            Notification::route('mail', $address)->notify(new NewSignup($user, User::count()));
+        // Sent at once, not put on the queue: this already runs after the sign-up has been answered, and a shared server may have no queue worker.
+        $sent = 0;
+        foreach (array_values(array_diff($this->recipients(), [mb_strtolower((string) $user->email)])) as $address) {
+            $sent += rescue(fn () => Notification::route('mail', $address)->notifyNow(new NewSignup($user, User::count())) ?? 1, 0) ?: 0;
         }
 
-        return count($to);
+        return $sent;
     }
 }

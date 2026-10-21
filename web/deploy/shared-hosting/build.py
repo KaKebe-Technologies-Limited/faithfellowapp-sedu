@@ -11,8 +11,8 @@ Run it from the web folder. The results are written to deploy/shared-hosting/out
                                               the public-domain "Classic Hymns" AND the sample data (five churches, members,
                                               sermons, events, giving, prayer, quizzes) so the site is not empty. The sample
                                               accounts sign in with DEMO_PASSWORD from .env.production, not the public "password".
-    hymnal-mujje-tutendereze-omukama.sql      the Luganda Catholic hymn book, loaded HIDDEN (not shown in the app until you
-                                              publish it in Super admin, Hymn book). Optional, import it after the first file.
+    hymnal-mujje-tutendereze-omukama.sql      the Luganda Catholic hymn book, loaded SHOWING in the hymn list (hide it any time
+                                              in Super admin, Hymn book). Optional, import it after the first file.
     faithfellows-site.zip                     the website: code, built styles, the PHP packages (no development tools), and
                                               a root .htaccess that serves the public folder.
 
@@ -150,8 +150,8 @@ def build_sql():
 
     has_luganda = LUGANDA.exists()
     if has_luganda:
-        say('Adding the Luganda Catholic hymn book as a HIDDEN hymnal and writing its own file')
-        artisan('hymns:import', LUGANDA, '--hidden', db='ff_export')
+        say('Adding the Luganda Catholic hymn book as a published hymnal and writing its own file')
+        artisan('hymns:import', LUGANDA, db='ff_export')
         slug = "'mujje-tutendereze-omukama'"
         dump('ff_export', luganda, 'hymnals', extra=['--no-create-info', '--skip-extended-insert', '--complete-insert', f'--where=slug={slug}'])
         part = OUT / 'part.sql'
@@ -160,9 +160,9 @@ def build_sql():
         with open(luganda, 'a', encoding='utf-8', newline='\n') as f:
             f.write('\n' + part.read_text(encoding='utf-8'))
         part.unlink()
-        header = ('-- The Luganda Catholic hymn book "Mujje Tutendereze Omukama", loaded HIDDEN (is_published = 0).\n'
-                  '-- Import it AFTER faithfellows-database.sql and before adding other hymnals. It stays out of the app until you\n'
-                  '-- publish it in Super admin, Hymn book, and the book is under copyright: publish it only with its publisher\'s permission.\n')
+        header = ('-- The Luganda Catholic hymn book "Mujje Tutendereze Omukama", loaded SHOWING in the hymn list (is_published = 1).\n'
+                  '-- Import it AFTER faithfellows-database.sql and before adding other hymnals. Hide it any time in Super admin, Hymn book.\n'
+                  '-- The book is under copyright: keep the publisher\'s permission (Inter-Diocesan Committee, Archdiocese of Kampala) on file.\n')
         luganda.write_text(header + luganda.read_text(encoding='utf-8'), encoding='utf-8', newline='\n')
 
     say('Checking the files by loading them into a second database (ff_verify)')

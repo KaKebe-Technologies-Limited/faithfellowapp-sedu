@@ -1,9 +1,12 @@
 <?php
 
+use App\Jobs\SendPushBatch;
+use App\Models\DeviceToken;
 use App\Models\Podcast;
 use App\Services\PodcastFeedService;
 use App\Services\PodcastService;
 use Illuminate\Routing\Middleware\ThrottleRequests;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
@@ -208,4 +211,24 @@ test('the embeddable player can be framed by other websites, other pages cannot'
     expect($this->get(route('podcasts.listen.show', $podcast->slug))->headers->get('X-Frame-Options'))->toBe('SAMEORIGIN');
 
     $this->actingAs($podcast->owner)->get(route('podcasts.show', $podcast))->assertOk()->assertSee('/embed', false)->assertSee('iframe');
+});
+
+test('a feed read for the first time makes no noise, a new episode on a later read pops up on phones', function () {
+    Bus::fake();
+    $admin = superAdmin();
+    $listener = member();
+    DeviceToken::create(['user_id' => $listener->id, 'token' => 'ExponentPushToken[feedlistener'.$listener->id.']', 'platform' => 'android', 'last_used_at' => now()]);
+    $today = fn (int $hours) => now()->utc()->subHours($hours)->format('D, d M Y H:i:s O');
+
+    $GLOBALS['feed']['body'] = feedXml([feedItem('Already out', 'g-1', 'https://mcdn.podbean.com/mf/web/a/one.mp3', '5:00', $today(5))]);
+    $podcast = app(PodcastFeedService::class)->import($admin, FEED);
+    Bus::assertNotDispatchedAfterResponse(SendPushBatch::class);
+
+    $GLOBALS['feed']['body'] = feedXml([
+        feedItem('Already out', 'g-1', 'https://mcdn.podbean.com/mf/web/a/one.mp3', '5:00', $today(5)),
+        feedItem('Fresh word', 'g-2', 'https://mcdn.podbean.com/mf/web/a/two.mp3', '5:00', $today(1)),
+    ]);
+    expect(app(PodcastFeedService::class)->sync($podcast->fresh()))->toMatchArray(['added' => 1]);
+
+    Bus::assertDispatchedAfterResponse(SendPushBatch::class, fn ($job) => $job->category === 'podcast' && $job->message['body'] === 'Fresh word' && $job->userIds === [$listener->id]);
 });

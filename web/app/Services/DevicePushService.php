@@ -13,7 +13,7 @@ use Illuminate\Support\Str;
 /**
  * Push to a member's phone for things that are not a church message: a connection request, a new chat
  * message. It respects the member's "People & messages" setting and quiet hours, and goes on the queue so the
- * request that caused it is never slowed down by Apple or Google.
+ * request that caused it is never slowed down by Apple or Google (it is sent right after the answer, so it does not need a queue worker).
  */
 class DevicePushService
 {
@@ -35,16 +35,17 @@ class DevicePushService
     public function toUser(User $user, string $category, array $message): void
     {
         if ($this->wants($user, $category)) {
-            SendDevicePush::dispatch($user->id, $message);
+            // Right after the answer to a web request; at once anywhere else (a command, a queue worker, where nothing ends a "response").
+            app()->runningInConsole() ? SendDevicePush::dispatchSync($user->id, $message) : SendDevicePush::dispatchAfterResponse($user->id, $message);
         }
     }
 
-    /** A chat message: at most one push per conversation a minute, so a busy chat does not buzz all evening. */
+    /** A chat message pops up on the other person's phone; messages sent within a few seconds of each other make one buzz. */
     public function newMessage(DirectMessage $message): void
     {
         $recipient = $message->recipient;
         $sender = $message->sender;
-        if (! $recipient || ! $sender || ! Cache::add("dm-push:{$message->sender_id}:{$message->recipient_id}", 1, 60)) {
+        if (! $recipient || ! $sender || ! Cache::add("dm-push:{$message->sender_id}:{$message->recipient_id}", 1, 6)) {
             return;
         }
 

@@ -30,6 +30,12 @@ export function routeFor(notification) {
   if (notification.kind === 'post' && notification.ref) return { pathname: '/post/[id]', params: { id: String(notification.ref) } };
   if (notification.kind === 'test') return '/settings/notifications';
   if (notification.kind === 'inspiration') return '/(tabs)';
+  // The verse of the day opens its chapter in the Bible; a new podcast or episode opens the podcast; the Podcast radio opens the radio.
+  if (notification.kind === 'verse') {
+    return notification.book && notification.chapter ? { pathname: '/bible/[book]/[chapter]', params: { book: String(notification.book), chapter: String(notification.chapter) } } : '/(tabs)';
+  }
+  if (notification.kind === 'podcast' && notification.ref) return { pathname: '/podcast/[id]', params: { id: String(notification.ref) } };
+  if (notification.kind === 'radio') return '/radio';
   if (notification.kind === 'game' && notification.ref) return { pathname: '/game/[id]', params: { id: String(notification.ref) } };
   if (notification.kind === 'connection_accepted' && notification.ref) return { pathname: '/person/[id]', params: { id: String(notification.ref) } };
 
