@@ -103,7 +103,8 @@ class InspirationBroadcaster
 
         $total = 0;
         DeviceToken::query()->distinct()->orderBy('user_id')->pluck('user_id')->chunk(200)->each(function ($ids) use ($payload, &$total) {
-            SendInspirationBatch::dispatch($ids->values()->all(), $payload);
+            // Right after the request or command, not through the queue: a shared server may have no queue worker running.
+            SendInspirationBatch::dispatchAfterResponse($ids->values()->all(), $payload);
             $total += $ids->count();
         });
 

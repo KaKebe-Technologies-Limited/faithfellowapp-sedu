@@ -262,7 +262,7 @@ test('each part of the day is pushed once at its time, and only while it is stil
 
     $this->travelTo(today()->setTime(6, 31));
     expect($broadcaster->sendDue())->toBe(1);
-    Bus::assertDispatched(SendInspirationBatch::class, fn ($job) => str_contains($job->message['body'], 'Be strong') && $job->message['data'] === ['kind' => 'inspiration']);
+    Bus::assertDispatchedAfterResponse(SendInspirationBatch::class, fn ($job) => str_contains($job->message['body'], 'Be strong') && $job->message['data'] === ['kind' => 'inspiration']);
 
     // Every minute the server checks, but the morning message does not go twice.
     $this->travelTo(today()->setTime(6, 40));
@@ -291,12 +291,12 @@ test('the super admin sets the times and sends a message to everyone now', funct
     $this->actingAs($admin)->put(route('super-admin.inspiration.schedule'), ['times' => ['morning' => '5:45']])->assertSessionHasErrors();
 
     $this->actingAs($admin)->post(route('super-admin.inspiration.send', $message))->assertRedirect()->assertSessionHas('status');
-    Bus::assertDispatched(SendInspirationBatch::class, fn ($job) => count($job->userIds) === 2 && str_contains($job->message['body'], 'Psalm 27:1'));
+    Bus::assertDispatchedAfterResponse(SendInspirationBatch::class, fn ($job) => count($job->userIds) === 2 && str_contains($job->message['body'], 'Psalm 27:1'));
 
     // A double tap is not sent twice, and members cannot do this.
     Bus::fake();
     $this->actingAs($admin)->post(route('super-admin.inspiration.send', $message))->assertRedirect();
-    Bus::assertNotDispatched(SendInspirationBatch::class);
+    Bus::assertNotDispatchedAfterResponse(SendInspirationBatch::class);
     $this->actingAs($one)->post(route('super-admin.inspiration.send', $message))->assertForbidden();
     $this->actingAs($admin)->get(route('super-admin.inspiration.index'))->assertOk()->assertSee('Send to phones');
 });
