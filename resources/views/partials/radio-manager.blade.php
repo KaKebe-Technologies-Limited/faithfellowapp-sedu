@@ -77,6 +77,71 @@
     @error('track')<div class="text-danger small mt-2">{{ $message }}</div>@enderror
 </div>
 
+{{-- Schedule a song: put it on air at a set time --}}
+@isset($scheduleUrl)
+    <div class="ff-card mb-4" id="radio-schedule">
+        <h2 class="h6 mb-1"><i class="bi bi-clock-history text-ff-primary"></i> {{ $isMusic ? __('Schedule a song') : __('Schedule an episode') }}</h2>
+        <p class="small text-ff-muted">{{ __('Choose a :noun and the time it should go on air, for example Don Moen Nonstop at 4:00 pm today. At that time the radio moves to it for everyone listening and carries on from it. Times are East Africa Time.', ['noun' => $noun]) }}</p>
+        @if (! \App\Models\RadioSchedule::ready())
+            <div class="alert alert-warning small mb-0"><i class="bi bi-info-circle"></i> {{ __('Scheduling needs a database update that has not been applied yet. Open Super admin, Database updates, and press Apply now.') }}</div>
+        @elseif ($tracks->isEmpty())
+            <div class="small text-ff-muted">{{ __('Add a :noun first, then you can schedule it.', ['noun' => $noun]) }}</div>
+        @else
+            <form method="POST" action="{{ $scheduleUrl('store') }}" class="row g-2 align-items-end">@csrf
+                @if ($stationField)<input type="hidden" name="station" value="{{ $stationField }}">@endif
+                <div class="col-lg-5">
+                    <label class="form-label small fw-semibold" for="schedule-track">{{ ucfirst($noun) }}</label>
+                    <select id="schedule-track" name="track" class="form-select @error('track') is-invalid @enderror" required>
+                        @foreach ($tracks as $t)
+                            <option value="{{ $t->id }}" @selected((int) old('track') === $t->id)>{{ $t->title }}@if ($t->artist) — {{ $t->artist }}@endif ({{ floor($t->duration_seconds / 60) }}:{{ str_pad($t->duration_seconds % 60, 2, '0', STR_PAD_LEFT) }})</option>
+                        @endforeach
+                    </select>
+                    @error('track')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+                <div class="col-sm-6 col-lg-3">
+                    <label class="form-label small fw-semibold" for="schedule-when">{{ __('Goes on air at') }}</label>
+                    <input id="schedule-when" type="datetime-local" name="starts_at" value="{{ old('starts_at', now()->addHour()->startOfHour()->format('Y-m-d\TH:i')) }}" min="{{ now()->format('Y-m-d\TH:i') }}" class="form-control @error('starts_at') is-invalid @enderror" required>
+                    @error('starts_at')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+                <div class="col-sm-6 col-lg-2">
+                    <label class="form-label small fw-semibold" for="schedule-repeat">{{ __('Repeat') }}</label>
+                    <select id="schedule-repeat" name="repeat" class="form-select">
+                        @foreach (\App\Models\RadioSchedule::REPEATS as $key => $label)
+                            <option value="{{ $key }}" @selected(old('repeat', 'none') === $key)>{{ __($label) }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-lg-2"><button class="btn btn-ff-primary w-100"><i class="bi bi-alarm"></i> {{ __('Schedule') }}</button></div>
+            </form>
+        @endif
+
+        @if (! empty($schedules))
+            <div class="mt-3 d-grid gap-2">
+                @foreach ($schedules as $row)
+                    @php($upcoming = $row['next'] !== null)
+                    <div class="d-flex align-items-center gap-3 p-2 rounded-3 {{ $upcoming ? 'bg-ff-soft' : 'text-ff-muted' }}" style="{{ $upcoming ? 'background:#FFF4F8' : 'background:#F7F7F8' }}">
+                        <img src="{{ $row['track']->coverUrl() }}" alt="" class="rounded-2 ff-cover" style="width:44px;height:44px;object-fit:cover">
+                        <div class="flex-grow-1 min-w-0">
+                            <div class="fw-semibold text-truncate">{{ $row['track']->title }}</div>
+                            <div class="small">
+                                @if ($upcoming)
+                                    <i class="bi bi-alarm text-ff-primary"></i> {{ $row['next']->isToday() ? __('Today') : ($row['next']->isTomorrow() ? __('Tomorrow') : $row['next']->format('D j M')) }}, {{ $row['next']->format('g:i a') }}
+                                @else
+                                    <i class="bi bi-check2-circle"></i> {{ __('Went on air :when', ['when' => $row['last']?->format('D j M, g:i a')]) }}
+                                @endif
+                                · {{ $row['schedule']->repeatLabel() }}
+                            </div>
+                        </div>
+                        <form method="POST" action="{{ $scheduleUrl('destroy', $row['schedule']) }}" data-ff-confirm="{{ __('Remove this schedule? What is on air now stays on air.') }}">@csrf @method('DELETE')
+                            <button class="btn btn-sm btn-ff-ghost text-danger" aria-label="{{ __('Remove the schedule') }}"><i class="bi bi-trash"></i></button>
+                        </form>
+                    </div>
+                @endforeach
+            </div>
+        @endif
+    </div>
+@endisset
+
 {{-- The loop --}}
 <div class="ff-table-wrap">
     <div class="ff-table-toolbar"><strong>{{ __('The loop, in order') }}</strong></div>
@@ -86,8 +151,8 @@
             <tbody>
                 @forelse ($tracks as $track)
                     <tr @class(['text-ff-muted' => ! $track->is_active])>
-                        <td class="fw-semibold">{{ $loop->iteration }}@if ($now && $now['track']['id'] === $track->id)<div><span class="ff-badge ff-badge-success"><i class="bi bi-broadcast"></i> {{ __('On air') }}</span></div>@endif</td>
-                        <td>
+                        <td class="fw-semibold text-nowrap">{{ $loop->iteration }}@if ($now && $now['track']['id'] === $track->id)<div><span class="ff-badge ff-badge-success"><i class="bi bi-broadcast"></i> {{ __('On air') }}</span></div>@endif</td>
+                        <td style="min-width:300px">
                             <form method="POST" action="{{ $trackUrl('update', $track) }}" class="d-flex align-items-center gap-2">@csrf @method('PUT')
                                 <img src="{{ $track->coverUrl() }}" alt="" class="rounded-2 ff-cover" style="width:48px;height:48px;object-fit:cover">
                                 <div class="d-flex flex-column gap-1 flex-grow-1">
@@ -104,8 +169,9 @@
                                 <button class="btn btn-sm {{ $track->is_active ? 'btn-ff-primary' : 'btn-ff-ghost' }}">{{ $track->is_active ? __('Playing') : __('Off') }}</button>
                             </form>
                         </td>
-                        <td><audio controls preload="none" src="{{ $track->streamUrl() }}" style="height:34px;max-width:220px"></audio></td>
-                        <td class="text-end text-nowrap">
+                        <td><audio controls preload="none" src="{{ $track->streamUrl() }}" style="height:34px;max-width:150px"></audio></td>
+                        <td class="text-end" style="width:210px">
+                            @isset($scheduleUrl)<a href="#radio-schedule" class="btn btn-sm btn-ff-ghost" data-schedule-track="{{ $track->id }}" aria-label="{{ __('Schedule') }}" title="{{ __('Schedule') }}"><i class="bi bi-alarm"></i></a>@endisset
                             <form method="POST" action="{{ $trackUrl('play', $track) }}" class="d-inline" data-ff-confirm="{{ __('Put this :noun on air now? Everyone listening moves to it.', ['noun' => $noun]) }}">@csrf<button class="btn btn-sm btn-ff-primary"><i class="bi bi-play-fill"></i> {{ __('Play now') }}</button></form>
                             <form method="POST" action="{{ $trackUrl('move', $track) }}" class="d-inline">@csrf<input type="hidden" name="direction" value="up"><button class="btn btn-sm btn-ff-ghost" aria-label="{{ __('Move up') }}" @disabled($loop->first)><i class="bi bi-arrow-up"></i></button></form>
                             <form method="POST" action="{{ $trackUrl('move', $track) }}" class="d-inline">@csrf<input type="hidden" name="direction" value="down"><button class="btn btn-sm btn-ff-ghost" aria-label="{{ __('Move down') }}" @disabled($loop->last)><i class="bi bi-arrow-down"></i></button></form>
@@ -123,6 +189,13 @@
 </div>
 
 @push('scripts')
+    <script>
+        // The alarm on a track picks it in the schedule form above.
+        document.querySelectorAll('[data-schedule-track]').forEach((link) => link.addEventListener('click', () => {
+            const select = document.getElementById('schedule-track');
+            if (select) { select.value = link.dataset.scheduleTrack; document.getElementById('schedule-when')?.focus({ preventScroll: true }); }
+        }));
+    </script>
     <script>
         // Sends the chosen files one at a time, each cut into 4 MB pieces: a big file never meets the server's upload size limit,
         // and a piece that fails on a weak connection is simply sent again. Each file gets a card with a ring, the FaithFellows

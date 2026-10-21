@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\SuperAdmin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\RadioScheduleRequest;
+use App\Models\RadioSchedule;
 use App\Models\RadioStation;
 use App\Models\RadioTrack;
 use App\Services\RadioService;
@@ -37,6 +39,7 @@ class RadioController extends Controller
             'platformStations' => RadioStation::ready() ? [RadioStation::gospel(), RadioStation::podcast()] : [RadioStation::gospel()],
             'tracks' => $tracks,
             'now' => $this->radio->nowPlaying(null, 4, 5, $station),
+            'schedules' => $this->radio->scheduleList($station),
             'name' => $this->radio->name($station),
             'enabled' => $this->radio->enabled($station),
             'loopSeconds' => $this->radio->loopSeconds($station),
@@ -104,6 +107,24 @@ class RadioController extends Controller
         $this->radio->playNow($track);
 
         return back()->with('success', __('“:title” is on air now. Listeners move to it within a few seconds.', ['title' => $track->title]));
+    }
+
+    /** Puts a song on air at a set time (once, every day or every week). */
+    public function schedule(RadioScheduleRequest $request): RedirectResponse
+    {
+        abort_unless(RadioSchedule::ready(), 503, __('Scheduling is being set up. Apply the database update first.'));
+        $track = RadioTrack::ofStation($this->station($request))->findOrFail((int) $request->validated('track'));
+        $schedule = $this->radio->schedule($track, $request->startsAt(), $request->validated('repeat'), $request->user());
+
+        return back()->with('success', __('“:title” will go on air :when (:zone).', ['title' => $track->title, 'when' => $schedule->starts_at->format('D j M, g:i a'), 'zone' => __('East Africa Time')]));
+    }
+
+    public function unschedule(RadioSchedule $schedule): RedirectResponse
+    {
+        abort_unless(in_array($schedule->station, [RadioStation::GOSPEL, RadioStation::PODCAST], true), 404);
+        $this->radio->cancelSchedule($schedule);
+
+        return back()->with('success', __('The schedule was removed.'));
     }
 
     public function destroy(RadioTrack $track): RedirectResponse

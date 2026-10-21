@@ -19,7 +19,7 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
  */
 class ArtController extends Controller
 {
-    private const KINDS = ['event' => Event::class, 'sermon' => Sermon::class, 'devotional' => Devotional::class, 'campaign' => Campaign::class, 'group' => SmallGroup::class, 'radio' => RadioTrack::class, 'podcast' => Podcast::class];
+    public const KINDS = ['event' => Event::class, 'sermon' => Sermon::class, 'devotional' => Devotional::class, 'campaign' => Campaign::class, 'group' => SmallGroup::class, 'radio' => RadioTrack::class, 'podcast' => Podcast::class];
 
     public function show(string $kind, int $id): BinaryFileResponse
     {

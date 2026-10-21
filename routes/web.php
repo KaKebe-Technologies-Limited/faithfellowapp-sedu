@@ -42,6 +42,8 @@ Route::get('/pay/return/{reference}', function (Request $request, string $refere
 Route::get('/podcasts', [Public\PodcastController::class, 'index'])->name('podcasts.listen');
 Route::get('/podcasts/{slug}', [Public\PodcastController::class, 'show'])->where('slug', '[a-z0-9-]+')->name('podcasts.listen.show');
 Route::get('/podcasts/{slug}/embed', [Public\PodcastController::class, 'embed'])->where('slug', '[a-z0-9-]+')->middleware('throttle:240,1')->name('podcasts.embed');
+// Uploaded pictures and files, for a server whose /storage link is missing (the web server answers first when it is there).
+Route::get('/storage/{path}', [Public\StorageController::class, 'show'])->where('path', '.+')->middleware('throttle:1200,1')->name('storage.fallback');
 Route::get('/radio/stream/{track}', [Public\RadioFileController::class, 'stream'])->whereNumber('track')->middleware('throttle:1200,1')->name('radio.stream');
 Route::get('/radio/cover/{track}', [Public\RadioFileController::class, 'cover'])->whereNumber('track')->middleware('throttle:240,1')->name('radio.cover');
 Route::get('/art/{kind}/{id}', [Public\ArtController::class, 'show'])->whereIn('kind', ['event', 'sermon', 'devotional', 'campaign', 'group', 'radio', 'podcast'])->whereNumber('id')->middleware('throttle:240,1')->name('art');
@@ -392,6 +394,8 @@ Route::prefix('church/{church}/admin')->name('church-admin.')
             Route::put('/radio/{trackId}', [ChurchAdmin\RadioController::class, 'update'])->whereNumber('trackId')->name('radio.update');
             Route::post('/radio/{trackId}/move', [ChurchAdmin\RadioController::class, 'move'])->whereNumber('trackId')->name('radio.move');
             Route::post('/radio/{trackId}/play', [ChurchAdmin\RadioController::class, 'play'])->whereNumber('trackId')->middleware('throttle:30,1')->name('radio.play');
+            Route::post('/radio/schedules', [ChurchAdmin\RadioController::class, 'schedule'])->middleware('throttle:30,1')->name('radio.schedule');
+            Route::delete('/radio/schedules/{scheduleId}', [ChurchAdmin\RadioController::class, 'unschedule'])->whereNumber('scheduleId')->name('radio.unschedule');
             Route::delete('/radio/{trackId}', [ChurchAdmin\RadioController::class, 'destroy'])->whereNumber('trackId')->name('radio.destroy');
         });
 
@@ -623,6 +627,8 @@ Route::prefix('super-admin')->name('super-admin.')
         Route::put('/radio/{track}', [SuperAdmin\RadioController::class, 'update'])->name('radio.update');
         Route::post('/radio/{track}/move', [SuperAdmin\RadioController::class, 'move'])->name('radio.move');
         Route::post('/radio/{track}/play', [SuperAdmin\RadioController::class, 'play'])->middleware('throttle:30,1')->name('radio.play');
+        Route::post('/radio-schedules', [SuperAdmin\RadioController::class, 'schedule'])->middleware('throttle:30,1')->name('radio.schedule');
+        Route::delete('/radio-schedules/{schedule}', [SuperAdmin\RadioController::class, 'unschedule'])->whereNumber('schedule')->name('radio.unschedule');
         Route::delete('/radio/{track}', [SuperAdmin\RadioController::class, 'destroy'])->name('radio.destroy');
 
         // Podcasts made by members: review before they show in the app

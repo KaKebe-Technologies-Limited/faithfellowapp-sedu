@@ -8,6 +8,7 @@ use App\Jobs\TranscribeSermon;
 use App\Models\Church;
 use App\Models\Sermon;
 use App\Services\SermonService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -39,11 +40,11 @@ class SermonController extends Controller
         return $this->form($church, new Sermon(['language' => 'en', 'status' => 'published', 'visibility' => 'public']));
     }
 
-    public function store(SermonRequest $request, Church $church): RedirectResponse
+    public function store(SermonRequest $request, Church $church): RedirectResponse|JsonResponse
     {
         $sermon = $this->sermons->save($church, $request, null, $request->user());
 
-        return redirect()->route('church-admin.sermons.index', $church)->with('success', match ($sermon->status) {
+        return $this->saved($request, $church, match ($sermon->status) {
             'draft' => __('Sermon saved as draft.'),
             'scheduled' => __('Sermon scheduled for :date.', ['date' => $sermon->published_at->format('j M, H:i')]),
             default => __('Sermon published and subscribers notified.'),
@@ -55,11 +56,24 @@ class SermonController extends Controller
         return $this->form($church, $sermon->load(['media', 'transcripts']));
     }
 
-    public function update(SermonRequest $request, Church $church, Sermon $sermon): RedirectResponse
+    public function update(SermonRequest $request, Church $church, Sermon $sermon): RedirectResponse|JsonResponse
     {
         $this->sermons->save($church, $request, $sermon);
 
-        return redirect()->route('church-admin.sermons.index', $church)->with('success', __('Sermon updated.'));
+        return $this->saved($request, $church, __('Sermon updated.'));
+    }
+
+    /** Back to the list with the message; a form that shows its upload progress asks for JSON and gets the address to go to. */
+    protected function saved(SermonRequest $request, Church $church, string $message): RedirectResponse|JsonResponse
+    {
+        $to = route('church-admin.sermons.index', $church);
+        if ($request->expectsJson()) {
+            session()->flash('success', $message);
+
+            return response()->json(['redirect' => $to, 'message' => $message]);
+        }
+
+        return redirect($to)->with('success', $message);
     }
 
     public function destroy(Church $church, Sermon $sermon): RedirectResponse

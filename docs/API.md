@@ -174,6 +174,8 @@ Returns the home feed across every church the member follows, newest first. Each
 ```
 
 ### `GET /sermons?church=<id>&q=<text>` and `GET /sermons/{id}`
+`GET /sermons` also takes `preacher=<exact name>`, `series=<id>`, `page` and `per_page` (up to 50); each sermon carries `series_id` and `listens`. `GET /sermons/browse` is the Sermons page in one request: `{ featured, preachers, latest, popular, series, total }`: `featured` is up to six sermons by different preachers (the ones with a real picture first, then the most listened; newest sermons fill it up to three when few preachers are named), `preachers` is `[{ name, sermons, latest_at }]`, `latest` the ten newest, `popular` the eight most listened, `series` is `[{ id, title, sermons, cover_url, church }]`; everything is limited to what the member may see.
+
 
 Lists or shows sermons. Members-only sermons appear only for churches the member follows. Each sermon includes `audio_url`, `video_url` (an embed or file URL) and `thumbnail_url`.
 
@@ -424,6 +426,7 @@ One station for the whole app. The super admin adds the songs at `/super-admin/r
 The radio is now several channels, each playing round the clock in a loop, the same for everyone at the same moment: the platform's **Gospel radio** (songs) and **Podcast radio** (teaching, filled by the super admin), and one channel for **each church** (filled by the church). `GET /radio` is still the Gospel radio, exactly as above.
 
 - `GET /radio/stations` → the channels this person can hear, Gospel radio first: `[{ id, slug, kind: music|talk, name, tagline, church: {id, name}|null, songs }]`. Only channels that are on and have something in them. A church's channel (`slug: church-{id}`) is listed for the people who follow that church or work for it.
+- Every channel answer (`GET /radio`, `GET /radio/stations/{slug}`) has `scheduled: { track, starts_at } | null`: the next song an admin has scheduled to go on air ("Don Moen Nonstop at 4 pm"). At that time `now` changes to it by itself; the app polls every 10 seconds while playing, so listeners move to it within seconds.
 - `GET /radio/stations/{slug}` (`gospel`, `podcast` or `church-{id}`) → the same shape as `GET /radio` for that channel (`now` is `null` when it is off or empty), plus `id`, `slug`, `kind` and `church`. `404` for a church channel the person does not follow.
 - Website, super admin: `GET /super-admin/radio?station=gospel|podcast` (the page for a platform channel); the upload (`POST /super-admin/radio/chunk`, in 4 MB pieces: `upload_id`, `index`, `total`, `name`, `chunk`, `station`), `PUT /super-admin/radio/settings` (`station`, `name`, `enabled`) and `PUT /super-admin/radio/channels/{id}/block` (switch a church's channel off or back on; the church cannot undo it).
 - Website, church (permission `media.manage`): `GET /church/{church}/admin/radio` (the church's channel is made the first time the page opens), `POST …/radio/chunk` (pieces, up to 150 MB per file, counted in the church's storage), `PUT …/radio/settings` `{ name, enabled }`, `PUT …/radio/{id}`, `POST …/radio/{id}/move`, `DELETE …/radio/{id}`.

@@ -23,6 +23,8 @@ class SermonResource extends JsonResource
             'audio_url' => $this->audio_src,
             'video_url' => $this->video_embed_url ?? $this->video_file_src,
             'thumbnail_url' => $this->picture_url,
+            'series_id' => $this->sermon_series_id,
+            'listens' => (int) $this->listens_count,
             'visibility' => $this->visibility,
             'published_at' => $this->published_at?->toIso8601String(),
             'church' => new ChurchSummaryResource($this->whenLoaded('church')),
