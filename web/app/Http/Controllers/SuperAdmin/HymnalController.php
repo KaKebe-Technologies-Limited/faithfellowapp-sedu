@@ -5,11 +5,15 @@ namespace App\Http\Controllers\SuperAdmin;
 use App\Http\Controllers\Controller;
 use App\Models\Hymn;
 use App\Models\Hymnal;
+use App\Services\HymnImporter;
+use App\Support\Audit;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use InvalidArgumentException;
+use JsonException;
 
 /**
  * The hymn book, managed by the super admin only: hymnals (collections, each in one language) and the hymns in them.
@@ -21,6 +25,34 @@ class HymnalController extends Controller
     public function index(): View
     {
         return view('super-admin.hymns.index', ['hymnals' => Hymnal::orderBy('sort')->orderBy('name')->get()]);
+    }
+
+    /**
+     * Loads a whole hymn book from its JSON file (the file made from the printed book), straight from the browser, so a book does not need the
+     * server's command line or a database tool. Loading the same file again updates the same hymns instead of adding them twice.
+     */
+    public function import(Request $request, HymnImporter $importer): RedirectResponse
+    {
+        $request->validate(['file' => ['required', 'file', 'max:10240', 'extensions:json'], 'publish' => ['sometimes', 'boolean']]);
+        @set_time_limit(300);
+
+        try {
+            $data = json_decode((string) file_get_contents($request->file('file')->getRealPath()), true, 512, JSON_THROW_ON_ERROR);
+            $result = $importer->import(is_array($data) ? $data : [], publish: $request->boolean('publish'));
+        } catch (JsonException|InvalidArgumentException $e) {
+            throw ValidationException::withMessages(['file' => __('That file could not be loaded: :why', ['why' => $e->getMessage()])]);
+        }
+
+        $hymnal = $result['hymnal'];
+        if ($request->boolean('publish') && ! $hymnal->is_published) {
+            $hymnal->update(['is_published' => true]);
+        }
+        Audit::log('hymnal.imported', $hymnal, __(':added added, :updated updated', ['added' => $result['created'], 'updated' => $result['updated']]));
+
+        return redirect()->route('super-admin.hymnals.show', $hymnal)->with('success', __('“:name” was loaded: :added hymns added, :updated updated, :skipped skipped (no title or words). :state', [
+            'name' => $hymnal->name, 'added' => $result['created'], 'updated' => $result['updated'], 'skipped' => $result['skipped'],
+            'state' => $hymnal->is_published ? __('It shows in the app.') : __('It is hidden from the app until you publish it.'),
+        ]));
     }
 
     public function create(): View

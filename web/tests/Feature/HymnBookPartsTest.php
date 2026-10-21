@@ -3,6 +3,7 @@
 use App\Models\Hymn;
 use App\Models\Hymnal;
 use App\Services\HymnImporter;
+use Illuminate\Http\UploadedFile;
 use Laravel\Sanctum\Sanctum;
 
 /*
@@ -188,4 +189,56 @@ test('the update that shows the Luganda hymn book publishes it where it was load
     (require base_path('database/migrations/2026_01_25_000001_publish_luganda_hymnal.php'))->up();
 
     expect($luganda->fresh()->is_published)->toBeTrue()->and($other->fresh()->is_published)->toBeFalse();
+});
+
+function hymnFile(array $overrides = [], string $name = 'book.json'): UploadedFile
+{
+    $book = array_merge([
+        'hymnal' => ['name' => 'Mujje Tutendereze Omukama', 'slug' => 'mujje-tutendereze-omukama', 'language' => 'lg', 'denomination' => 'Catholic', 'sections' => [['name' => 'Ez’Amayingira', 'meaning' => 'Entrance hymns']]],
+        'hymns' => [
+            ['section' => 'Ez’Amayingira', 'number' => 1, 'title' => 'Abasomi, mujje tusome mmwe', 'author' => 'Fr. Joseph Nnamukangula', 'verses' => [['number' => 1, 'lines' => ['Tufukamire mu maaso g’Omukama ono']]], 'refrain' => ['lines' => ['Abasomi mujje tusome mmwe,']]],
+            ['section' => 'Ez’Amayingira', 'number' => 2, 'title' => 'Mukama ajja', 'verses' => [['number' => 1, 'lines' => ['Mukama ajja mu kitiibwa']]]],
+            ['section' => 'Ez’Amayingira', 'number' => 3, 'title' => '', 'verses' => []],
+        ],
+    ], $overrides);
+
+    return UploadedFile::fake()->createWithContent($name, json_encode($book, JSON_UNESCAPED_UNICODE));
+}
+
+test('the super admin loads a whole hymn book from its file in the browser, and loading it again updates it', function () {
+    $admin = superAdmin();
+
+    $this->actingAs($admin)->get(route('super-admin.hymnals.index'))->assertOk()->assertSee('Load a whole hymn book from a file');
+    $this->actingAs($admin)->post(route('super-admin.hymnals.import'), ['file' => hymnFile(), 'publish' => 1])->assertRedirect()
+        ->assertSessionHas('success', fn ($m) => str_contains($m, '2 hymns added') && str_contains($m, '1 skipped') && str_contains($m, 'It shows in the app'));
+
+    $book = Hymnal::where('slug', 'mujje-tutendereze-omukama')->sole();
+    expect($book->is_published)->toBeTrue()->and($book->hymns()->count())->toBe(2)->and($book->hymns_count)->toBe(2)->and($book->language)->toBe('lg');
+
+    // The same file again changes nothing but what the file changed; nothing is added twice.
+    $changed = hymnFile(['hymns' => [['section' => 'Ez’Amayingira', 'number' => 1, 'title' => 'Abasomi, mujje tusome mmwe (corrected)', 'verses' => [['number' => 1, 'lines' => ['Tufukamire mu maaso g’Omukama ono']]]]]]);
+    $this->actingAs($admin)->post(route('super-admin.hymnals.import'), ['file' => $changed, 'publish' => 1])->assertRedirect()
+        ->assertSessionHas('success', fn ($m) => str_contains($m, '0 hymns added') && str_contains($m, '1 updated'));
+    expect(Hymnal::count())->toBe(1)->and($book->fresh()->hymns()->count())->toBe(2)->and($book->hymns()->where('number', 1)->value('title'))->toBe('Abasomi, mujje tusome mmwe (corrected)');
+});
+
+test('a hymn book loaded without "show it in the app" stays hidden, and ticking it shows a book that was hidden', function () {
+    $admin = superAdmin();
+
+    $this->actingAs($admin)->post(route('super-admin.hymnals.import'), ['file' => hymnFile()])->assertRedirect()->assertSessionHas('success', fn ($m) => str_contains($m, 'hidden from the app'));
+    expect(Hymnal::where('slug', 'mujje-tutendereze-omukama')->sole()->is_published)->toBeFalse();
+
+    $this->actingAs($admin)->post(route('super-admin.hymnals.import'), ['file' => hymnFile(), 'publish' => 1])->assertRedirect();
+    expect(Hymnal::where('slug', 'mujje-tutendereze-omukama')->sole()->is_published)->toBeTrue();
+});
+
+test('a file that is not a hymn book is refused with a reason, and only the super admin can load one', function () {
+    $admin = superAdmin();
+
+    $this->actingAs($admin)->post(route('super-admin.hymnals.import'), ['file' => UploadedFile::fake()->createWithContent('notes.json', 'this is not json')])->assertSessionHasErrors('file');
+    $this->actingAs($admin)->post(route('super-admin.hymnals.import'), ['file' => UploadedFile::fake()->createWithContent('notes.json', '{"hymns": []}')])->assertSessionHasErrors('file');
+    $this->actingAs($admin)->post(route('super-admin.hymnals.import'), ['file' => UploadedFile::fake()->createWithContent('book.txt', '{}')])->assertSessionHasErrors('file');
+    expect(Hymnal::count())->toBe(0);
+
+    $this->actingAs(member())->post(route('super-admin.hymnals.import'), ['file' => hymnFile()])->assertForbidden();
 });

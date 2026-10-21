@@ -99,7 +99,7 @@ Build one with `npx.cmd eas-cli build -p android --profile preview`. See `app/RE
 - **Church subdomains** (`grace-lira.faithfellows.com`) need a wildcard subdomain: in Hostinger add `*` under the domain's subdomains (and
   a wildcard certificate). Not needed for the app. Until then links to a church's own site do not open.
 - **Hymn book.** The Luganda hymn book shows in the hymn list (the update `2026_01_25_000001` publishes it where it was loaded hidden). It is under
-  copyright: keep the publisher's written permission (the Inter-Diocesan Committee, Archdiocese of Kampala) on file. Hide it any time in Super admin, Hymn book.
+  copyright: keep the publisher's written permission (the Inter-Diocesan Committee, Archdiocese of Kampala) on file. Hide it any time in Super admin, Hymn book. To load the book (or a corrected file) without any database tool, use Super admin, Hymn book, **Load a whole hymn book from a file** and choose `mujje-tutendereze-omukama.json` from `web/storage/app/private/hymnals/` on your computer.
 - **Sample data.** The churches and people are fictional. Before real churches use the site, build a database without them: take the `DemoSeeder` step (and the password re-hash that follows it) out of `build_sql()` in `deploy/shared-hosting/build.py`, then import into a fresh database.
 
 ## Updating the site later
