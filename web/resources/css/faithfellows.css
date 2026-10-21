@@ -1543,3 +1543,25 @@ a.btn:hover, .nav-link:hover, .dropdown-item:hover, .ff-card-link:hover, .list-g
 .ff-upload-note { margin: 14px 0 0; font-size: var(--ff-text-sm); color: var(--ff-gray-700); }
 .ff-upload-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
 @media (max-width: 575.98px) { .ff-upload-sheet { padding: 18px; border-radius: 22px; } .ff-upload-sheet .ff-upload-ring { width: 76px; height: 76px; } }
+
+/* A collapsible menu (desktop): it shrinks to a rail of icons, labels show as tooltips, and the choice is remembered (app-shell). */
+.ff-sidebar, .ff-main { transition: width .2s ease, margin-left .2s ease; }
+.ff-sidebar-toggle .ff-when-collapsed, .ff-sidebar-footer .ff-when-collapsed { display: none; }
+html.ff-sidebar-collapsed .ff-sidebar-toggle .ff-when-open, html.ff-sidebar-collapsed .ff-sidebar-footer .ff-when-open { display: none; }
+html.ff-sidebar-collapsed .ff-sidebar-toggle .ff-when-collapsed, html.ff-sidebar-collapsed .ff-sidebar-footer i.ff-when-collapsed { display: inline-block; }
+@media (min-width: 992px) {
+    html.ff-sidebar-collapsed { --ff-sidebar-width: 76px; }
+    html.ff-sidebar-collapsed .ff-sidebar-brand { justify-content: center; padding: 0; }
+    html.ff-sidebar-collapsed .ff-sidebar .ff-logo-word { display: none; }
+    html.ff-sidebar-collapsed .ff-sidebar-nav { padding: 12px 10px; }
+    html.ff-sidebar-collapsed .ff-sidebar-heading { display: block; height: 1px; padding: 0; margin: 12px 10px; background: #F0E6EA; font-size: 0; overflow: hidden; }
+    html.ff-sidebar-collapsed .ff-sidebar .ff-nav-link { position: relative; justify-content: center; gap: 0; padding: 10px 0; }
+    html.ff-sidebar-collapsed .ff-sidebar .ff-nav-label { display: none; }
+    html.ff-sidebar-collapsed .ff-sidebar .ff-nav-link .badge { position: absolute; top: 2px; right: 6px; margin: 0; padding: 2px 5px; font-size: .62rem; }
+    html.ff-sidebar-collapsed .ff-sidebar-footer { padding: 12px 10px; }
+    html.ff-sidebar-collapsed .ff-sidebar-top { padding-left: 10px !important; padding-right: 10px !important; }
+    html.ff-sidebar-collapsed .ff-church-switcher .dropdown-toggle { justify-content: center; padding: 8px 0; }
+    html.ff-sidebar-collapsed .ff-church-switcher .dropdown-toggle > span, html.ff-sidebar-collapsed .ff-church-switcher .dropdown-toggle::after { display: none; }
+    html.ff-sidebar-collapsed .ff-church-switcher .dropdown-menu { min-width: 240px; }
+}
+@media (prefers-reduced-motion: reduce) { .ff-sidebar, .ff-main { transition: none; } }
