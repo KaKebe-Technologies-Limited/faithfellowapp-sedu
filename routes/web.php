@@ -629,6 +629,7 @@ Route::prefix('super-admin')->name('super-admin.')
         // The hymn book: only the super admin adds hymnals and hymns
         Route::get('/hymnals', [SuperAdmin\HymnalController::class, 'index'])->name('hymnals.index');
         Route::get('/hymnals/new', [SuperAdmin\HymnalController::class, 'create'])->name('hymnals.create');
+        Route::post('/hymnals/import', [SuperAdmin\HymnalController::class, 'import'])->middleware('throttle:6,1')->name('hymnals.import');
         Route::post('/hymnals', [SuperAdmin\HymnalController::class, 'store'])->name('hymnals.store');
         Route::get('/hymnals/{hymnal}', [SuperAdmin\HymnalController::class, 'show'])->name('hymnals.show');
         Route::get('/hymnals/{hymnal}/edit', [SuperAdmin\HymnalController::class, 'edit'])->name('hymnals.edit');
