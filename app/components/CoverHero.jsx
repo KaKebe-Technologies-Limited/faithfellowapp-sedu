@@ -4,6 +4,7 @@
 import { StyleSheet, View } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
+import BrandPlaceholder from './BrandPlaceholder';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, SPACING } from '../constants/theme';
 import { mediaUrl } from '../lib/api';
@@ -15,7 +16,7 @@ export default function CoverHero({ uri, height = 280, right, children, colors =
   return (
     <View style={[styles.hero, { height: height + insets.top }]}>
       <LinearGradient colors={colors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
-      {uri ? <Image source={{ uri: mediaUrl(uri) }} style={StyleSheet.absoluteFill} contentFit="cover" transition={300} /> : null}
+      {uri ? <Image source={{ uri: mediaUrl(uri) }} style={StyleSheet.absoluteFill} contentFit="cover" transition={300} /> : <BrandPlaceholder />}
       <LinearGradient colors={['rgba(20,6,12,0.35)', 'rgba(20,6,12,0.05)', 'rgba(20,6,12,0.85)']} locations={[0, 0.4, 1]} style={StyleSheet.absoluteFill} />
       <View style={[styles.top, { top: insets.top + 8 }]}>
         <BackButton onDark />

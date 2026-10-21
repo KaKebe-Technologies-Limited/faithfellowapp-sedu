@@ -5,6 +5,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
+import BrandPlaceholder from './BrandPlaceholder';
 import { router } from 'expo-router';
 import { COLORS, FONTS, RADIUS, SHADOW, SPACING } from '../constants/theme';
 import { mediaUrl } from '../lib/api';
@@ -17,7 +18,7 @@ function Cover({ uri, children, height = 168 }) {
   return (
     <View style={[styles.cover, { height }]}>
       <LinearGradient colors={[COLORS.primaryDark, COLORS.primary]} style={StyleSheet.absoluteFill} />
-      {uri ? <Image source={{ uri: mediaUrl(uri) }} style={StyleSheet.absoluteFill} contentFit="cover" transition={250} /> : null}
+      {uri ? <Image source={{ uri: mediaUrl(uri) }} style={StyleSheet.absoluteFill} contentFit="cover" transition={250} /> : <BrandPlaceholder />}
       <LinearGradient colors={['rgba(20,6,12,0.0)', 'rgba(20,6,12,0.5)']} locations={[0.45, 1]} style={StyleSheet.absoluteFill} />
       {children}
     </View>
@@ -126,7 +127,7 @@ export function DevotionalListCard({ devotional: d }) {
     <Pressable onPress={() => router.push({ pathname: '/devotional/[id]', params: { id: d.id } })} style={({ pressed }) => [styles.row, pressed && { opacity: 0.94 }]} accessibilityRole="button" accessibilityLabel={`Devotional: ${d.title}`}>
       <View style={styles.rowThumb}>
         <LinearGradient colors={[COLORS.primaryDark, COLORS.primary]} style={StyleSheet.absoluteFill} />
-        {d.cover_url ? <Image source={{ uri: mediaUrl(d.cover_url) }} style={StyleSheet.absoluteFill} contentFit="cover" transition={250} /> : null}
+        {d.cover_url ? <Image source={{ uri: mediaUrl(d.cover_url) }} style={StyleSheet.absoluteFill} contentFit="cover" transition={250} /> : <BrandPlaceholder />}
       </View>
       <View style={{ flex: 1, gap: 3 }}>
         <AppText style={styles.title} numberOfLines={2}>

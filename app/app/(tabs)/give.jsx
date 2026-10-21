@@ -5,6 +5,7 @@ import { useCallback } from 'react';
 import { Alert, FlatList, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { LinearGradient } from 'expo-linear-gradient';
+import BrandPlaceholder from '../../components/BrandPlaceholder';
 import { router, useFocusEffect } from 'expo-router';
 import AppText from '../../components/AppText';
 import ChurchAvatar from '../../components/ChurchAvatar';
@@ -133,7 +134,7 @@ export default function GiveTab() {
                 <Pressable key={c.id} onPress={() => router.push({ pathname: '/campaign/[id]', params: { id: c.id } })} style={styles.campaign} accessibilityRole="button" accessibilityLabel={`Campaign: ${c.title}`}>
                   <View style={styles.campaignCover}>
                     <LinearGradient colors={[COLORS.primaryDark, COLORS.primary]} style={StyleSheet.absoluteFill} />
-                    {c.cover_url ? <Image source={{ uri: mediaUrl(c.cover_url) }} style={StyleSheet.absoluteFill} contentFit="cover" transition={250} /> : null}
+                    {c.cover_url ? <Image source={{ uri: mediaUrl(c.cover_url) }} style={StyleSheet.absoluteFill} contentFit="cover" transition={250} /> : <BrandPlaceholder />}
                   </View>
                   <View style={{ padding: 12, gap: 6 }}>
                     <AppText style={styles.campaignTitle} numberOfLines={2}>

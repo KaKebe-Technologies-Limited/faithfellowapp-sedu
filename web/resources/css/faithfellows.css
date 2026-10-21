@@ -243,10 +243,15 @@ a.btn:hover, .nav-link:hover, .dropdown-item:hover, .ff-card-link:hover, .list-g
     aspect-ratio: 16 / 9; width: 100%; object-fit: cover; display: block;
     background: var(--ff-gradient-soft);
 }
+/* A picture slot with no picture: the white FaithFellows mark on a soft glow over the brand gradient (the icon inside the box is not shown). */
 .ff-cover-placeholder {
     aspect-ratio: 16 / 9; width: 100%;
     display: flex; align-items: center; justify-content: center;
-    background: var(--ff-gradient-warm); color: rgba(255, 255, 255, .85); font-size: 2.5rem;
+    background:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='none'%3E%3Crect x='5.1' y='5.1' width='89.8' height='89.8' rx='30.4' stroke='white' stroke-width='10.2'/%3E%3Cg stroke='white' stroke-width='10.2'%3E%3Cpath d='M22.3 51.6H55.6M50.5 46.5V78.5'/%3E%3Cpath d='M49.7 21.7A29.9 29.9 0 0 0 79.6 51.6'/%3E%3C/g%3E%3C/svg%3E") center / auto 40% no-repeat,
+        radial-gradient(circle at 50% 50%, rgba(255, 255, 255, .24), transparent 52%),
+        linear-gradient(135deg, var(--ff-primary-dark), var(--ff-primary) 62%, var(--ff-primary-light));
+    color: transparent; font-size: 0;
 }
 
 /* ==========================================================================

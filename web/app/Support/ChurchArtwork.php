@@ -56,7 +56,7 @@ class ChurchArtwork
      */
     public static function banner(string $path, string $hex, int $seed = 1, ?string $theme = null): string
     {
-        return self::scene($path, $theme ?? ['sunrise', 'cross', 'waves'][$seed % 3], $hex, $seed, 1600, 600);
+        return self::placeholder($path, $hex, $seed, 1600, 600);
     }
 
     /**
@@ -66,6 +66,67 @@ class ChurchArtwork
     public static function slide(string $path, string $theme, string $hex, int $seed = 1): string
     {
         return self::scene($path, $theme, $hex, $seed, 1600, 700);
+    }
+
+    /* ── The FaithFellows placeholder ─────────────────────────────────────── */
+
+    /**
+     * The picture for anything that has no photo of its own (a radio track, a podcast, an event, a church banner…): a soft gradient in the
+     * brand colour, the FaithFellows mark big and faint in the background, light pooling in the corners, and the white mark in the middle on a
+     * soft glow. It looks like part of the app and not like an empty box. No text is drawn (the app puts the title on top), and the middle
+     * stays clear, so it still works when the app crops it to a square. The `$seed` picks one of four looks, so a list is not all the same.
+     *
+     * `$layout` says where the mark sits, because the app lays things over the picture: 'center' (radio and podcast covers, shown as squares),
+     * 'top' (the default: a title or a date sits over the lower half) and 'compact' (sermons, which have a play button in the middle).
+     */
+    public static function placeholder(string $path, string $hex = '#BC2649', int $seed = 1, int $w = 1200, int $h = 675, string $format = 'jpg', string $layout = 'top'): string
+    {
+        $scale = 1.4;
+        $W = (int) ($w * $scale);
+        $H = (int) ($h * $scale);
+        $im = self::canvas($W, $H);
+        $brand = self::rgb($hex);
+        $v = abs($seed) % 4;
+
+        $deep = self::mix($brand, [24, 6, 16], 0.6);
+        $light = self::mix($brand, [255, 255, 255], 0.3);
+        self::vgradient($im, [
+            [[0, $deep], [0.55, $brand], [1, $light]],
+            [[0, $light], [0.5, $brand], [1, $deep]],
+            [[0, $brand], [0.6, self::mix($brand, [255, 255, 255], 0.12)], [1, $deep]],
+            [[0, $deep], [0.45, $brand], [1, self::mix($brand, [255, 200, 215], 0.35)]],
+        ][$v]);
+
+        // Light pooling in two corners, so the colour has depth.
+        self::glow($im, (int) ($W * [0.18, 0.82, 0.3, 0.74][$v]), (int) ($H * [0.2, 0.78, 0.8, 0.24][$v]), (int) ($W * 0.5), self::mix($brand, [255, 255, 255], 0.55), 0.24);
+        self::glow($im, (int) ($W * [0.86, 0.12, 0.8, 0.16][$v]), (int) ($H * [0.84, 0.18, 0.2, 0.86][$v]), (int) ($W * 0.38), self::mix($brand, [255, 190, 210], 0.5), 0.22);
+
+        // The mark, big and faint, off to one side.
+        self::layMark($im, 'mark-faint', (int) ($W * [0.84, 0.14, 0.9, 0.1][$v]), (int) ($H * [0.46, 0.56, 0.7, 0.34][$v]), (int) ($H * 1.5));
+
+        // The mark in the middle, on a soft glow and a soft shadow.
+        [$at, $big] = ['center' => [0.5, 0.34], 'compact' => [0.26, 0.2]][$layout] ?? [0.33, 0.26];
+        $cx = (int) ($W / 2);
+        $cy = (int) ($H * $at);
+        self::glow($im, $cx, $cy, (int) ($H * $big * 1.4), self::mix($brand, [255, 255, 255], 0.7), 0.3);
+        self::layMark($im, 'mark-shadow', $cx, $cy + (int) ($H * 0.02), (int) ($H * $big * 1.4));
+        self::layMark($im, 'mark', $cx, $cy, (int) ($H * $big));
+
+        self::bottomShade($im, $W, $H, 0.4);
+
+        return self::save($im, $path, $w, $h, $format);
+    }
+
+    /** Lays one of the brand marks (resources/brand) on the picture, centred on a point and `$size` pixels wide. */
+    protected static function layMark(GdImage $im, string $mark, int $cx, int $cy, int $size): void
+    {
+        $file = resource_path("brand/{$mark}.png");
+        if (! is_file($file) || ! ($png = @imagecreatefrompng($file))) {
+            return;
+        }
+        imagealphablending($im, true);
+        imagecopyresampled($im, $png, (int) ($cx - $size / 2), (int) ($cy - $size / 2), 0, 0, $size, $size, imagesx($png), imagesy($png));
+        imagedestroy($png);
     }
 
     /* ── Scenes ───────────────────────────────────────────────────────── */

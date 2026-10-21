@@ -6,6 +6,7 @@ import { Alert, Linking, Pressable, RefreshControl, ScrollView, StyleSheet, View
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
+import BrandPlaceholder from '../../components/BrandPlaceholder';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AppText from '../../components/AppText';
@@ -122,7 +123,7 @@ export default function ChurchScreen() {
       >
         <View style={styles.cover}>
           <LinearGradient colors={[COLORS.primaryDark, COLORS.primary]} style={StyleSheet.absoluteFill} />
-          {info.cover_url ? <Image source={{ uri: mediaUrl(info.cover_url) }} style={StyleSheet.absoluteFill} contentFit="cover" transition={300} /> : null}
+          {info.cover_url ? <Image source={{ uri: mediaUrl(info.cover_url) }} style={StyleSheet.absoluteFill} contentFit="cover" transition={300} /> : <BrandPlaceholder />}
           <LinearGradient colors={['rgba(0,0,0,0.25)', 'rgba(0,0,0,0)', 'rgba(0,0,0,0.25)']} style={StyleSheet.absoluteFill} />
         </View>
 

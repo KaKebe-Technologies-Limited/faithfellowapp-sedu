@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
+import BrandPlaceholder from './BrandPlaceholder';
 import { router } from 'expo-router';
 import { COLORS, FONTS, RADIUS, SHADOW } from '../constants/theme';
 import { mediaUrl } from '../lib/api';
@@ -15,7 +16,7 @@ export default function GroupCard({ group, width, style }) {
     <Pressable onPress={() => router.push({ pathname: '/group/[id]', params: { id: String(group.id) } })} style={({ pressed }) => [styles.card, width && { width }, style, pressed && { opacity: 0.94 }]} accessibilityRole="button" accessibilityLabel={`Group: ${group.name}`}>
       <View style={styles.cover}>
         <LinearGradient colors={[COLORS.primaryDark, COLORS.primary]} style={StyleSheet.absoluteFill} />
-        {group.cover_url ? <Image source={{ uri: mediaUrl(group.cover_url) }} style={StyleSheet.absoluteFill} contentFit="cover" transition={250} /> : null}
+        {group.cover_url ? <Image source={{ uri: mediaUrl(group.cover_url) }} style={StyleSheet.absoluteFill} contentFit="cover" transition={250} /> : <BrandPlaceholder />}
         <LinearGradient colors={['rgba(20,6,12,0)', 'rgba(20,6,12,0.55)']} locations={[0.4, 1]} style={StyleSheet.absoluteFill} />
         <View style={styles.pills}>
           <Pill label={group.type_label} tone="dark" />

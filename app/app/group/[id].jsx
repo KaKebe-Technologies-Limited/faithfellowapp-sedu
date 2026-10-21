@@ -6,6 +6,7 @@ import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, St
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
+import BrandPlaceholder from '../../components/BrandPlaceholder';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AppText from '../../components/AppText';
@@ -192,7 +193,7 @@ export default function GroupScreen() {
           <View style={{ flex: 1 }}>
             <View style={styles.hero}>
               <LinearGradient colors={[COLORS.primaryDark, COLORS.primary]} style={StyleSheet.absoluteFill} />
-              {g.cover_url ? <Image source={{ uri: mediaUrl(g.cover_url) }} style={StyleSheet.absoluteFill} contentFit="cover" /> : null}
+              {g.cover_url ? <Image source={{ uri: mediaUrl(g.cover_url) }} style={StyleSheet.absoluteFill} contentFit="cover" /> : <BrandPlaceholder />}
               <LinearGradient colors={['rgba(20,6,12,0.25)', 'rgba(20,6,12,0.75)']} style={StyleSheet.absoluteFill} />
               <View style={styles.heroInfo}>
                 {g.schedule ? <AppText style={styles.heroLine}>🕒  {g.schedule}</AppText> : null}
