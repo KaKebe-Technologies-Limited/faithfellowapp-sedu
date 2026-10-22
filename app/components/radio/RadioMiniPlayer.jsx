@@ -17,7 +17,7 @@ export default function RadioMiniPlayer({ bottomInset = 0 }) {
 
   return (
     <View style={[styles.bar, { paddingBottom: 8 + bottomInset }]}>
-      <Pressable onPress={() => router.push('/radio')} style={styles.left} accessibilityRole="button" accessibilityLabel={`${track.title}${track.artist ? ` by ${track.artist}` : ''}. Open the radio player`}>
+      <Pressable onPress={() => router.push(station?.kind === 'talk' ? { pathname: '/radio', params: { kind: 'talk' } } : '/radio')} style={styles.left} accessibilityRole="button" accessibilityLabel={`${track.title}${track.artist ? ` by ${track.artist}` : ''}. Open the radio player`}>
         <Image source={{ uri: mediaUrl(track.cover_url) }} style={styles.cover} contentFit="cover" />
         <View style={{ flex: 1 }}>
           <AppText style={styles.title} numberOfLines={1}>

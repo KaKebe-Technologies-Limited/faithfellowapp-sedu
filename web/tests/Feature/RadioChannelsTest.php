@@ -104,7 +104,7 @@ test('the super admin page has a tab for each platform channel and the pieces go
 test('a church adds its own episodes and they join its channel', function () {
     [$church, $admin] = channelChurch();
 
-    $this->actingAs($admin)->get(route('church-admin.radio.index', $church))->assertOk()->assertSee('Radio channel')->assertSee('No episodes yet')->assertSee('Up to 150 MB per episode');
+    $this->actingAs($admin)->get(route('church-admin.radio.index', $church))->assertOk()->assertSee('Podcast channel')->assertSee('No episodes yet')->assertSee('Up to 150 MB per episode');
 
     sendPieces($this, $admin, 'church-admin.radio.chunk', [$church], channelMp3(), 'Faith and Work - Pastor Okello.mp3')->assertOk()->assertJson(['ok' => true, 'title' => 'Faith and Work']);
 

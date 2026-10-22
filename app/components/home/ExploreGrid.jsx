@@ -9,7 +9,7 @@ import { router } from 'expo-router';
 import { COLORS, FONTS, SPACING } from '../../constants/theme';
 import { SOFT, SOFT_SHADOW } from '../../constants/soft';
 import { useFeatures } from '../../lib/features';
-import { useRadio, useStationInfo } from '../../lib/radio';
+import { toggleMusicRadio, useRadio, useStationInfo } from '../../lib/radio';
 import AppText from '../AppText';
 import RadioButton from '../radio/RadioButton';
 
@@ -47,13 +47,13 @@ function Cell({ icon, colors, label, onPress, count, hint }) {
 }
 
 function RadioCell() {
-  const { phase } = useRadio();
-  const on = phase === 'playing' || phase === 'loading';
+  const { phase, station } = useRadio();
+  const on = (phase === 'playing' || phase === 'loading') && (!station || station.kind === 'music');
 
   return (
     <View style={styles.cell}>
       <Frame>
-        <RadioButton size={46} />
+        <RadioButton size={46} onPress={toggleMusicRadio} kind="music" />
       </Frame>
       <AppText style={[styles.label, on && styles.on]} numberOfLines={1}>
         {on ? 'On air' : 'Radio'}
@@ -66,8 +66,8 @@ export default function ExploreGrid({ home }) {
   const features = useFeatures();
   useStationInfo();
   const { station, stations } = useRadio();
-  // The Radio tile shows when any channel has something on (the Gospel radio, the Podcast radio or a church's channel).
-  const radio = features.radio && (stations.length > 0 || (!!station?.enabled && station.songs > 0));
+  // The Radio tile is the music radio, and shows when a music channel has something on. The Podcast radio and the churches' podcast channels are on the Podcasts tile.
+  const radio = features.radio && (stations.some((s) => s.kind !== 'talk') || (stations.length === 0 && !!station?.enabled && station.songs > 0));
   const church = home?.churches?.[0];
   const several = (home?.churches?.length ?? 0) > 1;
 

@@ -118,6 +118,21 @@ export async function selectStation(slug) {
   if (wasPlaying) playRadio();
 }
 
+/**
+ * Plays a channel now, or stops it when it is the one on air. Used by the cards on the Podcasts screen (the Podcast radio and the churches' podcast
+ * channels) and by the Radio button on Home.
+ */
+export async function playChannel(slug) {
+  if (!slug) return;
+  if (slug === snapshot.stationId) return snapshot.phase === 'playing' || snapshot.phase === 'loading' ? stopRadio() : playRadio();
+  const wasPlaying = snapshot.phase === 'playing' || snapshot.phase === 'loading';
+  await selectStation(slug); // moves to it, and starts it when the channel before it was playing
+  if (!wasPlaying) playRadio();
+}
+
+/** The Radio button on Home is the music radio: it joins the music channel even when a podcast channel was the last one chosen. */
+export const toggleMusicRadio = () => playChannel(snapshot.stations.find((s) => s.kind === 'music')?.slug ?? 'gospel');
+
 function lockScreen(track) {
   if (Platform.OS === 'web' || !player) return;
   const metadata = { title: track.title, artist: track.artist || stationName(), albumTitle: stationName(), artworkUrl: mediaUrl(track.cover_url) };

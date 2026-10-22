@@ -15,15 +15,17 @@ export function RoundIconButton({ icon, label, onPress }) {
   );
 }
 
-export default function RadioButton({ size = 76, style }) {
-  const { phase } = useRadio();
+/** `kind` ('music' or 'talk'): the button only shows as playing for that kind of channel; `onPress` replaces the default (the channel that is selected). */
+export default function RadioButton({ size = 76, style, onPress = toggleRadio, kind }) {
+  const radio = useRadio();
+  const phase = !kind || !radio.station || radio.station.kind === kind ? radio.phase : 'idle';
   const ring = Math.max(3, Math.round(size * 0.055));
   const inner = size - ring * 2;
   const playing = phase === 'playing';
 
   return (
     <Pressable
-      onPress={toggleRadio}
+      onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={playing ? 'Stop the radio' : phase === 'loading' ? 'Starting the radio' : 'Play the radio'}
       style={({ pressed }) => [{ width: size, height: size, borderRadius: size / 2 }, styles.glow, pressed && { transform: [{ scale: 0.96 }] }, style]}

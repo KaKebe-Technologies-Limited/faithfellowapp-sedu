@@ -1,10 +1,12 @@
 // The full radio player: the track on air with a big cover, the glowing play / stop button, what comes next and what was
 // just played. Above it, the channels to choose from: the Gospel radio, the Podcast radio and the channel of each church you follow.
 // The radio keeps playing when you close this screen, switch apps or lock the phone.
+import { useEffect } from 'react';
 import { Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AppText from '../components/AppText';
 import RadioButton, { RoundIconButton } from '../components/radio/RadioButton';
@@ -48,6 +50,18 @@ export default function RadioScreen() {
   const { station, stations, stationId, track, phase, upcoming, recent, scheduled, error } = useRadio();
   const live = phase === 'playing';
 
+  // This screen is the music radio, or the podcast radio when it is opened from Podcasts (?kind=talk). Whatever is playing decides what it shows.
+  const { kind } = useLocalSearchParams();
+  const wanted = kind === 'talk' ? 'talk' : 'music';
+  const showing = phase !== 'idle' && station?.kind ? station.kind : wanted;
+  const channels = stations.filter((s) => (s.kind === 'talk') === (showing === 'talk'));
+  useEffect(() => {
+    // Opened for one kind while the other was the last one chosen, and nothing is playing: move to the first channel of the kind asked for.
+    if (phase !== 'idle' || !stations.length || (station?.kind ?? 'music') === wanted) return;
+    const first = stations.find((s) => (s.kind === 'talk') === (wanted === 'talk'));
+    if (first) selectStation(first.slug);
+  }, [wanted, stations, phase, station?.kind]);
+
   return (
     <View style={styles.screen}>
       <LinearGradient colors={['#2B0D18', '#17171C', '#17171C']} style={StyleSheet.absoluteFill} />
@@ -61,9 +75,9 @@ export default function RadioScreen() {
           <RoundIconButton icon="share-social-outline" label="Share the radio" onPress={() => Share.share({ message: `Listen to ${station?.name ?? 'FaithFellows Radio'}: ${(station?.tagline ?? 'Gospel music, day and night').toLowerCase()}, on FaithFellows.` }).catch(() => {})} />
         </View>
 
-        {stations.length > 1 ? (
+        {channels.length > 1 ? (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll} contentContainerStyle={styles.chips}>
-            {stations.map((s) => {
+            {channels.map((s) => {
               const on = s.slug === stationId;
               return (
                 <Pressable key={s.slug} onPress={() => selectStation(s.slug)} accessibilityRole="button" accessibilityState={{ selected: on }} accessibilityLabel={`Channel: ${s.name}`} style={[styles.chip, on && styles.chipOn]}>

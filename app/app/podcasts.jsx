@@ -6,9 +6,11 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import AppText from '../components/AppText';
 import Chip from '../components/Chip';
 import { EpisodeRow, PodcastRow, PodcastTile } from '../components/podcast/PodcastCards';
+import PodcastRadio from '../components/podcast/PodcastRadio';
 import ScreenHeader from '../components/ScreenHeader';
 import StateView from '../components/StateView';
 import { COLORS, FONTS, RADIUS, SPACING, MAX_FONT_SCALE } from '../constants/theme';
+import { useRadio } from '../lib/radio';
 import { usePaged } from '../lib/usePaged';
 import { useFetch } from '../lib/useFetch';
 
@@ -27,6 +29,7 @@ function Overview({ overview, refreshing, reload }) {
 
   return (
     <ScrollView contentContainerStyle={{ paddingTop: 6, paddingBottom: 40 }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={reload} tintColor={COLORS.primary} colors={[COLORS.primary]} />}>
+      <PodcastRadio />
       {following.length ? (
         <Shelf title="Following">
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: SPACING.md, gap: 14 }}>
@@ -43,11 +46,13 @@ function Overview({ overview, refreshing, reload }) {
           ))}
         </Shelf>
       ) : null}
-      <Shelf title="Podcasts">
-        {podcasts.map((p) => (
-          <PodcastRow key={p.id} podcast={p} />
-        ))}
-      </Shelf>
+      {podcasts.length ? (
+        <Shelf title="Podcasts">
+          {podcasts.map((p) => (
+            <PodcastRow key={p.id} podcast={p} />
+          ))}
+        </Shelf>
+      ) : null}
     </ScrollView>
   );
 }
@@ -86,6 +91,8 @@ export default function PodcastsScreen() {
   const [category, setCategory] = useState('');
   const [onlyFollowing, setOnlyFollowing] = useState(false);
   const overview = useFetch('/podcasts/overview');
+  // The Podcast radio is a podcast too: the screen is not empty while a podcast channel is on.
+  const talkOn = useRadio().stations.some((s) => s.kind === 'talk');
 
   // Search as you type, a moment after the last letter.
   useEffect(() => {
@@ -130,7 +137,7 @@ export default function PodcastsScreen() {
           loading={overview.loading}
           error={overview.error}
           onRetry={overview.retry}
-          empty={!overview.loading && !overview.error && !overview.data?.data?.podcasts?.length}
+          empty={!overview.loading && !overview.error && !overview.data?.data?.podcasts?.length && !talkOn}
           emptyIcon="mic-outline"
           emptyTitle="No podcasts yet"
           emptyMessage="Podcasts made by members appear here once they are approved. You can start one from the FaithFellows website."
