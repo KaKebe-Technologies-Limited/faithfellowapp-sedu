@@ -94,6 +94,7 @@ class HomeController extends Controller
                 ->map(fn (Podcast $p) => app(PodcastController::class)->card($p, $user->followedPodcasts()->whereKey($p->id)->exists()))->values(), [], false),
             'churches' => $followed->map(fn (Church $c) => [
                 'id' => $c->id, 'slug' => $c->slug, 'name' => $c->name, 'logo_url' => $c->logo_url, 'is_live' => in_array($c->id, $liveChurchIds, true),
+                'join_url' => $c->join_code ? route('join.show', $c->join_code) : null,
             ])->values(),
             'live' => LiveStreamResource::collection($live),
             'announcements' => $announcements->map(fn (Announcement $a) => [

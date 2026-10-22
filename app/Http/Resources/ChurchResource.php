@@ -31,6 +31,8 @@ class ChurchResource extends JsonResource
             'logo_url' => $this->logo_url,
             'cover_url' => $this->cover_url,
             'web_url' => route('churches.show', $this->resource),
+            // The church's invite link (null until the database update that adds join codes has been applied).
+            'join_url' => $this->join_code ? route('join.show', $this->join_code) : null,
             'subscribers' => $this->whenCounted('subscriptions'),
             'is_subscribed' => $this->when($viewer !== null, fn () => $viewer->isSubscribedTo($this->id)),
             'service_times' => $this->whenLoaded('serviceTimes', fn () => $this->serviceTimes->map(fn ($s) => [

@@ -117,6 +117,16 @@ if (! function_exists('ff_app_download_url')) {
     }
 }
 
+if (! function_exists('ff_ios_app_url')) {
+    /** The App Store or TestFlight link for iPhones (Super admin → Settings), or null until there is one. */
+    function ff_ios_app_url(): ?string
+    {
+        $url = rescue(fn () => PlatformSetting::get('ios_app_url'), null, false) ?: config('faithfellows.app.ios_url');
+
+        return filled($url) ? (string) $url : null;
+    }
+}
+
 if (! function_exists('plain_text')) {
     /**
      * Rich text (Quill HTML) as plain text for the mobile app: paragraphs and list items keep their

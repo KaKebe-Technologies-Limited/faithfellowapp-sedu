@@ -53,8 +53,13 @@ return [
 
     // Where the "Download the app" buttons on the website go. Super admin → Settings can change it without a code change
     // (a Play Store link when the app is published, or the APK link of the latest build).
+    // The iPhone link is an App Store or TestFlight address (Super admin → Settings). Church join links open the app through its own scheme
+    // (faithfellows://join/CODE) and fall back to these downloads.
     'app' => [
         'android_url' => env('FF_ANDROID_URL', 'https://expo.dev/artifacts/eas/kJ2-sK0H5y23g0z66gVQkRb9hL6_XvJQnWThWuCarrA.apk'),
+        'ios_url' => env('FF_IOS_URL', ''),
+        'android_package' => 'tech.kakebe.faithfellows',
+        'scheme' => 'faithfellows',
     ],
 
     'pricing' => [

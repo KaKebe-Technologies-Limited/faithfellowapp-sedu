@@ -10,6 +10,7 @@ use App\Services\DormancyService;
 use App\Services\EventService;
 use App\Services\GivingScheduler;
 use App\Services\InspirationBroadcaster;
+use App\Services\JoinLinks;
 use App\Services\Notifications\BroadcastService;
 use App\Services\Notifications\DigestService;
 use App\Services\PodcastFeedService;
@@ -84,6 +85,13 @@ Artisan::command('ff:dormancy', function (DormancyService $dormancy) {
 })->purpose('Warn churches that stay dormant, then block them if they stay quiet');
 
 Schedule::command('ff:dormancy')->dailyAt('06:30');
+
+// A church's join link remembers which address opened it for a few days (so the app can offer that church after a fresh install), then forgets.
+Artisan::command('ff:prune-join-links', function (JoinLinks $links) {
+    $this->info('Forgot '.$links->prune().' old link opening(s).');
+})->purpose('Forget which address opened a church join link once it is too old to matter');
+
+Schedule::command('ff:prune-join-links')->dailyAt('03:30');
 
 Artisan::command('ff:inspiration', function (InspirationBroadcaster $inspiration) {
     $this->info('Sent '.$inspiration->sendDue().' inspiring message(s) to phones.');
