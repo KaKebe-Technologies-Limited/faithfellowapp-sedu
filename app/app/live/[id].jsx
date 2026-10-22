@@ -2,14 +2,14 @@
 // chat below. Before the service it shows a countdown and switches to the stream by itself when it starts;
 // afterwards it plays the recording if the church kept one. A heartbeat every 30 s counts you as a viewer.
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { FlatList, KeyboardAvoidingView, Linking, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AppText from '../../components/AppText';
 import ChurchAvatar from '../../components/ChurchAvatar';
-import { Video } from '../../components/MediaPlayers';
+import { Video, youtubeWatchUrl } from '../../components/MediaPlayers';
 import Pill from '../../components/Pill';
 import { BackButton } from '../../components/ScreenHeader';
 import StateView from '../../components/StateView';
@@ -38,6 +38,7 @@ export default function LiveScreen() {
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
   const [viewers, setViewers] = useState(null);
+  const [problem, setProblem] = useState(false); // the embedded video said it cannot play here
   const [, tick] = useState(0);
   const last = useRef(0);
   const list = useRef(null);
@@ -115,7 +116,7 @@ export default function LiveScreen() {
           <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
             <View style={{ paddingTop: insets.top, backgroundColor: '#000' }}>
               {status === 'live' && source ? (
-                <Video url={source} />
+                <Video url={source} onProblem={() => setProblem(true)} />
               ) : status !== 'live' && recording ? (
                 <Video url={recording} autoPlay={false} />
               ) : (
@@ -132,6 +133,19 @@ export default function LiveScreen() {
                 <BackButton onDark />
               </View>
             </View>
+
+            {problem && status === 'live' && youtubeWatchUrl(source) ? (
+              <View style={styles.problem}>
+                <Ionicons name="logo-youtube" size={24} color="#D63031" />
+                <View style={{ flex: 1 }}>
+                  <AppText style={styles.problemTitle}>The video would not start here</AppText>
+                  <AppText style={styles.problemText}>You can watch the service on YouTube. The chat below keeps working.</AppText>
+                </View>
+                <Pressable onPress={() => Linking.openURL(youtubeWatchUrl(source)).catch(() => {})} style={styles.problemButton} accessibilityRole="link" accessibilityLabel="Watch on YouTube">
+                  <AppText style={styles.problemButtonText}>Watch</AppText>
+                </Pressable>
+              </View>
+            ) : null}
 
             <View style={styles.info}>
               <View style={{ flex: 1, gap: 4 }}>
@@ -201,6 +215,11 @@ const styles = StyleSheet.create({
   stageTitle: { fontFamily: FONTS.bold, fontSize: 20, color: COLORS.white, textAlign: 'center' },
   stageSub: { fontFamily: FONTS.regular, fontSize: 14, color: COLORS.primaryPale, textAlign: 'center' },
   info: { flexDirection: 'row', padding: SPACING.md, backgroundColor: COLORS.white },
+  problem: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: COLORS.primaryMist, padding: 14, paddingHorizontal: SPACING.md },
+  problemTitle: { fontFamily: FONTS.bold, fontSize: 14, color: COLORS.primary },
+  problemText: { fontFamily: FONTS.regular, fontSize: 12.5, color: COLORS.gray900 },
+  problemButton: { backgroundColor: COLORS.primary, borderRadius: RADIUS.full, paddingHorizontal: 18, paddingVertical: 9 },
+  problemButtonText: { fontFamily: FONTS.bold, fontSize: 13, color: '#fff' },
   title: { fontFamily: FONTS.bold, fontSize: 19, lineHeight: 25, color: COLORS.black },
   host: { flexDirection: 'row', alignItems: 'center', gap: 7, marginTop: 2 },
   chat: { flex: 1 },

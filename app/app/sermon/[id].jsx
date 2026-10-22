@@ -77,15 +77,15 @@ export default function SermonScreen() {
               </CoverHero>
             )}
 
-            {showVideo && videoProblem && s.audio_url ? (
+            {showVideo && videoProblem && (s.audio_url || youtube) ? (
               <View style={styles.problem}>
                 <Ionicons name="alert-circle-outline" size={22} color={COLORS.primary} />
                 <View style={{ flex: 1 }}>
                   <AppText style={styles.problemTitle}>The video could not play</AppText>
-                  <AppText style={styles.problemText}>You can listen to this sermon instead.</AppText>
+                  <AppText style={styles.problemText}>{s.audio_url ? 'You can listen to this sermon instead.' : 'You can watch it on YouTube.'}</AppText>
                 </View>
-                <Pressable onPress={listen} style={styles.problemButton} accessibilityRole="button">
-                  <AppText style={styles.problemButtonText}>Listen</AppText>
+                <Pressable onPress={s.audio_url ? listen : () => Linking.openURL(youtube).catch(() => {})} style={styles.problemButton} accessibilityRole="button">
+                  <AppText style={styles.problemButtonText}>{s.audio_url ? 'Listen' : 'Watch'}</AppText>
                 </Pressable>
               </View>
             ) : null}

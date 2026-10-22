@@ -1,6 +1,8 @@
 // Players used by sermons and live services, so media plays inside the app:
 //  - VideoPlayer: a direct video file or an HLS (.m3u8) live stream, with native controls (expo-video)
-//  - EmbedPlayer: a YouTube / Facebook / Vimeo page shown in a small in-app web view
+//  - EmbedPlayer: a YouTube / Facebook / Vimeo page shown in a small in-app web view. YouTube refuses to play for a page that does not say which site is
+//    showing it ("Video player configuration error", error 153), so the web view shows a small page of ours with the YouTube player inside it and
+//    the site's address as its base; the player reports its errors back, so the screen can offer "Watch on YouTube" instead of a black box.
 //  - AudioPlayerCard: sermon audio (expo-audio) with play/pause, back 15 s, forward 30 s and a progress bar
 import { useEffect, useRef } from 'react';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
@@ -25,6 +27,35 @@ export function youtubeWatchUrl(url = '') {
   return id ? `https://www.youtube.com/watch?v=${id}` : null;
 }
 
+/** The site that shows the embedded players. YouTube (and some Vimeo videos) check it: a player with no site to point to is refused. */
+const EMBED_ORIGIN = 'https://faithfellows.com';
+
+const isYoutubeEmbed = (url = '') => /youtube(?:-nocookie)?\.com\/embed\//i.test(url);
+
+/** A page with the YouTube player in it, and a script that tells the app when the player says it cannot play the video. */
+function youtubePage(url) {
+  const src = `${url}${url.includes('?') ? '&' : '?'}enablejsapi=1&playsinline=1&rel=0&origin=${encodeURIComponent(EMBED_ORIGIN)}`.replace(/&/g, '&amp;');
+
+  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>html,body{margin:0;height:100%;background:#000;overflow:hidden}iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:0}</style></head><body>
+<iframe id="p" src="${src}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
+<script>
+(function () {
+  var frame = document.getElementById('p');
+  var tell = function (text) { if (window.ReactNativeWebView) window.ReactNativeWebView.postMessage(text); };
+  frame.addEventListener('load', function () {
+    try { frame.contentWindow.postMessage(JSON.stringify({ event: 'listening', id: 1, channel: 'widget' }), '*'); } catch (e) {}
+  });
+  window.addEventListener('message', function (e) {
+    try {
+      var d = typeof e.data === 'string' ? JSON.parse(e.data) : e.data;
+      if (d && d.event === 'onError') tell('error:' + d.info);
+      else if (d && (d.event === 'onReady' || d.event === 'initialDelivery' || d.event === 'infoDelivery' || d.event === 'onStateChange')) tell('ready');
+    } catch (err) {}
+  });
+})();
+</script></body></html>`;
+}
+
 /** `onProblem` is called when the video cannot be played (the picture never starts, or the page says no), so the screen can offer the audio instead. */
 export function VideoPlayer({ url, autoPlay = true, style, onProblem }) {
   const source = mediaUrl(url);
@@ -42,6 +73,20 @@ export function VideoPlayer({ url, autoPlay = true, style, onProblem }) {
 }
 
 export function EmbedPlayer({ url, style, onProblem }) {
+  const youtube = isYoutubeEmbed(url);
+  const ready = useRef(false);
+  const problem = useRef(onProblem);
+  problem.current = onProblem; // the screen's callback changes on every draw; the timer below must not restart each time
+
+  // A YouTube player that never says it is ready (it stays black) is as good as an error: the screen can offer YouTube itself.
+  useEffect(() => {
+    ready.current = false;
+    if (!youtube || Platform.OS === 'web') return undefined;
+    const timer = setTimeout(() => !ready.current && problem.current?.(), 15000);
+
+    return () => clearTimeout(timer);
+  }, [url, youtube]);
+
   if (Platform.OS === 'web') {
     return (
       <View style={[styles.video, style]}>
@@ -50,9 +95,27 @@ export function EmbedPlayer({ url, style, onProblem }) {
       </View>
     );
   }
+
   return (
     <View style={[styles.video, style]}>
-      <WebView source={{ uri: url }} allowsInlineMediaPlayback allowsFullscreenVideo mediaPlaybackRequiresUserAction={false} javaScriptEnabled onError={() => onProblem?.()} onHttpError={() => onProblem?.()} style={{ backgroundColor: '#000' }} />
+      <WebView
+        source={youtube ? { html: youtubePage(url), baseUrl: EMBED_ORIGIN } : { uri: url, headers: { Referer: EMBED_ORIGIN } }}
+        originWhitelist={['*']}
+        allowsInlineMediaPlayback
+        allowsFullscreenVideo
+        mediaPlaybackRequiresUserAction={false}
+        javaScriptEnabled
+        domStorageEnabled
+        setSupportMultipleWindows={false}
+        onMessage={(e) => {
+          const said = String(e.nativeEvent.data);
+          if (said === 'ready') ready.current = true;
+          else if (said.startsWith('error')) problem.current?.();
+        }}
+        onError={() => onProblem?.()}
+        onHttpError={() => onProblem?.()}
+        style={{ backgroundColor: '#000' }}
+      />
     </View>
   );
 }
