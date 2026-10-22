@@ -4,16 +4,11 @@ namespace App\Http\Controllers\Member;
 
 use App\Http\Controllers\Controller;
 use App\Models\AttendanceRecord;
-use App\Models\Campaign;
-use App\Models\CampaignUpdate;
 use App\Models\Church;
 use App\Models\Comment;
-use App\Models\Post;
-use App\Models\PrayerRequest;
 use App\Models\Reaction;
-use App\Models\Sermon;
-use App\Models\Testimony;
 use App\Models\VolunteerRota;
+use App\Services\Reactions;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -27,55 +22,19 @@ use Illuminate\View\View;
  */
 class EngagementController extends Controller
 {
-    /** Content types members can react to / comment on. */
-    protected const TYPES = [
-        'post' => Post::class,
-        'sermon' => Sermon::class,
-        'testimony' => Testimony::class,
-        'campaign' => Campaign::class,
-        'campaign_update' => CampaignUpdate::class,
-        'prayer' => PrayerRequest::class,
-    ];
+    public function __construct(protected Reactions $reactions) {}
 
     protected function resolve(string $type, int $id): Model
     {
-        $class = self::TYPES[$type] ?? abort(404);
-        $model = $class::with('church')->findOrFail($id);
-        $user = request()->user();
-
-        $allowed = match (true) {
-            $model instanceof PrayerRequest => $user->can('view', $model),
-            $model instanceof Testimony => $model->status === 'approved' && $model->church?->isActive(),
-            default => $model->church?->isActive() && ($user->isMemberOf($model->church_id) || ($model->visibility ?? null) === 'public'),
-        };
-        abort_unless($allowed, 403);
-
-        return $model;
+        return $this->reactions->find($type, $id, request()->user());
     }
 
     public function react(Request $request, string $type, int $id): JsonResponse
     {
         $model = $this->resolve($type, $id);
-        $data = $request->validate(['type' => ['required', Rule::in(array_keys(Reaction::TYPES))]]);
+        $data = $request->validate(['type' => ['required', Rule::in(array_keys(Reaction::available()))]]);
 
-        $existing = Reaction::where('reactable_type', $model->getMorphClass())->where('reactable_id', $model->getKey())->where('user_id', $request->user()->id)->first();
-
-        if ($existing && $existing->type === $data['type']) {
-            $existing->delete();
-            $mine = null;
-        } else {
-            Reaction::updateOrCreate(
-                ['reactable_type' => $model->getMorphClass(), 'reactable_id' => $model->getKey(), 'user_id' => $request->user()->id],
-                ['church_id' => $model->church_id, 'type' => $data['type']],
-            );
-            $mine = $data['type'];
-        }
-
-        return response()->json([
-            'counts' => Reaction::where('reactable_type', $model->getMorphClass())->where('reactable_id', $model->getKey())
-                ->selectRaw('type, count(*) c')->groupBy('type')->pluck('c', 'type'),
-            'mine' => $mine,
-        ]);
+        return response()->json($this->reactions->toggle($model, $request->user(), $data['type']));
     }
 
     public function comment(Request $request, string $type, int $id): RedirectResponse

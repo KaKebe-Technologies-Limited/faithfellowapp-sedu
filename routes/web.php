@@ -65,7 +65,7 @@ Route::post('/register-church', [Public\ChurchApplicationController::class, 'sto
     ->middleware(['auth', 'verified', 'throttle:5,60'])->name('church.apply.store');
 Route::get('/churches/{church}', [Public\ChurchDirectoryController::class, 'show'])->name('churches.show');
 
-// The link each church shares to bring people into the app: https://faithfellows.com/join/GRACE7KQ
+// The link each church shares to bring people into the app: https://faithfellows.com/join/FF47KM
 Route::get('/join/{code}', [Public\JoinController::class, 'show'])->where('code', '[A-Za-z0-9\-]+')->middleware('throttle:120,1')->name('join.show');
 
 /*
@@ -287,7 +287,6 @@ Route::prefix('church/{church}/admin')->name('church-admin.')
 
         // Settings
         Route::middleware('church.can:settings.manage')->group(function () {
-            Route::put('/invite', [ChurchAdmin\InviteController::class, 'update'])->name('invite.update');
             Route::post('/invite/regenerate', [ChurchAdmin\InviteController::class, 'regenerate'])->name('invite.regenerate');
             Route::get('/settings/profile', [ChurchAdmin\SettingsController::class, 'profile'])->name('settings.profile');
             Route::put('/settings/profile', [ChurchAdmin\SettingsController::class, 'updateProfile'])->name('settings.profile.update');
@@ -313,7 +312,7 @@ Route::prefix('church/{church}/admin')->name('church-admin.')
 
         Route::get('/search', ChurchAdmin\SearchController::class)->name('search');
 
-        // The church's invite link (https://faithfellows.com/join/CODE): any staff can share it; changing the code is a settings permission.
+        // The church's invite link (https://faithfellows.com/join/CODE): any staff can share it; making a new code is a settings permission.
         Route::get('/invite', [ChurchAdmin\InviteController::class, 'show'])->name('invite.show');
         Route::get('/invite/poster', [ChurchAdmin\InviteController::class, 'poster'])->name('invite.poster');
 

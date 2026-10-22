@@ -19,24 +19,14 @@
                     <p class="small text-ff-muted mt-3 mb-0">{{ __('Tip: the church name and picture show in the preview when you paste the link into WhatsApp or Facebook.') }}</p>
                 </x-ff.card>
 
-                <x-ff.card :title="__('Church code')" :subtitle="__('Members can also type this code in the app (Create account → Have a church code?).')">
+                <x-ff.card :title="__('Church code')" :subtitle="__('Six characters. Members can also type it in the app (Create account → Have a church code?).')">
                     <div class="d-flex align-items-center gap-3 flex-wrap mb-3">
                         <span class="fs-2 fw-bold text-ff-primary" style="letter-spacing:.14em">{{ $code }}</span>
                         <button type="button" class="btn btn-sm btn-ff-soft" data-ff-copy="{{ $code }}"><i class="bi bi-clipboard"></i> {{ __('Copy code') }}</button>
                     </div>
                     @if ($canEdit)
-                        <form method="POST" action="{{ route('church-admin.invite.update', $church) }}" class="row g-2 align-items-start" data-ff-confirm="{{ __('Change the code? The link you shared before will stop working.') }}">@csrf @method('PUT')
-                            <div class="col-sm-7">
-                                <input type="text" name="join_code" value="{{ old('join_code', $code) }}" maxlength="24" class="form-control @error('join_code') is-invalid @enderror" aria-label="{{ __('Church code') }}" autocomplete="off" style="text-transform:uppercase">
-                                @error('join_code')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                                <div class="form-text">{{ __('Letters and numbers, 4 to 20. A code with your church name is easy to remember, for example GRACELIRA.') }}</div>
-                            </div>
-                            <div class="col-sm-5 d-flex gap-2">
-                                <button class="btn btn-ff-outline">{{ __('Change code') }}</button>
-                            </div>
-                        </form>
-                        <form method="POST" action="{{ route('church-admin.invite.regenerate', $church) }}" data-ff-confirm="{{ __('Make a new link? The link you shared before will stop working.') }}" class="mt-2">@csrf
-                            <button class="btn btn-sm btn-ff-ghost text-danger"><i class="bi bi-arrow-repeat"></i> {{ __('Make a new random code') }}</button>
+                        <form method="POST" action="{{ route('church-admin.invite.regenerate', $church) }}" data-ff-confirm="{{ __('Make a new code? The link you shared before will stop working.') }}">@csrf
+                            <button class="btn btn-sm btn-ff-ghost text-danger"><i class="bi bi-arrow-repeat"></i> {{ __('Make a new code') }}</button>
                         </form>
                     @endif
                 </x-ff.card>

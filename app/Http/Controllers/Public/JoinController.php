@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Cache;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 /**
- * The page a church's join link opens (https://faithfellows.com/join/GRACE7KQ): the church, a button that opens the app on it and the
+ * The page a church's join link opens (https://faithfellows.com/join/FF47KM): the church, a button that opens the app on it and the
  * downloads for people who do not have it yet. It also notes the visit, so the app can offer the church after a fresh install.
  */
 class JoinController extends Controller

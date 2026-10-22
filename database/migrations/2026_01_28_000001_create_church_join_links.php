@@ -10,7 +10,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // Every church gets a short code of its own (GRACE7KQ). The link https://faithfellows.com/join/GRACE7KQ opens the app on that church.
+        // Every church gets a short code of its own (FF47KM). The link https://faithfellows.com/join/FF47KM opens the app on that church.
         Schema::table('churches', function (Blueprint $table) {
             $table->string('join_code', 24)->nullable()->unique()->after('slug');
         });
@@ -28,7 +28,7 @@ return new class extends Migration
 
         // Churches that already exist get their code now.
         Church::withTrashed()->whereNull('join_code')->orderBy('id')->each(function (Church $church) {
-            $church->forceFill(['join_code' => JoinLinks::generate($church->name)])->saveQuietly();
+            $church->forceFill(['join_code' => JoinLinks::generate()])->saveQuietly();
         });
     }
 

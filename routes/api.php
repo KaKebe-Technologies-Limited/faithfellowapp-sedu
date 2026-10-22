@@ -34,6 +34,7 @@ Route::prefix('v1')->name('api.v1.')->middleware('throttle:api')->group(function
     Route::get('/churches', [V1\ChurchController::class, 'index'])->name('churches.index');
     Route::get('/churches/nearby', [V1\ChurchController::class, 'nearby'])->middleware(['auth:sanctum', 'api.active'])->name('churches.nearby');
     Route::get('/churches/{church}', [V1\ChurchController::class, 'show'])->name('churches.show');
+    Route::get('/churches/{church}/page', [V1\ChurchController::class, 'page'])->name('churches.page');
 
     // A church's join link in the app: which church a code is (before there is an account), and the church the app was installed from.
     Route::get('/join/{code}', [V1\JoinController::class, 'show'])->where('code', '[A-Za-z0-9\-]+')->middleware('throttle:60,1')->name('join.show');
@@ -50,6 +51,7 @@ Route::prefix('v1')->name('api.v1.')->middleware('throttle:api')->group(function
         Route::delete('/churches/{church}/subscription', [V1\ChurchController::class, 'unsubscribe'])->name('churches.unsubscribe');
 
         Route::get('/home', V1\HomeController::class)->name('home');
+        Route::post('/react/{type}/{id}', [V1\ReactionController::class, 'toggle'])->whereNumber('id')->middleware('throttle:engagement')->name('react');
         Route::get('/feed', [V1\ContentController::class, 'feed'])->name('feed');
         Route::get('/sermons', [V1\ContentController::class, 'sermons'])->name('sermons.index');
         Route::get('/sermons/browse', [V1\ContentController::class, 'sermonsBrowse'])->name('sermons.browse');

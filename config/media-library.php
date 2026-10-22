@@ -50,7 +50,8 @@ return [
      * The maximum file size of an item in bytes.
      * Adding a larger file will result in an exception.
      */
-    'max_file_size' => 1024 * 1024 * 10, // 10MB
+    'max_file_size' => 1024 * 1024 * (max((int) env('FF_MAX_UPLOAD_MB', 200), (int) env('FF_MAX_AUDIO_MB', 150), (int) env('FF_MAX_ADMIN_AUDIO_MB', 400)) + 20),
+    // ^ the biggest file the forms allow (video 200 MB, church audio 150 MB, platform audio 400 MB) plus a little: each form checks its own, smaller limit first.
 
     /*
      * Uploads whose file name contains any of these extensions will be rejected.

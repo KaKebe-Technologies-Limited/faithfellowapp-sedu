@@ -10,6 +10,9 @@
         <h1 class="h2 mb-4">{{ $announcement->title }}</h1>
         @if ($announcement->image_url)<img src="{{ $announcement->image_url }}" alt="" class="ff-cover ff-rounded-xl mb-4">@endif
         <div class="ff-prose">{!! ff_safe_html($announcement->body) !!}</div>
+        @auth
+            <div class="mt-4">@include('partials.engagement-bar', ['model' => $announcement, 'type' => 'announcement'])</div>
+        @endauth
         @if ($announcement->expires_at)
             <p class="small text-ff-muted mt-4">{{ __('Valid until :date', ['date' => $announcement->expires_at->format('j M Y')]) }}</p>
         @endif

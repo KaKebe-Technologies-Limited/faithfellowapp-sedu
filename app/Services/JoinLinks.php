@@ -7,11 +7,9 @@ use App\Models\JoinLinkVisit;
 use App\Models\Subscription;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Str;
-use Illuminate\Validation\ValidationException;
 
 /**
- * The link every church shares to bring people into the app: https://faithfellows.com/join/GRACE7KQ.
+ * The link every church shares to bring people into the app: https://faithfellows.com/join/FF47KM (the code is FF, two digits and two letters).
  *
  * Opening it shows the church and either opens the app on that church or sends the person to download the app. The app keeps the code
  * until the person has an account, then follows the church for them. When the app is installed after the link was opened, three things
@@ -20,12 +18,11 @@ use Illuminate\Validation\ValidationException;
  */
 class JoinLinks
 {
-    /** Letters and digits that cannot be mistaken for one another when read aloud or typed. */
-    public const ALPHABET = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+    /** The letters of a code: no I and no O, which look like 1 and 0 when read aloud or typed. */
+    public const LETTERS = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
 
+    /** The shortest thing that can be a code (a typed code shorter than this is not looked up). */
     public const MIN_LENGTH = 4;
-
-    public const MAX_LENGTH = 20;
 
     /** How long after opening the link the app may still be offered that church, and how long the fingerprint is kept. */
     public const MATCH_HOURS = 24;
@@ -40,7 +37,7 @@ class JoinLinks
         return $ready ??= (bool) rescue(fn () => Schema::hasColumn('churches', 'join_code') && Schema::hasTable('join_link_visits'), false, false);
     }
 
-    /** "https://faithfellows.com/join/grace7kq?x=1", "faithfellows://join/GRACE7KQ" or "grace 7kq" all become GRACE7KQ. */
+    /** "https://faithfellows.com/join/ff47km?x=1", "faithfellows://join/FF47KM" or "ff 47 km" all become FF47KM. */
     public static function normalise(?string $input): string
     {
         $text = trim((string) $input);
@@ -51,43 +48,23 @@ class JoinLinks
         return strtoupper((string) preg_replace('/[^A-Za-z0-9]/', '', $text));
     }
 
-    /** A new code from the church's name: a few letters of the name and three characters that make it its own, like GRACE7KQ. */
-    public static function generate(string $name): string
+    /**
+     * A new code: FF, two digits and two letters, six characters like FF47KM, easy to say and to type. About 57,000 are possible; a code that is
+     * already taken is never made again (and if they ever run out, a digit is added).
+     */
+    public static function generate(): string
     {
-        $base = '';
-        foreach (preg_split('/[^A-Za-z0-9]+/', Str::ascii($name), -1, PREG_SPLIT_NO_EMPTY) ?: [] as $word) {
-            $word = strtoupper($word);
-            if ($base !== '' && strlen($base.$word) > 10) {
-                break;
-            }
-            $base .= $word;
-            if (strlen($base) >= 6) {
-                break;
-            }
-        }
-        $base = substr($base, 0, 10);
-        if (strlen($base) < 3) {
-            $base = 'CHURCH';
-        }
+        $make = fn (int $digits) => 'FF'.str_pad((string) random_int(0, 10 ** $digits - 1), $digits, '0', STR_PAD_LEFT)
+            .self::LETTERS[random_int(0, strlen(self::LETTERS) - 1)].self::LETTERS[random_int(0, strlen(self::LETTERS) - 1)];
 
-        for ($i = 0; $i < 25; $i++) {
-            $code = $base.self::suffix($i < 20 ? 3 : 5);
+        foreach ([2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 4] as $digits) {
+            $code = $make($digits);
             if (! Church::withTrashed()->where('join_code', $code)->exists()) {
                 return $code;
             }
         }
 
-        return $base.self::suffix(8);
-    }
-
-    protected static function suffix(int $length): string
-    {
-        $out = '';
-        for ($i = 0; $i < $length; $i++) {
-            $out .= self::ALPHABET[random_int(0, strlen(self::ALPHABET) - 1)];
-        }
-
-        return $out;
+        return $make(6);
     }
 
     /** The church's code, made on the spot for a church that has none yet. Null before the database update. */
@@ -97,7 +74,7 @@ class JoinLinks
             return null;
         }
         if (blank($church->join_code)) {
-            $church->forceFill(['join_code' => self::generate($church->name)])->saveQuietly();
+            $church->forceFill(['join_code' => self::generate()])->saveQuietly();
         }
 
         return $church->join_code;
@@ -122,26 +99,10 @@ class JoinLinks
         return Church::active()->where('join_code', $code)->first();
     }
 
-    /** Lets a church admin pick its own code. */
-    public function change(Church $church, string $input): void
-    {
-        $code = self::normalise($input);
-        $field = 'join_code';
-
-        if (strlen($code) < self::MIN_LENGTH || strlen($code) > self::MAX_LENGTH) {
-            throw ValidationException::withMessages([$field => __('Use :min to :max letters and numbers.', ['min' => self::MIN_LENGTH, 'max' => self::MAX_LENGTH])]);
-        }
-        if (Church::withTrashed()->where('join_code', $code)->whereKeyNot($church->id)->exists()) {
-            throw ValidationException::withMessages([$field => __('Another church already uses this code. Try a different one.')]);
-        }
-
-        $church->forceFill([$field => $code])->save();
-    }
-
     /** A new random code, for a church whose link should stop working (the old link then shows nothing). */
     public function regenerate(Church $church): string
     {
-        $code = self::generate($church->name);
+        $code = self::generate();
         $church->forceFill(['join_code' => $code])->save();
 
         return $code;
