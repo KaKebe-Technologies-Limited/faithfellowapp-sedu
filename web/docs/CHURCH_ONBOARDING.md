@@ -86,6 +86,7 @@ Want your own domain, like `www.yourchurch.org`? Request it under **Billing & pl
 
 ## Step 8: Invite your members
 
+- Open **Invite link** (Church admin → People) for your church's own link, for example `faithfellows.com/join/GRACE7KQ`. Share it on WhatsApp or Facebook, or print the **QR poster** for the noticeboard and the bulletin. Whoever opens it is taken to the app (or to its download first), and as soon as they create their account they follow your church. The page shows how many people opened the link and how many joined through it. You can change the code to something your members remember, for example `GRACELIRA`; the old link then stops working.
 - Announce FaithFellows on Sunday and show the QR code to your church page.
 - Members create one free account and tap **Subscribe**. They choose which alerts they want (live, sermons, events, giving, prayer) and on which channels.
 - Turn on **member approval** under **Settings → Church profile** if you want to approve each new member.

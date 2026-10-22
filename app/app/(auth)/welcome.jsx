@@ -10,6 +10,7 @@ import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AppText from '../../components/AppText';
 import GoogleButton from '../../components/GoogleButton';
+import PendingJoinBanner from '../../components/join/PendingJoinBanner';
 import Logo from '../../components/Logo';
 import { COLORS, FONTS, RADIUS, SPACING } from '../../constants/theme';
 import { GOOGLE_ENABLED } from '../../lib/google';
@@ -50,6 +51,8 @@ export default function Welcome() {
           ))}
         </View>
 
+        <PendingJoinBanner dark />
+
         {GOOGLE_ENABLED ? <GoogleButton /> : null}
 
         <Pressable onPress={() => router.push('/(auth)/login')} style={({ pressed }) => [styles.email, pressed && { opacity: 0.85 }]} accessibilityRole="button" accessibilityLabel="Continue with email">
@@ -63,6 +66,10 @@ export default function Welcome() {
             <AppText style={styles.newLink}>Create an account</AppText>
           </Pressable>
         </View>
+
+        <Pressable onPress={() => router.push('/join')} accessibilityRole="button" hitSlop={8} style={styles.codeRow}>
+          <AppText style={styles.codeText}>Have a church code?</AppText>
+        </Pressable>
 
         <AppText style={styles.legal}>
           By continuing you agree to our{' '}
@@ -95,6 +102,8 @@ const styles = StyleSheet.create({
   newRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6, marginTop: 4 },
   newText: { fontFamily: FONTS.regular, fontSize: 14, color: 'rgba(255,255,255,0.8)' },
   newLink: { fontFamily: FONTS.bold, fontSize: 14, color: COLORS.white, textDecorationLine: 'underline' },
+  codeRow: { alignSelf: 'center', marginTop: 2 },
+  codeText: { fontFamily: FONTS.semibold, fontSize: 14, color: 'rgba(255,255,255,0.9)', textDecorationLine: 'underline' },
   legal: { fontFamily: FONTS.regular, fontSize: 12, lineHeight: 18, color: 'rgba(255,255,255,0.7)', textAlign: 'center', marginTop: 6 },
   link: { fontFamily: FONTS.semibold, color: COLORS.white, textDecorationLine: 'underline' },
 });

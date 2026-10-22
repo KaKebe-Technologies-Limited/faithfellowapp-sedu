@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\Auditable;
+use App\Services\JoinLinks;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -41,6 +42,8 @@ class Church extends Model implements HasMedia
     {
         // Every church starts with a few common giving reasons it can change.
         static::created(fn (Church $church) => rescue(fn () => GivingReason::seedDefaults($church), report: false));
+        // ...and its own join link: https://faithfellows.com/join/CODE (see JoinLinks).
+        static::created(fn (Church $church) => rescue(fn () => app(JoinLinks::class)->codeFor($church), report: false));
     }
 
     protected $fillable = [

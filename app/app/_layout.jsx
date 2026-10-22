@@ -17,6 +17,7 @@ import NowPlayingBar from '../components/NowPlayingBar';
 import { COLORS } from '../constants/theme';
 import { useActivityTracking } from '../lib/activity';
 import { AuthProvider, useAuth } from '../lib/auth';
+import { useJoinLink } from '../lib/join';
 import { useOfflineSync } from '../lib/outbox';
 import { syncNotes } from '../lib/notesSync';
 import { usePushSetup } from '../lib/push';
@@ -26,13 +27,14 @@ import { useRadioLifecycle } from '../lib/radio';
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 function Navigator({ fontsLoaded }) {
-  const { ready, user } = useAuth();
+  const { ready, token, user } = useAuth();
   usePushSetup(user);
   useOfflineSync(user, syncNotes);
   useRadioLifecycle();
   useActivityTracking(user); // the figures on your profile: minutes reading and listening, what you shared
   useAppUpdates();
   const segments = useSegments();
+  useJoinLink({ ready, token, user, place: segments[0] }); // a church's join link: keep it through sign-up, then follow the church
   const insets = useSafeAreaInsets();
   // The tab screens carry the player bar inside their own tab bar; every other screen gets it here, at the bottom.
   const showBar = !!user && !['(tabs)', '(auth)', 'onboarding', 'radio', 'listen'].includes(segments[0]);

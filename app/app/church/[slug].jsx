@@ -2,7 +2,7 @@
 // button, about, service times, upcoming events, recent sermons, and contact details (only shown to
 // people who follow the church). Data: GET /churches/{slug}, /events?church=, /sermons?church=.
 import { useState } from 'react';
-import { Alert, Linking, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Linking, Pressable, RefreshControl, ScrollView, Share, StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -152,6 +152,13 @@ export default function ChurchScreen() {
             {info.subscribers != null ? <Pill label={`${info.subscribers} followers`} icon="people-outline" /> : null}
           </View>
 
+          {info.join_url ? (
+            <Pressable onPress={() => Share.share({ message: `Join ${info.name} on FaithFellows: ${info.join_url}` }).catch(() => {})} style={({ pressed }) => [styles.invite, pressed && { opacity: 0.85 }]} accessibilityRole="button" accessibilityLabel={`Invite a friend to ${info.name}`}>
+              <Ionicons name="person-add-outline" size={18} color={COLORS.primary} />
+              <AppText style={styles.inviteText}>Invite a friend to this church</AppText>
+            </Pressable>
+          ) : null}
+
           {info.description ? (
             <View style={styles.card}>
               <AppText style={styles.cardTitle}>About</AppText>
@@ -251,6 +258,8 @@ export default function ChurchScreen() {
 }
 
 const styles = StyleSheet.create({
+  invite: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', gap: 8, marginTop: SPACING.md, paddingHorizontal: 14, height: 40, borderRadius: RADIUS.full, borderWidth: 1.5, borderColor: COLORS.primary, backgroundColor: COLORS.white },
+  inviteText: { fontFamily: FONTS.semibold, fontSize: 13.5, color: COLORS.primary },
   screen: { flex: 1, backgroundColor: COLORS.canvas },
   back: { position: 'absolute', left: SPACING.md, zIndex: 10, width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.92)', alignItems: 'center', justifyContent: 'center', ...SHADOW },
   cover: { height: 230, backgroundColor: COLORS.primaryDark },

@@ -9,6 +9,7 @@ import Button from '../../components/Button';
 import GoogleButton from '../../components/GoogleButton';
 import TextField from '../../components/TextField';
 import KeyboardScroll from '../../components/KeyboardScroll';
+import PendingJoinBanner from '../../components/join/PendingJoinBanner';
 import { COLORS, RADIUS, SPACING } from '../../constants/theme';
 import { errorMessage, fieldErrors } from '../../lib/api';
 import { useAuth } from '../../lib/auth';
@@ -62,6 +63,7 @@ export default function Register() {
         </View>
 
         <View style={styles.card}>
+          <PendingJoinBanner style={{ marginBottom: SPACING.md }} />
           {GOOGLE_ENABLED ? (
             <View style={{ marginBottom: SPACING.md }}>
               <GoogleButton title="Sign up with Google" />
@@ -136,6 +138,12 @@ export default function Register() {
             <AppText>Already have an account? </AppText>
             <Link href="/(auth)/login" style={styles.link}>
               Sign in
+            </Link>
+          </View>
+          <View style={[styles.switch, { marginTop: SPACING.sm }]}>
+            <AppText>Joining a church? </AppText>
+            <Link href="/join" style={styles.link}>
+              Enter its code
             </Link>
           </View>
         </View>

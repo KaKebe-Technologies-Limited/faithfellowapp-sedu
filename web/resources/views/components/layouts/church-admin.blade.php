@@ -28,6 +28,7 @@
         ]],
         ['heading' => __('People'), 'items' => [
             ['label' => __('Members'), 'icon' => 'bi-people', 'route' => 'church-admin.members.index', 'params' => $p, 'active' => 'church-admin.members.*', 'show' => $can('members.manage')],
+            ['label' => __('Invite link'), 'icon' => 'bi-link-45deg', 'route' => 'church-admin.invite.show', 'params' => $p, 'active' => 'church-admin.invite.*'],
             ['label' => __('Small groups'), 'icon' => 'bi-diagram-3', 'route' => 'church-admin.small-groups.index', 'params' => $p, 'active' => 'church-admin.small-groups.*', 'show' => $can('groups.manage')],
             ['label' => __('Volunteers'), 'icon' => 'bi-hand-thumbs-up', 'route' => 'church-admin.volunteers.index', 'params' => $p, 'active' => 'church-admin.volunteers.*', 'show' => $can('groups.manage')],
             ['label' => __('Attendance'), 'icon' => 'bi-qr-code-scan', 'route' => 'church-admin.attendance.index', 'params' => $p, 'active' => 'church-admin.attendance.*', 'show' => $can('groups.manage') || $can('members.manage')],

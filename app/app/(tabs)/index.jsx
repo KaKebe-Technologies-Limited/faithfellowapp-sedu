@@ -6,7 +6,7 @@
 // slider of church pictures takes the top of the panel instead. Pull down to refresh.
 // Data: GET /api/v1/home, in one request.
 import { useCallback, useRef } from 'react';
-import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { RefreshControl, ScrollView, Share, StyleSheet, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import AppText from '../../components/AppText';
 import Button from '../../components/Button';
@@ -83,6 +83,7 @@ export default function HomeScreen() {
   const items = data ? sliderItems(data) : [];
   const liveNow = (data?.live ?? []).find((stream) => stream.status === 'live');
   const hasChurches = (data?.churches ?? []).length > 0;
+  const inviteChurch = (data?.churches ?? []).find((c) => c.join_url);
 
   return (
     <ScrollView
@@ -105,7 +106,11 @@ export default function HomeScreen() {
       {data ? (
         <>
           <ExploreGrid home={data} />
-          <ForYou home={data} withHighlights={radio !== 'none'} />
+          <ForYou
+            home={data}
+            withHighlights={radio !== 'none'}
+            invite={inviteChurch ? { title: `Invite friends to ${inviteChurch.name}`, onPress: () => Share.share({ message: `Join ${inviteChurch.name} on FaithFellows: ${inviteChurch.join_url}` }).catch(() => {}) } : null}
+          />
           <NotificationsPrompt />
           {!hasChurches ? (
             <View style={{ paddingHorizontal: SPACING.md, marginBottom: SPACING.lg }}>

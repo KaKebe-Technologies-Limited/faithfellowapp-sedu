@@ -131,6 +131,15 @@ This endpoint is public. It returns church details, service times, accepted givi
   "giving_methods": ["mtn_momo", "airtel_money", "stripe"], "subscribers": 47, "is_subscribed": true, "web_url": "https://faithfellows.com/churches/grace-lira" } }
 ```
 
+### Church join links
+
+Every church has an invite link, `https://faithfellows.com/join/{CODE}` (a code like `GRACE7KQ`, made from the church name; the church can change it). The page it opens shows the church and a button that opens the app (`faithfellows://join/{CODE}`; on Android through an `intent://` link that falls back to the download, with the code in the Play Store `referrer`), the download buttons (Super admin → Settings: Android and iPhone links) and the code. The app keeps the code until the person has an account, then follows the church for them. `join_url` is on `GET /churches/{slug}` and on each church of `GET /home` (null until the database update that adds the codes has been applied).
+
+- `GET /join/{code}` (public, 60 a minute): which church a code is. `404` for an unknown code or a church that is not active. The code may be typed in any case. Response: `{ "data": { "code": "GRACE7KQ", "church": { "id", "slug", "name", "logo_url", "tagline", "city", "denomination", "followers" }, "requires_approval": false } }`.
+- `POST /join/{code}/follow` 🔒: follows that church, with the source `invite` (it shows as "Invitation" in the church's subscriber figures). `200` with `{ "status": "active" | "pending", "message", "data" }`; a church that approves new members answers `pending`; a member at the limit of 3 churches gets `422` on `church`.
+- `POST /join/match` (public, 20 a minute) `{ platform: android|ios }`: for the app opened for the first time after an install. Answers `{ "data": { ...as above } | null }`: the church whose link this phone's address opened in the last 24 hours, only when exactly one church was opened from that address, and only once per opening. It is a guess (many phones share one address), so the app asks the person before using it. The addresses are kept only as a keyed hash and forgotten after 3 days.
+- `GET /admin/{church}/invite` 🔒 (any staff): `{ ready, code, url, message, stats: { opened, opened_30, joined, joined_30 } }`.
+
 ### `POST /churches/{slug}/subscription` 🔒
 
 Follows a church. The response is `201` with `{"status": "active" | "pending"}`. The status is `pending` when the church approves new members. A member can follow at most 3 churches at a time (pending requests count). A fourth returns `422` with an error on `church`.

@@ -9,6 +9,7 @@ import Button from '../../components/Button';
 import Logo from '../../components/Logo';
 import TextField from '../../components/TextField';
 import KeyboardScroll from '../../components/KeyboardScroll';
+import PendingJoinBanner from '../../components/join/PendingJoinBanner';
 import { COLORS, RADIUS, SPACING } from '../../constants/theme';
 import { API_ROOT, errorMessage, fieldErrors } from '../../lib/api';
 import { useAuth } from '../../lib/auth';
@@ -54,6 +55,7 @@ export default function Login() {
         </View>
 
         <View style={styles.card}>
+          <PendingJoinBanner style={{ marginBottom: SPACING.md }} />
           <AppText variant="heading" style={styles.cardTitle}>
             Continue with email
           </AppText>

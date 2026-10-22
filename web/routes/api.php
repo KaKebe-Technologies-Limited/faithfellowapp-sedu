@@ -35,7 +35,13 @@ Route::prefix('v1')->name('api.v1.')->middleware('throttle:api')->group(function
     Route::get('/churches/nearby', [V1\ChurchController::class, 'nearby'])->middleware(['auth:sanctum', 'api.active'])->name('churches.nearby');
     Route::get('/churches/{church}', [V1\ChurchController::class, 'show'])->name('churches.show');
 
+    // A church's join link in the app: which church a code is (before there is an account), and the church the app was installed from.
+    Route::get('/join/{code}', [V1\JoinController::class, 'show'])->where('code', '[A-Za-z0-9\-]+')->middleware('throttle:60,1')->name('join.show');
+    Route::post('/join/match', [V1\JoinController::class, 'match'])->middleware('throttle:20,1')->name('join.match');
+
     Route::middleware(['auth:sanctum', 'api.active'])->group(function () {
+        Route::post('/join/{code}/follow', [V1\JoinController::class, 'follow'])->where('code', '[A-Za-z0-9\-]+')->middleware('throttle:engagement')->name('join.follow');
+
         Route::delete('/auth/token', [V1\AuthController::class, 'revoke'])->name('auth.revoke');
         Route::get('/me', [V1\AuthController::class, 'me'])->name('me');
         Route::delete('/me', [V1\AuthController::class, 'destroy'])->middleware('throttle:5,1')->name('me.destroy');
@@ -200,6 +206,7 @@ Route::prefix('v1')->name('api.v1.')->middleware('throttle:api')->group(function
         Route::get('/admin/churches', [V1\Admin\DashboardController::class, 'churches'])->name('admin.churches');
         Route::prefix('admin/{church}')->name('admin.')->middleware('church.staff')->scopeBindings()->group(function () {
             Route::get('/dashboard', [V1\Admin\DashboardController::class, 'dashboard'])->name('dashboard');
+            Route::get('/invite', [V1\Admin\InviteController::class, 'show'])->name('invite.show');
 
             Route::middleware('church.can:content.manage')->group(function () {
                 Route::get('/announcements', [V1\Admin\ContentController::class, 'announcements'])->name('announcements.index');

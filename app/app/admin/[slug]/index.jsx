@@ -16,6 +16,7 @@ import { dayAndTime, formatMoney } from '../../../lib/format';
 import { useFetch } from '../../../lib/useFetch';
 
 const TOOLS = [
+  { key: 'invite', icon: 'link-outline', label: 'Invite link', perm: null, colors: ['#1B9AAA', '#0B3B44'] },
   { key: 'announcements', icon: 'megaphone-outline', label: 'Announcements', perm: 'content.manage', colors: ['#D34268', '#8E1C37'] },
   { key: 'posts', icon: 'images-outline', label: 'Updates & photos', perm: 'content.manage', colors: ['#26A69A', '#00695C'] },
   { key: 'events', icon: 'calendar-outline', label: 'Events & check-in', perm: 'events.manage', colors: ['#7C4DFF', '#4527A0'] },
@@ -107,7 +108,7 @@ export default function AdminDashboard() {
             <View style={{ marginTop: SPACING.md }}>
               <SectionHeader title="Manage" />
               <View style={styles.grid}>
-                {TOOLS.filter((t) => can(d.permissions, t.perm)).map((t) => (
+                {TOOLS.filter((t) => !t.perm || can(d.permissions, t.perm)).map((t) => (
                   <Pressable key={t.key} onPress={() => go(t.key)} style={({ pressed }) => [styles.tileWrap, pressed && { opacity: 0.92 }]} accessibilityRole="button" accessibilityLabel={t.label}>
                     <LinearGradient colors={t.colors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.tile}>
                       <Ionicons name={t.icon} size={24} color={COLORS.white} />
