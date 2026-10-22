@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
   commentsButton: { marginHorizontal: SPACING.md, marginTop: 12 },
   subsection: { fontFamily: FONTS.semibold, fontSize: 14, color: COLORS.gray700, paddingHorizontal: SPACING.md, marginBottom: 8 },
   mark: { position: 'absolute', right: -30, top: -34, width: 220, height: 220, tintColor: '#fff', opacity: 0.12 },
-  card: { height: 178, borderRadius: RADIUS.xl, overflow: 'hidden', backgroundColor: '#4527A0', ...SHADOW, shadowOpacity: 0.16 },
+  card: { height: 160, borderRadius: RADIUS.xl, overflow: 'hidden', backgroundColor: '#4527A0', ...SHADOW, shadowOpacity: 0.16 },
   cardTop: { position: 'absolute', left: 16, top: 16, flexDirection: 'row' },
   live: { flexDirection: 'row', alignItems: 'center', gap: 7, backgroundColor: 'rgba(20,6,40,0.45)', borderRadius: RADIUS.full, paddingHorizontal: 11, paddingVertical: 5 },
   dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#FF7A9A' },

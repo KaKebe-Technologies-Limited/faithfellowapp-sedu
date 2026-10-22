@@ -1,6 +1,6 @@
 // The building blocks of the podcast screens: a square tile for horizontal shelves, a row for a podcast in a list, and
 // a row for an episode with a play button (it shows the pause icon and a pink name while that episode is playing).
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
   rowPlaying: { position: 'absolute', right: 12, top: 10 },
   gridPlaying: { position: 'absolute', right: 8, top: 8, zIndex: 2 },
   gridWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 14, paddingHorizontal: 16 },
-  gridCover: { width: '100%', aspectRatio: 1, borderRadius: RADIUS.lg + 2, backgroundColor: PURPLE.mist },
+  gridCover: { borderRadius: RADIUS.lg + 2, backgroundColor: PURPLE.mist },
   gridBadge: { position: 'absolute', left: 8, bottom: 8, backgroundColor: 'rgba(40,16,90,0.72)', borderRadius: 9, paddingHorizontal: 8, paddingVertical: 3 },
   gridBadgeText: { fontFamily: FONTS.semibold, fontSize: 10.5, color: '#fff' },
   gridName: { fontFamily: FONTS.bold, fontSize: 14.5, lineHeight: 19, color: COLORS.black, marginTop: 8 },
@@ -148,43 +148,31 @@ const styles = StyleSheet.create({
 });
 
 /** Podcasts as cover thumbnails, two to a row: the cover, its category, the name, who publishes it and how many episodes. */
-function GridTile({ p, tile }) {
+/** A podcast as a cover thumbnail for a sideways shelf: the cover, its category, the name, who publishes it and how many episodes. */
+export function PodcastCover({ p, width = 150 }) {
   const playing = usePlayingPodcast(p.id);
 
   return (
-        <Pressable onPress={() => open(p.id)} style={({ pressed }) => [{ width: tile }, pressed && { opacity: 0.92 }]} accessibilityRole="button" accessibilityLabel={`Podcast: ${p.name}, by ${p.host}${playing ? ', playing now' : ''}`}>
-          <View>
-            {playing ? <PlayingPill style={styles.gridPlaying} /> : null}
-            <Image source={{ uri: mediaUrl(p.cover_url) }} style={styles.gridCover} contentFit="cover" transition={200} />
-            {p.category_label ? (
-              <View style={styles.gridBadge}>
-                <AppText style={styles.gridBadgeText}>{p.category_label}</AppText>
-              </View>
-            ) : null}
+    <Pressable onPress={() => open(p.id)} style={({ pressed }) => [{ width }, pressed && { opacity: 0.92 }]} accessibilityRole="button" accessibilityLabel={`Podcast: ${p.name}, by ${p.host}${playing ? ', playing now' : ''}`}>
+      <View>
+        <Image source={{ uri: mediaUrl(p.cover_url) }} style={[styles.gridCover, { width, height: width }]} contentFit="cover" transition={200} />
+        {playing ? <PlayingPill style={styles.gridPlaying} /> : null}
+        {p.category_label ? (
+          <View style={styles.gridBadge}>
+            <AppText style={styles.gridBadgeText}>{p.category_label}</AppText>
           </View>
-          <AppText style={styles.gridName} numberOfLines={2}>
-            {p.name}
-          </AppText>
-          <AppText style={styles.gridHost} numberOfLines={1}>
-            by {p.host}
-          </AppText>
-          <AppText style={styles.gridCount}>
-            {p.episodes} episode{p.episodes === 1 ? '' : 's'}
-          </AppText>
-        </Pressable>
-  );
-}
-
-export function PodcastGrid({ podcasts }) {
-  const { width } = useWindowDimensions();
-  const tile = Math.floor((width - 32 - 14) / 2);
-
-  return (
-    <View style={styles.gridWrap}>
-      {podcasts.map((p) => (
-        <GridTile key={p.id} p={p} tile={tile} />
-      ))}
-    </View>
+        ) : null}
+      </View>
+      <AppText style={styles.gridName} numberOfLines={2}>
+        {p.name}
+      </AppText>
+      <AppText style={styles.gridHost} numberOfLines={1}>
+        by {p.host}
+      </AppText>
+      <AppText style={styles.gridCount}>
+        {p.episodes} episode{p.episodes === 1 ? '' : 's'}
+      </AppText>
+    </Pressable>
   );
 }
 

@@ -5,7 +5,7 @@ import { FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, TextInput,
 import Ionicons from '@expo/vector-icons/Ionicons';
 import AppText from '../components/AppText';
 import Chip from '../components/Chip';
-import { EpisodeRow, PodcastGrid, PodcastRow, PodcastTile, PublisherStrip } from '../components/podcast/PodcastCards';
+import { EpisodeRow, PodcastCover, PodcastRow, PodcastTile, PublisherStrip } from '../components/podcast/PodcastCards';
 import PodcastRadio from '../components/podcast/PodcastRadio';
 import ScreenHeader from '../components/ScreenHeader';
 import StateView from '../components/StateView';
@@ -15,13 +15,21 @@ import { useRadio } from '../lib/radio';
 import { usePaged } from '../lib/usePaged';
 import { useFetch } from '../lib/useFetch';
 
-function Shelf({ title, hint, children }) {
+/** A titled block of the page. `action` ({ label, onPress }) puts a "See all" link at the right of the title. */
+function Shelf({ title, hint, action, children }) {
   return (
-    <View style={{ marginBottom: SPACING.lg }}>
+    <View style={{ marginBottom: SPACING.lg + 4 }}>
       <View style={styles.sectionHead}>
         <View style={styles.sectionBar} />
         <AppText style={styles.section}>{title}</AppText>
-        {hint ? <AppText style={styles.hint}>{hint}</AppText> : null}
+        {action ? (
+          <Pressable onPress={action.onPress} hitSlop={8} accessibilityRole="button" accessibilityLabel={`${action.label}: ${title}`} style={styles.action}>
+            <AppText style={styles.actionText}>{action.label}</AppText>
+            <Ionicons name="chevron-forward" size={14} color={PURPLE.main} />
+          </Pressable>
+        ) : hint ? (
+          <AppText style={styles.hint}>{hint}</AppText>
+        ) : null}
       </View>
       {children}
     </View>
@@ -40,8 +48,11 @@ function PublisherStripShelf({ podcasts, onSelect }) {
   );
 }
 
-/** The landing view: the Podcast radio, what you follow, the publishers, the podcasts as thumbnails, the newest episodes and the full list. */
-function Overview({ overview, refreshing, reload, onPublisher, onSection }) {
+/**
+ * The landing view, in the order a listener explores: the Podcast radio, what you follow, the publishers, then a shelf of cover thumbnails for each
+ * category (Faith and Motivation first; each podcast is in the shelf of its own category), the newest episodes, and the podcasts as a list.
+ */
+function Overview({ overview, total, refreshing, reload, onPublisher, onSection, onBrowseAll }) {
   const { following, new_episodes: fresh, podcasts, sections = [] } = overview;
 
   return (
@@ -56,25 +67,14 @@ function Overview({ overview, refreshing, reload, onPublisher, onSection }) {
           </ScrollView>
         </Shelf>
       ) : null}
-      {podcasts.length ? (
-        <>
-          <PublisherStripShelf podcasts={podcasts} onSelect={onPublisher} />
-          <Shelf title="Podcasts" hint={`${podcasts.length} to explore`}>
-            <PodcastGrid podcasts={podcasts} />
-          </Shelf>
-        </>
-      ) : null}
+      <PublisherStripShelf podcasts={podcasts} onSelect={onPublisher} />
       {sections.map((section) => (
-        <Shelf key={section.key} title={section.label} hint={section.count > section.podcasts.length ? `${section.count} podcasts` : null}>
-          {section.podcasts.map((p) => (
-            <PodcastRow key={p.id} podcast={p} />
-          ))}
-          {section.count > section.podcasts.length ? (
-            <Pressable onPress={() => onSection(section.key)} accessibilityRole="button" style={styles.seeAll}>
-              <AppText style={styles.seeAllText}>See all {section.count} in {section.label}</AppText>
-              <Ionicons name="chevron-forward" size={15} color={PURPLE.main} />
-            </Pressable>
-          ) : null}
+        <Shelf key={section.key} title={section.label} action={{ label: section.count > section.podcasts.length ? `See all ${section.count}` : 'See all', onPress: () => onSection(section.key) }}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: SPACING.md, gap: 14 }}>
+            {section.podcasts.map((p) => (
+              <PodcastCover key={p.id} p={p} width={150} />
+            ))}
+          </ScrollView>
         </Shelf>
       ))}
       {fresh.length ? (
@@ -85,10 +85,16 @@ function Overview({ overview, refreshing, reload, onPublisher, onSection }) {
         </Shelf>
       ) : null}
       {podcasts.length ? (
-        <Shelf title="All podcasts">
+        <Shelf title="All podcasts" hint={`${total || podcasts.length}`}>
           {podcasts.map((p) => (
             <PodcastRow key={p.id} podcast={p} />
           ))}
+          {total > podcasts.length ? (
+            <Pressable onPress={onBrowseAll} accessibilityRole="button" style={styles.browseAll}>
+              <AppText style={styles.browseAllText}>Browse all {total} podcasts</AppText>
+              <Ionicons name="chevron-forward" size={16} color={PURPLE.main} />
+            </Pressable>
+          ) : null}
         </Shelf>
       ) : null}
     </ScrollView>
@@ -128,6 +134,7 @@ export default function PodcastsScreen() {
   const [q, setQ] = useState('');
   const [category, setCategory] = useState('');
   const [onlyFollowing, setOnlyFollowing] = useState(false);
+  const [browseAll, setBrowseAll] = useState(false);
   const overview = useFetch('/podcasts/overview');
   // The Podcast radio is a podcast too: the screen is not empty while a podcast channel is on.
   const talkOn = useRadio().stations.some((s) => s.kind === 'talk');
@@ -138,7 +145,8 @@ export default function PodcastsScreen() {
     return () => clearTimeout(t);
   }, [text]);
 
-  const browsing = !!q || !!category || onlyFollowing;
+  const browsing = !!q || !!category || onlyFollowing || browseAll;
+  const total = (overview.data?.data?.categories ?? []).reduce((n, c) => n + c.count, 0);
   const categories = overview.data?.data?.categories ?? [];
   const params = { q: q || undefined, category: category || undefined, following: onlyFollowing ? 1 : undefined };
 
@@ -160,7 +168,7 @@ export default function PodcastsScreen() {
       </View>
       <View>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
-          <Chip tone="purple" label="All" on={!category && !onlyFollowing} onPress={() => (setCategory(''), setOnlyFollowing(false), setText(''), setQ(''))} />
+          <Chip tone="purple" label="All" on={!category && !onlyFollowing} onPress={() => (setCategory(''), setOnlyFollowing(false), setBrowseAll(false), setText(''), setQ(''))} />
           {overview.data?.data?.following?.length ? <Chip tone="purple" label="Following" on={onlyFollowing} onPress={() => (setOnlyFollowing(true), setCategory(''))} /> : null}
           {categories.map((c) => (
             <Chip key={c.key} tone="purple" label={c.label} on={category === c.key} onPress={() => (setCategory(c.key), setOnlyFollowing(false))} />
@@ -180,7 +188,7 @@ export default function PodcastsScreen() {
           emptyTitle="No podcasts yet"
           emptyMessage="Podcasts made by members appear here once they are approved. You can start one from the FaithFellows website."
         >
-          {overview.data ? <Overview overview={overview.data.data} refreshing={overview.refreshing} reload={overview.reload} onPublisher={(host) => host && (setText(host), setQ(host))} onSection={(key) => (setCategory(key), setOnlyFollowing(false))} /> : null}
+          {overview.data ? <Overview overview={overview.data.data} total={total} refreshing={overview.refreshing} reload={overview.reload} onPublisher={(host) => host && (setText(host), setQ(host))} onSection={(key) => (setCategory(key), setOnlyFollowing(false))} onBrowseAll={() => setBrowseAll(true)} /> : null}
         </StateView>
       )}
     </View>
@@ -196,7 +204,9 @@ const styles = StyleSheet.create({
   sectionBar: { width: 4, height: 20, borderRadius: 2, backgroundColor: PURPLE.main },
   section: { fontFamily: FONTS.bold, fontSize: 19, color: COLORS.black, flex: 1 },
   hint: { fontFamily: FONTS.regular, fontSize: 12.5, color: COLORS.gray700 },
-  seeAll: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, paddingVertical: 8 },
-  seeAllText: { fontFamily: FONTS.semibold, fontSize: 14, color: PURPLE.main },
+  action: { flexDirection: 'row', alignItems: 'center', gap: 2 },
+  actionText: { fontFamily: FONTS.semibold, fontSize: 13.5, color: PURPLE.main },
+  browseAll: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, backgroundColor: PURPLE.mist, borderRadius: RADIUS.full, marginHorizontal: SPACING.md, paddingVertical: 12, marginTop: 2 },
+  browseAllText: { fontFamily: FONTS.semibold, fontSize: 14.5, color: PURPLE.main },
   more: { textAlign: 'center', color: COLORS.gray700, paddingVertical: 12 },
 });
