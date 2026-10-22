@@ -490,6 +490,7 @@ return array(
     'App\\Support\\MobileMoneyPhone' => $baseDir . '/app/Support/MobileMoneyPhone.php',
     'App\\Support\\ReadingPlanTemplates' => $baseDir . '/app/Support/ReadingPlanTemplates.php',
     'App\\Support\\SampleGames' => $baseDir . '/app/Support/SampleGames.php',
+    'App\\Support\\ServerErrors' => $baseDir . '/app/Support/ServerErrors.php',
     'App\\Support\\StorageQuota' => $baseDir . '/app/Support/StorageQuota.php',
     'App\\Support\\VerseOfTheDay' => $baseDir . '/app/Support/VerseOfTheDay.php',
     'App\\View\\Composers\\AppShellComposer' => $baseDir . '/app/View/Composers/AppShellComposer.php',

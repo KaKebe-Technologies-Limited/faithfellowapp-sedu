@@ -82,6 +82,8 @@ Each provider card shows sandbox or live mode, attempts, success rate and volume
 
 Every admin action is recorded: approvals, role changes, refunds, moderation, settings changes, impersonation, and API tokens issued. Filter by church, action, user or date, and export to CSV. Platform-level actions have no church.
 
+**Server errors.** When something fails on the server that nobody expected (a sermon that could not be saved, a page that shows "Something went wrong"), the person sees a short reference such as `K7M2QX`, and the details are recorded here as `error.server`: what failed, the page it happened on and the file and line. Filter by the action `error.server`, find the reference they quote, and the line says what to fix. This is the quickest way to find a problem that only happens on the live site.
+
 ## Security notes
 
 - Never share or reuse super admin accounts. Each staff member has their own.

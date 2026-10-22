@@ -1085,6 +1085,7 @@ class ComposerStaticInit6b61fb820dd7281d49fc501460ab603f
         'App\\Support\\MobileMoneyPhone' => __DIR__ . '/../..' . '/app/Support/MobileMoneyPhone.php',
         'App\\Support\\ReadingPlanTemplates' => __DIR__ . '/../..' . '/app/Support/ReadingPlanTemplates.php',
         'App\\Support\\SampleGames' => __DIR__ . '/../..' . '/app/Support/SampleGames.php',
+        'App\\Support\\ServerErrors' => __DIR__ . '/../..' . '/app/Support/ServerErrors.php',
         'App\\Support\\StorageQuota' => __DIR__ . '/../..' . '/app/Support/StorageQuota.php',
         'App\\Support\\VerseOfTheDay' => __DIR__ . '/../..' . '/app/Support/VerseOfTheDay.php',
         'App\\View\\Composers\\AppShellComposer' => __DIR__ . '/../..' . '/app/View/Composers/AppShellComposer.php',
