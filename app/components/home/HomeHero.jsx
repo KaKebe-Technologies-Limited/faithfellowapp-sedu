@@ -11,6 +11,7 @@ import Svg, { Path } from 'react-native-svg';
 import { COLORS, FONTS, SPACING } from '../../constants/theme';
 import { SOFT } from '../../constants/soft';
 import { firstName, greeting } from '../../lib/format';
+import { useRadio } from '../../lib/radio';
 import { useFetch } from '../../lib/useFetch';
 import AppText from '../AppText';
 import Logo from '../Logo';
@@ -60,6 +61,7 @@ export default function HomeHero({ user, children }) {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const me = useFetch('/me');
+  const { stations } = useRadio();
   const mine = me.data?.data ?? user;
 
   useFocusEffect(
@@ -79,7 +81,15 @@ export default function HomeHero({ user, children }) {
         <View style={styles.glowB} />
 
         <View style={styles.top}>
-          <Logo size={42} />
+          <View style={styles.brand}>
+            <Logo size={42} />
+            {stations.length > 1 ? (
+              <Pressable onPress={() => router.push('/radio')} style={({ pressed }) => [styles.pill, pressed && { opacity: 0.8 }]} accessibilityRole="button" accessibilityLabel="More radio channels">
+                <Ionicons name="radio-outline" size={16} color="#fff" />
+                <AppText style={styles.pillText}>Channels</AppText>
+              </Pressable>
+            ) : null}
+          </View>
           <View style={styles.buttons}>
             <RoundButton icon="notifications-outline" label="Notifications" count={mine?.unread_notifications ?? 0} onPress={() => router.push('/notifications')} />
             <RoundButton icon="chatbubble-ellipses-outline" label="Messages" count={mine?.unread_messages ?? 0} onPress={() => router.push('/chats')} />
@@ -103,6 +113,9 @@ const styles = StyleSheet.create({
   glowA: { position: 'absolute', right: -70, top: -60, width: 240, height: 240, borderRadius: 120, backgroundColor: 'rgba(255,255,255,0.07)' },
   glowB: { position: 'absolute', left: -90, bottom: 30, width: 220, height: 220, borderRadius: 110, backgroundColor: 'rgba(242,126,168,0.10)' },
   top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: SPACING.md },
+  brand: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  pill: { flexDirection: 'row', alignItems: 'center', gap: 6, height: 36, borderRadius: 18, paddingHorizontal: 13, backgroundColor: SOFT.glassOnDark, borderWidth: 1, borderColor: SOFT.glassOnDarkBorder },
+  pillText: { fontFamily: FONTS.semibold, fontSize: 13, color: '#fff' },
   buttons: { flexDirection: 'row', gap: 10 },
   round: { width: 42, height: 42, borderRadius: 21, backgroundColor: SOFT.glassOnDark, borderWidth: 1, borderColor: SOFT.glassOnDarkBorder, alignItems: 'center', justifyContent: 'center' },
   badge: { position: 'absolute', top: -4, right: -4, minWidth: 18, height: 18, borderRadius: 9, paddingHorizontal: 4, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#4A0F29' },

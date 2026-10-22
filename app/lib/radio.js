@@ -20,6 +20,7 @@ let snapshot = {
   upcoming: [],
   recent: [],
   scheduled: null, // a song an admin has scheduled to go on air later: { track, starts_at }
+  unreachable: false, // the last look at the selected channel failed (offline): Home stops waiting for it
   error: null,
 };
 const listeners = new Set();
@@ -85,6 +86,7 @@ export async function loadStation() {
     station: { enabled: info.enabled, name: info.name, tagline: info.tagline, songs: info.songs, kind: info.kind ?? 'music', slug: info.slug ?? slug, church: info.church ?? null, fallbackFor: info.fallback ? info.fallback_for : null },
     ...(info.now ? { upcoming: info.now.upcoming, recent: info.now.recent } : { upcoming: [], recent: [] }),
     scheduled: info.scheduled ?? null,
+    unreachable: false,
     ...(snapshot.phase === 'idle' || snapshot.phase === 'loading' ? { track: info.now?.track ?? null, startedAt: info.now?.started_at ?? null } : {}),
   });
   return info;
@@ -109,7 +111,7 @@ export async function selectStation(slug) {
   const wasPlaying = snapshot.phase === 'playing' || snapshot.phase === 'loading';
   if (wasPlaying) stopRadio();
   queue = [];
-  set({ stationId: slug, station: null, track: null, startedAt: null, upcoming: [], recent: [], scheduled: null, error: null });
+  set({ stationId: slug, station: null, track: null, startedAt: null, upcoming: [], recent: [], scheduled: null, unreachable: false, error: null });
   try {
     await loadStation();
   } catch {
@@ -262,7 +264,7 @@ export function useStationInfo() {
     const run = () => {
       if (!alive) return;
       loadStations();
-      if (snapshot.phase === 'idle') loadStation().catch(() => {});
+      if (snapshot.phase === 'idle') loadStation().catch(() => !snapshot.station && set({ unreachable: true }));
     };
     run();
     const timer = setInterval(run, 60000);

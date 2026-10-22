@@ -18,9 +18,11 @@ const ROUTES = {
   campaign: '/campaign/[id]',
   devotional: '/devotional/[id]',
   sermon: '/sermon/[id]',
+  announcement: '/announcement/[id]',
 };
 
-function open(item) {
+/** Opens what a highlight is about: the live service, event, campaign, devotional, sermon or announcement, or a church's page. */
+export function openItem(item) {
   if (item.kind === 'church' && item.slug) return router.push({ pathname: '/church/[slug]', params: { slug: item.slug } });
   if (ROUTES[item.kind]) router.push({ pathname: ROUTES[item.kind], params: { id: item.id } });
 }
@@ -28,7 +30,7 @@ function open(item) {
 function Slide({ item, width, height }) {
   return (
     <View style={{ width, paddingHorizontal: SPACING.md }}>
-      <Pressable accessibilityRole="button" accessibilityLabel={`${item.label}: ${item.title}`} onPress={() => open(item)} style={[styles.card, { height }]}>
+      <Pressable accessibilityRole="button" accessibilityLabel={`${item.label}: ${item.title}`} onPress={() => openItem(item)} style={[styles.card, { height }]}>
         <LinearGradient colors={['#5B1431', COLORS.primaryDark, COLORS.primary]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
         {item.image ? <Image source={{ uri: mediaUrl(item.image) }} style={StyleSheet.absoluteFill} contentFit="cover" transition={350} /> : null}
         <LinearGradient colors={['rgba(20,6,12,0)', 'rgba(20,6,12,0.25)', 'rgba(20,6,12,0.82)']} locations={[0.2, 0.55, 1]} style={StyleSheet.absoluteFill} />

@@ -1,6 +1,6 @@
-// "Explore": the everyday places of the app as soft frosted tiles, four to a row. The gospel radio is a real play / stop button, the
-// rest open their own screen. Podcasts, the hymn book and the radio belong to the whole platform; the super admin can switch
-// them off for a church (see lib/features.js), and a new sign-up with no church sees all of them.
+// "Explore": the everyday places of the app as soft frosted tiles, four to a row, each opening its own screen (the radio is the card at
+// the top of Home). Podcasts and the hymn book belong to the whole platform; the super admin can switch them off for a church
+// (see lib/features.js), and a new sign-up with no church sees all of them.
 // A little number on a tile says what is waiting (prayer requests to pray for).
 import { Pressable, StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -9,9 +9,7 @@ import { router } from 'expo-router';
 import { COLORS, FONTS, SPACING } from '../../constants/theme';
 import { SOFT, SOFT_SHADOW } from '../../constants/soft';
 import { useFeatures } from '../../lib/features';
-import { toggleMusicRadio, useRadio, useStationInfo } from '../../lib/radio';
 import AppText from '../AppText';
-import RadioButton from '../radio/RadioButton';
 
 const TILE = 66;
 
@@ -46,28 +44,8 @@ function Cell({ icon, colors, label, onPress, count, hint }) {
   );
 }
 
-function RadioCell() {
-  const { phase, station } = useRadio();
-  const on = (phase === 'playing' || phase === 'loading') && (!station || station.kind === 'music');
-
-  return (
-    <View style={styles.cell}>
-      <Frame>
-        <RadioButton size={46} onPress={toggleMusicRadio} kind="music" />
-      </Frame>
-      <AppText style={[styles.label, on && styles.on]} numberOfLines={1}>
-        {on ? 'On air' : 'Radio'}
-      </AppText>
-    </View>
-  );
-}
-
 export default function ExploreGrid({ home }) {
   const features = useFeatures();
-  useStationInfo();
-  const { station, stations } = useRadio();
-  // The Radio tile is the music radio, and shows when a music channel has something on. The Podcast radio and the churches' podcast channels are on the Podcasts tile.
-  const radio = features.radio && (stations.some((s) => s.kind !== 'talk') || (stations.length === 0 && !!station?.enabled && station.songs > 0));
   const church = home?.churches?.[0];
   const several = (home?.churches?.length ?? 0) > 1;
 
@@ -75,7 +53,6 @@ export default function ExploreGrid({ home }) {
     <View style={styles.wrap}>
       <AppText style={styles.title}>Explore</AppText>
       <View style={styles.grid}>
-        {radio ? <RadioCell /> : null}
         {features.podcasts ? <Cell icon="headset" colors={['#8E6BD6', '#4527A0']} label="Podcasts" onPress={() => router.push('/podcasts')} /> : null}
         {features.hymns ? <Cell icon="musical-notes" colors={['#F6BC4A', '#C77700']} label="Hymns" onPress={() => router.push('/hymns')} /> : null}
         <Cell icon="mic" colors={['#5AA6F5', '#1D5FD1']} label="Sermons" onPress={() => router.push('/sermons')} />
@@ -89,6 +66,7 @@ export default function ExploreGrid({ home }) {
           onPress={() => (church && !several ? router.push({ pathname: '/give/[slug]', params: { slug: church.slug } }) : router.push('/(tabs)/give'))}
         />
         <Cell icon="game-controller" colors={['#A58AFF', '#5B3CC4']} label="Games" hint="Games" onPress={() => router.push('/games')} />
+        <Cell icon="business" colors={['#3FC1C9', '#0E7C86']} label="Churches" hint="Find and follow churches" onPress={() => router.push('/churches')} />
       </View>
     </View>
   );
