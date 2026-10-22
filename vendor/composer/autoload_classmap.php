@@ -185,6 +185,7 @@ return array(
     'App\\Http\\Middleware\\ResolveCustomDomain' => $baseDir . '/app/Http/Middleware/ResolveCustomDomain.php',
     'App\\Http\\Middleware\\SecurityHeaders' => $baseDir . '/app/Http/Middleware/SecurityHeaders.php',
     'App\\Http\\Middleware\\SetLocale' => $baseDir . '/app/Http/Middleware/SetLocale.php',
+    'App\\Http\\Middleware\\ThrottlePerRoute' => $baseDir . '/app/Http/Middleware/ThrottlePerRoute.php',
     'App\\Http\\Requests\\Auth\\LoginRequest' => $baseDir . '/app/Http/Requests/Auth/LoginRequest.php',
     'App\\Http\\Requests\\Auth\\RegisterRequest' => $baseDir . '/app/Http/Requests/Auth/RegisterRequest.php',
     'App\\Http\\Requests\\Church\\BranchRequest' => $baseDir . '/app/Http/Requests/Church/BranchRequest.php',

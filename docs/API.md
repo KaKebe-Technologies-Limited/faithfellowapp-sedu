@@ -8,7 +8,7 @@ This is a JSON REST API for the FaithFellows mobile app and integrations.
 
 - Send `Accept: application/json` and, for writes, `Content-Type: application/json`. All responses are JSON, including errors.
 - **Authentication:** `Authorization: Bearer <token>` (Laravel Sanctum personal access tokens). Tokens expire after 180 days.
-- **Rate limits:** 60 requests per minute per user (or IP). Token creation is limited to 10 per minute, plus 5 failed sign-ins per email/IP per minute. Giving is limited to 10 per minute. A `429` response includes `Retry-After`.
+- **Rate limits:** counted for each person (their token), never for the address, because many phones share one (a church's Wi-Fi, a mobile network): 240 requests per minute for a signed-in person, 120 per address for people who are not signed in yet. A route with a limit of its own (a game's polling, giving, reactions, sign-in) is held to that one, and every route counts on its own (a game screen asking once a second never uses up the Start or Answer buttons). Sign-in and Google sign-in are limited to 60 per minute per address plus 5 failed sign-ins per email and address per minute, sign-up to 20 per minute and 300 a day per address, a password code to one a minute per email address. Giving is limited to 10 per minute. A `429` response includes `Retry-After`.
 - **Pagination:** list endpoints return Laravel's `data`, `links` and `meta` envelope. Use `?page=` and, where offered, `?per_page=` (maximum 50).
 - **Errors:** `401` unauthenticated, `403` forbidden or account suspended, `404` not found, `422` validation (`{"message": …, "errors": {field: [..]}}`), `429` throttled.
 - **Times** are ISO 8601. **Money** is a number in UGX unless `currency` says otherwise.
@@ -58,7 +58,7 @@ lowercased, and an email that already belongs to an account, including a closed 
 least 8 characters (letters and numbers, and not a known breached password, in production).
 
 **201** returns the same body as `/auth/token` plus `"is_new_user": true`. The member is signed in at once; a "verify your email"
-message is sent, and the email stays unverified until they follow it. Limited to 5 requests per minute and 30 per day per address (**429**).
+message is sent, and the email stays unverified until they follow it. Limited to 20 requests per minute and 300 per day per address (**429**).
 ### `POST /auth/google`
 
 Signs in with Google, or creates the member account the first time. Send the **Google ID token** (a JWT the app receives from Google sign-in), not a password. The server checks Google's signature and that the token was issued for one of our OAuth client IDs (`GOOGLE_CLIENT_IDS`), so no client secret is involved.
@@ -71,7 +71,7 @@ Signs in with Google, or creates the member account the first time. Send the **G
 
 - An existing member with the same email is signed in and linked to the Google account; no second account is created. If their email was never verified, any password and tokens on it are discarded first.
 - New accounts are members, with the email marked verified and the Terms accepted (the app must show "By continuing you agree to the Terms and Privacy Policy").
-- **401** the token could not be verified (wrong audience, expired, unverified email, bad signature). **403** the account is suspended, closed, platform staff, or linked to a different Google account. **503** Google sign-in is not configured. Limited to 10 requests per minute.
+- **401** the token could not be verified (wrong audience, expired, unverified email, bad signature). **403** the account is suspended, closed, platform staff, or linked to a different Google account. **503** Google sign-in is not configured. Limited to 60 requests per minute per address.
 ### Google sign-in through the browser (what the mobile app uses)
 
 The app does not need a native Google library. It opens a page on our server in the system browser:

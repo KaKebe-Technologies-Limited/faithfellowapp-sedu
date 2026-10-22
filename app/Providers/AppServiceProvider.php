@@ -89,17 +89,30 @@ class AppServiceProvider extends ServiceProvider
 
     private function configureRateLimiting(): void
     {
-        RateLimiter::for('api', fn (Request $request) => Limit::perMinute(60)->by($request->user()?->id ?: $request->ip()));
+        // Everything under /api/v1. It is counted for the person (their app token), not for the address: many phones share one address (a church's
+        // Wi-Fi, a mobile network), and counting them together shut whole congregations out with "Too many attempts". A route that has a limit of its
+        // own (a game's one-second polling, sign-in, giving, reactions) is held to that one; counting it here as well would let one game screen use up
+        // the whole allowance. People who are not signed in yet share their address's allowance, which is larger than before.
+        RateLimiter::for('api', function (Request $request) {
+            $own = collect($request->route()?->gatherMiddleware() ?? [])->contains(fn ($m) => is_string($m) && str_starts_with($m, 'throttle:') && $m !== 'throttle:api');
+            if ($own) {
+                return Limit::none();
+            }
+            $user = $request->user('sanctum');
+
+            return $user ? Limit::perMinute(240)->by('user:'.$user->id) : Limit::perMinute(120)->by('ip:'.$request->ip());
+        });
 
         RateLimiter::for('contact', fn (Request $request) => [
             Limit::perMinute(3)->by($request->ip()),
             Limit::perDay(20)->by($request->ip()),
         ]);
 
-        // Account creation from the app: a few per minute and a daily cap per address.
+        // Account creation from the app: per minute and per day for an address. A mobile network puts thousands of phones behind one address, so the daily
+        // cap is high; it only has to stop a script.
         RateLimiter::for('register', fn (Request $request) => [
-            Limit::perMinute(5)->by($request->ip()),
-            Limit::perDay(30)->by($request->ip()),
+            Limit::perMinute(20)->by($request->ip()),
+            Limit::perDay(300)->by($request->ip()),
         ]);
 
         RateLimiter::for('giving', fn (Request $request) => Limit::perMinute(10)->by($request->user()?->id ?: $request->ip()));

@@ -780,6 +780,7 @@ class ComposerStaticInit6b61fb820dd7281d49fc501460ab603f
         'App\\Http\\Middleware\\ResolveCustomDomain' => __DIR__ . '/../..' . '/app/Http/Middleware/ResolveCustomDomain.php',
         'App\\Http\\Middleware\\SecurityHeaders' => __DIR__ . '/../..' . '/app/Http/Middleware/SecurityHeaders.php',
         'App\\Http\\Middleware\\SetLocale' => __DIR__ . '/../..' . '/app/Http/Middleware/SetLocale.php',
+        'App\\Http\\Middleware\\ThrottlePerRoute' => __DIR__ . '/../..' . '/app/Http/Middleware/ThrottlePerRoute.php',
         'App\\Http\\Requests\\Auth\\LoginRequest' => __DIR__ . '/../..' . '/app/Http/Requests/Auth/LoginRequest.php',
         'App\\Http\\Requests\\Auth\\RegisterRequest' => __DIR__ . '/../..' . '/app/Http/Requests/Auth/RegisterRequest.php',
         'App\\Http\\Requests\\Church\\BranchRequest' => __DIR__ . '/../..' . '/app/Http/Requests/Church/BranchRequest.php',

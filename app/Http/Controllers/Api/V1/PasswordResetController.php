@@ -31,7 +31,9 @@ class PasswordResetController extends Controller
         $email = Str::lower(trim($data['email']));
 
         $user = User::where('email', $email)->first();
-        if ($user && $user->status === 'active') {
+        // One code a minute for an address: the sign-in limit per phone address is generous (many phones share one), so this is what stops someone
+        // filling a person's inbox with codes.
+        if ($user && $user->status === 'active' && Cache::add('password-code-sent:'.sha1($email), 1, 60)) {
             $code = (string) random_int(100000, 999999);
             Cache::put($this->key($email), ['hash' => Hash::make($code), 'tries' => 0], now()->addMinutes(self::MINUTES));
             try {
