@@ -51,7 +51,10 @@
                 lost: @json(__('The connection was lost. Check your internet connection, then try again.')),
                 expired: @json(__('The page expired, or the files are bigger than the server allows. Reload the page and try again.')),
                 tooBig: @json(__('The files are bigger than the server allows.')),
-                failed: @json(__('Something went wrong on the server. Please try again.')),
+                failed: @json(__('Something went wrong on the server. It may already be saved: check the list before you try again, so it is not added twice.')),
+                slow: @json(__('The server took too long to answer. It may already be saved: check the list before you try again, so it is not added twice.')),
+                code: @json(__('(error :n)')),
+                ref: @json(__('Reference: :r')),
                 fix: @json(__('Some details need fixing:')),
                 left: @json(__('about :t left')),
             };
@@ -144,7 +147,11 @@
                         });
                         return fail(words.fix, data.errors);
                     }
-                    fail(xhr.status === 419 || xhr.status === 413 ? (xhr.status === 413 ? words.tooBig : words.expired) : words.failed, null);
+                    if (xhr.status === 419) return fail(words.expired, null);
+                    if (xhr.status === 413) return fail(words.tooBig, null);
+                    // The status and, when the server noted the error, its reference, so the problem can be found and fixed.
+                    const detail = [words.code.replace(':n', xhr.status), data.reference ? words.ref.replace(':r', data.reference) : ''].filter(Boolean).join(' ');
+                    fail([[408, 502, 503, 504, 522, 524].includes(xhr.status) ? words.slow : words.failed, detail].join(' '), null);
                 };
                 xhr.onerror = xhr.ontimeout = () => fail(words.lost, null);
                 xhr.onabort = () => { working = false; overlay.hidden = true; document.body.style.overflow = ''; };

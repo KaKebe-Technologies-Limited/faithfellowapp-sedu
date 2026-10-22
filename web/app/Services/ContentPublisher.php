@@ -11,6 +11,7 @@ use App\Notifications\Content\NewChurchUpdate;
 use App\Notifications\Content\NewDevotional;
 use App\Notifications\Content\NewSermonPublished;
 use Illuminate\Database\Eloquent\Model;
+use Throwable;
 
 /**
  * Notifies subscribers when content goes live — immediately on publish, or
@@ -27,7 +28,29 @@ class ContentPublisher
             return false;
         }
 
-        $model->forceFill(['notified_at' => now()])->saveQuietly();
+        // Claim it first (the scheduler may be looking at the same item), and give the claim back if telling the members fails: the content is saved
+        // either way, and the scheduler tries again every minute for two days.
+        $claimed = $model->newQuery()->whereKey($model->getKey())->whereNull('notified_at')->update(['notified_at' => now()]);
+        if (! $claimed) {
+            return false;
+        }
+        $model->forceFill(['notified_at' => now()])->syncOriginal();
+
+        try {
+            $this->notify($model);
+        } catch (Throwable $e) {
+            $model->newQuery()->whereKey($model->getKey())->update(['notified_at' => null]);
+            $model->forceFill(['notified_at' => null])->syncOriginal();
+            report($e);
+
+            return false;
+        }
+
+        return true;
+    }
+
+    protected function notify(Model $model): void
+    {
         $model->loadMissing('church');
 
         match (true) {
@@ -47,8 +70,6 @@ class ContentPublisher
             ),
             default => null,
         };
-
-        return true;
     }
 
     /**

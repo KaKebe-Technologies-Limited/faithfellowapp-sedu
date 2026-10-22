@@ -9,12 +9,16 @@ use App\Http\Middleware\EnsureSubscribed;
 use App\Http\Middleware\ResolveCustomDomain;
 use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\SetLocale;
+use App\Support\ServerErrors;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Spatie\Permission\Middleware\PermissionMiddleware;
 use Spatie\Permission\Middleware\RoleMiddleware;
 use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
+use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -57,4 +61,17 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions): void {
         // The API always answers in JSON, even when a client forgets the Accept header.
         $exceptions->shouldRenderJsonWhen(fn ($request) => $request->is('api/*') || $request->expectsJson());
+
+        // An unexpected server error leaves a note in Super admin → Audit logs ("error.server") and gives the person a short reference to quote.
+        $exceptions->report(function (Throwable $e) {
+            ServerErrors::note($e);
+        });
+        $exceptions->respond(function (SymfonyResponse $response, Throwable $e, Request $request) {
+            $reference = $request->attributes->get('error_reference');
+            if ($reference && $response instanceof JsonResponse && $response->getStatusCode() >= 500) {
+                $response->setData([...(array) $response->getData(true), 'reference' => $reference]);
+            }
+
+            return $response;
+        });
     })->create();

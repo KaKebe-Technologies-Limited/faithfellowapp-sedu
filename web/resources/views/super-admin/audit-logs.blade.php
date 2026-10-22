@@ -36,7 +36,8 @@
                         <tr>
                             <td class="small text-nowrap">{{ $log->created_at?->format('j M Y, H:i') }}</td>
                             <td class="small">{{ $log->user?->name ?? __('System') }}@if ($log->impersonator)<div class="small-xs text-danger"><i class="bi bi-person-badge"></i> {{ __('as :name', ['name' => $log->impersonator->name]) }}</div>@endif</td>
-                            <td><code class="small">{{ $log->action }}</code>@if ($log->description)<div class="small-xs text-ff-muted">{{ Str::limit($log->description, 80) }}</div>@endif</td>
+                            <td><code class="small @if ($log->action === 'error.server') text-danger @endif">{{ $log->action }}</code>@if ($log->description)<div class="small-xs text-ff-muted">{{ $log->action === 'error.server' ? $log->description : Str::limit($log->description, 80) }}</div>@endif
+                            @if ($log->action === 'error.server' && ($log->new_values['where'] ?? null))<div class="small-xs text-ff-muted">{{ $log->new_values['request'] ?? '' }} · {{ $log->new_values['where'] }}</div>@endif</td>
                             <td class="small">{{ $log->auditable_type ? class_basename($log->auditable_type).' #'.$log->auditable_id : '—' }}</td>
                             <td class="small">{{ $log->church_id ? ($churches[$log->church_id] ?? '#'.$log->church_id) : __('Platform') }}</td>
                             <td class="small text-ff-muted">{{ $log->ip_address }}</td>
