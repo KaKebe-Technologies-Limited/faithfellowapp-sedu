@@ -1,7 +1,8 @@
 // Playing a live quiz on your phone. The screen asks the server for the game's state about once a second:
 // the lobby (the host shares the PIN, invites people they have played with by name and presses Start; everyone else waits),
-// each 10-second question with four big answers and a live scoreboard,
-// the reveal (right answer, points, how many chose each option) and the final podium.
+// each question with four big answers and a live scoreboard (the time per question is set by the platform admin and comes with the game's state),
+// the reveal (right answer, points, how many chose each option) and the final podium. A chime sounds for a right answer, a soft low note for a wrong one
+// (or time running out) and a finale when the game is over; the speaker button at the top turns the sounds off.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -16,6 +17,7 @@ import Sheet from '../../components/Sheet';
 import StateView from '../../components/StateView';
 import { COLORS, FONTS, RADIUS, SPACING } from '../../constants/theme';
 import api, { errorMessage } from '../../lib/api';
+import { playGameSound, useGameSound } from '../../lib/gameSounds';
 
 const OPTION_COLORS = ['#E21B3C', '#1368CE', '#D89E00', '#26890C'];
 const LETTERS = ['A', 'B', 'C', 'D'];
@@ -48,6 +50,9 @@ export default function GameScreen() {
   const finished = useRef(false);
   const [people, setPeople] = useState(null); // the invite sheet: null = closed, otherwise the list
   const [busy, setBusy] = useState(false);
+  const sound = useGameSound();
+  const sounded = useRef(''); // which moment already made its sound, so a poll does not repeat it
+  const playedLive = useRef(false); // the game was seen running, so the finale is for a game that just ended, not for one opened afterwards to read the results
 
   const poll = useCallback(async () => {
     try {
@@ -68,6 +73,22 @@ export default function GameScreen() {
     }, 1000);
     return () => clearInterval(t);
   }, [poll]);
+
+  // The sounds: once per revealed question (right or wrong, and time running out counts as wrong) and once when the game is over.
+  useEffect(() => {
+    if (!state) return;
+    if (['lobby', 'question', 'reveal'].includes(state.status)) playedLive.current = true;
+    if (state.status === 'reveal' && state.me) {
+      const moment = `reveal-${state.index}`;
+      if (sounded.current !== moment) {
+        sounded.current = moment;
+        playGameSound(state.me.correct ? 'correct' : 'wrong');
+      }
+    } else if (state.status === 'finished' && playedLive.current && sounded.current !== 'done') {
+      sounded.current = 'done';
+      playGameSound('done');
+    }
+  }, [state]);
 
   // A smooth countdown between polls.
   useEffect(() => {
@@ -163,6 +184,9 @@ export default function GameScreen() {
           </AppText>
           {state?.status === 'question' || state?.status === 'reveal' ? <AppText style={styles.progress}>Question {state.index + 1} of {state.total}</AppText> : null}
         </View>
+        <Pressable onPress={sound.toggle} hitSlop={8} style={styles.speaker} accessibilityRole="button" accessibilityLabel={sound.on ? 'Turn the game sounds off' : 'Turn the game sounds on'}>
+          <Ionicons name={sound.on ? 'volume-high' : 'volume-mute'} size={20} color={COLORS.white} />
+        </Pressable>
         {state?.me ? (
           <View style={styles.scorePill}>
             <Ionicons name="star" size={14} color="#FFD36B" />
@@ -358,6 +382,7 @@ const styles = StyleSheet.create({
   top: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   quiz: { fontFamily: FONTS.bold, fontSize: 17, color: COLORS.white },
   progress: { fontFamily: FONTS.medium, fontSize: 12.5, color: 'rgba(255,255,255,0.8)' },
+  speaker: { width: 38, height: 38, borderRadius: 19, backgroundColor: 'rgba(255,255,255,0.16)', alignItems: 'center', justifyContent: 'center', marginRight: 8 },
   scorePill: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'rgba(255,255,255,0.18)', borderRadius: RADIUS.full, paddingHorizontal: 12, paddingVertical: 7 },
   scoreText: { fontFamily: FONTS.bold, fontSize: 15, color: COLORS.white },
   center: { alignItems: 'center', gap: 8, paddingTop: 30 },

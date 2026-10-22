@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\ThrottlePerRoute;
 use App\Jobs\SendPushBatch;
 use App\Models\DeviceToken;
 use App\Models\Podcast;
@@ -83,7 +84,7 @@ test('a podcast the super admin imports is live at once, anyone else waits for r
 });
 
 test('the import is refused for a bad link, a page that is not a feed, a repeat, or without the promise', function () {
-    $this->withoutMiddleware(ThrottleRequests::class);
+    $this->withoutMiddleware([ThrottleRequests::class, ThrottlePerRoute::class]);
     $ruth = member();
     $post = fn (array $data) => $this->actingAs($ruth)->post(route('podcasts.import.store'), $data + ['host_name' => 'Ruth', 'faith_based' => 1]);
 

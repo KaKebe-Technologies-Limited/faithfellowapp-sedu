@@ -70,7 +70,7 @@ test('sign-up refuses incomplete or unsafe details and creates nobody', function
 ]);
 
 test('sign-up from the app is rate limited per address', function () {
-    foreach (range(1, 5) as $i) {
+    foreach (range(1, 20) as $i) {
         $this->postJson(route('api.v1.auth.register'), signUpData(['name' => '']))->assertUnprocessable();
     }
 

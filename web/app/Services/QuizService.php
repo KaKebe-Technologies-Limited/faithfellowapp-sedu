@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\PlatformSetting;
 use App\Models\Quiz;
 use App\Models\QuizAnswer;
 use App\Models\QuizPlayer;
@@ -122,16 +123,25 @@ class QuizService
         return QuizSession::active()->where('pin', preg_replace('/\D/', '', $pin))->latest()->first();
     }
 
-    /** Seconds each question is open. */
+    /** The shortest and longest a question may stay open, and the longest the answer may stay on screen, whatever is set. */
+    public const QUESTION_RANGE = [5, 120];
+
+    public const REVEAL_RANGE = [2, 30];
+
+    /** Seconds each question is open: what the platform admin set in Super admin → Settings, else the server's default (10). */
     public static function questionSeconds(): int
     {
-        return max(5, (int) config('faithfellows.quizzes.question_seconds', 10));
+        $set = (int) rescue(fn () => PlatformSetting::get('quiz_question_seconds'), 0, false);
+
+        return min(self::QUESTION_RANGE[1], max(self::QUESTION_RANGE[0], $set ?: (int) config('faithfellows.quizzes.question_seconds', 10)));
     }
 
-    /** Seconds the answer and leaderboard show before the next question. */
+    /** Seconds the answer and leaderboard show before the next question: set by the platform admin, else the server's default (5). */
     public static function revealSeconds(): int
     {
-        return max(0, (int) config('faithfellows.quizzes.reveal_seconds', 5));
+        $set = (int) rescue(fn () => PlatformSetting::get('quiz_reveal_seconds'), 0, false);
+
+        return $set > 0 ? min(self::REVEAL_RANGE[1], max(self::REVEAL_RANGE[0], $set)) : max(0, (int) config('faithfellows.quizzes.reveal_seconds', 5));
     }
 
     public function start(QuizSession $session): void

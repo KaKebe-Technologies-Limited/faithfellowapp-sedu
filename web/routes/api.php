@@ -21,13 +21,13 @@ Route::get('/ping', fn () => response()->json([
 ])->header('Cache-Control', 'no-store'))->name('api.ping');
 
 Route::prefix('v1')->name('api.v1.')->middleware('throttle:api')->group(function () {
-    Route::post('/auth/token', [V1\AuthController::class, 'token'])->middleware('throttle:10,1')->name('auth.token');
+    Route::post('/auth/token', [V1\AuthController::class, 'token'])->middleware('throttle:60,1')->name('auth.token');
     Route::post('/auth/register', [V1\AuthController::class, 'register'])->middleware('throttle:register')->name('auth.register');
-    Route::post('/auth/google', [V1\AuthController::class, 'google'])->middleware('throttle:10,1')->name('auth.google');
-    Route::post('/auth/google/exchange', [V1\AuthController::class, 'exchangeGoogleCode'])->middleware('throttle:10,1')->name('auth.google.exchange');
+    Route::post('/auth/google', [V1\AuthController::class, 'google'])->middleware('throttle:60,1')->name('auth.google');
+    Route::post('/auth/google/exchange', [V1\AuthController::class, 'exchangeGoogleCode'])->middleware('throttle:60,1')->name('auth.google.exchange');
 
-    Route::post('/auth/password/code', [V1\PasswordResetController::class, 'sendCode'])->middleware('throttle:5,1')->name('auth.password.code');
-    Route::post('/auth/password/reset', [V1\PasswordResetController::class, 'reset'])->middleware('throttle:10,1')->name('auth.password.reset');
+    Route::post('/auth/password/code', [V1\PasswordResetController::class, 'sendCode'])->middleware('throttle:20,1')->name('auth.password.code');
+    Route::post('/auth/password/reset', [V1\PasswordResetController::class, 'reset'])->middleware('throttle:30,1')->name('auth.password.reset');
     Route::get('/pages/{page}', [V1\PageController::class, 'show'])->name('pages.show');
 
     // Public directory

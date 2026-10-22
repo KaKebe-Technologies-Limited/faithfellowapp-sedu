@@ -9,6 +9,7 @@ use App\Http\Middleware\EnsureSubscribed;
 use App\Http\Middleware\ResolveCustomDomain;
 use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\SetLocale;
+use App\Http\Middleware\ThrottlePerRoute;
 use App\Support\ServerErrors;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -54,6 +55,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'subscribed' => EnsureSubscribed::class,
             'api.active' => EnsureApiUserActive::class,
             'feature' => EnsureAppFeature::class,
+            'throttle' => ThrottlePerRoute::class, // each route counts on its own (see the class)
         ]);
 
         $middleware->redirectGuestsTo(fn () => route('login'));

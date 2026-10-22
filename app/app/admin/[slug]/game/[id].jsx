@@ -1,7 +1,7 @@
 // Running a quiz from the phone: the PIN in big letters for the room, how many have joined, and the controls —
-// Start, Show answer, Next question, End. Once started the game moves along by itself (10 seconds per question, a short
-// reveal), so you can also just watch the live scores. Data: /api/v1/admin/{church}/quiz-sessions/{id}.
-import { useCallback, useEffect, useState } from 'react';
+// Start, Show answer, Next question, End. Once started the game moves along by itself (the platform admin sets the seconds per question, then a short
+// reveal), so you can also just watch the live scores. The finale sounds when the game is over. Data: /api/v1/admin/{church}/quiz-sessions/{id}.
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -13,6 +13,7 @@ import StateView from '../../../../components/StateView';
 import { COLORS, FONTS, RADIUS, SPACING } from '../../../../constants/theme';
 import { adminApi } from '../../../../lib/admin';
 import { errorMessage } from '../../../../lib/api';
+import { playGameSound, useGameSound } from '../../../../lib/gameSounds';
 
 const LETTERS = ['A', 'B', 'C', 'D'];
 
@@ -20,6 +21,7 @@ export default function HostGame() {
   const { slug, id } = useLocalSearchParams();
   const admin = adminApi(slug);
   const insets = useSafeAreaInsets();
+  useGameSound(); // remembers whether the person wants sounds, and lets the sound players go with the screen
   const [state, setState] = useState(null);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -61,6 +63,14 @@ export default function HostGame() {
 
   const q = state?.question;
   const over = state?.status === 'finished';
+  const ran = useRef(false); // the game was seen running: the finale is for a game that just ended, not one opened afterwards
+  useEffect(() => {
+    if (state && !over) ran.current = true;
+    if (over && ran.current) {
+      ran.current = false;
+      playGameSound('done');
+    }
+  }, [over, state]);
 
   return (
     <View style={[styles.screen, { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 12 }]}>
