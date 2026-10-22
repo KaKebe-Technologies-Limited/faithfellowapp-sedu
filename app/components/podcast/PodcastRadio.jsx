@@ -6,10 +6,12 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { COLORS, FONTS, RADIUS, SHADOW, SPACING } from '../../constants/theme';
+import { PURPLE } from '../../constants/podcastTheme';
 import { playChannel, selectStation, useRadio, useStationInfo } from '../../lib/radio';
 import { useFetch } from '../../lib/useFetch';
 import AppText from '../AppText';
 import ChurchAvatar from '../ChurchAvatar';
+import Comments from './Comments';
 
 const MARK = require('../../assets/logo-mark.png');
 
@@ -32,7 +34,7 @@ function PlayButton({ slug, size = 56, light = false }) {
       hitSlop={6}
       accessibilityRole="button"
       accessibilityLabel={playing ? 'Stop the podcast radio' : 'Play the podcast radio'}
-      style={({ pressed }) => [styles.play, { width: size, height: size, borderRadius: size / 2, backgroundColor: light ? '#fff' : '#6A3FC8' }, pressed && { opacity: 0.88 }]}
+      style={({ pressed }) => [styles.play, { width: size, height: size, borderRadius: size / 2, backgroundColor: light ? '#fff' : PURPLE.main }, pressed && { opacity: 0.88 }]}
     >
       {loading ? <ActivityIndicator color={color} /> : <Ionicons name={playing ? 'pause' : 'play'} size={size * 0.46} color={color} style={playing ? null : { marginLeft: size * 0.05 }} />}
     </Pressable>
@@ -105,11 +107,19 @@ export default function PodcastRadio() {
 
   return (
     <View style={{ marginBottom: SPACING.lg }}>
-      <AppText style={styles.section}>Podcast radio</AppText>
+      <View style={styles.sectionHead}>
+        <View style={styles.sectionBar} />
+        <AppText style={styles.section}>Podcast radio</AppText>
+      </View>
       {main ? (
-        <View style={{ paddingHorizontal: SPACING.md }}>
-          <MainCard channel={main} />
-        </View>
+        <>
+          <View style={{ paddingHorizontal: SPACING.md }}>
+            <MainCard channel={main} />
+          </View>
+          <View style={styles.commentsCard}>
+            <Comments key={main.slug} base={`/radio/stations/${main.slug}`} limit={3} compact onSeeAll={() => openPlayer(main.slug)} title="Listeners' comments" />
+          </View>
+        </>
       ) : null}
       {churches.length ? (
         <View style={{ marginTop: SPACING.md }}>
@@ -124,7 +134,10 @@ export default function PodcastRadio() {
 }
 
 const styles = StyleSheet.create({
-  section: { fontFamily: FONTS.bold, fontSize: 19, color: COLORS.black, paddingHorizontal: SPACING.md, marginBottom: 10 },
+  sectionHead: { flexDirection: 'row', alignItems: 'center', gap: 9, paddingHorizontal: SPACING.md, marginBottom: 12 },
+  sectionBar: { width: 4, height: 20, borderRadius: 2, backgroundColor: PURPLE.main },
+  section: { fontFamily: FONTS.bold, fontSize: 19, color: COLORS.black, flex: 1 },
+  commentsCard: { backgroundColor: COLORS.white, borderRadius: RADIUS.xl - 4, padding: SPACING.md, marginHorizontal: SPACING.md, marginTop: 12, ...SHADOW },
   subsection: { fontFamily: FONTS.semibold, fontSize: 14, color: COLORS.gray700, paddingHorizontal: SPACING.md, marginBottom: 8 },
   mark: { position: 'absolute', right: -30, top: -34, width: 220, height: 220, tintColor: '#fff', opacity: 0.12 },
   card: { height: 178, borderRadius: RADIUS.xl, overflow: 'hidden', backgroundColor: '#4527A0', ...SHADOW, shadowOpacity: 0.16 },

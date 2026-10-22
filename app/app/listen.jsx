@@ -8,6 +8,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AppText from '../components/AppText';
+import Comments from '../components/podcast/Comments';
 import Scrubber from '../components/podcast/Scrubber';
 import { RoundIconButton } from '../components/radio/RadioButton';
 import { BackButton, goBack } from '../components/ScreenHeader';
@@ -70,7 +71,7 @@ export default function ListenScreen() {
   return (
     <View style={styles.screen}>
       <LinearGradient colors={['#241633', '#17171C', '#17171C']} style={StyleSheet.absoluteFill} />
-      <ScrollView contentContainerStyle={{ paddingTop: insets.top + 8, paddingBottom: insets.bottom + 40, paddingHorizontal: SPACING.md }} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={{ paddingTop: insets.top + 8, paddingBottom: insets.bottom + 40, paddingHorizontal: SPACING.md }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
         <View style={styles.top}>
           <BackButton onDark icon="chevron-down" onPress={goBack} />
           <View style={{ flex: 1, alignItems: 'center' }}>
@@ -129,6 +130,12 @@ export default function ListenScreen() {
           <View style={{ marginTop: 26 }}>
             <AppText style={styles.section}>About this episode</AppText>
             <AppText style={styles.about}>{episode.summary}</AppText>
+          </View>
+        ) : null}
+
+        {!sermon && typeof episode.id === 'number' ? (
+          <View style={{ marginTop: 30 }}>
+            <Comments key={episode.id} base={`/podcast-episodes/${episode.id}`} dark />
           </View>
         ) : null}
 

@@ -5,30 +5,47 @@ import { FlatList, RefreshControl, ScrollView, StyleSheet, TextInput, View } fro
 import Ionicons from '@expo/vector-icons/Ionicons';
 import AppText from '../components/AppText';
 import Chip from '../components/Chip';
-import { EpisodeRow, PodcastRow, PodcastTile } from '../components/podcast/PodcastCards';
+import { EpisodeRow, PodcastGrid, PodcastRow, PodcastTile, PublisherStrip } from '../components/podcast/PodcastCards';
 import PodcastRadio from '../components/podcast/PodcastRadio';
 import ScreenHeader from '../components/ScreenHeader';
 import StateView from '../components/StateView';
 import { COLORS, FONTS, RADIUS, SPACING, MAX_FONT_SCALE } from '../constants/theme';
+import { PURPLE } from '../constants/podcastTheme';
 import { useRadio } from '../lib/radio';
 import { usePaged } from '../lib/usePaged';
 import { useFetch } from '../lib/useFetch';
 
-function Shelf({ title, children }) {
+function Shelf({ title, hint, children }) {
   return (
     <View style={{ marginBottom: SPACING.lg }}>
-      <AppText style={styles.section}>{title}</AppText>
+      <View style={styles.sectionHead}>
+        <View style={styles.sectionBar} />
+        <AppText style={styles.section}>{title}</AppText>
+        {hint ? <AppText style={styles.hint}>{hint}</AppText> : null}
+      </View>
       {children}
     </View>
   );
 }
 
-/** The landing view: what you follow, the newest episodes and the podcasts. */
-function Overview({ overview, refreshing, reload }) {
+/** "Publishers": the people and groups behind the podcasts. Nothing shows until there are at least two. */
+function PublisherStripShelf({ podcasts, onSelect }) {
+  const hosts = new Set(podcasts.map((p) => String(p.host ?? '').trim()).filter(Boolean));
+  if (hosts.size < 2) return null;
+
+  return (
+    <Shelf title="Publishers" hint="Tap one to see their podcasts">
+      <PublisherStrip podcasts={podcasts} selected={null} onSelect={onSelect} />
+    </Shelf>
+  );
+}
+
+/** The landing view: the Podcast radio, what you follow, the publishers, the podcasts as thumbnails, the newest episodes and the full list. */
+function Overview({ overview, refreshing, reload, onPublisher }) {
   const { following, new_episodes: fresh, podcasts } = overview;
 
   return (
-    <ScrollView contentContainerStyle={{ paddingTop: 6, paddingBottom: 40 }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={reload} tintColor={COLORS.primary} colors={[COLORS.primary]} />}>
+    <ScrollView contentContainerStyle={{ paddingTop: 6, paddingBottom: 40 }} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets refreshControl={<RefreshControl refreshing={refreshing} onRefresh={reload} tintColor={COLORS.primary} colors={[COLORS.primary]} />}>
       <PodcastRadio />
       {following.length ? (
         <Shelf title="Following">
@@ -39,15 +56,23 @@ function Overview({ overview, refreshing, reload }) {
           </ScrollView>
         </Shelf>
       ) : null}
+      {podcasts.length ? (
+        <>
+          <PublisherStripShelf podcasts={podcasts} onSelect={onPublisher} />
+          <Shelf title="Podcasts" hint={`${podcasts.length} to explore`}>
+            <PodcastGrid podcasts={podcasts} />
+          </Shelf>
+        </>
+      ) : null}
       {fresh.length ? (
         <Shelf title="New episodes">
           {fresh.slice(0, 6).map((e) => (
-            <EpisodeRow key={e.id} episode={e} list={[e]} showPodcast />
+            <EpisodeRow key={e.id} episode={e} list={fresh} showPodcast />
           ))}
         </Shelf>
       ) : null}
       {podcasts.length ? (
-        <Shelf title="Podcasts">
+        <Shelf title="All podcasts">
           {podcasts.map((p) => (
             <PodcastRow key={p.id} podcast={p} />
           ))}
@@ -122,10 +147,10 @@ export default function PodcastsScreen() {
       </View>
       <View>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
-          <Chip label="All" on={!category && !onlyFollowing} onPress={() => (setCategory(''), setOnlyFollowing(false))} />
-          {overview.data?.data?.following?.length ? <Chip label="Following" on={onlyFollowing} onPress={() => (setOnlyFollowing(true), setCategory(''))} /> : null}
+          <Chip tone="purple" label="All" on={!category && !onlyFollowing} onPress={() => (setCategory(''), setOnlyFollowing(false), setText(''), setQ(''))} />
+          {overview.data?.data?.following?.length ? <Chip tone="purple" label="Following" on={onlyFollowing} onPress={() => (setOnlyFollowing(true), setCategory(''))} /> : null}
           {categories.map((c) => (
-            <Chip key={c.key} label={c.label} on={category === c.key} onPress={() => (setCategory(c.key), setOnlyFollowing(false))} />
+            <Chip key={c.key} tone="purple" label={c.label} on={category === c.key} onPress={() => (setCategory(c.key), setOnlyFollowing(false))} />
           ))}
         </ScrollView>
       </View>
@@ -142,7 +167,7 @@ export default function PodcastsScreen() {
           emptyTitle="No podcasts yet"
           emptyMessage="Podcasts made by members appear here once they are approved. You can start one from the FaithFellows website."
         >
-          {overview.data ? <Overview overview={overview.data.data} refreshing={overview.refreshing} reload={overview.reload} /> : null}
+          {overview.data ? <Overview overview={overview.data.data} refreshing={overview.refreshing} reload={overview.reload} onPublisher={(host) => host && (setText(host), setQ(host))} /> : null}
         </StateView>
       )}
     </View>
@@ -154,6 +179,9 @@ const styles = StyleSheet.create({
   search: { flexDirection: 'row', alignItems: 'center', gap: 8, margin: SPACING.md, marginBottom: SPACING.sm, paddingHorizontal: SPACING.md, borderRadius: RADIUS.full, backgroundColor: COLORS.white },
   searchInput: { flex: 1, minHeight: 44, fontFamily: FONTS.regular, fontSize: 15, color: COLORS.black },
   chips: { paddingHorizontal: SPACING.md, gap: 8, paddingBottom: 6 },
-  section: { fontFamily: FONTS.bold, fontSize: 19, color: COLORS.black, paddingHorizontal: SPACING.md, marginBottom: 10 },
+  sectionHead: { flexDirection: 'row', alignItems: 'center', gap: 9, paddingHorizontal: SPACING.md, marginBottom: 12 },
+  sectionBar: { width: 4, height: 20, borderRadius: 2, backgroundColor: PURPLE.main },
+  section: { fontFamily: FONTS.bold, fontSize: 19, color: COLORS.black, flex: 1 },
+  hint: { fontFamily: FONTS.regular, fontSize: 12.5, color: COLORS.gray700 },
   more: { textAlign: 'center', color: COLORS.gray700, paddingVertical: 12 },
 });

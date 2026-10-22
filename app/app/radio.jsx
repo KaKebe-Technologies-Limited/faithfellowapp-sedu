@@ -9,6 +9,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AppText from '../components/AppText';
+import Comments from '../components/podcast/Comments';
 import RadioButton, { RoundIconButton } from '../components/radio/RadioButton';
 import { BackButton } from '../components/ScreenHeader';
 import { FONTS, SPACING } from '../constants/theme';
@@ -65,7 +66,7 @@ export default function RadioScreen() {
   return (
     <View style={styles.screen}>
       <LinearGradient colors={['#2B0D18', '#17171C', '#17171C']} style={StyleSheet.absoluteFill} />
-      <ScrollView contentContainerStyle={{ paddingTop: insets.top + 8, paddingBottom: insets.bottom + 40, paddingHorizontal: SPACING.md }} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={{ paddingTop: insets.top + 8, paddingBottom: insets.bottom + 40, paddingHorizontal: SPACING.md }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
         <View style={styles.top}>
           <BackButton onDark icon="chevron-down" />
           <View style={{ flex: 1, alignItems: 'center' }}>
@@ -113,6 +114,12 @@ export default function RadioScreen() {
         ) : (
           <AppText style={[styles.hint, { marginTop: 80 }]}>{station && !station.enabled ? 'This channel is quiet or switched off for now.' : 'This channel is quiet right now. Check again soon.'}</AppText>
         )}
+
+        {showing === 'talk' && station?.slug ? (
+          <View style={{ marginTop: 30 }}>
+            <Comments key={station.slug} base={`/radio/stations/${station.slug}`} dark title="Listeners' comments" />
+          </View>
+        ) : null}
 
         {scheduled ? (
           <View style={{ marginTop: 30 }}>

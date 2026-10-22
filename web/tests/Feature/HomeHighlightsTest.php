@@ -44,8 +44,8 @@ test('the verse of the day is the same for the whole day, in the member\'s trans
     $verse = $this->getJson(route('api.v1.home'))->assertOk()->json('data.verse');
     expect($verse)->toHaveKeys(['reference', 'text', 'translation', 'book', 'chapter', 'verse'])
         ->and($verse['translation'])->toBe('KJV')->and($verse['text'])->not->toBeEmpty()
-        // A verse range is shown with a typographic dash (2:8–9) while the list of references uses a plain hyphen.
-        ->and(str_replace('–', '-', $verse['reference']))->toBe(VerseOfTheDay::reference());
+        // A verse range is shown with a typographic dash (2:8–9) while the list of references uses a plain hyphen, and a Psalm is titled "Psalms".
+        ->and(str_replace(['–', 'Psalms '], ['-', 'Psalm '], $verse['reference']))->toBe(VerseOfTheDay::reference());
 
     // Asked again, it comes from the day's cache, not from the Bible provider.
     Http::fake();

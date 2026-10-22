@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Comment;
 use App\Models\ContentReport;
 use App\Models\LiveChatMessage;
+use App\Models\PodcastComment;
 use App\Models\Post;
 use App\Models\PrayerRequest;
 use App\Models\Testimony;
@@ -30,7 +31,7 @@ class ModerationService
         );
 
         // Flag comments straight away so moderators see them at the top of their queue.
-        if ($content instanceof Comment && $content->status === 'visible') {
+        if (($content instanceof Comment || $content instanceof PodcastComment) && $content->status === 'visible') {
             $content->update(['status' => 'flagged']);
         }
 
@@ -51,7 +52,7 @@ class ModerationService
         $content = $report->reportable;
 
         match (true) {
-            $content instanceof Comment, $content instanceof PrayerRequest => $content?->update(['status' => 'hidden']),
+            $content instanceof Comment, $content instanceof PodcastComment, $content instanceof PrayerRequest => $content?->update(['status' => 'hidden']),
             $content instanceof Post => $content->update(['status' => 'hidden']),
             $content instanceof Testimony => $content->update(['status' => 'rejected']),
             $content instanceof LiveChatMessage => $content->update(['is_hidden' => true]),
@@ -69,7 +70,7 @@ class ModerationService
         $this->close($report, 'dismissed', $moderator);
 
         // A dismissed comment goes back to normal.
-        if ($report->reportable instanceof Comment && $report->reportable->status === 'flagged') {
+        if (($report->reportable instanceof Comment || $report->reportable instanceof PodcastComment) && $report->reportable->status === 'flagged') {
             $report->reportable->update(['status' => 'visible']);
         }
     }
