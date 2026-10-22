@@ -4,6 +4,7 @@ use App\Models\Podcast;
 use App\Models\PodcastEpisode;
 use App\Models\User;
 use App\Notifications\Podcasts\PodcastReviewed;
+use App\Services\PodcastFeedService;
 use App\Services\PodcastService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
@@ -273,4 +274,49 @@ test('notes taken while listening belong to the episode, as podcast notes', func
     $this->postJson(route('api.v1.notes.store'), ['context' => 'podcast:'.$episode->id, 'title' => '', 'body' => 'Faith is trusting before I see.', 'reference' => 'Morning Manna: Walking by faith'])
         ->assertSuccessful()->assertJsonPath('data.kind', 'podcast')->assertJsonPath('data.kind_label', 'Podcast');
     $this->getJson(route('api.v1.notes.index', ['kind' => 'podcast']))->assertOk()->assertJsonCount(1, 'data');
+});
+
+// ── Faith and Motivation sections ───────────────────────────────────────────────────────────────────────
+
+test('Faith and Motivation are categories, and the overview has a shelf for each category that has podcasts, those two first', function () {
+    expect(array_slice(array_keys(Podcast::CATEGORIES), 0, 2))->toBe(['faith', 'motivation']);
+    $maker = member();
+    foreach (['Faith one' => 'faith', 'Faith two' => 'faith', 'Rise up' => 'motivation', 'Morning prayer' => 'prayer'] as $name => $category) {
+        Podcast::create(['user_id' => $maker->id, 'name' => $name, 'host_name' => 'Host '.$name, 'summary' => 'A short word every day for you.', 'category' => $category, 'language' => 'en', 'status' => 'approved', 'approved_at' => now()]);
+    }
+    Podcast::create(['user_id' => $maker->id, 'name' => 'Not approved', 'host_name' => 'Nobody', 'summary' => 'A short word every day for you.', 'category' => 'motivation', 'language' => 'en', 'status' => 'pending']);
+    Sanctum::actingAs(member(), ['member']);
+
+    $data = $this->getJson(route('api.v1.podcasts.overview'))->assertOk()->json('data');
+
+    expect(collect($data['sections'])->pluck('key')->all())->toBe(['faith', 'motivation', 'prayer'])
+        ->and(collect($data['sections'])->pluck('label')->all())->toBe(['Faith', 'Motivation', 'Prayer'])
+        ->and($data['sections'][0]['count'])->toBe(2)->and(collect($data['sections'][0]['podcasts'])->pluck('name')->sort()->values()->all())->toBe(['Faith one', 'Faith two'])
+        ->and(collect($data['sections'][1]['podcasts'])->pluck('name')->all())->toBe(['Rise up'])
+        ->and(collect($data['categories'])->pluck('key')->all())->toBe(['faith', 'motivation', 'prayer']);
+});
+
+test('a shelf shows six podcasts and says how many there are in all', function () {
+    $maker = member();
+    foreach (range(1, 8) as $i) {
+        Podcast::create(['user_id' => $maker->id, 'name' => "Faith {$i}", 'host_name' => "Host {$i}", 'summary' => 'A short word every day for you.', 'category' => 'faith', 'language' => 'en', 'status' => 'approved', 'approved_at' => now()]);
+    }
+    Sanctum::actingAs(member(), ['member']);
+
+    $shelf = $this->getJson(route('api.v1.podcasts.overview'))->json('data.sections.0');
+    expect($shelf['count'])->toBe(8)->and($shelf['podcasts'])->toHaveCount(6);
+    expect($this->getJson(route('api.v1.podcasts.index', ['category' => 'faith']))->json('meta.total'))->toBe(8);
+});
+
+test('a member can start a podcast in the Faith or Motivation category, and a feed about motivation is filed there', function () {
+    $ruth = member();
+
+    foreach (['faith', 'motivation'] as $category) {
+        $this->actingAs($ruth)->post(route('podcasts.store'), podcastData(['name' => 'Podcast '.$category, 'category' => $category]))->assertRedirect()->assertSessionHasNoErrors();
+    }
+    expect(Podcast::pluck('category')->sort()->values()->all())->toBe(['faith', 'motivation']);
+
+    $feeds = app(PodcastFeedService::class);
+    expect($feeds->guessCategory(['Self-Improvement']))->toBe('motivation')->and($feeds->guessCategory(['Faith & Hope']))->toBe('faith')
+        ->and($feeds->guessCategory(['Religion & Spirituality', 'Christianity']))->toBe('teaching');
 });

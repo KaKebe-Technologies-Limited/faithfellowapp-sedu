@@ -29,10 +29,29 @@ export function PodcastTile({ podcast }) {
   );
 }
 
+/** True while an episode of this podcast is the one playing. */
+function usePlayingPodcast(podcastId) {
+  const { episode, phase } = usePodcast();
+
+  return phase === 'playing' && episode?.podcast?.id === podcastId;
+}
+
+/** A small purple "Playing" pill, for the podcast whose episode is on. */
+function PlayingPill({ style }) {
+  return (
+    <View style={[styles.playingPill, style]}>
+      <Ionicons name="volume-high" size={11} color="#fff" />
+      <AppText style={styles.playingText}>Playing</AppText>
+    </View>
+  );
+}
+
 /** A podcast in a list: cover, name, who presents it, a line about it, and how many episodes. */
 export function PodcastRow({ podcast }) {
+  const playing = usePlayingPodcast(podcast.id);
+
   return (
-    <Pressable onPress={() => open(podcast.id)} style={({ pressed }) => [styles.card, pressed && { opacity: 0.94 }]} accessibilityRole="button" accessibilityLabel={`Podcast: ${podcast.name}`}>
+    <Pressable onPress={() => open(podcast.id)} style={({ pressed }) => [styles.card, playing && styles.cardOn, pressed && { opacity: 0.94 }]} accessibilityRole="button" accessibilityLabel={`Podcast: ${podcast.name}${playing ? ', playing now' : ''}`}>
       <Image source={{ uri: mediaUrl(podcast.cover_url) }} style={styles.rowCover} contentFit="cover" transition={200} />
       <View style={{ flex: 1 }}>
         <AppText style={styles.name} numberOfLines={1}>
@@ -49,6 +68,7 @@ export function PodcastRow({ podcast }) {
           {podcast.following ? ' · Following' : ''}
         </AppText>
       </View>
+      {playing ? <PlayingPill style={styles.rowPlaying} /> : null}
     </Pressable>
   );
 }
@@ -108,6 +128,10 @@ const styles = StyleSheet.create({
   count: { fontFamily: FONTS.medium, fontSize: 12, color: PURPLE.main, marginTop: 5 },
   epTitle: { fontFamily: FONTS.semibold, fontSize: 15.5, color: COLORS.black },
   play: { width: 42, height: 42, borderRadius: 21, backgroundColor: PURPLE.main, alignItems: 'center', justifyContent: 'center' },
+  playingPill: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: PURPLE.main, borderRadius: 10, paddingHorizontal: 8, paddingVertical: 3 },
+  playingText: { fontFamily: FONTS.bold, fontSize: 10.5, color: '#fff' },
+  rowPlaying: { position: 'absolute', right: 12, top: 10 },
+  gridPlaying: { position: 'absolute', right: 8, top: 8, zIndex: 2 },
   gridWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 14, paddingHorizontal: 16 },
   gridCover: { width: '100%', aspectRatio: 1, borderRadius: RADIUS.lg + 2, backgroundColor: PURPLE.mist },
   gridBadge: { position: 'absolute', left: 8, bottom: 8, backgroundColor: 'rgba(40,16,90,0.72)', borderRadius: 9, paddingHorizontal: 8, paddingVertical: 3 },
@@ -124,15 +148,13 @@ const styles = StyleSheet.create({
 });
 
 /** Podcasts as cover thumbnails, two to a row: the cover, its category, the name, who publishes it and how many episodes. */
-export function PodcastGrid({ podcasts }) {
-  const { width } = useWindowDimensions();
-  const tile = Math.floor((width - 32 - 14) / 2);
+function GridTile({ p, tile }) {
+  const playing = usePlayingPodcast(p.id);
 
   return (
-    <View style={styles.gridWrap}>
-      {podcasts.map((p) => (
-        <Pressable key={p.id} onPress={() => open(p.id)} style={({ pressed }) => [{ width: tile }, pressed && { opacity: 0.92 }]} accessibilityRole="button" accessibilityLabel={`Podcast: ${p.name}, by ${p.host}`}>
+        <Pressable onPress={() => open(p.id)} style={({ pressed }) => [{ width: tile }, pressed && { opacity: 0.92 }]} accessibilityRole="button" accessibilityLabel={`Podcast: ${p.name}, by ${p.host}${playing ? ', playing now' : ''}`}>
           <View>
+            {playing ? <PlayingPill style={styles.gridPlaying} /> : null}
             <Image source={{ uri: mediaUrl(p.cover_url) }} style={styles.gridCover} contentFit="cover" transition={200} />
             {p.category_label ? (
               <View style={styles.gridBadge}>
@@ -150,6 +172,17 @@ export function PodcastGrid({ podcasts }) {
             {p.episodes} episode{p.episodes === 1 ? '' : 's'}
           </AppText>
         </Pressable>
+  );
+}
+
+export function PodcastGrid({ podcasts }) {
+  const { width } = useWindowDimensions();
+  const tile = Math.floor((width - 32 - 14) / 2);
+
+  return (
+    <View style={styles.gridWrap}>
+      {podcasts.map((p) => (
+        <GridTile key={p.id} p={p} tile={tile} />
       ))}
     </View>
   );

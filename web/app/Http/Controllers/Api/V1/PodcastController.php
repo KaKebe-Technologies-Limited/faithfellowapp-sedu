@@ -8,6 +8,7 @@ use App\Models\PodcastEpisode;
 use App\Services\PodcastService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Validation\Rule;
 
 /**
@@ -27,10 +28,25 @@ class PodcastController extends Controller
 
         return response()->json(['data' => [
             'categories' => collect(Podcast::CATEGORIES)->map(fn ($label, $key) => ['key' => $key, 'label' => __($label), 'count' => Podcast::listed()->where('category', $key)->count()])->filter(fn ($c) => $c['count'] > 0)->values(),
+            // A shelf for each category that has podcasts (Faith and Motivation first): up to six, the newest first, and how many there are in all.
+            'sections' => $this->sections($followed),
             'following' => $followed->map(fn (Podcast $p) => $this->card($p, true))->values(),
             'new_episodes' => $newest->map(fn (PodcastEpisode $e) => $this->episode($e))->values(),
             'podcasts' => Podcast::listed()->orderByDesc('latest_episode_at')->orderByDesc('id')->take(12)->get()->map(fn (Podcast $p) => $this->card($p, $followed->contains('id', $p->id)))->values(),
         ]]);
+    }
+
+    /**
+     * @param  Collection<int, Podcast>  $followed
+     * @return list<array{key: string, label: string, count: int, podcasts: list<array<string, mixed>>}>
+     */
+    protected function sections($followed): array
+    {
+        $byCategory = Podcast::listed()->orderByDesc('latest_episode_at')->orderByDesc('id')->take(300)->get()->groupBy('category');
+
+        return collect(Podcast::CATEGORIES)->map(fn ($label, $key) => ['key' => $key, 'label' => __($label), 'count' => ($byCategory[$key] ?? collect())->count(),
+            'podcasts' => ($byCategory[$key] ?? collect())->take(6)->map(fn (Podcast $p) => $this->card($p, $followed->contains('id', $p->id)))->values()->all()])
+            ->filter(fn (array $s) => $s['count'] > 0)->values()->all();
     }
 
     /** Search and browse: `q` looks in the name, host and summary; `category` narrows it. */

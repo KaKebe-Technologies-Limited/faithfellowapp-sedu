@@ -1,7 +1,7 @@
 // Podcasts: faith-based podcasts made by members. Search by name, host or topic, pick a category, see what you follow
 // and the newest episodes, and open a podcast to listen. Playing an episode keeps going while you move around the app.
 import { useEffect, useState } from 'react';
-import { FlatList, RefreshControl, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import AppText from '../components/AppText';
 import Chip from '../components/Chip';
@@ -41,8 +41,8 @@ function PublisherStripShelf({ podcasts, onSelect }) {
 }
 
 /** The landing view: the Podcast radio, what you follow, the publishers, the podcasts as thumbnails, the newest episodes and the full list. */
-function Overview({ overview, refreshing, reload, onPublisher }) {
-  const { following, new_episodes: fresh, podcasts } = overview;
+function Overview({ overview, refreshing, reload, onPublisher, onSection }) {
+  const { following, new_episodes: fresh, podcasts, sections = [] } = overview;
 
   return (
     <ScrollView contentContainerStyle={{ paddingTop: 6, paddingBottom: 40 }} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets refreshControl={<RefreshControl refreshing={refreshing} onRefresh={reload} tintColor={COLORS.primary} colors={[COLORS.primary]} />}>
@@ -64,6 +64,19 @@ function Overview({ overview, refreshing, reload, onPublisher }) {
           </Shelf>
         </>
       ) : null}
+      {sections.map((section) => (
+        <Shelf key={section.key} title={section.label} hint={section.count > section.podcasts.length ? `${section.count} podcasts` : null}>
+          {section.podcasts.map((p) => (
+            <PodcastRow key={p.id} podcast={p} />
+          ))}
+          {section.count > section.podcasts.length ? (
+            <Pressable onPress={() => onSection(section.key)} accessibilityRole="button" style={styles.seeAll}>
+              <AppText style={styles.seeAllText}>See all {section.count} in {section.label}</AppText>
+              <Ionicons name="chevron-forward" size={15} color={PURPLE.main} />
+            </Pressable>
+          ) : null}
+        </Shelf>
+      ))}
       {fresh.length ? (
         <Shelf title="New episodes">
           {fresh.slice(0, 6).map((e) => (
@@ -167,7 +180,7 @@ export default function PodcastsScreen() {
           emptyTitle="No podcasts yet"
           emptyMessage="Podcasts made by members appear here once they are approved. You can start one from the FaithFellows website."
         >
-          {overview.data ? <Overview overview={overview.data.data} refreshing={overview.refreshing} reload={overview.reload} onPublisher={(host) => host && (setText(host), setQ(host))} /> : null}
+          {overview.data ? <Overview overview={overview.data.data} refreshing={overview.refreshing} reload={overview.reload} onPublisher={(host) => host && (setText(host), setQ(host))} onSection={(key) => (setCategory(key), setOnlyFollowing(false))} /> : null}
         </StateView>
       )}
     </View>
@@ -183,5 +196,7 @@ const styles = StyleSheet.create({
   sectionBar: { width: 4, height: 20, borderRadius: 2, backgroundColor: PURPLE.main },
   section: { fontFamily: FONTS.bold, fontSize: 19, color: COLORS.black, flex: 1 },
   hint: { fontFamily: FONTS.regular, fontSize: 12.5, color: COLORS.gray700 },
+  seeAll: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, paddingVertical: 8 },
+  seeAllText: { fontFamily: FONTS.semibold, fontSize: 14, color: PURPLE.main },
   more: { textAlign: 'center', color: COLORS.gray700, paddingVertical: 12 },
 });
