@@ -1,8 +1,11 @@
-// Playing a live quiz on your phone. The screen asks the server for the game's state about once a second:
-// the lobby (the host shares the PIN, invites people they have played with by name and presses Start; everyone else waits),
-// each question with four big answers and a live scoreboard (the time per question is set by the platform admin and comes with the game's state),
-// the reveal (right answer, points, how many chose each option) and the final podium. A chime sounds for a right answer, a soft low note for a wrong one
-// (or time running out) and a finale when the game is over; the speaker button at the top turns the sounds off.
+// Playing a quiz on your phone. The screen asks the server for the game's state about once a second:
+// the lobby (the host shares the PIN and invites people they have played with by name), each question with four big answers
+// (the time per question is set by the platform admin and comes with the game's state), the reveal (right answer, points, how many chose each option)
+// and the final results. A chime sounds for a right answer, a soft low note for a wrong one (or time running out) and a finale when the game is over;
+// the speaker button at the top turns the sounds off.
+// Two kinds of game: a church's live game, where the host moves everyone along together, and the games members start (state.mode === 'self'), where
+// everyone plays at their own pace: you start at the first question whenever you join, answering shows the result at once and moves on after a moment
+// (or when you press Next), and a finished run counts in the quiz's records (today, this week, all time).
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -22,7 +25,7 @@ import { playGameSound, useGameSound } from '../../lib/gameSounds';
 const OPTION_COLORS = ['#E21B3C', '#1368CE', '#D89E00', '#26890C'];
 const LETTERS = ['A', 'B', 'C', 'D'];
 
-function Board({ rows, limit = 5, light = false }) {
+function Board({ rows, limit = 5, light = false, progress = false, total = 0 }) {
   return (
     <View style={{ gap: 6 }}>
       {rows.slice(0, limit).map((r) => (
@@ -31,6 +34,7 @@ function Board({ rows, limit = 5, light = false }) {
           <AppText style={[styles.boardName, light && { color: COLORS.white }]} numberOfLines={1}>
             {r.me ? `${r.name} (you)` : r.name}
           </AppText>
+          {progress ? <AppText style={styles.progressChip}>{r.done ? 'Done ✓' : r.at ? `Q${r.at}/${total}` : 'Waiting'}</AppText> : null}
           {r.gained > 0 ? <AppText style={styles.gained}>+{r.gained}</AppText> : null}
           <AppText style={[styles.boardScore, light && { color: COLORS.white }]}>{r.score}</AppText>
         </View>
@@ -48,6 +52,9 @@ export default function GameScreen() {
   const [left, setLeft] = useState(0);
   const received = useRef(0);
   const finished = useRef(false);
+  const slow = useRef(false); // your own run is over but friends may still be playing: the board is refreshed every few seconds, not every second
+  const tick = useRef(0);
+  const acted = useRef(0); // when the last answer, Next or Start came back
   const [people, setPeople] = useState(null); // the invite sheet: null = closed, otherwise the list
   const [busy, setBusy] = useState(false);
   const sound = useGameSound();
@@ -55,12 +62,16 @@ export default function GameScreen() {
   const playedLive = useRef(false); // the game was seen running, so the finale is for a game that just ended, not for one opened afterwards to read the results
 
   const poll = useCallback(async () => {
+    const asked = Date.now();
     try {
       const { data } = await api.get(`/games/${id}`);
+      if (asked < acted.current) return; // you answered or pressed Next while this was on its way: it is older than what the screen shows
       received.current = Date.now();
       setState(data.data);
       setError(null);
-      finished.current = ['finished', 'cancelled'].includes(data.data.status);
+      const self = data.data.mode === 'self';
+      finished.current = data.data.status === 'cancelled' || (data.data.status === 'finished' && !self);
+      slow.current = data.data.status === 'finished' && self;
     } catch (e) {
       setError(errorMessage(e));
     }
@@ -69,7 +80,8 @@ export default function GameScreen() {
   useEffect(() => {
     poll();
     const t = setInterval(() => {
-      if (!finished.current) poll();
+      tick.current += 1;
+      if (!finished.current && (!slow.current || tick.current % 5 === 0)) poll();
     }, 1000);
     return () => clearInterval(t);
   }, [poll]);
@@ -93,7 +105,9 @@ export default function GameScreen() {
   // A smooth countdown between polls.
   useEffect(() => {
     const t = setInterval(() => {
-      if (state?.status === 'question' && state.question) setLeft(Math.max(0, state.question.remaining_ms - (Date.now() - received.current)));
+      const passed = Date.now() - received.current;
+      if (state?.status === 'question' && state.question) setLeft(Math.max(0, state.question.remaining_ms - passed));
+      else if (state?.status === 'reveal' && state.mode === 'self') setLeft(Math.max(0, (state.next_in_ms ?? 0) - passed));
       else setLeft(0);
     }, 100);
     return () => clearInterval(t);
@@ -103,15 +117,53 @@ export default function GameScreen() {
     if (!state || picked[state.index] !== undefined || state.status !== 'question') return;
     setPicked((p) => ({ ...p, [state.index]: option }));
     try {
-      await api.post(`/games/${id}/answer`, { option, question: state.index });
+      const { data } = await api.post(`/games/${id}/answer`, { option, question: state.index });
+      // In your own run the result comes back with the answer, so it shows at once, without waiting for anybody.
+      if (data.data) {
+        received.current = acted.current = Date.now();
+        setState(data.data);
+      }
     } catch (e) {
       Alert.alert('Not counted', errorMessage(e));
+      poll();
+    }
+  }
+
+  // "Next": leave the answer screen and go on to the next question (or to the results after the last one).
+  async function next() {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const { data } = await api.post(`/games/${id}/next`);
+      received.current = acted.current = Date.now();
+      setState(data.data);
+    } catch (e) {
+      Alert.alert('Could not go on', errorMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // Another go at the same quiz: a new game, so it starts at the first question and is a new run for the records.
+  async function playAgain() {
+    setBusy(true);
+    try {
+      const { data } = await api.post('/games/start', { quiz_id: state.quiz_id });
+      router.replace(`/game/${data.data.id}`);
+    } catch (e) {
+      Alert.alert('Could not start', errorMessage(e));
+    } finally {
+      setBusy(false);
     }
   }
 
   async function share() {
     try {
-      await Share.share({ message: `Join my FaithFellows game “${state.quiz}”! Open the FaithFellows app → Games → type the PIN ${state.pin}.` });
+      await Share.share({
+        message: self
+          ? `Can you beat me at “${state.quiz}” on FaithFellows? Open the app → Games and pick the quiz, or type the PIN ${state.pin}. We will all be ranked in the records.`
+          : `Join my FaithFellows game “${state.quiz}”! Open the FaithFellows app → Games → type the PIN ${state.pin}.`,
+      });
     } catch {
       // the share sheet was closed
     }
@@ -121,7 +173,7 @@ export default function GameScreen() {
     setBusy(true);
     try {
       const { data } = await api.post(`/games/${id}/begin`);
-      received.current = Date.now();
+      received.current = acted.current = Date.now();
       setState(data.data);
     } catch (e) {
       Alert.alert('Could not start', errorMessage(e));
@@ -131,7 +183,7 @@ export default function GameScreen() {
   }
 
   function cancelGame() {
-    Alert.alert('Cancel this game?', 'Everyone waiting will be taken out of it.', [
+    Alert.alert(self ? 'Close this game?' : 'Cancel this game?', self ? 'Friends will no longer be able to join with the PIN. Runs already finished still count in the records.' : 'Everyone waiting will be taken out of it.', [
       { text: 'Keep it', style: 'cancel' },
       {
         text: 'Cancel game',
@@ -170,6 +222,7 @@ export default function GameScreen() {
   }
 
   const q = state?.question;
+  const self = state?.mode === 'self';
   const mine = state?.index != null ? picked[state.index] ?? state?.me?.answer ?? null : null;
   const fraction = q ? Math.min(1, left / (q.time_limit * 1000)) : 0;
 
@@ -203,8 +256,14 @@ export default function GameScreen() {
                 <View style={styles.pulse}>
                   <Ionicons name={state.is_host ? 'people' : 'hourglass-outline'} size={42} color={COLORS.white} />
                 </View>
-                <AppText style={styles.big}>{state.is_host ? 'Your game is ready' : 'You are in!'}</AppText>
-                <AppText style={styles.sub}>{state.is_host ? 'Share the PIN or invite friends, then press Start.' : `Waiting for ${state.host_name ?? 'the host'} to start the game…`}</AppText>
+                <AppText style={styles.big}>{self ? 'Ready to play?' : state.is_host ? 'Your game is ready' : 'You are in!'}</AppText>
+                <AppText style={styles.sub}>
+                  {self
+                    ? `${state.total} questions, ${state.timing?.question ?? 15} seconds each. You start at question 1, and friends can join with the PIN and play any time this week.`
+                    : state.is_host
+                      ? 'Share the PIN or invite friends, then press Start.'
+                      : `Waiting for ${state.host_name ?? 'the host'} to start the game…`}
+                </AppText>
                 <AppText style={styles.pin}>PIN {state.pin}</AppText>
                 <AppText style={styles.sub}>{state.players_count} {state.players_count === 1 ? 'player' : 'players'} so far</AppText>
                 <View style={styles.names}>
@@ -214,22 +273,30 @@ export default function GameScreen() {
                     </View>
                   ))}
                 </View>
-                {state.is_host ? (
+                {state.is_host || self ? (
                   <View style={styles.hostBox}>
-                    <View style={styles.hostRow}>
-                      <Pressable onPress={share} style={styles.ghost} accessibilityRole="button" accessibilityLabel="Share the game PIN">
-                        <Ionicons name="share-social-outline" size={18} color={COLORS.white} />
-                        <AppText style={styles.ghostText}>Share PIN</AppText>
+                    {state.is_host ? (
+                      <View style={styles.hostRow}>
+                        <Pressable onPress={share} style={styles.ghost} accessibilityRole="button" accessibilityLabel="Share the game PIN">
+                          <Ionicons name="share-social-outline" size={18} color={COLORS.white} />
+                          <AppText style={styles.ghostText}>Share PIN</AppText>
+                        </Pressable>
+                        <Pressable onPress={openPeople} style={styles.ghost} accessibilityRole="button" accessibilityLabel="Invite people you have played with">
+                          <Ionicons name="person-add-outline" size={18} color={COLORS.white} />
+                          <AppText style={styles.ghostText}>Invite people</AppText>
+                        </Pressable>
+                      </View>
+                    ) : null}
+                    {self ? (
+                      <Button title="Start playing" variant="light" loading={busy} onPress={begin} />
+                    ) : (
+                      <Button title={state.players_count > 1 ? `Start game · ${state.players_count} players` : 'Start game'} variant="light" loading={busy} onPress={begin} />
+                    )}
+                    {state.is_host ? (
+                      <Pressable onPress={cancelGame} accessibilityRole="button" style={{ alignSelf: 'center', padding: 8 }}>
+                        <AppText style={styles.cancel}>{self ? 'Close this game' : 'Cancel game'}</AppText>
                       </Pressable>
-                      <Pressable onPress={openPeople} style={styles.ghost} accessibilityRole="button" accessibilityLabel="Invite people you have played with">
-                        <Ionicons name="person-add-outline" size={18} color={COLORS.white} />
-                        <AppText style={styles.ghostText}>Invite people</AppText>
-                      </Pressable>
-                    </View>
-                    <Button title={state.players_count > 1 ? `Start game · ${state.players_count} players` : 'Start game'} variant="light" loading={busy} onPress={begin} />
-                    <Pressable onPress={cancelGame} accessibilityRole="button" style={{ alignSelf: 'center', padding: 8 }}>
-                      <AppText style={styles.cancel}>Cancel game</AppText>
-                    </Pressable>
+                    ) : null}
                   </View>
                 ) : null}
               </View>
@@ -258,10 +325,10 @@ export default function GameScreen() {
                     );
                   })}
                 </View>
-                <AppText style={styles.locked}>{mine !== null ? 'Answer locked in ✓ — watch the scores' : 'Pick your answer — faster is worth more!'}</AppText>
+                <AppText style={styles.locked}>{mine !== null ? (self ? 'Checking…' : 'Answer locked in ✓ — watch the scores') : 'Pick your answer — faster is worth more!'}</AppText>
                 <View style={styles.boardBox}>
-                  <AppText style={styles.boardTitle}>Live scores</AppText>
-                  <Board rows={state.leaderboard} light />
+                  <AppText style={styles.boardTitle}>{self ? 'Players' : 'Live scores'}</AppText>
+                  <Board rows={state.leaderboard} light progress={self} total={state.total} />
                 </View>
               </View>
             ) : null}
@@ -279,6 +346,7 @@ export default function GameScreen() {
                   </View>
                   {state.me?.streak > 1 && state.me.correct ? <AppText style={styles.resultSub}>🔥 {state.me.streak} in a row</AppText> : null}
                 </View>
+                {self ? <Button title={state.is_last ? 'See my results' : `Next question · ${Math.ceil(left / 1000)}s`} variant="light" loading={busy} onPress={next} /> : null}
                 <View style={styles.options}>
                   {q.options.map((opt, i) => {
                     const right = state.reveal?.correct === i;
@@ -296,9 +364,9 @@ export default function GameScreen() {
                 </View>
                 <View style={styles.boardBox}>
                   <AppText style={styles.boardTitle}>Scoreboard{state.me ? ` · you are #${state.me.rank}` : ''}</AppText>
-                  <Board rows={state.leaderboard} limit={8} light />
+                  <Board rows={state.leaderboard} limit={8} light progress={self} total={state.total} />
                 </View>
-                <AppText style={styles.locked}>{state.is_last ? 'Final results next…' : `Next question in ${Math.ceil((state.next_in_ms ?? 0) / 1000)}s`}</AppText>
+                {!self ? <AppText style={styles.locked}>{state.is_last ? 'Final results next…' : `Next question in ${Math.ceil((state.next_in_ms ?? 0) / 1000)}s`}</AppText> : null}
               </View>
             ) : null}
 
@@ -308,12 +376,57 @@ export default function GameScreen() {
                   <Ionicons name="close-circle-outline" size={42} color={COLORS.white} />
                 </View>
                 <AppText style={styles.big}>This game was closed</AppText>
-                <AppText style={styles.sub}>The host ended it. Start your own from the games list.</AppText>
+                <AppText style={styles.sub}>{self ? 'Its host closed it, or it was open for a week. Start your own from the games list.' : 'The host ended it. Start your own from the games list.'}</AppText>
                 <Button title="Back to games" variant="light" onPress={() => router.replace('/games')} style={{ alignSelf: 'stretch', marginTop: 18 }} />
               </View>
             ) : null}
 
-            {state.status === 'finished' ? (
+            {state.status === 'finished' && self ? (
+              <View style={{ gap: 16, alignItems: 'center' }}>
+                <AppText style={styles.big}>Well played 🎉</AppText>
+                {state.me ? (
+                  <View style={styles.myRun}>
+                    <AppText style={styles.myScore}>{state.me.score}</AppText>
+                    <AppText style={styles.mySub}>points</AppText>
+                    <View style={styles.myStats}>
+                      <View style={styles.myStat}>
+                        <AppText style={styles.myStatValue}>{state.me.correct_count}/{state.total}</AppText>
+                        <AppText style={styles.myStatLabel}>right</AppText>
+                      </View>
+                      <View style={styles.myStat}>
+                        <AppText style={styles.myStatValue}>{state.me.seconds}s</AppText>
+                        <AppText style={styles.myStatLabel}>total time</AppText>
+                      </View>
+                      <View style={styles.myStat}>
+                        <AppText style={styles.myStatValue}>#{state.me.rank}</AppText>
+                        <AppText style={styles.myStatLabel}>in this game</AppText>
+                      </View>
+                    </View>
+                  </View>
+                ) : null}
+                <View style={[styles.boardBox, { alignSelf: 'stretch' }]}>
+                  <AppText style={styles.boardTitle}>Players in this game</AppText>
+                  <Board rows={state.leaderboard} limit={10} light progress total={state.total} />
+                </View>
+                <Button title="See the records" variant="light" onPress={() => router.push(`/leaderboard/${state.quiz_id}`)} style={{ alignSelf: 'stretch' }} />
+                <View style={{ flexDirection: 'row', gap: 10, alignSelf: 'stretch' }}>
+                  <Pressable onPress={playAgain} disabled={busy} style={styles.ghost} accessibilityRole="button" accessibilityLabel="Play this quiz again">
+                    <Ionicons name="refresh" size={18} color={COLORS.white} />
+                    <AppText style={styles.ghostText}>Play again</AppText>
+                  </Pressable>
+                  <Pressable onPress={share} style={styles.ghost} accessibilityRole="button" accessibilityLabel="Challenge friends to this quiz">
+                    <Ionicons name="share-social-outline" size={18} color={COLORS.white} />
+                    <AppText style={styles.ghostText}>Challenge</AppText>
+                  </Pressable>
+                  <Pressable onPress={() => router.replace('/games')} style={styles.ghost} accessibilityRole="button" accessibilityLabel="Back to games">
+                    <Ionicons name="grid-outline" size={18} color={COLORS.white} />
+                    <AppText style={styles.ghostText}>Games</AppText>
+                  </Pressable>
+                </View>
+              </View>
+            ) : null}
+
+            {state.status === 'finished' && !self ? (
               <View style={{ gap: 16, alignItems: 'center' }}>
                 <AppText style={styles.big}>Game over 🎉</AppText>
                 <View style={styles.podium}>
@@ -435,6 +548,14 @@ const styles = StyleSheet.create({
   invited: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   invitedText: { fontFamily: FONTS.semibold, fontSize: 13, color: COLORS.success },
   joined: { fontFamily: FONTS.semibold, fontSize: 13, color: COLORS.gray700 },
+  progressChip: { fontFamily: FONTS.medium, fontSize: 12, color: 'rgba(255,255,255,0.8)' },
+  myRun: { alignSelf: 'stretch', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.14)', borderRadius: RADIUS.xl - 4, paddingVertical: 20, paddingHorizontal: 16 },
+  myScore: { fontFamily: FONTS.bold, fontSize: 52, lineHeight: 58, color: '#FFD36B' },
+  mySub: { fontFamily: FONTS.semibold, fontSize: 14, color: 'rgba(255,255,255,0.85)', marginBottom: 14 },
+  myStats: { flexDirection: 'row', alignSelf: 'stretch', justifyContent: 'space-around' },
+  myStat: { alignItems: 'center', flex: 1 },
+  myStatValue: { fontFamily: FONTS.bold, fontSize: 20, color: COLORS.white },
+  myStatLabel: { fontFamily: FONTS.regular, fontSize: 12, color: 'rgba(255,255,255,0.8)' },
   final: { backgroundColor: 'rgba(255,255,255,0.16)', borderRadius: RADIUS.full, paddingHorizontal: 18, paddingVertical: 10 },
   finalText: { fontFamily: FONTS.bold, fontSize: 15, color: COLORS.white },
 });

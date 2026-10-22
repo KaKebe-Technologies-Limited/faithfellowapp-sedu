@@ -425,13 +425,12 @@ C += f"""
 <section class="newpage">
 <h2>17 · Members: Games</h2>
 <p>Games are Bible quizzes you play with friends. There are <strong>25 ready-made games</strong> of 10 questions: Creation, Moses, David, the Prophets, Women of the Bible, the Christmas story, Parables, Miracles, Acts, Paul, Revelation, Books of the Bible, Bible lands, and Faith in Uganda among them.</p>
-{phones([('app-games', 'Pick a game, or join with a PIN'), ('app-game-lobby', 'Your game is ready: share the PIN or invite'), ('app-game-invite', 'Invite people you have played with, by name')])}
+{phones([('app-games', 'Pick a quiz, or join with a PIN'), ('app-game-lobby', 'Ready to play: share the PIN or invite'), ('app-game-records', 'Records: today, this week, all time')])}
 {steps([
-  'Open <strong>Games</strong> from Home. Filter by category and press <strong>Start</strong> on a game.',
-  'You become the host and a player. Press <strong>Share PIN</strong> to send the 6-digit code by WhatsApp or SMS, or <strong>Invite people</strong> and tap <strong>Invite</strong> next to the names of people you have played with or are connected to.',
-  'Your friends get a notification and a push; they tap it, or enter the PIN under <strong>Join a friend’s game</strong>.',
-  'When everyone is in, press <strong>Start game</strong>. Everyone is told it has started. Each question is open for 10 seconds; fast, correct answers score more.',
-  'At the end you see the podium and the scoreboard.',
+  'Open <strong>Games</strong> from Home. Filter by category and press <strong>Play</strong> on a quiz.',
+  'Press <strong>Start playing</strong>. Everyone plays at their own pace: you start at question 1, each question is open for 15 seconds, and as soon as you answer you see the result and go on (or press <strong>Next</strong>). Fast, correct answers score more.',
+  'To play with friends, press <strong>Share PIN</strong> to send the 6-digit code by WhatsApp or SMS, or <strong>Invite people</strong> and tap <strong>Invite</strong> next to the names of people you have played with or are connected to. They enter the PIN under <strong>Join a friend’s game</strong> or tap the notification, and they start at question 1 too, even days later (a game stays open for a week).',
+  'At the end you see your score and your place in the game. <strong>See the records</strong> ranks everyone who finished the quiz, by their best run, for today, this week or all time, and <strong>My churches</strong> keeps to people from your churches. Other players see you by your <strong>nickname</strong> (Edit profile), never your full name.',
 ])}
 </section>
 
@@ -604,7 +603,7 @@ D += f"""
   ['Followed churches per member', '3', 'Server setting'],
   ['Minimum gift', 'UGX 500 (UGX 1,000 for a pledge)', 'Built in'],
   ['Inspiration push times', '06:30, 10:30, 18:30', 'Super admin → Inspiration'],
-  ['Game question time', '10 seconds', 'Server setting'],
+  ['Game question time', '15 seconds', 'Super admin → Settings (5 to 120)'],
 ])}
 <h3>Technology</h3>
 <p>Website and API: Laravel 12 (PHP 8.2) with a MariaDB database, hosted at faithfellows.com. Mobile app: React Native with Expo (SDK 57), Android now and iPhone next. Notifications through Expo push (Firebase for Android) and email through Gmail. Mobile money through ioTec Pay. Updates reach installed apps over the air; website updates deploy from the code repository automatically. The API reference is in <code>web/docs/API.md</code>, the decision log in <code>web/DECISIONS.md</code> and the deployment guide in <code>web/docs/DEPLOYMENT_SHARED_HOSTING.md</code>.</p>

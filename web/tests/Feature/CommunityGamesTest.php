@@ -58,7 +58,7 @@ test('any member can start a game, becomes its host and a player, and gets a PIN
     $game = $this->postJson(route('api.v1.games.start'), ['quiz_id' => $quiz->id])->assertCreated()->json('data');
     $session = QuizSession::findOrFail($game['id']);
 
-    expect($game['pin'])->toMatch('/^\d{6}$/')->and($session->church_id)->toBeNull()->and($session->host_id)->toBe($host->id)->and($session->status)->toBe('lobby')
+    expect($game['pin'])->toMatch('/^\d{6}$/')->and($session->church_id)->toBeNull()->and($session->host_id)->toBe($host->id)->and($session->mode)->toBe('self')->and($session->isActive())->toBeTrue()
         ->and(QuizPlayer::where('quiz_session_id', $session->id)->where('user_id', $host->id)->exists())->toBeTrue();
 
     // Starting another game replaces the one still waiting.
@@ -79,7 +79,7 @@ test('anyone with the PIN can join a community game, play it and see it in the l
     $this->postJson(route('api.v1.games.join'), ['pin' => $game['pin']])->assertOk()->assertJsonPath('data.id', $game['id']);
 
     $state = $this->getJson(route('api.v1.games.state', $game['id']))->assertOk()->json('data');
-    expect($state['status'])->toBe('lobby')->and($state['community'])->toBeTrue()->and($state['is_host'])->toBeFalse()->and($state['players_count'])->toBe(2)->and($state['players'])->toContain('Grace Akello');
+    expect($state['status'])->toBe('lobby')->and($state['community'])->toBeTrue()->and($state['is_host'])->toBeFalse()->and($state['players_count'])->toBe(2)->and($state['players'])->toContain('Grace');
 
     // A stranger who is not in the game cannot look at it by number.
     Sanctum::actingAs(member(), ['member']);
@@ -87,7 +87,7 @@ test('anyone with the PIN can join a community game, play it and see it in the l
     $this->postJson(route('api.v1.games.join'), ['pin' => '000000'])->assertUnprocessable();
 });
 
-test('only the host starts the game, and everyone who joined or was invited is told', function () {
+test('each player starts their own run: the host, a friend who joined and a friend who was invited, and nobody else', function () {
     Notification::fake();
     [$host, $quiz] = gamer();
     $game = $this->postJson(route('api.v1.games.start'), ['quiz_id' => $quiz->id])->json('data');
@@ -96,19 +96,26 @@ test('only the host starts the game, and everyone who joined or was invited is t
     $invited = member();
     $session = QuizSession::findOrFail($game['id']);
     $session->invites()->create(['user_id' => $invited->id, 'invited_by' => $host->id]);
+
+    Sanctum::actingAs(member(), ['member']);
+    $this->postJson(route('api.v1.games.begin', $game['id']))->assertNotFound(); // not in the game
+
     Sanctum::actingAs($joined, ['member']);
     $this->postJson(route('api.v1.games.join'), ['pin' => $game['pin']])->assertOk();
+    $this->postJson(route('api.v1.games.begin', $game['id']))->assertOk()->assertJsonPath('data.status', 'question')->assertJsonPath('data.index', 0);
 
-    $this->postJson(route('api.v1.games.begin', $game['id']))->assertNotFound(); // not the host
+    Sanctum::actingAs($invited, ['member']);
+    $this->postJson(route('api.v1.games.begin', $game['id']))->assertOk()->assertJsonPath('data.status', 'question')->assertJsonPath('data.is_host', false);
 
+    // The host has not started: their own run waits for them, and nobody was pushed into the game.
     Sanctum::actingAs($host, ['member']);
+    expect($this->getJson(route('api.v1.games.state', $game['id']))->json('data.status'))->toBe('lobby');
     $state = $this->postJson(route('api.v1.games.begin', $game['id']))->assertOk()->json('data');
-
     expect($state['status'])->toBe('question')->and($state['is_host'])->toBeTrue();
-    Notification::assertSentTo([$joined, $invited], GameInvite::class, fn ($n) => $n->kind === 'started');
-    Notification::assertNotSentTo($host, GameInvite::class);
+    Notification::assertNotSentTo([$joined, $invited, $host], GameInvite::class);
 
-    $this->postJson(route('api.v1.games.begin', $game['id']))->assertUnprocessable(); // already started
+    // Pressing Start again does not restart the run.
+    $this->postJson(route('api.v1.games.begin', $game['id']))->assertOk()->assertJsonPath('data.index', 0);
 });
 
 test('the people you have played with, and your connections, can be invited by name; strangers and blocked members cannot', function () {

@@ -169,9 +169,11 @@ Route::prefix('v1')->name('api.v1.')->middleware('throttle:api')->group(function
         Route::post('/games/join', [V1\GameController::class, 'join'])->middleware('throttle:20,1')->name('games.join');
         Route::get('/games/library', [V1\CommunityGameController::class, 'library'])->name('games.library');
         Route::get('/games/friends', [V1\CommunityGameController::class, 'friends'])->name('games.friends');
+        Route::get('/games/records', [V1\GameController::class, 'records'])->name('games.records');
         Route::post('/games/start', [V1\CommunityGameController::class, 'start'])->middleware('throttle:20,1')->name('games.start');
         Route::post('/games/{quizSession}/invite', [V1\CommunityGameController::class, 'invite'])->middleware('throttle:30,1')->name('games.invite');
         Route::post('/games/{quizSession}/begin', [V1\CommunityGameController::class, 'begin'])->middleware('throttle:30,1')->name('games.begin');
+        Route::post('/games/{quizSession}/next', [V1\GameController::class, 'next'])->middleware('throttle:60,1')->name('games.next');
         Route::post('/games/{quizSession}/cancel', [V1\CommunityGameController::class, 'cancel'])->middleware('throttle:30,1')->name('games.cancel');
         Route::get('/games/{quizSession}', [V1\GameController::class, 'state'])->middleware('throttle:300,1')->name('games.state');
         Route::post('/games/{quizSession}/answer', [V1\GameController::class, 'answer'])->middleware('throttle:60,1')->name('games.answer');

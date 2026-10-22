@@ -1,5 +1,6 @@
-// Games: pick one of 25 Bible and faith quizzes, start a game and share its PIN (or invite the people you have played with by
-// name), join a friend's game with their PIN, answer an invitation, or jump into a game your church is hosting.
+// Games: pick one of 25 Bible and faith quizzes and play it at your own pace (a friend who plays later also starts at the first question), share the
+// game's PIN or invite the people you have played with by name, join a friend's game with their PIN, answer an invitation, jump into a game your church
+// is hosting, and open the records of a quiz (today, this week, all time).
 // Data: GET /api/v1/games, GET /games/library, POST /games/start, POST /games/join.
 import { useCallback, useMemo, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, TextInput, View } from 'react-native';
@@ -119,7 +120,7 @@ export default function GamesScreen() {
                     <Tile emoji={i.emoji ?? '🎮'} color={COLORS.primary} />
                     <View style={{ flex: 1 }}>
                       <AppText style={styles.title} numberOfLines={1}>{i.quiz}</AppText>
-                      <AppText variant="caption" numberOfLines={1}>{i.from ? `${i.from} invited you` : 'You were invited'} · {i.status === 'lobby' ? 'waiting to start' : 'in progress'}</AppText>
+                      <AppText variant="caption" numberOfLines={1}>{i.from ? `${i.from} invited you` : 'You were invited'} · {i.mode === 'self' ? 'play any time this week' : i.status === 'lobby' ? 'waiting to start' : 'in progress'}</AppText>
                     </View>
                     <View style={styles.play}><AppText style={styles.playText}>Join</AppText></View>
                   </Pressable>
@@ -135,7 +136,7 @@ export default function GamesScreen() {
                     <Tile emoji={h.emoji ?? '🎮'} color="#4527A0" />
                     <View style={{ flex: 1 }}>
                       <AppText style={styles.title} numberOfLines={1}>{h.quiz}</AppText>
-                      <AppText variant="caption" numberOfLines={1}>PIN {h.pin} · {h.players_count} {h.players_count === 1 ? 'player' : 'players'} · {h.status === 'lobby' ? 'waiting to start' : 'in progress'}</AppText>
+                      <AppText variant="caption" numberOfLines={1}>PIN {h.pin} · {h.players_count} {h.players_count === 1 ? 'player' : 'players'} · {h.mode === 'self' ? 'open for friends' : h.status === 'lobby' ? 'waiting to start' : 'in progress'}</AppText>
                     </View>
                     <View style={styles.play}><AppText style={styles.playText}>Open</AppText></View>
                   </Pressable>
@@ -160,8 +161,8 @@ export default function GamesScreen() {
             ) : null}
 
             <View style={styles.section}>
-              <SectionHeader title="Start a game" />
-              <AppText style={styles.hint}>Pick a quiz, then share the PIN or invite people you have played with.</AppText>
+              <SectionHeader title="Play a quiz" />
+              <AppText style={styles.hint}>Play at your own pace. Your best score is ranked for today, this week and all time. Share the PIN so friends play the same questions.</AppText>
               {lib ? (
                 <>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
@@ -174,17 +175,25 @@ export default function GamesScreen() {
                   {startError ? <AppText style={styles.pinErrorDark}>{startError}</AppText> : null}
                   <View style={styles.list}>
                     {shown.map((q, i) => (
-                      <Pressable key={q.id} onPress={() => start(q)} disabled={!!starting} style={[styles.quiz, i > 0 && styles.divider, starting && starting !== q.id && { opacity: 0.55 }]} accessibilityRole="button" accessibilityLabel={`Start a game of ${q.title}`}>
-                        <Tile emoji={q.emoji ?? '📖'} color={colors[q.category]?.color ?? COLORS.primary} />
-                        <View style={{ flex: 1 }}>
-                          <AppText style={styles.title} numberOfLines={1}>{q.title}</AppText>
-                          <AppText variant="caption" numberOfLines={2}>{q.description}</AppText>
-                          <AppText style={[styles.meta, { color: colors[q.category]?.color ?? COLORS.primary }]}>{q.questions} questions{q.plays ? ` · played ${q.plays}×` : ''}</AppText>
+                      <View key={q.id} style={[styles.quiz, i > 0 && styles.divider, starting && starting !== q.id && { opacity: 0.55 }]}>
+                        <Pressable onPress={() => start(q)} disabled={!!starting} style={styles.quizMain} accessibilityRole="button" accessibilityLabel={`Play ${q.title}`}>
+                          <Tile emoji={q.emoji ?? '📖'} color={colors[q.category]?.color ?? COLORS.primary} />
+                          <View style={{ flex: 1 }}>
+                            <AppText style={styles.title} numberOfLines={1}>{q.title}</AppText>
+                            <AppText variant="caption" numberOfLines={2}>{q.description}</AppText>
+                            <AppText style={[styles.meta, { color: colors[q.category]?.color ?? COLORS.primary }]}>{q.questions} questions{q.my_best != null ? ` · your best ${q.my_best}` : q.plays ? ` · played ${q.plays}×` : ''}</AppText>
+                          </View>
+                        </Pressable>
+                        <View style={styles.actions}>
+                          <Pressable onPress={() => start(q)} disabled={!!starting} style={styles.play} accessibilityRole="button" accessibilityLabel={`Play ${q.title}`}>
+                            <AppText style={styles.playText}>{starting === q.id ? '…' : 'Play'}</AppText>
+                          </Pressable>
+                          <Pressable onPress={() => router.push({ pathname: '/leaderboard/[quiz]', params: { quiz: String(q.id) } })} hitSlop={6} style={styles.records} accessibilityRole="button" accessibilityLabel={`Records of ${q.title}`}>
+                            <Ionicons name="trophy-outline" size={14} color="#C25B00" />
+                            <AppText style={styles.recordsText}>Records</AppText>
+                          </Pressable>
                         </View>
-                        <View style={styles.play}>
-                          <AppText style={styles.playText}>{starting === q.id ? '…' : 'Start'}</AppText>
-                        </View>
-                      </Pressable>
+                      </View>
                     ))}
                   </View>
                 </>
@@ -197,16 +206,16 @@ export default function GamesScreen() {
               <View style={styles.section}>
                 <SectionHeader title="Your scores" />
                 {g.mine.map((m) => (
-                  <View key={`${m.session_id}`} style={styles.row}>
+                  <Pressable key={`${m.session_id}`} onPress={() => (m.quiz_id ? router.push({ pathname: '/leaderboard/[quiz]', params: { quiz: String(m.quiz_id) } }) : open(m.session_id))} style={styles.row} accessibilityRole="button" accessibilityLabel={`${m.quiz}: ${m.score} points`}>
                     <View style={styles.trophy}>
                       <Ionicons name="trophy-outline" size={20} color="#C25B00" />
                     </View>
                     <View style={{ flex: 1 }}>
                       <AppText style={styles.title}>{m.quiz}</AppText>
-                      <AppText variant="caption">{m.correct} correct · {timeAgo(m.at)}</AppText>
+                      <AppText variant="caption">{m.finished === false ? 'Not finished' : `${m.correct} correct`} · {timeAgo(m.at)}</AppText>
                     </View>
                     <AppText style={styles.score}>{m.score}</AppText>
-                  </View>
+                  </Pressable>
                 ))}
               </View>
             ) : null}
@@ -242,6 +251,10 @@ const styles = StyleSheet.create({
   meta: { fontFamily: FONTS.semibold, fontSize: 12, marginTop: 3 },
   play: { backgroundColor: COLORS.primary, borderRadius: RADIUS.full, paddingHorizontal: 16, paddingVertical: 8 },
   playText: { fontFamily: FONTS.bold, fontSize: 13, color: COLORS.white },
+  quizMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, minWidth: 0 },
+  actions: { alignItems: 'center', gap: 8 },
+  records: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 2 },
+  recordsText: { fontFamily: FONTS.semibold, fontSize: 12, color: '#C25B00' },
   trophy: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#FFF3E0', alignItems: 'center', justifyContent: 'center' },
   score: { fontFamily: FONTS.bold, fontSize: 20, color: COLORS.primary },
 });

@@ -29,7 +29,7 @@ class SettingsController extends Controller
         'support_email' => ['Support email', 'email', 'Shown to churches on the support page.'],
         'support_phone' => ['Support phone', 'text', null],
         'trial_months' => ['Free trial length (months)', 'number', 'Applies to newly approved churches.'],
-        'quiz_question_seconds' => ['Quiz games: seconds to answer each question', 'number', 'How long every question stays open in a game, from 5 to 120 seconds. Default 10. It applies from the next question of every game, including one being played.'],
+        'quiz_question_seconds' => ['Quiz games: seconds to answer each question', 'number', 'How long every question stays open in a game, from 5 to 120 seconds. Default 15. It applies from the next question of every game, including one being played.'],
         'quiz_reveal_seconds' => ['Quiz games: seconds the answer shows', 'number', 'How long the right answer and the scores stay on screen before the next question, from 2 to 30 seconds. Default 5.'],
         'android_app_url' => ['App download link', 'url', 'The “Download the app” buttons on the website open this link: a Play Store link, or the link of the latest Android build.'],
         'ios_app_url' => ['iPhone download link', 'url', 'The App Store link, or the TestFlight invitation link while iPhone testers are being invited. Church join links send iPhone users here. Leave empty until there is one.'],

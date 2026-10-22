@@ -11,6 +11,7 @@ use App\Models\QuizSession;
 use App\Models\User;
 use App\Notifications\Games\GameInvite;
 use App\Notifications\Games\QuizUpdate;
+use App\Services\Concerns\SelfPacedQuizzes;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -20,9 +21,13 @@ use Illuminate\Validation\ValidationException;
  * itself — every question is open for the same few seconds, the answer and
  * leaderboard show briefly, and the next question follows. Scores reward
  * correct *and* fast answers.
+ *
+ * Games members start themselves from the ready-made quizzes are self-paced instead (SelfPacedQuizzes): everyone plays at their own speed.
  */
 class QuizService
 {
+    use SelfPacedQuizzes;
+
     /** Answers sent at the last moment still count while they travel over slow networks. */
     public const GRACE_MS = 1000;
 
@@ -50,6 +55,10 @@ class QuizService
      */
     public function hostCommunity(Quiz $quiz, User $host): QuizSession
     {
+        if (self::selfPaced()) {
+            return $this->hostSelf($quiz, $host);
+        }
+
         abort_unless($quiz->is_sample && $quiz->church_id === null, 404);
         abort_if($quiz->questions()->count() === 0, 422, __('This quiz has no questions yet.'));
 
@@ -114,13 +123,16 @@ class QuizService
 
         return QuizPlayer::firstOrCreate(
             ['quiz_session_id' => $session->id, 'user_id' => $user->id],
-            ['nickname' => mb_substr($user->name, 0, 40)],
+            ['nickname' => $session->church_id === null ? $user->gameName() : mb_substr($user->name, 0, 40)],
         );
     }
 
     public function findByPin(string $pin): ?QuizSession
     {
-        return QuizSession::active()->where('pin', preg_replace('/\D/', '', $pin))->latest()->first();
+        return QuizSession::active()->where('pin', preg_replace('/\D/', '', $pin))
+            // A self-paced game room is open to friends for a week.
+            ->when(self::selfPaced(), fn ($q) => $q->where(fn ($w) => $w->where('mode', '!=', 'self')->orWhere('created_at', '>=', now()->subDays(self::SELF_OPEN_DAYS))))
+            ->latest()->first();
     }
 
     /** The shortest and longest a question may stay open, and the longest the answer may stay on screen, whatever is set. */
@@ -128,12 +140,12 @@ class QuizService
 
     public const REVEAL_RANGE = [2, 30];
 
-    /** Seconds each question is open: what the platform admin set in Super admin → Settings, else the server's default (10). */
+    /** Seconds each question is open: what the platform admin set in Super admin → Settings, else the server's default (15). */
     public static function questionSeconds(): int
     {
         $set = (int) rescue(fn () => PlatformSetting::get('quiz_question_seconds'), 0, false);
 
-        return min(self::QUESTION_RANGE[1], max(self::QUESTION_RANGE[0], $set ?: (int) config('faithfellows.quizzes.question_seconds', 10)));
+        return min(self::QUESTION_RANGE[1], max(self::QUESTION_RANGE[0], $set ?: (int) config('faithfellows.quizzes.question_seconds', 15)));
     }
 
     /** Seconds the answer and leaderboard show before the next question: set by the platform admin, else the server's default (5). */
@@ -220,6 +232,10 @@ class QuizService
      */
     public function answer(QuizSession $session, QuizPlayer $player, int $option, int $questionIndex): array
     {
+        if ($session->isSelf()) {
+            return $this->answerSelf($session, $player, $option, $questionIndex);
+        }
+
         $question = $this->currentQuestion($session);
         $limit = self::questionSeconds() * 1000;
         $elapsed = (int) round($session->question_started_at->diffInMilliseconds(now(), true));
@@ -258,6 +274,10 @@ class QuizService
      */
     public function state(QuizSession $session, ?User $viewer = null, bool $host = false): array
     {
+        if ($session->isSelf()) {
+            return $this->selfState($session, $viewer);
+        }
+
         $session->refresh()->loadMissing('quiz');
         $this->advance($session);
 

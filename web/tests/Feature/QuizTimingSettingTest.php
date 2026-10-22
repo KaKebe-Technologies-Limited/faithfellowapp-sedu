@@ -16,8 +16,8 @@ beforeEach(function () {
     Cache::forget('platform_settings');
 });
 
-test('the defaults are 10 seconds for a question and 5 for the answer', function () {
-    expect(QuizService::questionSeconds())->toBe(10)->and(QuizService::revealSeconds())->toBe(5);
+test('the defaults are 15 seconds for a question and 5 for the answer', function () {
+    expect(QuizService::questionSeconds())->toBe(15)->and(QuizService::revealSeconds())->toBe(5);
 });
 
 test('the super admin sets the times, and they are kept within what a game can use', function () {
@@ -32,7 +32,7 @@ test('the super admin sets the times, and they are kept within what a game can u
 
     // Empty goes back to the server's default.
     $this->actingAs(superAdmin())->put(route('super-admin.settings.update'), ['quiz_question_seconds' => '', 'quiz_reveal_seconds' => ''])->assertSessionHasNoErrors();
-    expect(QuizService::questionSeconds())->toBe(10)->and(QuizService::revealSeconds())->toBe(5);
+    expect(QuizService::questionSeconds())->toBe(15)->and(QuizService::revealSeconds())->toBe(5);
 
     // A value saved out of range some other way is still held to the limits.
     PlatformSetting::put('quiz_question_seconds', '1');

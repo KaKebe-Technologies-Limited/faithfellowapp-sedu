@@ -56,6 +56,7 @@ export default function EditProfile() {
     if (user && !form) {
       setForm({
         name: user.name ?? '',
+        nickname: user.nickname ?? '',
         phone: user.phone ?? '',
         city: user.city ?? '',
         country: user.country ?? 'UG',
@@ -139,6 +140,8 @@ export default function EditProfile() {
           </View>
 
           <TextField label="Name" value={form.name} onChangeText={(t) => set('name', t)} error={errors.name} />
+          <TextField label="Nickname for games" value={form.nickname} onChangeText={(t) => set('nickname', t)} error={errors.nickname} placeholder="What you like to be called" maxLength={30} autoCapitalize="words" style={{ marginBottom: 4 }} />
+          <AppText variant="caption" style={{ marginBottom: SPACING.md }}>Other players see this on game scoreboards and records instead of your full name. Leave it empty to use your first name.</AppText>
           <TextField label="Phone" value={form.phone} onChangeText={(t) => set('phone', t)} error={errors.phone} keyboardType="phone-pad" placeholder="0772 123 456" />
           <TextField label="City" value={form.city} onChangeText={(t) => set('city', t)} error={errors.city} placeholder="For example: Lira" />
 

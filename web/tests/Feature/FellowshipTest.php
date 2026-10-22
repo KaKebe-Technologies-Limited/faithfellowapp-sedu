@@ -300,6 +300,7 @@ test('admins write multiple-choice quizzes; members cannot', function () {
 test('a live quiz scores fast correct answers higher and congratulates the winners', function () {
     Notification::fake();
     $this->freezeTime();
+    config(['faithfellows.quizzes.question_seconds' => 10]);
     [$church, $admin, $fast, $slow] = fellowshipChurch();
     $wrong = member();
     joinChurch($church, $wrong);

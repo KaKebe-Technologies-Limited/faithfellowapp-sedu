@@ -9,6 +9,7 @@ use App\Services\PeopleService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
@@ -25,6 +26,8 @@ class ProfileController extends Controller
         $user = $request->user();
         $data = $request->validate([
             'name' => ['sometimes', 'required', 'string', 'max:255'],
+            // What other players see on a game board and in the records. Empty goes back to the first name.
+            'nickname' => ['sometimes', 'nullable', 'string', 'min:2', 'max:30', new NoContactDetails],
             'phone' => ['sometimes', 'nullable', 'string', 'max:32', 'regex:/^[0-9+\s()-]{7,32}$/'],
             'country' => ['sometimes', 'required', 'string', 'size:2'],
             'city' => ['sometimes', 'nullable', 'string', 'max:120'],
@@ -37,7 +40,14 @@ class ProfileController extends Controller
             'open_to_connect' => ['sometimes', 'boolean'],
         ]);
 
+        // The nickname column arrives with a database update; until it is applied the rest of the profile still saves.
+        $nickname = array_key_exists('nickname', $data) ? trim(strip_tags((string) $data['nickname'])) : null;
+        unset($data['nickname']);
+
         $user->fill($data);
+        if ($nickname !== null && rescue(fn () => Schema::hasColumn('users', 'nickname'), false, false)) {
+            $user->nickname = $nickname !== '' ? $nickname : null;
+        }
         if (array_key_exists('country', $data)) {
             $user->country = strtoupper($data['country']);
         }

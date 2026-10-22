@@ -18,7 +18,7 @@ class QuizSession extends Model
 
     public const ACTIVE = ['lobby', 'question', 'reveal'];
 
-    protected $fillable = ['church_id', 'quiz_id', 'host_id', 'pin', 'status', 'current_index', 'question_started_at', 'revealed_at', 'started_at', 'finished_at'];
+    protected $fillable = ['church_id', 'quiz_id', 'host_id', 'pin', 'status', 'mode', 'current_index', 'question_started_at', 'revealed_at', 'started_at', 'finished_at'];
 
     /** Millisecond precision so answer speed can be scored fairly. */
     protected $dateFormat = 'Y-m-d H:i:s.v';
@@ -67,6 +67,12 @@ class QuizSession extends Model
     public function isActive(): bool
     {
         return in_array($this->status, self::ACTIVE, true);
+    }
+
+    /** A member game played at each person's own pace (see SelfPacedQuizzes), not one the host moves along. */
+    public function isSelf(): bool
+    {
+        return ($this->attributes['mode'] ?? 'live') === 'self';
     }
 
     /** Players ranked by score (ties: more correct, then who joined first). */
