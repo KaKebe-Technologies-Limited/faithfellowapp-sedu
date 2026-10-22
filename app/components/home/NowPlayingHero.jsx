@@ -1,6 +1,7 @@
 // The top of Home, shaped like a radio app: a big LIVE card for the radio (its name, the pulsing LIVE mark and sound bars that dance while you
 // listen; never the song or who made it, because the radio is live and everyone just listens) with the glowing play / stop button on the
-// card's lower edge, and three round buttons under it: pray, share and give. Press the card for the full player. `useHomeRadio()` says
+// card's lower edge, and three small buttons right under the card at the left, on the same line as the play button's lower half: pray, share and
+// give (a round icon each on a narrow phone, an icon with its name on a wider one). Press the card for the full player. `useHomeRadio()` says
 // whether this can show ('ready'), is still waiting for the radio ('loading') or has no radio to show ('none': the radio is switched off,
 // empty, or the phone is offline), so Home can fall back to the slider of highlights.
 import { useEffect } from 'react';
@@ -19,7 +20,7 @@ import RadioButton from '../radio/RadioButton';
 
 const MARK = require('../../assets/logo-mark.png');
 const BUTTON = 76;
-const ACTIONS = 86; // the height of the row of round buttons, kept as an empty space while the radio loads
+const ACTIONS = 56; // the height of the row of small buttons (the play button's lower half shares it), kept as an empty space while the radio loads
 
 /** Keeps the radio fresh on Home. Home is the music radio: a podcast channel chosen earlier (and not playing) gives way to it. */
 export function useHomeRadio() {
@@ -39,13 +40,12 @@ export function useHomeRadio() {
   return (station || unreachable) && !moving ? 'none' : 'loading';
 }
 
-function Action({ icon, label, onPress }) {
+/** A small button under the card: an icon with its name, or just the icon on a narrow phone. */
+function Action({ icon, label, onPress, compact }) {
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [styles.action, pressed && { opacity: 0.8 }]} accessibilityRole="button" accessibilityLabel={label}>
-      <View style={styles.round}>
-        <Ionicons name={icon} size={22} color="#fff" />
-      </View>
-      <AppText style={styles.actionLabel}>{label}</AppText>
+    <Pressable onPress={onPress} hitSlop={6} style={({ pressed }) => [styles.action, compact ? styles.actionRound : styles.actionPill, pressed && { opacity: 0.8 }]} accessibilityRole="button" accessibilityLabel={label}>
+      <Ionicons name={icon} size={compact ? 17 : 15} color="#fff" />
+      {compact ? null : <AppText style={styles.actionLabel}>{label}</AppText>}
     </Pressable>
   );
 }
@@ -54,6 +54,7 @@ export default function NowPlayingHero({ state, home }) {
   const { width } = useWindowDimensions();
   const { phase, station } = useRadio();
   const height = Math.max(200, Math.min(250, Math.round((width - SPACING.md * 2) * 0.62)));
+  const compact = width < 380; // three names and the play button do not fit side by side on a narrow phone
 
   if (state !== 'ready') {
     return (
@@ -104,9 +105,9 @@ export default function NowPlayingHero({ state, home }) {
       </View>
 
       <View style={styles.actions}>
-        <Action icon="hand-left-outline" label="Pray" onPress={() => router.push('/prayer')} />
-        <Action icon="share-social-outline" label="Share" onPress={share} />
-        <Action icon="heart-outline" label="Give" onPress={give} />
+        <Action icon="hand-left-outline" label="Pray" onPress={() => router.push('/prayer')} compact={compact} />
+        <Action icon="share-social-outline" label="Share" onPress={share} compact={compact} />
+        <Action icon="heart-outline" label="Give" onPress={give} compact={compact} />
       </View>
     </View>
   );
@@ -123,8 +124,9 @@ const styles = StyleSheet.create({
   title: { fontFamily: FONTS.bold, fontSize: 25, lineHeight: 30, color: '#fff' },
   tagline: { fontFamily: FONTS.medium, fontSize: 14, lineHeight: 20, color: 'rgba(255,255,255,0.88)', marginTop: 2, marginRight: BUTTON + 22 },
   play: { position: 'absolute', right: SPACING.md + 18 },
-  actions: { flexDirection: 'row', gap: 20, marginTop: 16, height: ACTIONS - 16 },
-  action: { alignItems: 'center', width: 56 },
-  round: { width: 52, height: 52, borderRadius: 26, backgroundColor: SOFT.glassOnDark, borderWidth: 1, borderColor: SOFT.glassOnDarkBorder, alignItems: 'center', justifyContent: 'center' },
-  actionLabel: { fontFamily: FONTS.semibold, fontSize: 11.5, color: 'rgba(255,255,255,0.82)', marginTop: 6 },
+  actions: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10, height: ACTIONS - 10, paddingRight: BUTTON + 30 },
+  action: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: SOFT.glassOnDark, borderWidth: 1, borderColor: SOFT.glassOnDarkBorder },
+  actionPill: { height: 36, gap: 6, paddingHorizontal: 13, borderRadius: 18 },
+  actionRound: { width: 38, height: 38, borderRadius: 19 },
+  actionLabel: { fontFamily: FONTS.semibold, fontSize: 12.5, color: '#fff' },
 });
