@@ -1,5 +1,5 @@
-<x-layouts.church-admin :church="$church" :title="__('Radio channel')">
-    <x-ff.page-header :title="__('Radio channel')" :subtitle="__('Teaching, sermons and podcasts that play round the clock, in a loop, for the members who follow your church. They find it in the app under Radio.')" />
+<x-layouts.church-admin :church="$church" :title="__('Podcast channel')">
+    <x-ff.page-header :title="__('Podcast channel')" :subtitle="__('Teaching, sermons and podcasts that play round the clock, in a loop, for the members who follow your church. They find it in the app under Podcasts, with the FaithFellows Podcast radio.')" />
 
     @if ($station->is_blocked)
         <div class="alert alert-danger"><i class="bi bi-slash-circle"></i> {{ __('This channel has been switched off by FaithFellows, so members cannot hear it. Please contact support.') }}</div>
