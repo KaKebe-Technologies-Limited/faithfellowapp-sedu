@@ -1,6 +1,6 @@
 {{--
     Reactions + comments for any HasEngagement model.
-    Expects $model and $type (key of EngagementController::TYPES). Optional: $open (show comments expanded).
+    Expects $model and $type (key of Reactions::CONTENT). Optional: $open (show comments expanded).
     Eager-load `reactions` and `comments.user.media` on lists to avoid per-item queries.
 --}}
 @php
@@ -15,7 +15,7 @@
 @endphp
 <div class="ff-engagement" x-data="reactions({ url: @js(route('reactions.toggle', [$type, $model->getKey()])), counts: @js($reactionCounts), mine: @js($myReaction), guest: @js(! $viewer), loginUrl: @js(route('login')) })">
     <div class="d-flex align-items-center gap-1 flex-wrap">
-        @foreach (\App\Models\Reaction::TYPES as $key => $emoji)
+        @foreach (\App\Models\Reaction::available() as $key => $emoji)
             <button type="button" class="ff-reaction" :class="{ 'is-mine': mine === @js($key) }" @click="react(@js($key))"
                 :aria-pressed="mine === @js($key)" aria-label="{{ __(ucfirst($key)) }}" title="{{ __(ucfirst($key)) }}">
                 <span aria-hidden="true">{{ $emoji }}</span><span x-text="counts[@js($key)] || ''"></span>

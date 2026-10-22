@@ -1,88 +1,119 @@
-// A church's page, opened from a banner, a "story" tile or the directory: cover photo and badge, follow
-// button, about, service times, upcoming events, recent sermons, and contact details (only shown to
-// people who follow the church). Data: GET /churches/{slug}, /events?church=, /sermons?church=.
-import { useState } from 'react';
-import { Alert, Linking, Pressable, RefreshControl, ScrollView, Share, StyleSheet, View } from 'react-native';
+// A church's page, with everything about the church in one place and nothing to hunt for on another screen: a banner and the Follow button, then tabs that
+// swap right on the page: Home (the live service, the latest sermon, the church's radio, what is coming up, the devotional, giving, the news), Sermons (every
+// sermon, with the audio playing right here), Listen (the church's own channel and its songs), Events, News, Give and About (service times, where and how to
+// reach them, photos and links). Sermons and songs play in the app's player and keep going while you look around.
+// Data: GET /churches/{slug} (the details) and GET /churches/{slug}/page (everything else, in one request; members of the church get what is kept for them).
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Alert, Pressable, RefreshControl, ScrollView, Share, StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
-import BrandPlaceholder from '../../components/BrandPlaceholder';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import AppText from '../../components/AppText';
 import Button from '../../components/Button';
-import ChurchAvatar from '../../components/ChurchAvatar';
-import Pill from '../../components/Pill';
-import SectionHeader from '../../components/SectionHeader';
+import ChurchHeader from '../../components/church/ChurchHeader';
+import ChurchTabBar from '../../components/church/ChurchTabBar';
+import { AboutTab, EventsTab, GiveTab, HomeTab, ListenTab, SermonsTab, UpdatesTab } from '../../components/church/ChurchTabs';
+import { EmptyNote } from '../../components/church/Blocks';
+import { goBack } from '../../components/ScreenHeader';
 import Skeleton from '../../components/Skeleton';
 import StateView from '../../components/StateView';
-import { COLORS, FONTS, RADIUS, SHADOW, SPACING } from '../../constants/theme';
-import api, { errorMessage, mediaUrl } from '../../lib/api';
-import { dateTile, dayAndTime, formatDuration } from '../../lib/format';
+import { COLORS, RADIUS, SHADOW, SPACING } from '../../constants/theme';
+import { SOFT } from '../../constants/soft';
+import api, { errorMessage } from '../../lib/api';
 import { useFetch } from '../../lib/useFetch';
 
-const open = (url) => url && Linking.openURL(mediaUrl(url));
+/** The tabs this church has something to show in (Home and About always). */
+function tabsFor(page) {
+  const tabs = [{ key: 'home', label: 'Home', icon: 'home' }];
+  if (page?.stats?.sermons > 0 || page?.sermons?.length) tabs.push({ key: 'sermons', label: 'Sermons', icon: 'mic' });
+  if (page?.channel) tabs.push({ key: 'listen', label: 'Listen', icon: 'headset' });
+  if (page?.events?.length) tabs.push({ key: 'events', label: 'Events', icon: 'calendar' });
+  if (page?.updates?.length || page?.announcements?.length || page?.devotional) tabs.push({ key: 'updates', label: 'News', icon: 'newspaper' });
+  if (page?.giving?.available || page?.campaigns?.length) tabs.push({ key: 'give', label: 'Give', icon: 'heart' });
+  tabs.push({ key: 'about', label: 'About', icon: 'information-circle' });
 
-function Row({ icon, label, value, onPress }) {
-  return (
-    <Pressable onPress={onPress} disabled={!onPress} style={styles.contactRow} accessibilityRole={onPress ? 'link' : undefined}>
-      <View style={styles.contactIcon}>
-        <Ionicons name={icon} size={18} color={COLORS.primary} />
-      </View>
-      <View style={{ flex: 1 }}>
-        <AppText variant="caption">{label}</AppText>
-        <AppText style={{ fontFamily: FONTS.medium, color: COLORS.black }} numberOfLines={2}>
-          {value}
-        </AppText>
-      </View>
-      {onPress ? <Ionicons name="chevron-forward" size={16} color={COLORS.gray500} /> : null}
-    </Pressable>
-  );
+  return tabs;
 }
 
 export default function ChurchScreen() {
-  const { slug } = useLocalSearchParams();
+  const { slug, tab: wanted } = useLocalSearchParams();
   const insets = useSafeAreaInsets();
   const church = useFetch(`/churches/${slug}`);
+  const pageQuery = useFetch(`/churches/${slug}/page`);
   const info = church.data?.data;
-  const events = useFetch('/events', { params: { church: info?.id }, enabled: !!info?.id });
-  const sermons = useFetch('/sermons', { params: { church: info?.id }, enabled: !!info?.id });
+  const page = pageQuery.data?.data;
+  const [tab, setTab] = useState(typeof wanted === 'string' ? wanted : 'home');
   const [busy, setBusy] = useState(false);
+  const scroll = useRef(null);
+  const offset = useRef(0);
+  const headerHeight = useRef(0);
 
-  const goBack = () => (router.canGoBack() ? router.back() : router.replace('/(tabs)'));
+  const tabs = tabsFor(page);
+  const active = tabs.some((t) => t.key === tab) ? tab : 'home';
 
-  async function toggleFollow() {
+  // Choosing a tab starts it at the top, just under the bar, instead of leaving you part-way down the last one.
+  const choose = useCallback((key) => {
+    setTab(key);
+    if (offset.current > headerHeight.current) scroll.current?.scrollTo({ y: headerHeight.current, animated: false });
+  }, []);
+
+  useEffect(() => {
+    if (typeof wanted === 'string') setTab(wanted);
+  }, [wanted]);
+
+  const reloadAll = () => {
+    church.reload();
+    pageQuery.reload();
+  };
+
+  async function follow() {
     setBusy(true);
     try {
-      if (info.is_subscribed) await api.delete(`/churches/${info.slug}/subscription`);
-      else await api.post(`/churches/${info.slug}/subscription`);
-      await church.reload();
-      events.reload();
-      sermons.reload();
+      await api.post(`/churches/${info.slug}/subscription`);
+      await Promise.all([church.reload(), pageQuery.reload()]);
     } catch (e) {
-      Alert.alert(info.is_subscribed ? 'Could not unfollow' : 'Could not follow', errorMessage(e));
+      Alert.alert('Could not follow', errorMessage(e));
     } finally {
       setBusy(false);
     }
   }
 
-  function confirmUnfollow() {
-    Alert.alert(`Unfollow ${info.name}?`, 'You will stop seeing their updates.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Unfollow', style: 'destructive', onPress: toggleFollow },
-    ]);
+  async function unfollow() {
+    setBusy(true);
+    try {
+      await api.delete(`/churches/${info.slug}/subscription`);
+      await Promise.all([church.reload(), pageQuery.reload()]);
+    } catch (e) {
+      Alert.alert('Could not unfollow', errorMessage(e));
+    } finally {
+      setBusy(false);
+    }
   }
 
-  const back = (
-    <Pressable onPress={goBack} accessibilityRole="button" accessibilityLabel="Go back" style={[styles.back, { top: insets.top + 8 }]}>
-      <Ionicons name="chevron-back" size={22} color={COLORS.black} />
-    </Pressable>
+  const confirmUnfollow = () =>
+    Alert.alert(`Unfollow ${info.name}?`, 'You will stop seeing their updates.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Unfollow', style: 'destructive', onPress: unfollow },
+    ]);
+
+  const share = () => Share.share({ message: info.join_url ? `${info.name} on FaithFellows: ${info.join_url}` : `${info.name} on FaithFellows` }).catch(() => {});
+
+  const floating = (
+    <>
+      <Pressable onPress={goBack} accessibilityRole="button" accessibilityLabel="Go back" style={[styles.round, { top: insets.top + 8, left: SPACING.md }]}>
+        <Ionicons name="chevron-back" size={22} color={COLORS.black} />
+      </Pressable>
+      {info ? (
+        <Pressable onPress={share} accessibilityRole="button" accessibilityLabel={`Share ${info.name}`} style={[styles.round, { top: insets.top + 8, right: SPACING.md }]}>
+          <Ionicons name="share-social-outline" size={20} color={COLORS.black} />
+        </Pressable>
+      ) : null}
+    </>
   );
 
   if (church.loading || church.error || !info) {
     return (
       <View style={styles.screen}>
-        {back}
+        {floating}
         {church.loading ? (
           <View style={{ paddingTop: insets.top + 64, paddingHorizontal: SPACING.md, gap: SPACING.md }}>
             <Skeleton height={190} radius={RADIUS.xl} />
@@ -98,187 +129,53 @@ export default function ChurchScreen() {
     );
   }
 
-  const upcoming = (events.data?.data ?? []).slice(0, 3);
-  const recent = (sermons.data?.data ?? []).slice(0, 3);
-  const place = [info.location?.city, info.denomination].filter(Boolean).join(' · ');
-
   return (
     <View style={styles.screen}>
-      {back}
       <ScrollView
+        ref={scroll}
+        stickyHeaderIndices={[1]}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 40 }}
-        refreshControl={
-          <RefreshControl
-            refreshing={church.refreshing}
-            onRefresh={() => {
-              church.reload();
-              events.reload();
-              sermons.reload();
-            }}
-            tintColor={COLORS.primary}
-            colors={[COLORS.primary]}
-          />
-        }
+        scrollEventThrottle={32}
+        onScroll={(e) => {
+          offset.current = e.nativeEvent.contentOffset.y;
+        }}
+        contentContainerStyle={{ paddingBottom: 60 }}
+        refreshControl={<RefreshControl refreshing={church.refreshing || pageQuery.refreshing} onRefresh={reloadAll} tintColor={COLORS.primary} colors={[COLORS.primary]} />}
       >
-        <View style={styles.cover}>
-          <LinearGradient colors={[COLORS.primaryDark, COLORS.primary]} style={StyleSheet.absoluteFill} />
-          {info.cover_url ? <Image source={{ uri: mediaUrl(info.cover_url) }} style={StyleSheet.absoluteFill} contentFit="cover" transition={300} /> : <BrandPlaceholder />}
-          <LinearGradient colors={['rgba(0,0,0,0.25)', 'rgba(0,0,0,0)', 'rgba(0,0,0,0.25)']} style={StyleSheet.absoluteFill} />
+        <View onLayout={(e) => (headerHeight.current = e.nativeEvent.layout.height)}>
+          <ChurchHeader info={info} stats={page?.stats} busy={busy} onFollow={follow} onUnfollow={confirmUnfollow} />
         </View>
-
-        <View style={styles.head}>
-          <View style={styles.badge}>
-            <ChurchAvatar church={info} size={84} />
-          </View>
-          <View style={{ flex: 1 }} />
-          <View style={{ paddingTop: 10 }}>
-            {info.is_subscribed ? (
-              <Button title="Following" variant="outline" small loading={busy} onPress={confirmUnfollow} />
-            ) : (
-              <Button title="Follow" small loading={busy} onPress={toggleFollow} />
-            )}
-          </View>
-        </View>
-
+        <ChurchTabBar tabs={tabs} active={active} onChange={choose} />
         <View style={styles.body}>
-          <AppText variant="title" style={{ fontSize: 24, lineHeight: 30 }}>
-            {info.name}
-          </AppText>
-          {info.tagline ? <AppText style={{ color: COLORS.gray700, marginTop: 2 }}>{info.tagline}</AppText> : null}
-          <View style={styles.facts}>
-            {place ? <Pill label={place} icon="location-outline" /> : null}
-            {info.pastor ? <Pill label={info.pastor} icon="person-outline" /> : null}
-            {info.subscribers != null ? <Pill label={`${info.subscribers} followers`} icon="people-outline" /> : null}
-          </View>
-
-          {info.join_url ? (
-            <Pressable onPress={() => Share.share({ message: `Join ${info.name} on FaithFellows: ${info.join_url}` }).catch(() => {})} style={({ pressed }) => [styles.invite, pressed && { opacity: 0.85 }]} accessibilityRole="button" accessibilityLabel={`Invite a friend to ${info.name}`}>
-              <Ionicons name="person-add-outline" size={18} color={COLORS.primary} />
-              <AppText style={styles.inviteText}>Invite a friend to this church</AppText>
-            </Pressable>
-          ) : null}
-
-          {info.description ? (
-            <View style={styles.card}>
-              <AppText style={styles.cardTitle}>About</AppText>
-              <AppText style={styles.text}>{info.description}</AppText>
+          {pageQuery.loading && !page ? (
+            <View style={{ gap: SPACING.md }}>
+              <Skeleton height={200} radius={RADIUS.xl} />
+              <Skeleton height={76} radius={RADIUS.lg} />
+              <Skeleton height={76} radius={RADIUS.lg} />
             </View>
           ) : null}
-
-          {info.service_times?.length ? (
-            <View style={styles.card}>
-              <AppText style={styles.cardTitle}>Service times</AppText>
-              {info.service_times.map((s, i) => (
-                <View key={`${s.name}-${i}`} style={[styles.timeRow, i > 0 && styles.timeBorder]}>
-                  <View style={{ flex: 1 }}>
-                    <AppText style={{ fontFamily: FONTS.semibold, color: COLORS.black }}>{s.name}</AppText>
-                    <AppText variant="caption">{[s.day, s.language && s.language.toUpperCase()].filter(Boolean).join(' · ')}</AppText>
-                  </View>
-                  <AppText style={{ fontFamily: FONTS.medium, color: COLORS.primary, fontSize: 13 }}>{s.time}</AppText>
-                </View>
-              ))}
+          {pageQuery.error && !page ? (
+            <View>
+              <EmptyNote icon="cloud-offline-outline" title="The church page could not load" text={pageQuery.error} />
+              <Button title="Try again" variant="outline" onPress={pageQuery.retry} style={{ alignSelf: 'center' }} />
             </View>
           ) : null}
-        </View>
-
-        {upcoming.length ? (
-          <View style={{ marginTop: SPACING.md }}>
-            <SectionHeader title="Upcoming events" />
-            {upcoming.map((e) => {
-              const tile = dateTile(e.starts_at);
-              return (
-                <Pressable key={e.id} onPress={() => router.push({ pathname: '/event/[id]', params: { id: e.id } })} style={[styles.card, styles.listCard]} accessibilityRole="button">
-                  <View style={styles.tile}>
-                    <AppText style={styles.tileMonth}>{tile.month}</AppText>
-                    <AppText style={styles.tileDay}>{tile.day}</AppText>
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <AppText style={{ fontFamily: FONTS.bold, fontSize: 15, color: COLORS.black }} numberOfLines={2}>
-                      {e.title}
-                    </AppText>
-                    <AppText variant="caption" numberOfLines={1}>
-                      {[dayAndTime(e.starts_at), e.location?.name].filter(Boolean).join(' · ')}
-                    </AppText>
-                  </View>
-                  <Ionicons name="chevron-forward" size={16} color={COLORS.gray500} />
-                </Pressable>
-              );
-            })}
-          </View>
-        ) : null}
-
-        {recent.length ? (
-          <View style={{ marginTop: SPACING.md }}>
-            <SectionHeader title="Recent sermons" actionLabel="All sermons" onAction={() => router.push('/sermons')} />
-            {recent.map((s) => (
-              <Pressable key={s.id} onPress={() => router.push({ pathname: '/sermon/[id]', params: { id: s.id } })} style={[styles.card, styles.listCard]} accessibilityRole="button">
-                <View style={styles.play}>
-                  <Ionicons name="play" size={16} color={COLORS.white} style={{ marginLeft: 2 }} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <AppText style={{ fontFamily: FONTS.bold, fontSize: 15, color: COLORS.black }} numberOfLines={2}>
-                    {s.title}
-                  </AppText>
-                  <AppText variant="caption" numberOfLines={1}>
-                    {[s.preacher, s.duration_seconds ? formatDuration(s.duration_seconds) : null].filter(Boolean).join(' · ')}
-                  </AppText>
-                </View>
-              </Pressable>
-            ))}
-          </View>
-        ) : null}
-
-        <View style={[styles.body, { marginTop: SPACING.md }]}>
-          <View style={styles.card}>
-            <AppText style={styles.cardTitle}>Contact</AppText>
-            {info.contact ? (
-              <>
-                {info.contact.phone ? <Row icon="call-outline" label="Phone" value={info.contact.phone} onPress={() => Linking.openURL(`tel:${info.contact.phone}`)} /> : null}
-                {info.contact.email ? <Row icon="mail-outline" label="Email" value={info.contact.email} onPress={() => Linking.openURL(`mailto:${info.contact.email}`)} /> : null}
-                {info.contact.website ? <Row icon="globe-outline" label="Website" value={info.contact.website} onPress={() => open(info.contact.website)} /> : null}
-                {info.location?.address ? <Row icon="location-outline" label="Address" value={info.location.address} /> : null}
-              </>
-            ) : (
-              <View style={styles.locked}>
-                <Ionicons name="lock-closed-outline" size={20} color={COLORS.primary} />
-                <AppText style={{ flex: 1, color: COLORS.gray900 }}>Follow {info.name} to see their phone number, email and address.</AppText>
-              </View>
-            )}
-          </View>
-
-          <View style={styles.actions}>
-            <Button title="Give to this church" onPress={() => router.push({ pathname: '/give/[slug]', params: { slug: info.slug } })} style={{ flex: 1 }} />
-            {info.is_subscribed ? <Button title="Prayer wall" variant="outline" onPress={() => router.push('/prayer')} style={{ flex: 1 }} /> : null}
-          </View>
+          {page && active === 'home' ? <HomeTab info={info} page={page} go={choose} onFollow={info.is_subscribed ? () => choose('listen') : follow} /> : null}
+          {page && active === 'sermons' ? <SermonsTab info={info} /> : null}
+          {page && active === 'listen' ? <ListenTab info={info} page={page} onFollow={follow} /> : null}
+          {page && active === 'events' ? <EventsTab page={page} /> : null}
+          {page && active === 'updates' ? <UpdatesTab info={info} page={page} /> : null}
+          {page && active === 'give' ? <GiveTab info={info} page={page} /> : null}
+          {active === 'about' ? <AboutTab info={info} page={page ?? { socials: [], gallery: [] }} /> : null}
         </View>
       </ScrollView>
+      {floating}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  invite: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', gap: 8, marginTop: SPACING.md, paddingHorizontal: 14, height: 40, borderRadius: RADIUS.full, borderWidth: 1.5, borderColor: COLORS.primary, backgroundColor: COLORS.white },
-  inviteText: { fontFamily: FONTS.semibold, fontSize: 13.5, color: COLORS.primary },
-  screen: { flex: 1, backgroundColor: COLORS.canvas },
-  back: { position: 'absolute', left: SPACING.md, zIndex: 10, width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.92)', alignItems: 'center', justifyContent: 'center', ...SHADOW },
-  cover: { height: 230, backgroundColor: COLORS.primaryDark },
-  head: { flexDirection: 'row', paddingHorizontal: SPACING.md, marginTop: -42 },
-  badge: { width: 96, height: 96, borderRadius: 28, backgroundColor: COLORS.white, borderWidth: 4, borderColor: COLORS.white, alignItems: 'center', justifyContent: 'center', ...SHADOW },
-  body: { paddingHorizontal: SPACING.md, marginTop: SPACING.sm },
-  facts: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: SPACING.md },
-  card: { backgroundColor: COLORS.white, borderRadius: RADIUS.lg + 2, padding: SPACING.md, marginTop: SPACING.md, ...SHADOW },
-  listCard: { flexDirection: 'row', alignItems: 'center', gap: 12, marginHorizontal: SPACING.md, marginTop: 0, marginBottom: 10 },
-  cardTitle: { fontFamily: FONTS.bold, fontSize: 16, color: COLORS.black, marginBottom: 6 },
-  text: { fontFamily: FONTS.regular, fontSize: 14.5, lineHeight: 22, color: '#2B2B2B' },
-  timeRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10 },
-  timeBorder: { borderTopWidth: 1, borderTopColor: COLORS.gray100 },
-  tile: { width: 52, paddingVertical: 6, borderRadius: 14, backgroundColor: COLORS.primaryMist, alignItems: 'center' },
-  tileMonth: { fontFamily: FONTS.bold, fontSize: 10.5, letterSpacing: 0.8, color: COLORS.primary },
-  tileDay: { fontFamily: FONTS.bold, fontSize: 20, lineHeight: 23, color: COLORS.black },
-  play: { width: 40, height: 40, borderRadius: 20, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center' },
-  contactRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 8 },
-  contactIcon: { width: 36, height: 36, borderRadius: 12, backgroundColor: COLORS.primaryMist, alignItems: 'center', justifyContent: 'center' },
-  actions: { flexDirection: 'row', gap: 10, marginTop: SPACING.md },
-  locked: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: COLORS.primaryMist, borderRadius: RADIUS.md, padding: SPACING.md },
+  screen: { flex: 1, backgroundColor: SOFT.surface },
+  round: { position: 'absolute', zIndex: 10, width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.92)', alignItems: 'center', justifyContent: 'center', ...SHADOW },
+  body: { paddingHorizontal: SPACING.md, paddingTop: SPACING.md },
 });

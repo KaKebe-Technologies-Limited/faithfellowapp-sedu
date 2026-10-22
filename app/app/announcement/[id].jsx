@@ -1,10 +1,11 @@
-// An announcement from a church, read in full inside the app (urgent ones are marked in red).
+// An announcement from a church, read in full inside the app (urgent ones are marked in red), with 👍 ❤️ 😊 reactions under it so people can answer it with one tap.
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import AppText from '../../components/AppText';
 import ChurchAvatar from '../../components/ChurchAvatar';
 import Pill from '../../components/Pill';
+import ReactionBar from '../../components/ReactionBar';
 import ScreenHeader from '../../components/ScreenHeader';
 import StateView from '../../components/StateView';
 import { COLORS, FONTS, RADIUS, SPACING } from '../../constants/theme';
@@ -34,6 +35,7 @@ export default function AnnouncementScreen() {
               </View>
             </Pressable>
             <AppText style={styles.text}>{a.body}</AppText>
+            <ReactionBar type="announcement" id={a.id} reactions={a.reactions} />
           </ScrollView>
         ) : null}
       </StateView>

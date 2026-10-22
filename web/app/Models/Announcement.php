@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\Auditable;
 use App\Models\Concerns\BelongsToChurch;
+use App\Models\Concerns\HasEngagement;
 use App\Models\Concerns\Publishable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -15,7 +16,7 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media as SpatieMedia;
 
 class Announcement extends Model implements HasMedia
 {
-    use Auditable, BelongsToChurch, InteractsWithMedia, Publishable, SoftDeletes;
+    use Auditable, BelongsToChurch, HasEngagement, InteractsWithMedia, Publishable, SoftDeletes;
 
     protected $fillable = [
         'church_id', 'branch_id', 'small_group_id', 'user_id', 'title', 'body', 'audience', 'priority',

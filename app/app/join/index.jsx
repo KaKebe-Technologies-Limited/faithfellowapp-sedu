@@ -1,4 +1,4 @@
-// "Have a church code?": type the code a church gave you (GRACE7KQ), or paste its link, and the app shows the church. Works signed in or out.
+// "Have a church code?": type the code a church gave you (FF47KM), or paste its link, and the app shows the church. Works signed in or out.
 import { useState } from 'react';
 import { KeyboardAvoidingView, StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
@@ -26,7 +26,7 @@ export default function JoinCode() {
       <ScreenHeader title="Join your church" />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
         <KeyboardScroll contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
-          <AppText style={styles.lead}>Your church has a code, like GRACE7KQ. Type it here, or paste the link they sent you, and we will take you to your church.</AppText>
+          <AppText style={styles.lead}>Your church has a code of six characters, like FF47KM. Type it here, or paste the link they sent you, and we will take you to your church.</AppText>
           <TextField
             label="Church code or link"
             value={text}
@@ -35,7 +35,7 @@ export default function JoinCode() {
             autoCapitalize="characters"
             autoCorrect={false}
             autoComplete="off"
-            placeholder="GRACE7KQ"
+            placeholder="FF47KM"
             returnKeyType="go"
             onSubmitEditing={next}
           />

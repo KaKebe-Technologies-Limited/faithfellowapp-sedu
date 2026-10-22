@@ -7,7 +7,6 @@ use App\Models\Church;
 use App\Services\JoinLinks;
 use App\Support\Audit;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\View\View;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
@@ -47,15 +46,6 @@ class InviteController extends Controller
             'code' => $church->join_code,
             'qr' => QrCode::format('svg')->size(420)->margin(1)->errorCorrection('H')->generate($url),
         ]);
-    }
-
-    public function update(Request $request, Church $church): RedirectResponse
-    {
-        $data = $request->validate(['join_code' => ['required', 'string', 'max:60']]);
-        $this->links->change($church, $data['join_code']);
-        Audit::log('church.join_code_changed', $church, $church->join_code);
-
-        return back()->with('success', __('The link now uses the code :code. The old link no longer works.', ['code' => $church->join_code]));
     }
 
     public function regenerate(Church $church): RedirectResponse

@@ -1,4 +1,4 @@
-// A church's join link in the app. The link (https://faithfellows.com/join/GRACE7KQ, or faithfellows://join/GRACE7KQ) opens the app on the church;
+// A church's join link in the app. The link (https://faithfellows.com/join/FF47KM, or faithfellows://join/FF47KM) opens the app on the church;
 // the code is kept on the phone until the person has an account, then the church is followed for them. When the app was installed after the link
 // was opened, the code can still be found: from the Play Store install referrer (Android), or by the server noticing which church's link this phone
 // opened a moment ago, which the person is asked to confirm (many phones share one address, so it is never applied without a yes).
@@ -21,7 +21,7 @@ const set = (patch) => {
 
 export const usePendingJoin = () => useSyncExternalStore((l) => (listeners.add(l), () => listeners.delete(l)), () => snapshot);
 
-/** "https://faithfellows.com/join/grace7kq", "faithfellows://join/GRACE7KQ" or "grace 7kq" all become "GRACE7KQ". */
+/** "https://faithfellows.com/join/ff47km", "faithfellows://join/FF47KM" or "ff 47 km" all become "FF47KM". */
 export function parseJoinCode(text) {
   const raw = String(text ?? '').trim();
   const fromLink = raw.match(/\/join\/([A-Za-z0-9-]+)/);

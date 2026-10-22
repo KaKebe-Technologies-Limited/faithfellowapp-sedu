@@ -43,21 +43,21 @@ function inviteChurchWithAdmin(array $attributes = []): array
     return [$church, $admin];
 }
 
-test('a new church gets its own code from its name, and no two churches share one', function () {
+test('a new church gets its own six-character code, FF, two digits and two letters, and no two churches share one', function () {
     $a = inviteChurch();
     $b = inviteChurch();
 
-    expect($a->join_code)->toMatch('/^GRACE[A-Z0-9]{3}$/')
-        ->and($b->join_code)->toMatch('/^GRACE[A-Z0-9]{3}$/')
+    expect($a->join_code)->toMatch('/^FF\d{2}[A-HJ-NP-Z]{2}$/')
+        ->and($b->join_code)->toMatch('/^FF\d{2}[A-HJ-NP-Z]{2}$/')
         ->and($a->join_code)->not->toBe($b->join_code)
         ->and(app(JoinLinks::class)->url($a))->toBe(route('join.show', $a->join_code));
 });
 
 test('a code is found from a link, the app address or whatever the person typed', function () {
-    expect(JoinLinks::normalise('https://faithfellows.com/join/grace7kq?utm=x'))->toBe('GRACE7KQ')
-        ->and(JoinLinks::normalise('faithfellows://join/GRACE7KQ'))->toBe('GRACE7KQ')
-        ->and(JoinLinks::normalise(' grace 7kq '))->toBe('GRACE7KQ')
-        ->and(JoinLinks::normalise('grace-7kq'))->toBe('GRACE7KQ');
+    expect(JoinLinks::normalise('https://faithfellows.com/join/ff47km?utm=x'))->toBe('FF47KM')
+        ->and(JoinLinks::normalise('faithfellows://join/FF47KM'))->toBe('FF47KM')
+        ->and(JoinLinks::normalise(' ff 47 km '))->toBe('FF47KM')
+        ->and(JoinLinks::normalise('ff-47-km'))->toBe('FF47KM');
 
     $church = inviteChurch();
     $links = app(JoinLinks::class);
@@ -126,7 +126,7 @@ test('the app asks which church a code is before there is an account', function 
     $this->getJson(route('api.v1.join.show', $church->join_code))->assertOk()
         ->assertJsonPath('data.code', $church->join_code)->assertJsonPath('data.church.name', 'Grace Community Church Lira')
         ->assertJsonPath('data.church.slug', $church->slug)->assertJsonPath('data.requires_approval', false);
-    $this->getJson(route('api.v1.join.show', 'grace'.substr($church->join_code, 5)))->assertOk();
+    $this->getJson(route('api.v1.join.show', strtolower($church->join_code)))->assertOk();
     $this->getJson(route('api.v1.join.show', 'NOSUCH1'))->assertNotFound();
 });
 
@@ -209,32 +209,40 @@ test('church staff see the invite link, its QR code and its figures; other peopl
     $this->actingAs(member())->get(route('church-admin.invite.show', $church))->assertForbidden();
 });
 
-test('a church can choose its own code, never one that is taken, and a new code retires the old link', function () {
+test('a church can get a new code, and the old link stops working', function () {
     [$church, $admin] = inviteChurchWithAdmin(['name' => 'Grace Community Church Lira']);
-    $taken = inviteChurch(['name' => 'Hope Chapel']);
     $old = $church->join_code;
-
-    $this->actingAs($admin)->put(route('church-admin.invite.update', $church), ['join_code' => 'abc'])->assertSessionHasErrors('join_code');
-    $this->actingAs($admin)->put(route('church-admin.invite.update', $church), ['join_code' => $taken->join_code])->assertSessionHasErrors('join_code');
-    $this->actingAs($admin)->put(route('church-admin.invite.update', $church), ['join_code' => 'Grace Lira'])->assertSessionHasNoErrors();
-
-    expect($church->fresh()->join_code)->toBe('GRACELIRA');
-    $this->get(route('join.show', 'GRACELIRA'))->assertOk()->assertSee('Grace Community Church Lira');
-    $this->get(route('join.show', $old))->assertNotFound();
+    $this->get(route('join.show', $old))->assertOk();
 
     $this->actingAs($admin)->post(route('church-admin.invite.regenerate', $church))->assertRedirect();
-    expect($church->fresh()->join_code)->not->toBe('GRACELIRA');
-    $this->get(route('join.show', 'GRACELIRA'))->assertNotFound();
+
+    $new = $church->fresh()->join_code;
+    expect($new)->not->toBe($old)->and($new)->toMatch('/^FF\d{2}[A-HJ-NP-Z]{2}$/');
+    $this->get(route('join.show', $old))->assertNotFound();
+    $this->get(route('join.show', $new))->assertOk()->assertSee('Grace Community Church Lira');
 });
 
-test('a staff member without the settings permission can share the link but not change the code', function () {
+test('a staff member without the settings permission can share the link but not make a new code', function () {
     [$church] = inviteChurchWithAdmin();
     $role = $church->roles()->create(['name' => 'Media', 'slug' => 'media-helper', 'permissions' => ['content.manage']]);
     $staff = member();
     $church->staffMembers()->create(['user_id' => $staff->id, 'is_admin' => false, 'church_role_id' => $role->id, 'status' => 'active']);
+    $code = $church->join_code;
 
-    $this->actingAs($staff)->get(route('church-admin.invite.show', $church))->assertOk()->assertDontSee('Change code');
-    $this->actingAs($staff)->put(route('church-admin.invite.update', $church), ['join_code' => 'NEWCODE1'])->assertForbidden();
+    $this->actingAs($staff)->get(route('church-admin.invite.show', $church))->assertOk()->assertDontSee('Make a new code');
+    $this->actingAs($staff)->post(route('church-admin.invite.regenerate', $church))->assertForbidden();
+    expect($church->fresh()->join_code)->toBe($code);
+});
+
+test('codes made in the first version are replaced by short ones, and short ones are left alone', function () {
+    $a = inviteChurch();
+    $b = inviteChurch();
+    $keep = $b->join_code;
+    $a->forceFill(['join_code' => 'GRACE5L8'])->saveQuietly();
+
+    (require database_path('migrations/2026_01_29_000001_use_short_join_codes.php'))->up();
+
+    expect($a->fresh()->join_code)->toMatch('/^FF\d{2}[A-HJ-NP-Z]{2}$/')->and($b->fresh()->join_code)->toBe($keep);
 });
 
 test('staff can read the link from the app', function () {

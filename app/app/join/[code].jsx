@@ -1,4 +1,4 @@
-// A church's join link opened in the app (faithfellows://join/GRACE7KQ, or the link from a message). It shows the church. Signed out: "Create account
+// A church's join link opened in the app (faithfellows://join/FF47KM, or the link from a message). It shows the church. Signed out: "Create account
 // and join" keeps the church until the account is made, then it is followed for the person. Signed in: one tap follows it. Data: GET /join/{code},
 // POST /join/{code}/follow.
 import { useCallback, useEffect, useState } from 'react';
