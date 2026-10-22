@@ -240,7 +240,7 @@ return [
     | the answer and leaderboard show for reveal_seconds, then the next question starts.
     */
     'quizzes' => [
-        'question_seconds' => (int) env('FF_QUIZ_QUESTION_SECONDS', 10),
+        'question_seconds' => (int) env('FF_QUIZ_QUESTION_SECONDS', 15),
         'reveal_seconds' => (int) env('FF_QUIZ_REVEAL_SECONDS', 5),
     ],
 

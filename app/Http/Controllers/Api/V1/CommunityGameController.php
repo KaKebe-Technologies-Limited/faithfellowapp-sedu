@@ -23,15 +23,20 @@ class CommunityGameController extends Controller
     public function __construct(protected QuizService $quizzes) {}
 
     /** The ready-made games, grouped by category. */
-    public function library(): JsonResponse
+    public function library(Request $request): JsonResponse
     {
         $plays = QuizSession::whereNull('church_id')->selectRaw('quiz_id, COUNT(*) as c')->groupBy('quiz_id')->pluck('c', 'quiz_id');
+        // The member's best finished run of each quiz (once the database update for self-paced games is applied).
+        $best = QuizService::selfPaced() ? rescue(fn () => QuizPlayer::query()->join('quiz_sessions', 'quiz_sessions.id', '=', 'quiz_players.quiz_session_id')
+            ->where('quiz_players.user_id', $request->user()->id)->where('quiz_sessions.mode', 'self')->whereNotNull('quiz_players.finished_at')
+            ->selectRaw('quiz_sessions.quiz_id as quiz_id, MAX(quiz_players.score) as best, COUNT(*) as runs')->groupBy('quiz_sessions.quiz_id')->get()->keyBy('quiz_id'), collect(), false) : collect();
 
         return response()->json(['data' => [
             'categories' => collect(SampleGames::CATEGORIES)->map(fn ($c, $key) => ['key' => $key, 'label' => $c[0], 'color' => $c[1]])->values(),
             'quizzes' => Quiz::samples()->withCount('questions')->orderBy('id')->get()->map(fn (Quiz $q) => [
                 'id' => $q->id, 'title' => $q->title, 'description' => $q->description, 'category' => $q->category, 'emoji' => $q->emoji,
                 'questions' => (int) $q->questions_count, 'plays' => (int) ($plays[$q->id] ?? 0),
+                'my_best' => isset($best[$q->id]) ? (int) $best[$q->id]->best : null, 'my_runs' => (int) ($best[$q->id]->runs ?? 0),
             ])->values(),
         ]]);
     }
@@ -84,9 +89,21 @@ class CommunityGameController extends Controller
         return response()->json(['invited' => $sent, 'skipped' => count($data['user_ids']) - $users->count()]);
     }
 
-    /** The host starts the game: everyone who joined or was invited is told it has begun. */
+    /**
+     * The host starts the game: everyone who joined or was invited is told it has begun. In a self-paced game there is nobody to wait for:
+     * each player starts their own run, at the first question, whenever they like (also days after the host).
+     */
     public function begin(Request $request, QuizSession $quizSession): JsonResponse
     {
+        if ($quizSession->isSelf()) {
+            $me = $request->user();
+            abort_unless($quizSession->church_id === null && ($quizSession->host_id === $me->id || $quizSession->players()->where('user_id', $me->id)->exists()
+                || $quizSession->invites()->where('user_id', $me->id)->exists()), 404);
+            $this->quizzes->beginSelf($quizSession->load('quiz'), $this->quizzes->join($me, $quizSession));
+
+            return response()->json(['data' => $this->quizzes->state($quizSession, $me) + ['id' => $quizSession->id]]);
+        }
+
         $this->authorizeHost($request, $quizSession);
         $this->quizzes->beginCommunity($quizSession, $request->user());
 

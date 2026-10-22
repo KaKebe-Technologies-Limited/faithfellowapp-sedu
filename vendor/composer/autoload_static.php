@@ -1018,6 +1018,7 @@ class ComposerStaticInit6b61fb820dd7281d49fc501460ab603f
         'App\\Services\\ChurchOnboardingService' => __DIR__ . '/../..' . '/app/Services/ChurchOnboardingService.php',
         'App\\Services\\ChurchPageService' => __DIR__ . '/../..' . '/app/Services/ChurchPageService.php',
         'App\\Services\\ChurchProfileService' => __DIR__ . '/../..' . '/app/Services/ChurchProfileService.php',
+        'App\\Services\\Concerns\\SelfPacedQuizzes' => __DIR__ . '/../..' . '/app/Services/Concerns/SelfPacedQuizzes.php',
         'App\\Services\\ContentPublisher' => __DIR__ . '/../..' . '/app/Services/ContentPublisher.php',
         'App\\Services\\ContentPushes' => __DIR__ . '/../..' . '/app/Services/ContentPushes.php',
         'App\\Services\\DevicePushService' => __DIR__ . '/../..' . '/app/Services/DevicePushService.php',

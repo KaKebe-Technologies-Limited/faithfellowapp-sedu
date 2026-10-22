@@ -26,7 +26,7 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
     use HasApiTokens, HasChurchMemberships, HasFactory, HasRoles, HasSubscriptions, InteractsWithMedia, Notifiable, SoftDeletes;
 
     protected $fillable = [
-        'name', 'email', 'password', 'phone', 'country', 'city', 'language', 'timezone',
+        'name', 'nickname', 'email', 'password', 'phone', 'country', 'city', 'language', 'timezone',
         'gender', 'date_of_birth', 'wedding_anniversary', 'bio', 'interests', 'status',
         'quiet_hours_start', 'quiet_hours_end', 'digest_mode',
         'email_consent', 'terms_accepted_at', 'directory_opt_in', 'open_to_connect', 'low_bandwidth',
@@ -99,6 +99,12 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
     public function getFirstNameAttribute(): string
     {
         return Str::before($this->name, ' ') ?: $this->name;
+    }
+
+    /** The name other players see on a game board: what the person likes to be called, else their first name (never the full name). */
+    public function gameName(): string
+    {
+        return mb_substr(trim((string) $this->nickname) ?: $this->first_name, 0, 40);
     }
 
     // ── Roles & routing ──────────────────────────────────────────────────

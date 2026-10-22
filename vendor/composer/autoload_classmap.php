@@ -423,6 +423,7 @@ return array(
     'App\\Services\\ChurchOnboardingService' => $baseDir . '/app/Services/ChurchOnboardingService.php',
     'App\\Services\\ChurchPageService' => $baseDir . '/app/Services/ChurchPageService.php',
     'App\\Services\\ChurchProfileService' => $baseDir . '/app/Services/ChurchProfileService.php',
+    'App\\Services\\Concerns\\SelfPacedQuizzes' => $baseDir . '/app/Services/Concerns/SelfPacedQuizzes.php',
     'App\\Services\\ContentPublisher' => $baseDir . '/app/Services/ContentPublisher.php',
     'App\\Services\\ContentPushes' => $baseDir . '/app/Services/ContentPushes.php',
     'App\\Services\\DevicePushService' => $baseDir . '/app/Services/DevicePushService.php',
