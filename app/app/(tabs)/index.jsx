@@ -1,9 +1,9 @@
-// Home tab, in a soft frosted style on the brand colours, built round the radio. From the top: a deep wine panel with the song that is
-// on air (the card, the glowing play / stop button, up next, share and give; a short greeting shows for ten seconds when the app opens),
-// then on the pale surface: the songs played last, What's new (live service, notices, events, campaigns, devotional, sermons), Explore
-// (podcasts, hymns, sermons, events, prayer, giving, games, churches), the inspiration of the hour, the verse of the day, Games, the
-// top four podcasts and four sermons. Nothing more: your churches are on Me. When the radio is off, empty or out of reach, the slider
-// of highlights takes the top of the panel instead. Pull down to refresh.
+// Home tab, in a soft frosted style on the brand colours, built round the radio. From the top: a deep wine panel with the LIVE radio card
+// (the glowing play / stop button, pray, share and give; a short greeting shows for ten seconds when the app opens), then on the pale
+// surface straight away: Explore (podcasts, hymns, sermons, events, prayer, giving, games, churches), the "For you" slider of things to do
+// (join the live service, events, giving, the devotional, notices, prayer, hymns), the inspiration of the hour, the verse of the day,
+// Games, the top four podcasts and four sermons. Nothing more: your churches are on Me. When the radio is off, empty or out of reach, the
+// slider of church pictures takes the top of the panel instead. Pull down to refresh.
 // Data: GET /api/v1/home, in one request.
 import { useCallback, useRef } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
@@ -15,9 +15,8 @@ import HeroCarousel from '../../components/home/HeroCarousel';
 import HomeHero from '../../components/home/HomeHero';
 import { LatestSermons, TopPodcasts } from '../../components/home/HomeLists';
 import InspirationCard from '../../components/home/InspirationCard';
-import LastPlayed from '../../components/home/LastPlayed';
 import LiveBanner from '../../components/home/LiveBanner';
-import NewThisWeek from '../../components/home/NewThisWeek';
+import ForYou from '../../components/home/ForYou';
 import NotificationsPrompt from '../../components/home/NotificationsPrompt';
 import NowPlayingHero, { useHomeRadio } from '../../components/home/NowPlayingHero';
 import QuizCard from '../../components/home/QuizCard';
@@ -105,9 +104,8 @@ export default function HomeScreen() {
 
       {data ? (
         <>
-          {radio === 'ready' ? <LastPlayed /> : null}
-          <NewThisWeek home={data} withHighlights={radio !== 'none'} />
           <ExploreGrid home={data} />
+          <ForYou home={data} withHighlights={radio !== 'none'} />
           <NotificationsPrompt />
           {!hasChurches ? (
             <View style={{ paddingHorizontal: SPACING.md, marginBottom: SPACING.lg }}>

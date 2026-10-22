@@ -8,7 +8,7 @@
 import { useEffect, useSyncExternalStore } from 'react';
 import { AppState, Platform } from 'react-native';
 import { createAudioPlayer, setAudioModeAsync } from 'expo-audio';
-import api, { errorMessage, mediaUrl } from './api';
+import api, { SITE_URL, errorMessage, mediaUrl } from './api';
 import { claimAudio, registerAudio } from './audioFocus';
 
 let snapshot = {
@@ -137,7 +137,11 @@ export const toggleMusicRadio = () => playChannel(snapshot.stations.find((s) => 
 
 function lockScreen(track) {
   if (Platform.OS === 'web' || !player) return;
-  const metadata = { title: track.title, artist: track.artist || stationName(), albumTitle: stationName(), artworkUrl: mediaUrl(track.cover_url) };
+  // The music radio is live and everyone just listens: the lock screen names the radio, not the song or who made it. A podcast channel names its teaching.
+  const talk = snapshot.station?.kind === 'talk';
+  const metadata = talk
+    ? { title: track.title, artist: track.artist || stationName(), albumTitle: stationName(), artworkUrl: mediaUrl(track.cover_url) }
+    : { title: stationName(), artist: 'Live', albumTitle: 'FaithFellows', artworkUrl: `${SITE_URL}/images/icon-192.png` };
   try {
     player.setActiveForLockScreen(true, metadata, { showSeekForward: false, showSeekBackward: false, isLiveStream: true });
   } catch {
