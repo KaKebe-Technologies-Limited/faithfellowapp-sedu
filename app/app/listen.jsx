@@ -8,7 +8,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AppText from '../components/AppText';
-import Comments from '../components/podcast/Comments';
+import CommentsButton from '../components/podcast/CommentsButton';
 import Scrubber from '../components/podcast/Scrubber';
 import { RoundIconButton } from '../components/radio/RadioButton';
 import { BackButton, goBack } from '../components/ScreenHeader';
@@ -134,9 +134,7 @@ export default function ListenScreen() {
         ) : null}
 
         {!sermon && typeof episode.id === 'number' ? (
-          <View style={{ marginTop: 30 }}>
-            <Comments key={episode.id} base={`/podcast-episodes/${episode.id}`} dark />
-          </View>
+          <CommentsButton key={episode.id} base={`/podcast-episodes/${episode.id}`} dark center style={{ marginTop: 22 }} />
         ) : null}
 
         {queue.length ? (

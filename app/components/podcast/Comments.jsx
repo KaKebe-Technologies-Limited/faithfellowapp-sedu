@@ -1,5 +1,6 @@
 // What listeners say: a box to write a comment and the comments under it, newest first. Used under the Podcast radio, under a podcast channel of a church
-// and under a podcast episode (`base` is the address the comments belong to, for example /podcast-episodes/12 or /radio/stations/podcast).
+// and under a podcast episode (`base` is the address the comments belong to, for example /podcast-episodes/12 or /radio/stations/podcast). It is shown in the sheet
+// that the Comments button opens (CommentsButton).
 // A comment can be reported by anyone and removed by its author, by the podcast's maker and by the platform. No phone numbers, emails or links.
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, StyleSheet, TextInput, View } from 'react-native';
@@ -18,9 +19,9 @@ const REASONS = [
 ];
 
 /**
- * `limit`: comments per page. `compact`: show only the newest `limit` and a "See all" link (`onSeeAll`). `dark`: for the dark player screens.
+ * `limit`: comments per page. `dark`: for the dark player screens. `hideTitle`: when the sheet around it already says "Comments".
  */
-export default function Comments({ base, limit = 15, compact = false, onSeeAll, dark = false, title = 'Comments' }) {
+export default function Comments({ base, limit = 15, dark = false, title = 'Comments', hideTitle = false }) {
   const [items, setItems] = useState([]);
   const [meta, setMeta] = useState({ total: 0, current_page: 0, last_page: 1 });
   const [loading, setLoading] = useState(true);
@@ -118,13 +119,15 @@ export default function Comments({ base, limit = 15, compact = false, onSeeAll, 
 
   return (
     <View>
-      <View style={styles.head}>
-        <Ionicons name="chatbubbles" size={18} color={dark ? PURPLE.pale : PURPLE.main} />
-        <AppText style={[styles.title, { color: ink }]}>
-          {title}
-          {meta.total ? <AppText style={{ color: soft, fontFamily: FONTS.medium }}>{`  ${meta.total}`}</AppText> : null}
-        </AppText>
-      </View>
+      {hideTitle ? null : (
+        <View style={styles.head}>
+          <Ionicons name="chatbubbles" size={18} color={dark ? PURPLE.pale : PURPLE.main} />
+          <AppText style={[styles.title, { color: ink }]}>
+            {title}
+            {meta.total ? <AppText style={{ color: soft, fontFamily: FONTS.medium }}>{`  ${meta.total}`}</AppText> : null}
+          </AppText>
+        </View>
+      )}
 
       <View style={[styles.composer, dark ? styles.composerDark : styles.composerLight]}>
         <TextInput
@@ -170,13 +173,7 @@ export default function Comments({ base, limit = 15, compact = false, onSeeAll, 
         ))
       )}
 
-      {compact && meta.total > items.length ? (
-        <Pressable onPress={onSeeAll} accessibilityRole="button" style={styles.seeAll}>
-          <AppText style={[styles.seeAllText, dark && { color: PURPLE.pale }]}>See all {meta.total} comments</AppText>
-          <Ionicons name="chevron-forward" size={15} color={dark ? PURPLE.pale : PURPLE.main} />
-        </Pressable>
-      ) : null}
-      {!compact && meta.current_page < meta.last_page ? (
+      {meta.current_page < meta.last_page ? (
         <Pressable
           onPress={() => {
             setMore(true);

@@ -11,7 +11,7 @@ import { playChannel, selectStation, useRadio, useStationInfo } from '../../lib/
 import { useFetch } from '../../lib/useFetch';
 import AppText from '../AppText';
 import ChurchAvatar from '../ChurchAvatar';
-import Comments from './Comments';
+import CommentsButton from './CommentsButton';
 
 const MARK = require('../../assets/logo-mark.png');
 
@@ -116,9 +116,7 @@ export default function PodcastRadio() {
           <View style={{ paddingHorizontal: SPACING.md }}>
             <MainCard channel={main} />
           </View>
-          <View style={styles.commentsCard}>
-            <Comments key={main.slug} base={`/radio/stations/${main.slug}`} limit={3} compact onSeeAll={() => openPlayer(main.slug)} title="Listeners' comments" />
-          </View>
+          <CommentsButton key={main.slug} base={`/radio/stations/${main.slug}`} title="Comments" style={styles.commentsButton} />
         </>
       ) : null}
       {churches.length ? (
@@ -137,7 +135,7 @@ const styles = StyleSheet.create({
   sectionHead: { flexDirection: 'row', alignItems: 'center', gap: 9, paddingHorizontal: SPACING.md, marginBottom: 12 },
   sectionBar: { width: 4, height: 20, borderRadius: 2, backgroundColor: PURPLE.main },
   section: { fontFamily: FONTS.bold, fontSize: 19, color: COLORS.black, flex: 1 },
-  commentsCard: { backgroundColor: COLORS.white, borderRadius: RADIUS.xl - 4, padding: SPACING.md, marginHorizontal: SPACING.md, marginTop: 12, ...SHADOW },
+  commentsButton: { marginHorizontal: SPACING.md, marginTop: 12 },
   subsection: { fontFamily: FONTS.semibold, fontSize: 14, color: COLORS.gray700, paddingHorizontal: SPACING.md, marginBottom: 8 },
   mark: { position: 'absolute', right: -30, top: -34, width: 220, height: 220, tintColor: '#fff', opacity: 0.12 },
   card: { height: 178, borderRadius: RADIUS.xl, overflow: 'hidden', backgroundColor: '#4527A0', ...SHADOW, shadowOpacity: 0.16 },

@@ -9,7 +9,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AppText from '../components/AppText';
-import Comments from '../components/podcast/Comments';
+import CommentsButton from '../components/podcast/CommentsButton';
 import RadioButton, { RoundIconButton } from '../components/radio/RadioButton';
 import { BackButton } from '../components/ScreenHeader';
 import { FONTS, SPACING } from '../constants/theme';
@@ -116,9 +116,7 @@ export default function RadioScreen() {
         )}
 
         {showing === 'talk' && station?.slug ? (
-          <View style={{ marginTop: 30 }}>
-            <Comments key={station.slug} base={`/radio/stations/${station.slug}`} dark title="Listeners' comments" />
-          </View>
+          <CommentsButton key={station.slug} base={`/radio/stations/${station.slug}`} dark center style={{ marginTop: 26 }} />
         ) : null}
 
         {scheduled ? (
