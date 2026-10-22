@@ -116,7 +116,7 @@ export default function LiveScreen() {
           <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
             <View style={{ paddingTop: insets.top, backgroundColor: '#000' }}>
               {status === 'live' && source ? (
-                <Video url={source} onProblem={() => setProblem(true)} />
+                <Video url={source} clean onProblem={() => setProblem(true)} />
               ) : status !== 'live' && recording ? (
                 <Video url={recording} autoPlay={false} />
               ) : (

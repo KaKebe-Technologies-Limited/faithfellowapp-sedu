@@ -13,6 +13,7 @@ import { WebView } from 'react-native-webview';
 import { COLORS, FONTS, RADIUS, SHADOW, SPACING } from '../constants/theme';
 import { mediaUrl } from '../lib/api';
 import { formatDuration } from '../lib/format';
+import { EMBED_ORIGIN, youtubePage } from '../lib/youtubePage';
 import AppText from './AppText';
 
 /** True for page-style video links (YouTube, Facebook, Vimeo…) that need a web view rather than a video player. */
@@ -27,34 +28,7 @@ export function youtubeWatchUrl(url = '') {
   return id ? `https://www.youtube.com/watch?v=${id}` : null;
 }
 
-/** The site that shows the embedded players. YouTube (and some Vimeo videos) check it: a player with no site to point to is refused. */
-const EMBED_ORIGIN = 'https://faithfellows.com';
-
 const isYoutubeEmbed = (url = '') => /youtube(?:-nocookie)?\.com\/embed\//i.test(url);
-
-/** A page with the YouTube player in it, and a script that tells the app when the player says it cannot play the video. */
-function youtubePage(url) {
-  const src = `${url}${url.includes('?') ? '&' : '?'}enablejsapi=1&playsinline=1&rel=0&origin=${encodeURIComponent(EMBED_ORIGIN)}`.replace(/&/g, '&amp;');
-
-  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>html,body{margin:0;height:100%;background:#000;overflow:hidden}iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:0}</style></head><body>
-<iframe id="p" src="${src}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
-<script>
-(function () {
-  var frame = document.getElementById('p');
-  var tell = function (text) { if (window.ReactNativeWebView) window.ReactNativeWebView.postMessage(text); };
-  frame.addEventListener('load', function () {
-    try { frame.contentWindow.postMessage(JSON.stringify({ event: 'listening', id: 1, channel: 'widget' }), '*'); } catch (e) {}
-  });
-  window.addEventListener('message', function (e) {
-    try {
-      var d = typeof e.data === 'string' ? JSON.parse(e.data) : e.data;
-      if (d && d.event === 'onError') tell('error:' + d.info);
-      else if (d && (d.event === 'onReady' || d.event === 'initialDelivery' || d.event === 'infoDelivery' || d.event === 'onStateChange')) tell('ready');
-    } catch (err) {}
-  });
-})();
-</script></body></html>`;
-}
 
 /** `onProblem` is called when the video cannot be played (the picture never starts, or the page says no), so the screen can offer the audio instead. */
 export function VideoPlayer({ url, autoPlay = true, style, onProblem }) {
@@ -72,7 +46,8 @@ export function VideoPlayer({ url, autoPlay = true, style, onProblem }) {
   return <VideoView player={player} style={[styles.video, style]} nativeControls allowsFullscreen allowsPictureInPicture contentFit="contain" />;
 }
 
-export function EmbedPlayer({ url, style, onProblem }) {
+/** `clean`: the look for a live service (no YouTube control bar, so no logo while it plays; see lib/youtubePage.js). */
+export function EmbedPlayer({ url, style, onProblem, clean = false }) {
   const youtube = isYoutubeEmbed(url);
   const ready = useRef(false);
   const problem = useRef(onProblem);
@@ -91,7 +66,7 @@ export function EmbedPlayer({ url, style, onProblem }) {
     return (
       <View style={[styles.video, style]}>
         {/* The web preview uses a plain iframe; phones use the web view below. */}
-        <iframe title="Video" src={url} style={{ width: '100%', height: '100%', border: 0 }} allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen />
+        <iframe title="Video" src={clean && isYoutubeEmbed(url) ? `${url}${url.includes('?') ? '&' : '?'}controls=0&disablekb=1&fs=0&iv_load_policy=3` : url} style={{ width: '100%', height: '100%', border: 0 }} allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen />
       </View>
     );
   }
@@ -99,7 +74,7 @@ export function EmbedPlayer({ url, style, onProblem }) {
   return (
     <View style={[styles.video, style]}>
       <WebView
-        source={youtube ? { html: youtubePage(url), baseUrl: EMBED_ORIGIN } : { uri: url, headers: { Referer: EMBED_ORIGIN } }}
+        source={youtube ? { html: youtubePage(url, { clean }), baseUrl: EMBED_ORIGIN } : { uri: url, headers: { Referer: EMBED_ORIGIN } }}
         originWhitelist={['*']}
         allowsInlineMediaPlayback
         allowsFullscreenVideo
