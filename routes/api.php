@@ -84,11 +84,18 @@ Route::prefix('v1')->name('api.v1.')->middleware('throttle:api')->group(function
             Route::post('/podcasts/{podcast}/follow', [V1\PodcastController::class, 'follow'])->whereNumber('podcast')->middleware('throttle:engagement')->name('podcasts.follow');
             Route::delete('/podcasts/{podcast}/follow', [V1\PodcastController::class, 'unfollow'])->whereNumber('podcast')->name('podcasts.unfollow');
             Route::post('/podcast-episodes/{episode}/played', [V1\PodcastController::class, 'played'])->middleware('throttle:120,1')->name('podcasts.played');
+            // What listeners say about an episode (and, in the radio group below, about a podcast channel).
+            Route::get('/podcast-episodes/{episode}/comments', [V1\PodcastCommentController::class, 'episode'])->whereNumber('episode')->middleware('throttle:240,1')->name('podcast-comments.episode');
+            Route::post('/podcast-episodes/{episode}/comments', [V1\PodcastCommentController::class, 'addToEpisode'])->whereNumber('episode')->middleware('throttle:engagement')->name('podcast-comments.episode.store');
+            Route::delete('/podcast-comments/{podcastComment}', [V1\PodcastCommentController::class, 'destroy'])->whereNumber('podcastComment')->name('podcast-comments.destroy');
+            Route::post('/podcast-comments/{podcastComment}/report', [V1\PodcastCommentController::class, 'report'])->whereNumber('podcastComment')->middleware('throttle:20,1')->name('podcast-comments.report');
         });
         Route::middleware('feature:radio')->group(function () {
             Route::get('/radio', [V1\RadioController::class, 'show'])->middleware('throttle:120,1')->name('radio');
             Route::get('/radio/stations', [V1\RadioController::class, 'stations'])->middleware('throttle:120,1')->name('radio.stations');
             Route::get('/radio/stations/{slug}', [V1\RadioController::class, 'station'])->where('slug', '[a-z0-9-]+')->middleware('throttle:240,1')->name('radio.station');
+            Route::get('/radio/stations/{slug}/comments', [V1\PodcastCommentController::class, 'station'])->where('slug', '[a-z0-9-]+')->middleware('throttle:240,1')->name('radio.station.comments');
+            Route::post('/radio/stations/{slug}/comments', [V1\PodcastCommentController::class, 'addToStation'])->where('slug', '[a-z0-9-]+')->middleware('throttle:engagement')->name('radio.station.comments.store');
         });
         Route::get('/posts/{post}', [V1\ContentController::class, 'post'])->name('posts.show');
         Route::get('/announcements/{announcement}', [V1\ReadingController::class, 'announcement'])->name('announcements.show');

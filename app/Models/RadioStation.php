@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
@@ -31,6 +32,11 @@ class RadioStation extends Model
     public function church(): BelongsTo
     {
         return $this->belongsTo(Church::class);
+    }
+
+    public function comments(): MorphMany
+    {
+        return $this->morphMany(PodcastComment::class, 'commentable');
     }
 
     public function tracks(): HasMany

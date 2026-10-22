@@ -18,6 +18,7 @@ class ContentReport extends Model
     public const TYPES = [
         'post' => Post::class,
         'comment' => Comment::class,
+        'podcast_comment' => PodcastComment::class,
         'prayer' => PrayerRequest::class,
         'testimony' => Testimony::class,
         'live_chat' => LiveChatMessage::class,

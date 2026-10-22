@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /** One episode: a title, a few words about it, and the link to its audio on the host site. */
@@ -24,6 +25,11 @@ class PodcastEpisode extends Model
         $refresh = fn (PodcastEpisode $e) => $e->podcast?->refreshCounts();
         static::saved($refresh);
         static::deleted($refresh);
+    }
+
+    public function comments(): MorphMany
+    {
+        return $this->morphMany(PodcastComment::class, 'commentable');
     }
 
     public function podcast(): BelongsTo
