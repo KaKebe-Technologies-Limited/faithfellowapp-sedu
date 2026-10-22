@@ -24,7 +24,7 @@ class Podcast extends Model implements HasMedia
 
     /** key => label */
     public const CATEGORIES = [
-        'teaching' => 'Bible teaching', 'sermons' => 'Sermons', 'devotional' => 'Devotionals', 'prayer' => 'Prayer',
+        'faith' => 'Faith', 'motivation' => 'Motivation', 'teaching' => 'Bible teaching', 'sermons' => 'Sermons', 'devotional' => 'Devotionals', 'prayer' => 'Prayer',
         'worship' => 'Worship & music', 'testimonies' => 'Testimonies', 'family' => 'Marriage & family', 'youth' => 'Youth',
         'kids' => 'Kids', 'leadership' => 'Leadership', 'missions' => 'Missions & outreach', 'interviews' => 'Interviews',
     ];

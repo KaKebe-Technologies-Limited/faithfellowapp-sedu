@@ -190,7 +190,7 @@ class PodcastFeedService
     {
         $text = strtolower(implode(' ', $names));
         $rules = ['kids' => 'kid|children', 'youth' => 'youth|teen', 'family' => 'marriage|family|parent', 'prayer' => 'prayer', 'worship' => 'music|worship|praise', 'sermons' => 'sermon|preach',
-            'leadership' => 'leader', 'missions' => 'mission|outreach', 'interviews' => 'interview', 'testimonies' => 'testimon|stories|journal', 'devotional' => 'devotion|inspiration', 'teaching' => 'christian|bible|scripture|religion|spiritual|teach'];
+            'leadership' => 'leader', 'missions' => 'mission|outreach', 'interviews' => 'interview', 'testimonies' => 'testimon|stories|journal', 'motivation' => 'motivat|self-help|self help|self-improvement|mindset|success', 'devotional' => 'devotion|inspiration', 'faith' => 'faith', 'teaching' => 'christian|bible|scripture|religion|spiritual|teach'];
         foreach ($rules as $key => $pattern) {
             if (preg_match('/'.$pattern.'/', $text)) {
                 return $key;
