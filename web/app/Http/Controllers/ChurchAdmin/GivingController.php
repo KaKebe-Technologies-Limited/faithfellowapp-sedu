@@ -7,6 +7,7 @@ use App\Http\Requests\Giving\RecordDonationRequest;
 use App\Models\Church;
 use App\Models\Donation;
 use App\Services\AnalyticsService;
+use App\Services\CampaignService;
 use App\Services\DonationService;
 use App\Services\FinancialRecords;
 use App\Support\CsvExport;
@@ -16,6 +17,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -26,8 +28,40 @@ class GivingController extends Controller
 {
     public function __construct(protected DonationService $donations, protected AnalyticsService $analytics) {}
 
+    /**
+     * Brings the church's giving up to date: waiting mobile money gifts are checked with the gateway (a gift is paid when the giver approves it on the
+     * phone, but the app, the callback or the cron job may not have told us), and campaign totals are counted again if they fell behind. Done when the
+     * finance pages are opened, at most once a minute, and at once with the Check payments button.
+     *
+     * @return array{settled: int, campaigns: int}
+     */
+    protected function bringUpToDate(Church $church, bool $force = false): array
+    {
+        if (! $force && ! Cache::add('giving-heal:'.$church->id, 1, 60)) {
+            return ['settled' => 0, 'campaigns' => 0];
+        }
+
+        return [
+            'settled' => $this->donations->refreshPending($church->donations(), 10),
+            'campaigns' => rescue(fn () => app(CampaignService::class)->healChurch($church), 0, false),
+        ];
+    }
+
+    /** "Check payments": the gifts that are still waiting are asked about now. */
+    public function refresh(Church $church): RedirectResponse
+    {
+        $result = $this->bringUpToDate($church, true);
+        $waiting = $church->donations()->whereIn('status', ['pending', 'processing'])->whereNotIn('method', ['cash', 'bank'])->count();
+
+        return back()->with('success', $result['settled']
+            ? trans_choice(':n payment was confirmed and is now in your figures.|:n payments were confirmed and are now in your figures.', $result['settled'], ['n' => $result['settled']]).($waiting ? ' '.__(':n still waiting for the giver to approve on their phone.', ['n' => $waiting]) : '')
+            : ($waiting ? __(':n payment is still waiting: the giver has not approved it on their phone yet, or the payment service has not answered.', ['n' => $waiting]) : __('Nothing is waiting. Every payment is up to date.')));
+    }
+
     public function index(Request $request, Church $church): View
     {
+        $this->bringUpToDate($church);
+
         return view('church-admin.giving.index', [
             'church' => $church,
             'finance' => $this->analytics->financeDashboard($church),
@@ -40,6 +74,8 @@ class GivingController extends Controller
 
     public function transactions(Request $request, Church $church): View
     {
+        $this->bringUpToDate($church);
+
         return view('church-admin.giving.transactions', [
             'church' => $church,
             'donations' => $this->filtered($request, $church)->with(['user', 'campaign', 'recorder', 'branch'])->latest()->paginate(30)->withQueryString(),

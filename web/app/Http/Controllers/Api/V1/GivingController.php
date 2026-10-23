@@ -19,6 +19,7 @@ use App\Support\MobileMoneyPhone;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\Rule;
 
 /**
@@ -33,6 +34,11 @@ class GivingController extends Controller
 
     public function index(Request $request): AnonymousResourceCollection
     {
+        // A gift approved on the phone after the app was closed is found when the giver looks at their history (at most every 30 seconds).
+        if (Cache::add('give-heal:'.$request->user()->id, 1, 30)) {
+            $this->donations->refreshPending(Donation::where('user_id', $request->user()->id), 5);
+        }
+
         return DonationResource::collection(Donation::where('user_id', $request->user()->id)->with(['church.media', 'campaign'])
             ->whereIn('status', ['succeeded', 'pending', 'processing', 'refunded', 'failed'])
             ->when($request->filled('year'), fn ($q) => $q->whereYear('created_at', (int) $request->query('year')))

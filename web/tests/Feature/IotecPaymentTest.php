@@ -2,6 +2,7 @@
 
 use App\Models\Church;
 use App\Models\Donation;
+use App\Services\DonationService;
 use App\Services\Payments\Drivers\IotecDriver;
 use App\Services\Payments\Drivers\SandboxDriver;
 use App\Services\PaymentService;
@@ -9,7 +10,9 @@ use App\Support\MobileMoneyPhone;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Validator;
+use Laravel\Sanctum\Sanctum;
 
 /*
 | ioTec Pay: mobile money collected inside the app. The giver enters a number and a PIN prompt appears on their phone;
@@ -141,4 +144,105 @@ test('the church is named on the prompt the giver sees and beside the payment in
         && str_starts_with($r['payerNote'], 'Gift to Grace Community Church Lira') && strlen($r['payerNote']) <= 60
         && str_contains($r['payeeNote'], $gift->reference) && str_contains($r['payeeNote'], 'Grace Community Church Lira'));
     expect($result->message)->toContain('ioTec Pay')->toContain('Grace Community Church Lira');
+});
+
+// ── A gift that was paid is found, whether or not the callback, the phone, the queue or the cron job told us ─────
+
+/** A church with a finance admin, a campaign, and a mobile money gift to the campaign that is still waiting, made a few minutes ago. */
+function waitingCampaignGift(int $amount = 1000, string $status = 'processing'): array
+{
+    $church = Church::factory()->create();
+    $admin = member();
+    $church->staffMembers()->create(['user_id' => $admin->id, 'is_admin' => true, 'status' => 'active']);
+    $giver = member(['phone' => '0772123456']);
+    $campaign = $church->campaigns()->create(['title' => 'Roof Fund', 'type' => 'building', 'goal_amount' => 100000, 'status' => 'active', 'visibility' => 'public']);
+    $gift = Donation::create(['church_id' => $church->id, 'user_id' => $giver->id, 'campaign_id' => $campaign->id, 'category' => 'campaign', 'amount' => $amount, 'currency' => 'UGX',
+        'method' => 'mtn_momo', 'status' => $status, 'phone' => '0772123456', 'provider_ref' => 'tx-'.uniqid(), 'reference' => 'FF-TEST-'.uniqid()]);
+    Donation::whereKey($gift->id)->update(['created_at' => now()->subMinutes(5)]);
+
+    return [$church, $admin, $giver, $campaign, $gift->fresh()];
+}
+
+test('opening the finance page asks ioTec about gifts still waiting, and a paid gift is counted at once', function () {
+    [$church, $admin, , $campaign, $gift] = waitingCampaignGift(1000);
+    fakeIotec([], ['id' => 'tx-77', 'status' => 'Success', 'externalId' => $gift->reference]);
+
+    $page = $this->actingAs($admin)->get(route('church-admin.giving.index', $church))->assertOk();
+
+    expect($gift->fresh()->status)->toBe('succeeded')->and($gift->fresh()->receipt_number)->not->toBeNull()
+        ->and((float) $campaign->fresh()->raised_amount)->toBe(1000.0)->and($campaign->fresh()->givers_count)->toBe(1);
+    // The page was built after the gift was confirmed: the figures include it.
+    $page->assertSee('UGX 1,000')->assertDontSee('waiting to be confirmed');
+});
+
+test('Check payments says what happened, and a gift the giver has not approved yet stays waiting', function () {
+    [$church, $admin, , $campaign, $gift] = waitingCampaignGift(1000, 'pending');
+    fakeIotec([], ['id' => 'tx-77', 'status' => 'Pending', 'externalId' => $gift->reference]);
+
+    $this->actingAs($admin)->post(route('church-admin.giving.refresh', $church))->assertRedirect()->assertSessionHas('success', fn ($m) => str_contains($m, '1 payment is still waiting'));
+    expect($gift->fresh()->status)->toBe('pending')->and((float) $campaign->fresh()->raised_amount)->toBe(0.0);
+
+    // The giver approves; the button brings it in and says so.
+    fakeIotec([], ['id' => 'tx-77', 'status' => 'Success', 'externalId' => $gift->reference]);
+    $this->actingAs($admin)->post(route('church-admin.giving.refresh', $church))->assertSessionHas('success', fn ($m) => str_contains($m, '1 payment was confirmed'));
+    expect($gift->fresh()->status)->toBe('succeeded')->and((float) $campaign->fresh()->raised_amount)->toBe(1000.0);
+
+    // A gift ioTec says failed is settled too, and is not counted.
+    [$church2, $admin2, , $campaign2, $failed] = waitingCampaignGift(2000);
+    fakeIotec([], ['id' => 'tx-77', 'status' => 'Failed', 'statusMessage' => 'Declined', 'externalId' => $failed->reference]);
+    $this->actingAs($admin2)->post(route('church-admin.giving.refresh', $church2))->assertRedirect();
+    expect($failed->fresh()->status)->toBe('failed')->and((float) $campaign2->fresh()->raised_amount)->toBe(0.0);
+
+    // Only people who may see the finances can ask.
+    $this->actingAs(member())->post(route('church-admin.giving.refresh', $church))->assertForbidden();
+});
+
+test('a gift is not asked about again and again: very new gifts and old ones are left to the other checks', function () {
+    [$church, $admin, , , $gift] = waitingCampaignGift(1000);
+    Donation::whereKey($gift->id)->update(['created_at' => now()->subSeconds(10)]);
+    fakeIotec([], ['id' => 'tx-77', 'status' => 'Success', 'externalId' => $gift->reference]);
+
+    $this->actingAs($admin)->get(route('church-admin.giving.index', $church))->assertOk();
+    expect($gift->fresh()->status)->toBe('processing'); // 10 seconds old: the giver is probably still looking at the prompt
+
+    Http::assertNotSent(fn ($r) => str_contains($r->url(), '/collections/status/'));
+});
+
+test('a giver who closed the app before approving finds the gift paid when they open their history', function () {
+    [, , $giver, $campaign, $gift] = waitingCampaignGift(1000);
+    fakeIotec([], ['id' => 'tx-77', 'status' => 'Success', 'externalId' => $gift->reference]);
+
+    Sanctum::actingAs($giver, ['member']);
+    $rows = $this->getJson(route('api.v1.giving.index'))->assertOk()->json('data');
+
+    expect($rows[0]['status'])->toBe('succeeded')->and($gift->fresh()->status)->toBe('succeeded')->and((float) $campaign->fresh()->raised_amount)->toBe(1000.0);
+});
+
+test('a campaign counts a paid gift at once, even with no queue worker, and corrects itself when it is opened', function () {
+    Queue::fake();
+    [$church, $admin, $giver, $campaign, $gift] = waitingCampaignGift(1000);
+
+    app(DonationService::class)->markSucceeded($gift, 'tx-77');
+    expect((float) $campaign->fresh()->raised_amount)->toBe(1000.0); // not waiting for a queued job
+
+    // A total that fell behind (a job that never ran) is put right the next time the campaign is looked at, by the church and by members.
+    $campaign->forceFill(['raised_amount' => 0, 'givers_count' => 0])->save();
+    $this->actingAs($admin)->get(route('church-admin.campaigns.index', $church))->assertOk();
+    expect((float) $campaign->fresh()->raised_amount)->toBe(1000.0);
+
+    $campaign->forceFill(['raised_amount' => 0])->save();
+    Sanctum::actingAs($giver, ['member']);
+    $this->getJson(route('api.v1.campaigns.show', $campaign->id))->assertOk()->assertJsonPath('data.raised', 1000);
+    expect((float) $campaign->fresh()->raised_amount)->toBe(1000.0);
+});
+
+test('ioTec\'s notice keeps ioTec\'s id for a gift that had none, so the payment can be looked up', function () {
+    [, , , , $gift] = waitingCampaignGift(1000, 'pending');
+    Donation::whereKey($gift->id)->update(['provider_ref' => null]);
+    fakeIotec([], ['id' => 'tx-notice', 'status' => 'Success', 'externalId' => $gift->reference]);
+
+    $this->postJson('/webhooks/iotec', ['externalId' => $gift->reference, 'id' => 'tx-notice', 'status' => 'Success'])->assertOk()->assertJson(['status' => 'succeeded']);
+
+    expect($gift->fresh()->provider_ref)->toBe('tx-notice')->and($gift->fresh()->status)->toBe('succeeded');
+    Http::assertSent(fn ($r) => str_contains($r->url(), '/collections/status/tx-notice'));
 });

@@ -19,6 +19,7 @@ import OpeningFlash from '../components/OpeningFlash';
 import { COLORS } from '../constants/theme';
 import { useActivityTracking } from '../lib/activity';
 import { markFlashDone } from '../lib/appStart';
+import { refreshFlash, storedFlash } from '../lib/openingFlash';
 import { AuthProvider, useAuth } from '../lib/auth';
 import { useJoinLink } from '../lib/join';
 import { useOfflineSync } from '../lib/outbox';
@@ -37,6 +38,19 @@ function Navigator({ fontsLoaded }) {
   useActivityTracking(user); // the figures on your profile: minutes reading and listening, what you shared
   useAppUpdates();
   const [flash, setFlash] = useState(true); // the opening flash, once each time the app is opened
+  const [flashSettings, setFlashSettings] = useState(null); // what the platform admin set for it (the last answer, kept on the phone)
+
+  useEffect(() => {
+    storedFlash().then(setFlashSettings);
+    refreshFlash(); // the answer is kept for the next time the app is opened
+  }, []);
+
+  useEffect(() => {
+    if (flashSettings && !flashSettings.enabled) {
+      setFlash(false);
+      markFlashDone();
+    }
+  }, [flashSettings]);
   const segments = useSegments();
   useJoinLink({ ready, token, user, place: segments[0] }); // a church's join link: keep it through sign-up, then follow the church
   const insets = useSafeAreaInsets();
@@ -62,7 +76,9 @@ function Navigator({ fontsLoaded }) {
         }}
       />
       {showBar ? <NowPlayingBar bottomInset={insets.bottom} /> : null}
-      {flash && ready ? <OpeningFlash onDone={() => { setFlash(false); markFlashDone(); }} /> : null}
+      {flash && ready && flashSettings?.enabled ? (
+        <OpeningFlash seconds={flashSettings.seconds} speed={flashSettings.speed} title={flashSettings.title} text={flashSettings.text} onDone={() => { setFlash(false); markFlashDone(); }} />
+      ) : null}
     </View>
   );
 }

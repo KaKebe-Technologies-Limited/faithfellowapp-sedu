@@ -44,6 +44,9 @@ class PaymentWebhookController extends Controller
         }
 
         if ($donation = Donation::where('reference', $result->reference)->first()) {
+            if (! $donation->provider_ref && $result->providerRef && ! Donation::where('provider_ref', $result->providerRef)->exists()) {
+                $donation->update(['provider_ref' => $result->providerRef]);
+            }
             // Stripe events are signature-verified; mobile money is re-checked with the API.
             $method === 'stripe' && $result->isFinal()
                 ? $donations->applyResult($donation, $result)

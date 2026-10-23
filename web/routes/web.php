@@ -362,6 +362,7 @@ Route::prefix('church/{church}/admin')->name('church-admin.')
         Route::middleware('church.can:giving.view')->group(function () {
             Route::get('/giving', [ChurchAdmin\GivingController::class, 'index'])->name('giving.index');
             Route::get('/giving/transactions', [ChurchAdmin\GivingController::class, 'transactions'])->name('giving.transactions');
+            Route::post('/giving/refresh', [ChurchAdmin\GivingController::class, 'refresh'])->middleware('throttle:20,1')->name('giving.refresh');
             Route::get('/giving/export', [ChurchAdmin\GivingController::class, 'export'])->name('giving.export');
             Route::get('/giving/records', [ChurchAdmin\GivingController::class, 'records'])->name('giving.records');
             Route::get('/giving/records/export', [ChurchAdmin\GivingController::class, 'recordsExport'])->name('giving.records.export');

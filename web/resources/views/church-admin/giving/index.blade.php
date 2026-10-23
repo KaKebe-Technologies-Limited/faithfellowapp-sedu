@@ -8,6 +8,14 @@
     </x-ff.page-header>
     @include('church-admin.giving._nav')
 
+    @if ($finance['pending'] > 0)
+        <div class="alert alert-warning rounded-4 d-flex flex-wrap align-items-center gap-2">
+            <i class="bi bi-hourglass-split"></i>
+            <span>{{ trans_choice(':n payment is waiting to be confirmed. A gift is counted below as soon as the payment service says it was paid.|:n payments are waiting to be confirmed. A gift is counted below as soon as the payment service says it was paid.', $finance['pending'], ['n' => $finance['pending']]) }}</span>
+            <form method="POST" action="{{ route('church-admin.giving.refresh', $church) }}" class="ms-auto">@csrf<button class="btn btn-sm btn-ff-primary"><i class="bi bi-arrow-repeat"></i> {{ __('Check payments now') }}</button></form>
+        </div>
+    @endif
+
     @unless ($hasChannels)
         <div class="alert alert-warning rounded-4 d-flex align-items-center gap-2">
             <i class="bi bi-exclamation-triangle"></i> <span>{{ __('Online giving is off. Turn on MTN MoMo, Airtel Money or card under Giving channels.') }}</span>

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Campaign;
+use App\Models\Church;
 use App\Models\Donation;
 use App\Models\User;
 use App\Notifications\Giving\CampaignMilestoneReached;
@@ -26,6 +27,28 @@ class CampaignService
                 'church_id' => $campaign->church_id,
                 'title' => $percent === 100 ? __('Goal reached!') : __(':p% funded', ['p' => $percent]),
             ]);
+        }
+    }
+
+    /**
+     * Re-counts the campaigns of a church whose saved total is less than its confirmed gifts add up to. The total is a saved figure that a job keeps
+     * up to date; if the job did not run, the next look at the campaign brings it right. (Only a total that fell behind is corrected, never one that is
+     * higher, so figures entered some other way, such as the demonstration data, are left alone.) Returns how many were put right.
+     */
+    public function healChurch(Church $church): int
+    {
+        $stale = $church->campaigns()->whereRaw('ROUND(raised_amount) < ROUND((select coalesce(sum(amount), 0) from donations where donations.campaign_id = campaigns.id and donations.status = ?))', ['succeeded'])->get();
+        $stale->each(fn (Campaign $c) => $this->recalculate($c));
+
+        return $stale->count();
+    }
+
+    public function healCampaign(Campaign $campaign): void
+    {
+        $sum = (float) Donation::where('campaign_id', $campaign->id)->where('status', 'succeeded')->sum('amount');
+        if (round((float) $campaign->raised_amount) < round($sum)) {
+            $this->recalculate($campaign);
+            $campaign->refresh();
         }
     }
 

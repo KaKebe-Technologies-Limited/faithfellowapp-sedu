@@ -1,6 +1,6 @@
-// The flash at the very start of the app: for about four seconds, three columns of tall rounded photos roll in opposite directions (up, down, up),
-// with small dark icon badges and sparkles floating over them, the FaithFellows name and a line about staying connected in faith. Then it fades
-// away and the app is there. "Skip" opens the app at once. The photos are the ones in assets/splash (see lib/openingPhotos.js); pass `photos` to
+// The flash at the very start of the app: for a few seconds (the platform admin sets how many, how fast and the words; see lib/openingFlash.js), three
+// columns of tall rounded photos roll in opposite directions (up, down, up), with small dark icon badges and sparkles floating over them, the
+// FaithFellows name and a line about staying connected in faith. Then it fades away and the app is there. "Skip" opens the app at once. The photos are the ones in assets/splash (see lib/openingPhotos.js); pass `photos` to
 // show others. Phones set to reduce motion get still photos and a shorter flash.
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { AccessibilityInfo, Animated, Easing, Image, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
@@ -8,16 +8,16 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, FONTS, SPACING } from '../constants/theme';
+import { FLASH_DEFAULTS } from '../lib/openingFlash';
 import { OPENING_PHOTOS } from '../lib/openingPhotos';
 import AppText from './AppText';
 import Logo from './Logo';
 
-const SHOW_MS = 3800; // how long the photos roll before the flash starts to fade
 const FADE_MS = 400;
 const PAGE = '#F8F4F6';
 const GAP = 12;
 const ASPECT = 0.52; // width / height of one photo
-const SPEEDS = [62, 84, 70]; // pixels a second for each column
+const SPEEDS = [62, 84, 70]; // pixels a second for each column at the normal speed (5 of 10)
 const STARTS = [0, 0.55, 0.2]; // where each column starts, as a share of a photo, so the three are staggered
 
 /** Splits the photos into three columns, one after the other, each with at least two photos (a short list is repeated). */
@@ -112,7 +112,7 @@ function Sparkle({ style, size = 18, delay = 0, still }) {
   );
 }
 
-export default function OpeningFlash({ photos = OPENING_PHOTOS, onDone }) {
+export default function OpeningFlash({ photos = OPENING_PHOTOS, seconds = FLASH_DEFAULTS.seconds, speed = FLASH_DEFAULTS.speed, title = FLASH_DEFAULTS.title, text = FLASH_DEFAULTS.text, onDone }) {
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const [region, setRegion] = useState(0); // the height of the area the photos roll in
@@ -123,6 +123,8 @@ export default function OpeningFlash({ photos = OPENING_PHOTOS, onDone }) {
   const finished = useRef(false);
   const columns = useMemo(() => columnsOf(photos), [photos]);
 
+  const showMs = Math.max(2, seconds) * 1000; // how long the photos roll before the flash starts to fade
+  const pace = Math.max(1, Math.min(10, speed)) / 5;
   const pillWidth = Math.floor((width - SPACING.md * 2 - GAP * 2) / 3);
   const lefts = [0, 1, 2].map((i) => SPACING.md + i * (pillWidth + GAP));
 
@@ -143,8 +145,9 @@ export default function OpeningFlash({ photos = OPENING_PHOTOS, onDone }) {
 
   useEffect(() => {
     Animated.timing(enter, { toValue: 1, duration: 650, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
-    Animated.timing(progress, { toValue: 1, duration: SHOW_MS, easing: Easing.linear, useNativeDriver: false }).start();
-    const timer = setTimeout(finish, still ? 2200 : SHOW_MS);
+    const wait = still ? Math.min(showMs, 2800) : showMs;
+    Animated.timing(progress, { toValue: 1, duration: wait, easing: Easing.linear, useNativeDriver: false }).start();
+    const timer = setTimeout(finish, wait);
 
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -173,7 +176,7 @@ export default function OpeningFlash({ photos = OPENING_PHOTOS, onDone }) {
 
       <Animated.View style={[styles.region, { opacity: enter, transform: [{ translateY: rise }] }]} onLayout={(e) => setRegion(Math.round(e.nativeEvent.layout.height))}>
         {region > 0
-          ? columns.map((column, i) => <Column key={i} photos={column} width={pillWidth} left={lefts[i]} up={i !== 1} speed={SPEEDS[i]} start={STARTS[i]} still={still} region={region} />)
+          ? columns.map((column, i) => <Column key={i} photos={column} width={pillWidth} left={lefts[i]} up={i !== 1} speed={SPEEDS[i] * pace} start={STARTS[i]} still={still} region={region} />)
           : null}
 
         <LinearGradient colors={[PAGE, 'rgba(248,244,246,0)']} style={styles.fadeTop} pointerEvents="none" />
@@ -188,8 +191,8 @@ export default function OpeningFlash({ photos = OPENING_PHOTOS, onDone }) {
       </Animated.View>
 
       <Animated.View style={[styles.text, { opacity: enter, transform: [{ translateY: rise }] }]}>
-        <AppText style={[styles.title, small && { fontSize: 24, lineHeight: 30 }]}>Stay Connected in Faith</AppText>
-        <AppText style={[styles.subtitle, small && { fontSize: 14, lineHeight: 20 }]}>Worship, pray, learn and grow together with your church family, wherever you are.</AppText>
+        <AppText style={[styles.title, small && { fontSize: 24, lineHeight: 30 }]}>{title}</AppText>
+        <AppText style={[styles.subtitle, small && { fontSize: 14, lineHeight: 20 }]}>{text}</AppText>
       </Animated.View>
     </Animated.View>
   );
