@@ -93,7 +93,7 @@ class HomeController extends Controller
             'podcasts' => rescue(fn () => Podcast::listed()->orderByDesc('followers_count')->orderByDesc('episodes_count')->orderByDesc('id')->take(4)->get()
                 ->map(fn (Podcast $p) => app(PodcastController::class)->card($p, $user->followedPodcasts()->whereKey($p->id)->exists()))->values(), [], false),
             'churches' => $followed->map(fn (Church $c) => [
-                'id' => $c->id, 'slug' => $c->slug, 'name' => $c->name, 'logo_url' => $c->logo_url, 'is_live' => in_array($c->id, $liveChurchIds, true),
+                'id' => $c->id, 'slug' => $c->slug, 'name' => $c->name, 'logo_url' => $c->logo_url, 'city' => $c->city, 'is_live' => in_array($c->id, $liveChurchIds, true),
                 'join_url' => $c->join_code ? route('join.show', $c->join_code) : null,
             ])->values(),
             'live' => LiveStreamResource::collection($live),

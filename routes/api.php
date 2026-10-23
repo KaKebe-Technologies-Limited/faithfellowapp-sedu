@@ -32,6 +32,7 @@ Route::prefix('v1')->name('api.v1.')->middleware('throttle:api')->group(function
 
     // Public directory
     Route::get('/churches', [V1\ChurchController::class, 'index'])->name('churches.index');
+    Route::post('/churches/suggest', [V1\ChurchController::class, 'suggest'])->middleware(['auth:sanctum', 'api.active', 'throttle:30,1'])->name('churches.suggest');
     Route::get('/churches/nearby', [V1\ChurchController::class, 'nearby'])->middleware(['auth:sanctum', 'api.active'])->name('churches.nearby');
     Route::get('/churches/{church}', [V1\ChurchController::class, 'show'])->name('churches.show');
     Route::get('/churches/{church}/page', [V1\ChurchController::class, 'page'])->name('churches.page');

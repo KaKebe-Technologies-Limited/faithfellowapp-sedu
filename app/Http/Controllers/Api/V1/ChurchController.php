@@ -64,13 +64,65 @@ class ChurchController extends Controller
             'city' => $c->city,
             'denomination' => $c->denomination,
             'distance_km' => round((float) $c->distance_km, 1),
-            'distance_label' => match (true) {
-                $c->distance_km < 1 => __('Less than 1 km away'),
-                $c->distance_km < 10 => __('About :km km away', ['km' => (int) round($c->distance_km)]),
-                default => __('About :km km away', ['km' => (int) (round($c->distance_km / 5) * 5)]),
-            },
+            'distance_label' => $this->distanceLabel((float) $c->distance_km),
             'following' => in_array($c->id, $mine, true),
         ])->values()]);
+    }
+
+    protected function distanceLabel(float $km): string
+    {
+        return match (true) {
+            $km < 1 => __('Less than 1 km away'),
+            $km < 10 => __('About :km km away', ['km' => (int) round($km)]),
+            default => __('About :km km away', ['km' => (int) (round($km / 5) * 5)]),
+        };
+    }
+
+    /**
+     * Churches to suggest to a member who follows none (or few): the nearest to where the phone is now (the place is only used for this answer, rounded
+     * to about 1 km, and is never saved), then churches in the member's own city, then in their country, then the best known. Churches already followed
+     * are left out. Each says why it is suggested (`why`), and `located` says whether the phone's place was used.
+     */
+    public function suggest(Request $request): JsonResponse
+    {
+        $data = $request->validate(['latitude' => ['nullable', 'numeric', 'between:-90,90', 'required_with:longitude'], 'longitude' => ['nullable', 'numeric', 'between:-180,180', 'required_with:latitude']]);
+        $me = $request->user();
+        $limit = 8;
+        $mine = $me->subscribedChurchIds();
+        $base = fn () => Church::active()->with('media')->withCount(['subscriptions' => fn ($q) => $q->where('status', 'active')])->whereNotIn('churches.id', $mine ?: [0]);
+        $picked = collect();
+        $add = function ($churches, callable $why) use (&$picked, $limit) {
+            foreach ($churches as $c) {
+                if ($picked->count() < $limit && ! $picked->has($c->id)) {
+                    $picked->put($c->id, [
+                        'id' => $c->id, 'slug' => $c->slug, 'name' => $c->name, 'logo_url' => $c->logo_url, 'city' => $c->city, 'denomination' => $c->denomination,
+                        'followers' => (int) $c->subscriptions_count, 'why' => $why($c), 'distance_label' => isset($c->distance_km) ? $this->distanceLabel((float) $c->distance_km) : null,
+                    ]);
+                }
+            }
+        };
+
+        $located = isset($data['latitude'], $data['longitude']);
+        if ($located) {
+            [$lat, $lng, $radius] = [round((float) $data['latitude'], 2), round((float) $data['longitude'], 2), 100];
+            $box = $radius / 111.0;
+            $distance = '(6371 * acos(least(1, cos(radians(?)) * cos(radians(lat)) * cos(radians(lng) - radians(?)) + sin(radians(?)) * sin(radians(lat)))))';
+            $add($base()->whereNotNull('lat')->whereNotNull('lng')->whereBetween('lat', [$lat - $box, $lat + $box])
+                ->selectRaw("{$distance} as distance_km", [$lat, $lng, $lat])->havingRaw('distance_km <= ?', [$radius])->orderBy('distance_km')->limit($limit)->get(),
+                fn ($c) => $this->distanceLabel((float) $c->distance_km));
+        }
+        if ($picked->count() < $limit && filled($me->city)) {
+            $add($base()->where('city', $me->city)->orderByDesc('is_featured')->orderByDesc('subscriptions_count')->orderBy('name')->limit($limit)->get(), fn ($c) => __('In :place', ['place' => $c->city]));
+        }
+        if ($picked->count() < $limit && filled($me->country)) {
+            $add($base()->where('country', $me->country)->orderByDesc('is_featured')->orderByDesc('subscriptions_count')->orderBy('name')->limit($limit)->get(),
+                fn ($c) => $c->city ? __('In :place', ['place' => $c->city]) : __('In your country'));
+        }
+        if ($picked->count() < $limit) {
+            $add($base()->orderByDesc('is_featured')->orderByDesc('subscriptions_count')->orderBy('name')->limit($limit)->get(), fn ($c) => $c->city ? __('In :place', ['place' => $c->city]) : __('Popular on FaithFellows'));
+        }
+
+        return response()->json(['located' => $located, 'following' => count($mine), 'data' => $picked->values()]);
     }
 
     public function show(Church $church): ChurchResource
