@@ -23,7 +23,8 @@ export function HomeTab({ info, page, go, onFollow }) {
   const nextEvent = page.events[0];
   const campaign = page.campaigns[0];
   const updates = page.updates.slice(0, 2);
-  const nothing = !latest && !nextEvent && !campaign && !updates.length && !page.devotional && !page.channel && !page.live && !page.next_live;
+  const listen = page.radio ?? page.channel; // the church's songs radio leads; its podcast channel is next
+  const nothing = !latest && !nextEvent && !campaign && !updates.length && !page.devotional && !listen && !page.live && !page.next_live;
 
   return (
     <View>
@@ -34,9 +35,9 @@ export function HomeTab({ info, page, go, onFollow }) {
           <SermonFeature sermon={latest} list={page.sermons} />
         </Section>
       ) : null}
-      {page.channel ? (
-        <Section title="Listen" action={page.channel.can_listen ? 'See all' : null} onAction={() => go('listen')}>
-          <ChannelCard channel={page.channel} church={info} following={info.is_subscribed} onFollow={onFollow} />
+      {listen ? (
+        <Section title="Listen" action={listen.can_listen ? 'See all' : null} onAction={() => go('listen')}>
+          <ChannelCard channel={listen} church={info} following={info.is_subscribed} onFollow={onFollow} />
         </Section>
       ) : null}
       {nextEvent ? (
@@ -83,21 +84,28 @@ export function SermonsTab({ info }) {
   );
 }
 
-/** The church's own radio channel, and each song or teaching in it. */
+/** The church's own radio (songs) and podcast channel (teaching), and each song or episode in them. */
 export function ListenTab({ info, page, onFollow }) {
-  const channel = page.channel;
-  if (!channel) return <EmptyNote icon="radio-outline" title="No audio yet" text="When the church adds songs or teaching to its channel, you can listen here." />;
+  const channels = [
+    page.radio ? { channel: page.radio, title: 'Songs' } : null,
+    page.channel ? { channel: page.channel, title: 'Teaching and episodes' } : null,
+  ].filter(Boolean);
+  if (!channels.length) return <EmptyNote icon="radio-outline" title="No audio yet" text="When the church adds songs or teaching to its channel, you can listen here." />;
 
   return (
     <View>
-      <ChannelCard channel={channel} church={info} following={info.is_subscribed} onFollow={onFollow} />
-      <Section title="Songs and teaching" style={{ marginTop: SPACING.lg }}>
-        {channel.can_listen ? (
-          channel.tracks.map((t) => <TrackRow key={t.id} track={t} list={channel.tracks} church={info} />)
-        ) : (
-          <EmptyNote icon="lock-closed-outline" title={`Follow ${info.name} to listen`} text="The church's songs and teaching are for the people who follow it." />
-        )}
-      </Section>
+      {channels.map(({ channel, title }, i) => (
+        <View key={channel.slug} style={i ? { marginTop: SPACING.xl } : null}>
+          <ChannelCard channel={channel} church={info} following={info.is_subscribed} onFollow={onFollow} />
+          <Section title={title} style={{ marginTop: SPACING.lg }}>
+            {channel.can_listen ? (
+              channel.tracks.map((t) => <TrackRow key={t.id} track={t} list={channel.tracks} church={info} />)
+            ) : (
+              <EmptyNote icon="lock-closed-outline" title={`Follow ${info.name} to listen`} text="The church's songs and teaching are for the people who follow it." />
+            )}
+          </Section>
+        </View>
+      ))}
     </View>
   );
 }

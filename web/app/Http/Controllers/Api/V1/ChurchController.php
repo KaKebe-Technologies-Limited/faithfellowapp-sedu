@@ -199,24 +199,25 @@ class ChurchController extends Controller
             'prayer' => ['open_count' => $s['prayer']->count()],
             'giving' => ['available' => $s['givingChannels']->isNotEmpty()],
             'channel' => $this->channel($church, $viewer, $radio),
+            'radio' => $this->channel($church, $viewer, $radio, 'music'),
             'gallery' => $church->getMedia('gallery')->take(12)->map(fn ($m) => ['url' => $m->getUrl(), 'thumb' => $m->getUrl('thumb')])->values(),
             'socials' => $church->socialLinks()->get()->map(fn ($l) => ['platform' => $l->platform, 'url' => $l->url])->values(),
         ]]);
     }
 
     /**
-     * The church's own radio channel (audio that plays round the clock) and what is in it. Everyone sees that it exists; only the people who may
+     * One of the church's own radio channels (its songs radio, or its podcast channel; audio that plays round the clock) and what is in it. Everyone sees that it exists; only the people who may
      * listen (they follow the church or work for it) get the list of songs and teaching to play one by one.
      *
      * @return array<string, mixed>|null
      */
-    protected function channel(Church $church, $viewer, RadioService $radio): ?array
+    protected function channel(Church $church, $viewer, RadioService $radio, string $kind = 'talk'): ?array
     {
-        return rescue(function () use ($church, $viewer, $radio) {
+        return rescue(function () use ($church, $viewer, $radio, $kind) {
             if (! RadioStation::ready()) {
                 return null;
             }
-            $station = RadioStation::where('slug', 'church-'.$church->id)->where('church_id', $church->id)->first();
+            $station = RadioStation::where('slug', 'church-'.$church->id.($kind === 'music' ? '-songs' : ''))->where('church_id', $church->id)->first();
             if (! $station || ! $radio->available($station)) {
                 return null;
             }

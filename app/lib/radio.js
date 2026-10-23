@@ -1,5 +1,7 @@
 // The FaithFellows radio: channels that play round the clock, in a loop, and everyone hears the same thing at the same
-// moment. There is the Gospel radio (songs), the Podcast radio (teaching), and a channel for each church the member follows.
+// moment. There is the Gospel radio (songs), the Podcast radio (teaching), and the channels of each church the member follows (a songs radio and a
+// podcast channel). The church's own channel is the one that plays first; the platform's fills in when the church has nothing on. When the super
+// admin broadcasts to everyone, every channel plays that track for a while (`broadcast` below) and then carries on.
 // The server says which channels there are (GET /api/v1/radio/stations) and what is on air on one of them and how far
 // into it it is (GET /api/v1/radio/stations/{slug}; the Gospel radio is also GET /api/v1/radio); this module plays it, moves
 // on to the next track by itself, keeps playing with the screen locked or the app in the background, and shows the track on
@@ -20,6 +22,7 @@ let snapshot = {
   upcoming: [],
   recent: [],
   scheduled: null, // a song an admin has scheduled to go on air later: { track, starts_at }
+  broadcast: null, // the super admin is broadcasting to everyone: { title, message }
   unreachable: false, // the last look at the selected channel failed (offline): Home stops waiting for it
   error: null,
 };
@@ -43,6 +46,7 @@ let watchdog = null;
 let configured = false;
 
 const stationName = () => snapshot.station?.name ?? 'FaithFellows Radio';
+let chose = false; // the member picked a channel themselves: the app stops choosing for them
 
 async function configure() {
   if (configured) return;
@@ -86,6 +90,7 @@ export async function loadStation() {
     station: { enabled: info.enabled, name: info.name, tagline: info.tagline, songs: info.songs, kind: info.kind ?? 'music', slug: info.slug ?? slug, church: info.church ?? null, fallbackFor: info.fallback ? info.fallback_for : null },
     ...(info.now ? { upcoming: info.now.upcoming, recent: info.now.recent } : { upcoming: [], recent: [] }),
     scheduled: info.scheduled ?? null,
+    broadcast: info.broadcast ?? null,
     unreachable: false,
     ...(snapshot.phase === 'idle' || snapshot.phase === 'loading' ? { track: info.now?.track ?? null, startedAt: info.now?.started_at ?? null } : {}),
   });
@@ -99,19 +104,24 @@ export async function loadStations() {
     const list = data.data ?? [];
     set({ stations: list });
     // The selected channel is gone or empty (a church was unfollowed, a channel was switched off): move to the first one that has something on.
-    if (list.length && !list.some((s) => s.slug === snapshot.stationId)) selectStation(list[0].slug);
+    if (list.length && !list.some((s) => s.slug === snapshot.stationId)) selectStation(list[0].slug, { auto: true });
+    // Nothing chosen by hand and nothing playing: the radio is the member's own church's songs when it has some, else the Gospel radio.
+    const preferred = list.find((s) => s.kind === 'music');
+    const current = list.find((s) => s.slug === snapshot.stationId);
+    if (!chose && snapshot.phase === 'idle' && preferred && current?.kind === 'music' && current.slug !== preferred.slug) selectStation(preferred.slug, { auto: true });
   } catch {
     // Keep what we have.
   }
 }
 
-/** Switches channel. If the radio was playing, the new channel starts playing at once. */
-export async function selectStation(slug) {
+/** Switches channel. If the radio was playing, the new channel starts playing at once. `auto` is the app choosing, not the member. */
+export async function selectStation(slug, { auto = false } = {}) {
   if (!slug || slug === snapshot.stationId) return;
+  if (!auto) chose = true;
   const wasPlaying = snapshot.phase === 'playing' || snapshot.phase === 'loading';
   if (wasPlaying) stopRadio();
   queue = [];
-  set({ stationId: slug, station: null, track: null, startedAt: null, upcoming: [], recent: [], scheduled: null, unreachable: false, error: null });
+  set({ stationId: slug, station: null, track: null, startedAt: null, upcoming: [], recent: [], scheduled: null, broadcast: null, unreachable: false, error: null });
   try {
     await loadStation();
   } catch {
@@ -139,7 +149,10 @@ function lockScreen(track) {
   if (Platform.OS === 'web' || !player) return;
   // The music radio is live and everyone just listens: the lock screen names the radio, not the song or who made it. A podcast channel names its teaching.
   const talk = snapshot.station?.kind === 'talk';
-  const metadata = talk
+  const special = snapshot.broadcast;
+  const metadata = special
+    ? { title: special.message || special.title, artist: 'Live broadcast', albumTitle: stationName(), artworkUrl: `${SITE_URL}/images/icon-192.png` }
+    : talk
     ? { title: track.title, artist: track.artist || stationName(), albumTitle: stationName(), artworkUrl: mediaUrl(track.cover_url) }
     : { title: stationName(), artist: 'Live', albumTitle: 'FaithFellows', artworkUrl: `${SITE_URL}/images/icon-192.png` };
   try {

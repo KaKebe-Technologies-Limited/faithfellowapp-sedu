@@ -24,7 +24,7 @@ const MARK = require('../assets/logo-mark.png');
 export default function RadioScreen() {
   useStationInfo();
   const insets = useSafeAreaInsets();
-  const { station, stations, stationId, track, phase, error } = useRadio();
+  const { station, stations, stationId, track, phase, error, broadcast } = useRadio();
   const live = phase === 'playing';
 
   // This screen is the music radio, or the podcast radio when it is opened from Podcasts (?kind=talk). Whatever is playing decides what it shows.
@@ -36,7 +36,7 @@ export default function RadioScreen() {
     // Opened for one kind while the other was the last one chosen, and nothing is playing: move to the first channel of the kind asked for.
     if (phase !== 'idle' || !stations.length || (station?.kind ?? 'music') === wanted) return;
     const first = stations.find((s) => (s.kind === 'talk') === (wanted === 'talk'));
-    if (first) selectStation(first.slug);
+    if (first) selectStation(first.slug, { auto: true });
   }, [wanted, stations, phase, station?.kind]);
 
   return (
@@ -91,9 +91,9 @@ export default function RadioScreen() {
                   </View>
                 </View>
                 <AppText style={styles.title} numberOfLines={2}>
-                  {station?.name ?? 'FaithFellows Radio'}
+                  {broadcast ? broadcast.message || broadcast.title : station?.name ?? 'FaithFellows Radio'}
                 </AppText>
-                <AppText style={styles.artist}>{station?.tagline || 'Gospel music, day and night'}</AppText>
+                <AppText style={styles.artist}>{broadcast ? 'Special broadcast, playing for everyone on FaithFellows' : station?.tagline || 'Gospel music, day and night'}</AppText>
               </>
             )}
             <View style={styles.buttonRow}>

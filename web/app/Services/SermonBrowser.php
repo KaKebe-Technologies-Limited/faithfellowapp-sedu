@@ -12,7 +12,8 @@ use Illuminate\Support\Collection;
 /**
  * What the app's Sermons page shows above the full list, in one go: the banner (a few sermons, each by a different preacher, the ones with a real
  * picture first), the preachers of the churches the member follows, the newest sermons, the most listened ones and the series. Everything is limited
- * to what this member may see (public sermons, and members-only sermons of the churches they follow).
+ * to what this member may see (the sermons of the churches they follow, members-only ones included; when those churches have none, the public
+ * sermons of all churches, and `general` says so).
  */
 class SermonBrowser
 {
@@ -22,7 +23,11 @@ class SermonBrowser
     public function sections(User $user, Request $request): array
     {
         $memberIds = $user->memberChurchIds();
-        $visible = fn (): Builder => Sermon::query()->published()->visibleTo($memberIds)->whereIn('church_id', $memberIds ?: [0]);
+        $own = fn (): Builder => Sermon::query()->published()->visibleTo($memberIds)->whereIn('church_id', $memberIds ?: [0]);
+        // The member's own churches' sermons are what plays; when they have none (or the member follows no church yet), the public sermons of every church
+        // on FaithFellows fill the page, so there is always something to listen to.
+        $general = $own()->doesntExist();
+        $visible = $general ? fn (): Builder => Sermon::query()->published()->where('visibility', 'public') : $own;
         $with = ['church.media', 'media', 'series'];
         $resolve = fn (Collection $sermons): array => SermonResource::collection($sermons)->resolve($request);
 
@@ -36,6 +41,7 @@ class SermonBrowser
             'popular' => $resolve($popular),
             'series' => $this->series($visible(), $with),
             'total' => $visible()->count(),
+            'general' => $general,
         ];
     }
 

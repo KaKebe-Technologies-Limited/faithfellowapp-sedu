@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\AuditLog;
 use App\Models\Church;
 use App\Models\RadioSchedule;
 use App\Models\RadioStation;
@@ -166,8 +167,8 @@ test('members hear the platform channels and the channels of the churches they f
 
     Sanctum::actingAs($follower, ['member']);
     $list = $this->getJson(route('api.v1.radio.stations'))->assertOk()->json('data');
-    expect(collect($list)->pluck('slug')->all())->toBe(['gospel', 'podcast', 'church-'.$church->id])
-        ->and($list[2]['church']['name'])->toBe($church->name)->and($list[2]['songs'])->toBe(1);
+    expect(collect($list)->pluck('slug')->all())->toBe(['gospel', 'church-'.$church->id, 'podcast'])
+        ->and($list[1]['church']['name'])->toBe($church->name)->and($list[1]['songs'])->toBe(1);
 
     $this->getJson(route('api.v1.radio.station', 'church-'.$church->id))->assertOk()->assertJsonPath('data.now.track.title', 'Faith and Work')->assertJsonPath('data.kind', 'talk');
     $this->getJson(route('api.v1.radio.station', 'podcast'))->assertOk()->assertJsonPath('data.now.track.title', 'Hope in Hard Times');
@@ -493,4 +494,130 @@ test('the admin pages list the schedules, and a church schedules only its own ep
     $this->actingAs($admin)->delete(route('church-admin.radio.unschedule', [$church, $other->id]))->assertNotFound();
 
     $this->actingAs(superAdmin())->get(route('super-admin.radio.index'))->assertOk()->assertSee('Schedule a song');
+});
+
+// ── A church's own songs radio, and the super admin's broadcast ─────────────────────────────────────────
+
+test('a church adds songs to its own radio, apart from its podcast channel, and members hear it first', function () {
+    [$church, $admin, $follower] = channelChurch();
+    $this->actingAs(superAdmin())->postJson(route('super-admin.radio.store'), ['track' => channelFile('Amazing Grace - Test Choir.mp3')])->assertOk();
+    $this->actingAs(superAdmin())->postJson(route('super-admin.radio.store'), ['track' => channelFile('Hope in Hard Times - Pastor Okello.mp3'), 'station' => 'podcast'])->assertOk();
+
+    $this->actingAs($admin)->get(route('church-admin.songs.index', $church))->assertOk()->assertSee('Church radio (songs)')->assertSee('No songs yet')->assertSee('Gospel radio plays for them instead');
+    sendPieces($this, $admin, 'church-admin.songs.chunk', [$church], channelMp3(), 'Our Song - Grace Choir.mp3', 1)->assertOk()->assertJson(['ok' => true, 'title' => 'Our Song']);
+    sendPieces($this, $admin, 'church-admin.radio.chunk', [$church], channelMp3(), 'Faith and Work - Pastor Okello.mp3', 1, 'zyxwvu9876543210zyxw')->assertOk();
+
+    $songs = RadioStation::where('slug', 'church-'.$church->id.'-songs')->sole();
+    $podcast = RadioStation::where('slug', 'church-'.$church->id)->sole();
+    expect($songs->kind)->toBe('music')->and($songs->church_id)->toBe($church->id)->and($podcast->kind)->toBe('talk')
+        ->and(RadioTrack::where('station_id', $songs->id)->pluck('title')->all())->toBe(['Our Song'])
+        ->and(RadioTrack::where('station_id', $podcast->id)->pluck('title')->all())->toBe(['Faith and Work']);
+
+    // The member hears the church's songs before the Gospel radio, and the church's teaching before the Podcast radio.
+    Sanctum::actingAs($follower, ['member']);
+    $list = collect($this->getJson(route('api.v1.radio.stations'))->json('data'));
+    expect($list->pluck('slug')->all())->toBe(['church-'.$church->id.'-songs', 'gospel', 'church-'.$church->id, 'podcast'])
+        ->and($list->pluck('kind')->all())->toBe(['music', 'music', 'talk', 'talk']);
+    $this->getJson(route('api.v1.radio.station', 'church-'.$church->id.'-songs'))->assertOk()->assertJsonPath('data.now.track.title', 'Our Song')->assertJsonPath('data.kind', 'music')->assertJsonPath('data.fallback', false);
+
+    // Somebody who does not follow the church cannot hear it.
+    Sanctum::actingAs(member(), ['member']);
+    $this->getJson(route('api.v1.radio.station', 'church-'.$church->id.'-songs'))->assertNotFound();
+    expect(collect($this->getJson(route('api.v1.radio.stations'))->json('data'))->pluck('slug')->all())->toBe(['gospel', 'podcast']);
+});
+
+test('a church with no songs plays the Gospel radio, and the songs radio is only a channel of its own church', function () {
+    [$church, $admin, $follower] = channelChurch();
+    [$other, $otherAdmin] = channelChurch();
+    $this->actingAs(superAdmin())->postJson(route('super-admin.radio.store'), ['track' => channelFile('Amazing Grace - Test Choir.mp3')])->assertOk();
+
+    // The church has opened its page but added nothing: the members' list is the platform's.
+    $this->actingAs($admin)->get(route('church-admin.songs.index', $church))->assertOk();
+    Sanctum::actingAs($follower, ['member']);
+    expect(collect($this->getJson(route('api.v1.radio.stations'))->json('data'))->pluck('slug')->all())->toBe(['gospel']);
+
+    // Asking for the empty songs radio itself hands over to the Gospel radio, like an empty podcast channel hands over to the Podcast radio.
+    $this->getJson(route('api.v1.radio.station', 'church-'.$church->id.'-songs'))->assertOk()
+        ->assertJsonPath('data.fallback', true)->assertJsonPath('data.slug', 'gospel')->assertJsonPath('data.now.track.title', 'Amazing Grace');
+
+    // One church's admin cannot add songs to, or open, another church's radio.
+    $this->actingAs($otherAdmin)->get(route('church-admin.songs.index', $church))->assertForbidden();
+    sendPieces($this, $otherAdmin, 'church-admin.songs.chunk', [$other], channelMp3(), 'Their Song - Choir.mp3', 1)->assertOk();
+    expect(RadioTrack::where('station_id', RadioStation::where('slug', 'church-'.$other->id.'-songs')->value('id'))->count())->toBe(1)
+        ->and(RadioTrack::where('station_id', RadioStation::where('slug', 'church-'.$church->id.'-songs')->value('id'))->count())->toBe(0);
+});
+
+test('a church can rename, reorder, put on air and remove its own songs', function () {
+    [$church, $admin] = channelChurch();
+    foreach (['One - A.mp3', 'Two - B.mp3'] as $i => $name) {
+        sendPieces($this, $admin, 'church-admin.songs.chunk', [$church], channelMp3(), $name, 1, 'abcdef0123456789ab'.$i.'0')->assertOk();
+    }
+    [$one, $two] = RadioTrack::orderBy('position')->get()->all();
+
+    $this->actingAs($admin)->put(route('church-admin.songs.update', [$church, $one->id]), ['title' => 'First song'])->assertRedirect();
+    $this->actingAs($admin)->post(route('church-admin.songs.move', [$church, $one->id]), ['direction' => 'down'])->assertRedirect();
+    $this->actingAs($admin)->post(route('church-admin.songs.play', [$church, $two->id]))->assertRedirect();
+    expect($one->fresh()->title)->toBe('First song')->and($one->fresh()->position)->toBe(2)
+        ->and(app(RadioService::class)->nowPlaying(null, 4, 5, RadioStation::where('slug', 'church-'.$church->id.'-songs')->first())['track']['id'])->toBe($two->id);
+
+    $this->actingAs($admin)->delete(route('church-admin.songs.destroy', [$church, $one->id]))->assertRedirect();
+    expect(RadioTrack::count())->toBe(1);
+});
+
+test('the super admin broadcasts a track to everyone: every channel plays it, then goes back to what it had on', function () {
+    $this->freezeSecond();
+    [$church, $admin, $follower] = channelChurch();
+    $super = superAdmin();
+    $this->actingAs($super)->postJson(route('super-admin.radio.store'), ['track' => channelFile('Amazing Grace - Test Choir.mp3')])->assertOk();
+    $this->actingAs($super)->postJson(route('super-admin.radio.store'), ['track' => channelFile('Special Message - Apostle Otolo.mp3', 600), 'station' => 'podcast'])->assertOk();
+    sendPieces($this, $admin, 'church-admin.songs.chunk', [$church], channelMp3(), 'Our Song - Grace Choir.mp3', 1)->assertOk();
+    $special = RadioTrack::where('title', 'Special Message')->sole();
+    $songs = 'church-'.$church->id.'-songs';
+
+    Sanctum::actingAs($follower, ['member']);
+    expect($this->getJson(route('api.v1.radio.station', $songs))->json('data.now.track.title'))->toBe('Our Song');
+
+    $this->actingAs($super)->post(route('super-admin.radio.broadcast'), ['track' => $special->id, 'message' => 'A word for the whole church', 'notify' => 1])->assertRedirect();
+    $this->travel(5)->seconds();
+
+    // Every channel, the church's own and the platform's, plays the broadcast, 5 seconds in, and says so.
+    Sanctum::actingAs($follower, ['member']);
+    foreach ([$songs, 'gospel', 'podcast'] as $slug) {
+        $data = $this->getJson(route('api.v1.radio.station', $slug))->assertOk()->json('data');
+        expect($data['now']['track']['title'])->toBe('Special Message')->and($data['now']['offset'])->toBe(5)->and($data['now']['upcoming'])->toBe([])
+            ->and($data['broadcast'])->toBe(['title' => 'Special Message', 'message' => 'A word for the whole church'])->and($data['scheduled'])->toBeNull();
+    }
+    expect($this->getJson(route('api.v1.radio'))->json('data.now.track.title'))->toBe('Special Message');
+
+    // When the track has finished, each channel is back to its own clock.
+    $this->travel($special->duration_seconds)->seconds();
+    $data = $this->getJson(route('api.v1.radio.station', $songs))->assertOk()->json('data');
+    expect($data['now']['track']['title'])->toBe('Our Song')->and($data['broadcast'])->toBeNull();
+});
+
+test('the super admin can stop a broadcast, and only the super admin can start one, with a track of the platform', function () {
+    $this->freezeSecond();
+    [$church, $admin, $follower] = channelChurch();
+    $super = superAdmin();
+    $this->actingAs($super)->postJson(route('super-admin.radio.store'), ['track' => channelFile('Amazing Grace - Test Choir.mp3', 600)])->assertOk();
+    sendPieces($this, $admin, 'church-admin.songs.chunk', [$church], channelMp3(), 'Our Song - Grace Choir.mp3', 1)->assertOk();
+    $grace = RadioTrack::where('title', 'Amazing Grace')->sole();
+    $ours = RadioTrack::where('title', 'Our Song')->sole();
+
+    // A church admin and an ordinary member cannot interrupt the app; a church's own track cannot be broadcast.
+    $this->actingAs($admin)->post(route('super-admin.radio.broadcast'), ['track' => $grace->id])->assertForbidden();
+    $this->actingAs($follower)->post(route('super-admin.radio.broadcast'), ['track' => $grace->id])->assertForbidden();
+    $this->actingAs($super)->post(route('super-admin.radio.broadcast'), ['track' => $ours->id])->assertNotFound();
+    expect(app(RadioService::class)->activeBroadcast())->toBeNull();
+
+    $this->actingAs($super)->post(route('super-admin.radio.broadcast'), ['track' => $grace->id])->assertRedirect();
+    expect(app(RadioService::class)->activeBroadcast()['track']->id)->toBe($grace->id);
+    $this->actingAs($super)->get(route('super-admin.radio.index'))->assertOk()->assertSee('On air for everyone now:')->assertSee('Stop broadcast');
+    expect(AuditLog::where('action', 'radio.broadcast')->count())->toBe(1);
+
+    $this->actingAs($super)->delete(route('super-admin.radio.broadcast.stop'))->assertRedirect();
+    expect(app(RadioService::class)->activeBroadcast())->toBeNull();
+    Sanctum::actingAs($follower, ['member']);
+    expect($this->getJson(route('api.v1.radio.station', 'church-'.$church->id.'-songs'))->json('data.now.track.title'))->toBe('Our Song');
+    $this->actingAs($super)->get(route('super-admin.radio.index'))->assertOk()->assertSee('Broadcast now');
 });

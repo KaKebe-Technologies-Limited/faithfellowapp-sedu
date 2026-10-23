@@ -9,6 +9,7 @@ use App\Models\RadioStation;
 use App\Models\RadioTrack;
 use App\Services\RadioService;
 use App\Services\RadioUploads;
+use App\Support\Audit;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -44,6 +45,8 @@ class RadioController extends Controller
             'enabled' => $this->radio->enabled($station),
             'loopSeconds' => $this->radio->loopSeconds($station),
             'limitMb' => ff_audio_upload_mb(request()->user()),
+            'broadcast' => $this->radio->activeBroadcast(),
+            'broadcastTracks' => (RadioStation::ready() ? RadioTrack::with('station')->orderBy('station_id')->orderBy('position')->orderBy('id')->get() : RadioTrack::orderBy('position')->orderBy('id')->get())->filter(fn (RadioTrack $t) => $t->channel()->isPlatform())->values(),
             'churchStations' => RadioStation::ready() ? RadioStation::whereNotNull('church_id')->with('church')->withCount('tracks')->orderBy('name')->get() : collect(),
         ]);
     }
@@ -140,6 +143,30 @@ class RadioController extends Controller
         $this->radio->saveSettings($data['name'], $request->boolean('enabled'), $this->station($request));
 
         return back()->with('success', __('Radio settings saved.'));
+    }
+
+    /**
+     * "Broadcast to everyone": interrupts every channel of the app, the platform's and every church's, with one of the platform's tracks, for everyone who
+     * is listening. A message can go with it, and every phone can be told. It ends with the track, or with Stop.
+     */
+    public function broadcast(Request $request): RedirectResponse
+    {
+        $data = $request->validate(['track' => ['required', 'integer'], 'message' => ['nullable', 'string', 'max:140'], 'notify' => ['boolean']]);
+        $track = RadioTrack::findOrFail($data['track']);
+        abort_unless($track->channel()->isPlatform() && $track->duration_seconds > 0, 404);
+
+        $this->radio->startBroadcast($track, $data['message'] ?? null, $request->user(), $request->boolean('notify'));
+        Audit::log('radio.broadcast', null, __('Broadcast to everyone: :title', ['title' => $track->title]), [], ['track' => $track->id, 'message' => $data['message'] ?? null, 'notify' => $request->boolean('notify')]);
+
+        return back()->with('success', __('“:title” is playing for everyone now. Phones that are listening move to it within a few seconds.', ['title' => $track->title]));
+    }
+
+    public function stopBroadcast(): RedirectResponse
+    {
+        $this->radio->stopBroadcast();
+        Audit::log('radio.broadcast_stopped', null, __('Broadcast to everyone stopped'));
+
+        return back()->with('success', __('The broadcast was stopped. Every channel is back to what it had on.'));
     }
 
     /** Switches a church's channel off for everyone (or back on). The church cannot undo it. */

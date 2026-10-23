@@ -89,10 +89,13 @@ class ContentController extends Controller
     public function sermons(Request $request): AnonymousResourceCollection
     {
         $memberIds = $request->user()->memberChurchIds();
+        // The member's own churches' sermons come first; when they have none (or the member follows no church yet) the public sermons of every church fill the
+        // list, the same as on the Sermons page (see SermonBrowser).
+        $general = ! $request->filled('church') && ! Sermon::query()->published()->visibleTo($memberIds)->whereIn('church_id', $memberIds ?: [0])->exists();
 
         return SermonResource::collection(Sermon::with(['church.media', 'media', 'series'])
             ->published()->visibleTo($memberIds)
-            ->whereIn('church_id', $request->filled('church') ? [(int) $request->query('church')] : ($memberIds ?: [0]))
+            ->when($general, fn ($q) => $q->where('visibility', 'public'), fn ($q) => $q->whereIn('church_id', $request->filled('church') ? [(int) $request->query('church')] : ($memberIds ?: [0])))
             ->when($request->filled('q'), fn ($q) => $q->where(fn ($w) => $w->where('title', 'like', '%'.$request->query('q').'%')->orWhere('preacher', 'like', '%'.$request->query('q').'%')))
             ->when($request->filled('preacher'), fn ($q) => $q->where('preacher', (string) $request->query('preacher')))
             ->when($request->filled('series'), fn ($q) => $q->where('sermon_series_id', (int) $request->query('series')))

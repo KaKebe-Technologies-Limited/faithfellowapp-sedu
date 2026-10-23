@@ -3,6 +3,8 @@
         <a href="{{ route('church-admin.quizzes.create', $church) }}" class="btn btn-ff-primary"><i class="bi bi-plus-lg"></i> {{ __('New quiz') }}</a>
     </x-ff.page-header>
 
+    <div class="alert alert-info small"><i class="bi bi-phone"></i> {{ __('Every quiz you write is also in the app under Games → From your church, first in the list. Members who follow your church can play it any time at their own pace and are ranked by day, week and all time. Use Host live when you want everyone to play together.') }}</div>
+
     @foreach ($live as $session)
         <div class="ff-card bg-ff-gradient border-0 text-white d-flex flex-wrap align-items-center gap-3 mb-3">
             <span class="ff-badge-live">{{ __('Live') }}</span>

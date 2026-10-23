@@ -17,20 +17,21 @@ use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 /**
- * A church's own radio channel. The church adds teaching, sermons and podcasts; the app plays them round the clock, in a loop, for the members
- * who follow the church. Every church gets the channel when it first opens this page. Audio counts against the church's storage, and a file can be
- * up to 150 MB (the platform admin's own channels allow more).
+ * A church's own channels. Its **songs radio** (route kind `music`) is the church's 24-hour radio: the app plays its songs round the clock, in a
+ * loop, on Home, for the members who follow the church, and the platform's Gospel radio plays only while the church has no songs. Its **podcast channel**
+ * (`talk`) plays teaching, sermons and podcasts the same way, on the Podcasts page. Every church gets its channels when it first opens a page. Audio
+ * counts against the church's storage, and a file can be up to 150 MB (the platform admin's own channels allow more).
  */
 class RadioController extends Controller
 {
     public function __construct(protected RadioService $radio, protected RadioUploads $uploads) {}
 
-    /** This church's channel, made on first use. The database update that adds channels must have been applied. */
+    /** This church's channel of the kind the route is for (songs or podcast), made on first use. The database update that adds channels must have been applied. */
     protected function station(Church $church): RadioStation
     {
         abort_unless(RadioStation::ready(), 503, __('Radio channels are being set up. Please try again in a few minutes.'));
 
-        return RadioStation::forChurch($church);
+        return RadioStation::forChurch($church, request()->route('kind') === 'music' ? 'music' : 'talk');
     }
 
     public function index(Church $church): View

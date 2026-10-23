@@ -73,12 +73,17 @@ class RadioStation extends Model
         return self::platform(self::PODCAST);
     }
 
-    /** A church's own channel. */
-    public static function forChurch(Church $church): static
+    /**
+     * A church's own channels: its podcast channel (`talk`: teaching and sermons, slug "church-{id}") and its songs radio (`music`: slug
+     * "church-{id}-songs"), which plays on Home for the people who follow the church, ahead of the platform's Gospel radio.
+     */
+    public static function forChurch(Church $church, string $kind = 'talk'): static
     {
+        $music = $kind === 'music';
+
         return static::firstOrCreate(
-            ['slug' => 'church-'.$church->id],
-            ['church_id' => $church->id, 'kind' => 'talk', 'name' => Str::limit($church->name, 68, '').' Radio', 'is_enabled' => true],
+            ['slug' => 'church-'.$church->id.($music ? '-songs' : '')],
+            ['church_id' => $church->id, 'kind' => $music ? 'music' : 'talk', 'name' => Str::limit($church->name, 68, '').' Radio', 'is_enabled' => true],
         );
     }
 

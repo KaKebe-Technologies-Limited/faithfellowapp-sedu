@@ -78,6 +78,12 @@ export default function SermonsScreen() {
   const header = (
     <View>
       {!filtering && sections ? <SermonHero sermons={sections.featured} /> : null}
+      {sections?.general ? (
+        <View style={styles.general}>
+          <Ionicons name="earth-outline" size={18} color={COLORS.primary} />
+          <AppText style={styles.generalText}>Sermons from across FaithFellows. Follow a church and its own sermons come first, right here.</AppText>
+        </View>
+      ) : null}
 
       <View style={styles.search}>
         <Ionicons name="search" size={18} color={COLORS.gray700} />
@@ -190,6 +196,8 @@ export default function SermonsScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: COLORS.canvas },
+  general: { flexDirection: 'row', alignItems: 'center', gap: 10, marginHorizontal: SPACING.md, marginBottom: SPACING.md, padding: 12, borderRadius: RADIUS.lg, backgroundColor: COLORS.primaryMist },
+  generalText: { flex: 1, fontFamily: FONTS.medium, fontSize: 13, lineHeight: 18, color: COLORS.gray700 },
   search: { flexDirection: 'row', alignItems: 'center', gap: 8, marginHorizontal: SPACING.md, marginBottom: SPACING.md, paddingHorizontal: SPACING.md, borderRadius: RADIUS.full, backgroundColor: COLORS.white },
   searchInput: { flex: 1, minHeight: 44, fontFamily: FONTS.regular, fontSize: 15, color: COLORS.black },
   sectionHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', paddingHorizontal: SPACING.md, marginBottom: 10 },

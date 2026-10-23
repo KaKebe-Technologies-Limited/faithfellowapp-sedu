@@ -31,7 +31,7 @@ export function useHomeRadio() {
   const moving = phase === 'idle' && station?.kind === 'talk' && !!music;
 
   useEffect(() => {
-    if (moving) selectStation(music.slug);
+    if (moving) selectStation(music.slug, { auto: true });
   }, [moving, music?.slug]);
 
   if (!features.radio) return 'none';
@@ -52,7 +52,7 @@ function Action({ icon, color, label, onPress, compact }) {
 
 export default function NowPlayingHero({ state, home }) {
   const { width } = useWindowDimensions();
-  const { phase, station } = useRadio();
+  const { phase, station, broadcast } = useRadio();
   const height = Math.max(200, Math.min(250, Math.round((width - SPACING.md * 2) * 0.62)));
   const compact = width < 380; // three names and the play button do not fit side by side on a narrow phone
 
@@ -89,13 +89,13 @@ export default function NowPlayingHero({ state, home }) {
 
         <View style={styles.text} pointerEvents="none">
           <AppText style={styles.kicker} numberOfLines={1}>
-            {live ? "YOU'RE LISTENING LIVE" : 'TAP PLAY TO LISTEN LIVE'}
+            {broadcast ? 'SPECIAL BROADCAST' : live ? "YOU'RE LISTENING LIVE" : 'TAP PLAY TO LISTEN LIVE'}
           </AppText>
-          <AppText style={styles.title} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
-            {name}
+          <AppText style={styles.title} numberOfLines={broadcast ? 2 : 1} adjustsFontSizeToFit minimumFontScale={0.75}>
+            {broadcast ? broadcast.message || broadcast.title : name}
           </AppText>
           <AppText style={styles.tagline} numberOfLines={2}>
-            {tagline}
+            {broadcast ? `Playing now for everyone on FaithFellows` : tagline}
           </AppText>
         </View>
       </Pressable>

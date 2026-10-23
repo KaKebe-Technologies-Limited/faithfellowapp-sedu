@@ -25,7 +25,7 @@ import { useFetch } from '../../lib/useFetch';
 function tabsFor(page) {
   const tabs = [{ key: 'home', label: 'Home', icon: 'home' }];
   if (page?.stats?.sermons > 0 || page?.sermons?.length) tabs.push({ key: 'sermons', label: 'Sermons', icon: 'mic' });
-  if (page?.channel) tabs.push({ key: 'listen', label: 'Listen', icon: 'headset' });
+  if (page?.radio || page?.channel) tabs.push({ key: 'listen', label: 'Listen', icon: 'headset' });
   if (page?.events?.length) tabs.push({ key: 'events', label: 'Events', icon: 'calendar' });
   if (page?.updates?.length || page?.announcements?.length || page?.devotional) tabs.push({ key: 'updates', label: 'News', icon: 'newspaper' });
   if (page?.giving?.available || page?.campaigns?.length) tabs.push({ key: 'give', label: 'Give', icon: 'heart' });

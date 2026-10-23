@@ -1,5 +1,5 @@
-// "Podcast radio" at the top of the Podcasts screen: the platform's own Podcast radio (teaching and podcasts the admin has put on, playing day and night)
-// and the podcast channel of each church you follow, which a church fills itself. Press play and it joins the live channel; it keeps playing while you
+// "Podcast radio" at the top of the Podcasts screen: the podcast channel of the church you follow leads (a church fills it itself), then the platform's own
+// Podcast radio (teaching and podcasts the admin has put on, playing day and night), which is what plays when the church has not added anything. Press play and it joins the live channel; it keeps playing while you
 // move around the app, with the bar above the tabs. Tap a card to open the full player.
 import { ActivityIndicator, Image, Pressable, StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -41,7 +41,7 @@ function PlayButton({ slug, size = 56, light = false }) {
   );
 }
 
-/** The platform's Podcast radio: a big card, with what is on air now. */
+/** The big card with what is on air now: the member's church's podcast channel when it has episodes, else the platform's Podcast radio. */
 function MainCard({ channel }) {
   const { stationId, phase } = useRadio();
   const now = useFetch(`/radio/stations/${channel.slug}`);
@@ -81,13 +81,13 @@ function ChurchRow({ channel }) {
   return (
     <View style={styles.row}>
       <Pressable onPress={() => openPlayer(channel.slug)} style={styles.rowMain} accessibilityRole="button" accessibilityLabel={`${channel.name}. Open the player`}>
-        <ChurchAvatar church={channel.church} size={48} />
+        <ChurchAvatar church={channel.church ?? { name: channel.name }} size={48} />
         <View style={{ flex: 1, gap: 2 }}>
           <AppText style={styles.rowTitle} numberOfLines={1}>
             {channel.name}
           </AppText>
           <AppText variant="caption" numberOfLines={1}>
-            {channel.songs} {channel.songs === 1 ? 'episode' : 'episodes'} · always on
+            {channel.songs} {channel.songs === 1 ? 'episode' : 'episodes'} · {channel.church ? 'always on' : 'FaithFellows'}
           </AppText>
         </View>
       </Pressable>
@@ -101,8 +101,11 @@ export default function PodcastRadio() {
   useStationInfo();
   const { stations } = useRadio();
   const talk = stations.filter((s) => s.kind === 'talk');
-  const main = talk.find((s) => !s.church);
-  const churches = talk.filter((s) => s.church);
+  const platform = talk.find((s) => !s.church);
+  const own = talk.filter((s) => s.church);
+  // The church the member follows comes first: its channel is the big card and the Podcast radio follows with the other churches' channels.
+  const main = own[0] ?? platform;
+  const churches = [...own.slice(1), ...(own[0] && platform ? [platform] : [])];
   if (!main && !churches.length) return null;
 
   return (
@@ -121,7 +124,7 @@ export default function PodcastRadio() {
       ) : null}
       {churches.length ? (
         <View style={{ marginTop: SPACING.md }}>
-          <AppText style={styles.subsection}>From your churches</AppText>
+          <AppText style={styles.subsection}>More channels</AppText>
           {churches.map((c) => (
             <ChurchRow key={c.slug} channel={c} />
           ))}

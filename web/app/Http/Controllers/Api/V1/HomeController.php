@@ -57,6 +57,10 @@ class HomeController extends Controller
         $sermons = Sermon::with(['church.media', 'media', 'series'])->published()->visibleTo($memberIds)
             ->when($memberIds, fn ($q) => $q->whereIn('church_id', $memberIds), fn ($q) => $q->where('visibility', 'public'))
             ->latest('published_at')->take(4)->get();
+        // The member's churches have no sermon yet: the public sermons of every church fill the spot, so Home always has something to play.
+        if ($sermons->isEmpty()) {
+            $sermons = Sermon::with(['church.media', 'media', 'series'])->published()->where('visibility', 'public')->latest('published_at')->take(4)->get();
+        }
 
         $campaigns = Campaign::with(['church.media', 'media'])->active()->visibleTo($memberIds)
             ->whereIn('church_id', $churchIds)->where(fn ($q) => $q->whereNull('ends_at')->orWhere('ends_at', '>', now()))

@@ -29,6 +29,16 @@ class Quiz extends Model
         return $query->where('is_sample', true)->whereNull('church_id');
     }
 
+    /**
+     * What a member can play on their own: the ready-made games, and the quizzes of the churches they follow.
+     *
+     * @param  array<int, int>  $churchIds
+     */
+    public function scopePlayableBy($query, array $churchIds)
+    {
+        return $query->where(fn ($q) => $q->where(fn ($s) => $s->where('is_sample', true)->whereNull('church_id'))->orWhereIn('church_id', $churchIds ?: [0]));
+    }
+
     public function author(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
