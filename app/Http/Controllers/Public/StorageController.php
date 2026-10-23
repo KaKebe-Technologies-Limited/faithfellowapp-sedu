@@ -21,7 +21,7 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
  */
 class StorageController extends Controller
 {
-    private const TYPES = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'svg', 'pdf', 'mp3', 'm4a', 'aac', 'wav', 'mp4', 'webm', 'ogg'];
+    private const TYPES = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'svg', 'pdf', 'mp3', 'mpeg', 'mpga', 'mpg', 'mp2', 'm4a', 'aac', 'wav', 'mp4', 'webm', 'ogg'];
 
     public function show(string $path): BinaryFileResponse
     {

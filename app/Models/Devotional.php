@@ -41,7 +41,7 @@ class Devotional extends Model implements HasMedia
     public function registerMediaCollections(): void
     {
         // Audio devotionals are data-light (~1 MB per 10 minutes at 16 kbps).
-        $this->addMediaCollection('audio')->singleFile()->acceptsMimeTypes(['audio/mpeg', 'audio/mp3', 'audio/mp4', 'audio/x-m4a', 'audio/aac', 'audio/ogg', 'audio/webm']);
+        $this->addMediaCollection('audio')->singleFile()->acceptsMimeTypes(['audio/mpeg', 'audio/mpeg3', 'audio/x-mpeg', 'audio/x-mpeg-3', 'audio/mp3', 'audio/mp4', 'audio/x-m4a', 'audio/aac', 'audio/ogg', 'audio/webm']);
     }
 
     public function author(): BelongsTo

@@ -54,9 +54,9 @@
 {{-- Add audio --}}
 <div class="ff-card mb-4" id="radio-upload">
     <h2 class="h6 mb-1">{{ __('Add :many', ['many' => $many]) }}</h2>
-    <p class="small text-ff-muted">{{ __('MP3, M4A, AAC or WAV. The title, speaker or artist, length and cover picture are read from the file. Up to :limit MB per :noun. Big files are sent in pieces, so keep this page open until each one shows a tick. Only upload what you have the right to broadcast.', ['limit' => $limitMb, 'noun' => $noun]) }}</p>
+    <p class="small text-ff-muted">{{ __('MP3, MPEG audio, M4A, AAC or WAV. The title, speaker or artist, length and cover picture are read from the file. Up to :limit MB per :noun. Big files are sent in pieces, so keep this page open until each one shows a tick. Only upload what you have the right to broadcast.', ['limit' => $limitMb, 'noun' => $noun]) }}</p>
     <div class="d-flex flex-wrap gap-2 align-items-center">
-        <input type="file" id="radio-files" class="form-control" accept=".mp3,.m4a,.aac,.wav,audio/*" multiple style="max-width:420px">
+        <input type="file" id="radio-files" class="form-control" accept=".mp3,.mpeg,.mpga,.mpg,.mp2,.m4a,.aac,.wav,audio/*" multiple style="max-width:420px">
         <button type="button" id="radio-send" class="btn btn-ff-primary"><i class="bi bi-cloud-arrow-up"></i> {{ __('Upload') }}</button>
     </div>
     <div id="radio-progress" class="ff-upload-list" aria-live="polite"></div>
