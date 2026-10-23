@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\SuperAdmin\StoreChurchRequest;
 use App\Models\AuditLog;
 use App\Models\Church;
+use App\Models\User;
 use App\Services\AnalyticsService;
 use App\Services\ChurchOnboardingService;
 use App\Support\Audit;
@@ -66,8 +67,17 @@ class ChurchController extends Controller
     {
         $church->load(['media', 'owner', 'approver', 'branches', 'serviceTimes', 'staffMembers.user', 'staffMembers.role']);
 
+        $find = trim((string) request()->query('find'));
+
         return view('super-admin.churches.show', [
             'church' => $church,
+            'followers' => $church->subscriptions()->where('status', 'active')->with('user')->latest('subscribed_at')->take(15)->get(),
+            'followerCount' => $church->subscriptions()->where('status', 'active')->count(),
+            'find' => $find,
+            'found' => mb_strlen($find) >= 2
+                ? User::where('status', 'active')->where(fn ($q) => $q->where('name', 'like', '%'.$find.'%')->orWhere('email', 'like', '%'.$find.'%')->orWhere('phone', 'like', '%'.$find.'%'))
+                    ->orderBy('name')->take(15)->get()->each(fn ($u) => $u->setAttribute('follows', $church->subscriptions()->where('user_id', $u->id)->where('status', 'active')->exists()))
+                : collect(),
             'activity' => AuditLog::forChurch($church->id)->with('user')->latest('created_at')->take(15)->get(),
             'stats' => app(AnalyticsService::class)->churchSummary($church),
         ]);

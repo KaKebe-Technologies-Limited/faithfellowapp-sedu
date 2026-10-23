@@ -4,6 +4,7 @@ namespace App\Http\Controllers\SuperAdmin;
 
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
+use App\Models\Church;
 use App\Models\User;
 use App\Support\Audit;
 use App\Support\CsvExport;
@@ -35,6 +36,7 @@ class UserController extends Controller
         return view('super-admin.users.show', [
             'user' => $user->load(['media', 'roles']),
             'subscriptions' => $user->subscriptions()->with('church')->latest('subscribed_at')->get(),
+            'assignable' => Church::active()->whereNotIn('id', $user->subscriptions()->where('status', 'active')->pluck('church_id'))->orderBy('name')->get(['id', 'name', 'city']),
             'staff' => $user->staffMemberships()->with(['church', 'role'])->get(),
             'giving' => DB::table('donations')->where('user_id', $user->id)->where('status', 'succeeded')->selectRaw('COUNT(*) n, COALESCE(SUM(amount), 0) total')->first(),
             'activity' => AuditLog::where('user_id', $user->id)->latest('created_at')->take(15)->get(),

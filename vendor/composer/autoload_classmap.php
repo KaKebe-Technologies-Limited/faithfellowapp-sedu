@@ -157,6 +157,7 @@ return array(
     'App\\Http\\Controllers\\SuperAdmin\\BillingController' => $baseDir . '/app/Http/Controllers/SuperAdmin/BillingController.php',
     'App\\Http\\Controllers\\SuperAdmin\\BlogController' => $baseDir . '/app/Http/Controllers/SuperAdmin/BlogController.php',
     'App\\Http\\Controllers\\SuperAdmin\\ChurchController' => $baseDir . '/app/Http/Controllers/SuperAdmin/ChurchController.php',
+    'App\\Http\\Controllers\\SuperAdmin\\ChurchMemberController' => $baseDir . '/app/Http/Controllers/SuperAdmin/ChurchMemberController.php',
     'App\\Http\\Controllers\\SuperAdmin\\DashboardController' => $baseDir . '/app/Http/Controllers/SuperAdmin/DashboardController.php',
     'App\\Http\\Controllers\\SuperAdmin\\DatabaseUpdateController' => $baseDir . '/app/Http/Controllers/SuperAdmin/DatabaseUpdateController.php',
     'App\\Http\\Controllers\\SuperAdmin\\EmailSettingsController' => $baseDir . '/app/Http/Controllers/SuperAdmin/EmailSettingsController.php',

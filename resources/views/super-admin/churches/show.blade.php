@@ -72,6 +72,71 @@
                 </div>
             </x-ff.card>
 
+            {{-- Add registered users to this church --}}
+            <x-ff.card :title="__('Add registered users to this church')" id="members">
+                <p class="small text-ff-muted">{{ __('They start following :church at once: they see its sermons, events, radio and everything else, without having to find it themselves. It does not count against the three churches a member can follow, and the church’s approval is not asked for.', ['church' => $church->name]) }}</p>
+
+                <form method="POST" action="{{ route('super-admin.churches.members.assign', $church) }}" class="row g-2 mb-3">@csrf
+                    <div class="col-12">
+                        <label class="form-label small fw-semibold" for="identifiers">{{ __('Emails or phone numbers') }}</label>
+                        <textarea id="identifiers" name="identifiers" rows="3" class="form-control @error('identifiers') is-invalid @enderror" placeholder="{{ __('One per line, or separated by commas') }}">{{ old('identifiers') }}</textarea>
+                        @error('identifiers')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
+                    <div class="col-sm-5">
+                        <label class="form-label small fw-semibold" for="stage">{{ __('They are') }}</label>
+                        <select id="stage" name="stage" class="form-select">@foreach (\App\Models\Subscription::STAGES as $key => $label)<option value="{{ $key }}" @selected($key === 'member')>{{ __($label) }}</option>@endforeach</select>
+                    </div>
+                    <div class="col-sm-4 d-flex align-items-end"><div class="form-check"><input class="form-check-input" type="checkbox" name="notify" value="1" id="notify" checked><label class="form-check-label small" for="notify">{{ __('Tell them') }}</label></div></div>
+                    <div class="col-sm-3 d-flex align-items-end"><button class="btn btn-ff-primary w-100"><i class="bi bi-person-plus"></i> {{ __('Add') }}</button></div>
+                </form>
+
+                <form method="GET" action="{{ route('super-admin.churches.show', $church) }}#members" class="input-group mb-2">
+                    <input name="find" value="{{ $find }}" class="form-control" placeholder="{{ __('Or find a registered user by name, email or phone') }}" aria-label="{{ __('Find a registered user') }}">
+                    <button class="btn btn-ff-soft"><i class="bi bi-search"></i> {{ __('Find') }}</button>
+                </form>
+
+                @if ($find !== '')
+                    <form method="POST" action="{{ route('super-admin.churches.members.assign', $church) }}">@csrf
+                        <input type="hidden" name="stage" value="member"><input type="hidden" name="notify" value="1">
+                        <div class="list-group mb-2">
+                            @forelse ($found as $u)
+                                <label class="list-group-item d-flex align-items-center gap-3">
+                                    <input type="checkbox" class="form-check-input mt-0" name="user_ids[]" value="{{ $u->id }}" @disabled($u->follows)>
+                                    <span class="flex-grow-1"><strong class="text-ff-black">{{ $u->name }}</strong><span class="d-block small text-ff-muted">{{ $u->email }}{{ $u->phone ? ' · '.$u->phone : '' }}{{ $u->city ? ' · '.$u->city : '' }}</span></span>
+                                    @if ($u->follows)<span class="ff-badge ff-badge-success">{{ __('Already follows') }}</span>@endif
+                                </label>
+                            @empty
+                                <div class="list-group-item small text-ff-muted">{{ __('Nobody registered matches “:q”.', ['q' => $find]) }}</div>
+                            @endforelse
+                        </div>
+                        @if ($found->isNotEmpty())<button class="btn btn-ff-primary btn-sm"><i class="bi bi-person-plus"></i> {{ __('Add the ticked people') }}</button>@endif
+                    </form>
+                @endif
+            </x-ff.card>
+
+            <x-ff.card :title="__('Followers (:n)', ['n' => number_format($followerCount)])" flush>
+                <div class="table-responsive">
+                    <table class="table ff-table mb-0">
+                        <thead><tr><th>{{ __('Name') }}</th><th>{{ __('Stage') }}</th><th>{{ __('Since') }}</th><th></th></tr></thead>
+                        <tbody>
+                            @forelse ($followers as $s)
+                                <tr>
+                                    <td><a href="{{ route('super-admin.users.show', $s->user_id) }}" class="fw-semibold">{{ $s->user?->name }}</a><div class="small text-ff-muted">{{ $s->user?->email }}</div></td>
+                                    <td class="small">{{ __(\App\Models\Subscription::STAGES[$s->stage] ?? Str::headline($s->stage)) }}@if ($s->source === 'assigned') <span class="ff-badge">{{ __('Added by FaithFellows') }}</span>@endif</td>
+                                    <td class="small">{{ $s->subscribed_at?->format('j M Y') }}</td>
+                                    <td class="text-end">
+                                        <form method="POST" action="{{ route('super-admin.churches.members.remove', [$church, $s->user_id]) }}" data-ff-confirm="{{ __('Take :name out of this church? They stop following it.', ['name' => $s->user?->name]) }}">@csrf @method('DELETE')<button class="btn btn-sm btn-ff-ghost text-danger">{{ __('Remove') }}</button></form>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr><td colspan="4" class="small text-ff-muted">{{ __('Nobody follows this church yet.') }}</td></tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+                @if ($followerCount > $followers->count())<div class="small text-ff-muted p-3">{{ __('The newest :n are shown. The church sees all its followers under Members.', ['n' => $followers->count()]) }}</div>@endif
+            </x-ff.card>
+
             <x-ff.card :title="__('Recent activity')">
                 @forelse ($activity as $log)
                     <div class="d-flex gap-3 py-2 border-bottom small">

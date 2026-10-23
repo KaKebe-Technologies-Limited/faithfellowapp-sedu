@@ -44,16 +44,40 @@
             <x-ff.card :title="__('Churches followed')" flush>
                 <div class="table-responsive">
                     <table class="table ff-table mb-0">
-                        <thead><tr><th>{{ __('Church') }}</th><th>{{ __('Stage') }}</th><th>{{ __('Since') }}</th><th>{{ __('Status') }}</th></tr></thead>
+                        <thead><tr><th>{{ __('Church') }}</th><th>{{ __('Stage') }}</th><th>{{ __('Since') }}</th><th>{{ __('Status') }}</th><th></th></tr></thead>
                         <tbody>
                             @forelse ($subscriptions as $s)
-                                <tr><td>{{ $s->church?->name }}</td><td class="small">{{ Str::headline($s->stage) }}</td><td class="small">{{ $s->subscribed_at?->format('j M Y') }}</td><td><x-ff.status :status="$s->status" /></td></tr>
+                                <tr>
+                                    <td>{{ $s->church?->name }}</td><td class="small">{{ Str::headline($s->stage) }}</td><td class="small">{{ $s->subscribed_at?->format('j M Y') }}</td><td><x-ff.status :status="$s->status" /></td>
+                                    <td class="text-end">
+                                        @if ($s->church && in_array($s->status, ['active', 'pending'], true))
+                                            <form method="POST" action="{{ route('super-admin.churches.members.remove', [$s->church, $user]) }}" data-ff-confirm="{{ __('Take :name out of :church?', ['name' => $user->name, 'church' => $s->church->name]) }}">@csrf @method('DELETE')<button class="btn btn-sm btn-ff-ghost text-danger">{{ __('Remove') }}</button></form>
+                                        @endif
+                                    </td>
+                                </tr>
                             @empty
-                                <tr><td colspan="4" class="small text-ff-muted">{{ __('Not following any church.') }}</td></tr>
+                                <tr><td colspan="5" class="small text-ff-muted">{{ __('Not following any church.') }}</td></tr>
                             @endforelse
                         </tbody>
                     </table>
                 </div>
+                @if ($assignable->isNotEmpty())
+                    <form method="POST" action="{{ route('super-admin.users.churches.assign', $user) }}" class="row g-2 p-3 border-top align-items-end">@csrf
+                        <input type="hidden" name="notify" value="1">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold" for="church_id">{{ __('Add to a church') }}</label>
+                            <select id="church_id" name="church_id" class="form-select" required>
+                                <option value="">{{ __('Choose a church…') }}</option>
+                                @foreach ($assignable as $c)<option value="{{ $c->id }}">{{ $c->name }}{{ $c->city ? ' · '.$c->city : '' }}</option>@endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-semibold" for="stage">{{ __('They are') }}</label>
+                            <select id="stage" name="stage" class="form-select">@foreach (\App\Models\Subscription::STAGES as $key => $label)<option value="{{ $key }}" @selected($key === 'member')>{{ __($label) }}</option>@endforeach</select>
+                        </div>
+                        <div class="col-md-3"><button class="btn btn-ff-primary w-100"><i class="bi bi-person-plus"></i> {{ __('Add') }}</button></div>
+                    </form>
+                @endif
             </x-ff.card>
 
             @if ($staff->isNotEmpty())

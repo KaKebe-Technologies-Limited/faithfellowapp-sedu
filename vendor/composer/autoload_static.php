@@ -752,6 +752,7 @@ class ComposerStaticInit6b61fb820dd7281d49fc501460ab603f
         'App\\Http\\Controllers\\SuperAdmin\\BillingController' => __DIR__ . '/../..' . '/app/Http/Controllers/SuperAdmin/BillingController.php',
         'App\\Http\\Controllers\\SuperAdmin\\BlogController' => __DIR__ . '/../..' . '/app/Http/Controllers/SuperAdmin/BlogController.php',
         'App\\Http\\Controllers\\SuperAdmin\\ChurchController' => __DIR__ . '/../..' . '/app/Http/Controllers/SuperAdmin/ChurchController.php',
+        'App\\Http\\Controllers\\SuperAdmin\\ChurchMemberController' => __DIR__ . '/../..' . '/app/Http/Controllers/SuperAdmin/ChurchMemberController.php',
         'App\\Http\\Controllers\\SuperAdmin\\DashboardController' => __DIR__ . '/../..' . '/app/Http/Controllers/SuperAdmin/DashboardController.php',
         'App\\Http\\Controllers\\SuperAdmin\\DatabaseUpdateController' => __DIR__ . '/../..' . '/app/Http/Controllers/SuperAdmin/DatabaseUpdateController.php',
         'App\\Http\\Controllers\\SuperAdmin\\EmailSettingsController' => __DIR__ . '/../..' . '/app/Http/Controllers/SuperAdmin/EmailSettingsController.php',
