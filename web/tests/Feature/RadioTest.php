@@ -145,7 +145,7 @@ test('something that is not a song is refused with a reason', function () {
     $admin = superAdmin();
 
     $this->actingAs($admin)->postJson(route('super-admin.radio.store'), ['track' => UploadedFile::fake()->createWithContent('notes.txt', 'hello')])
-        ->assertStatus(422)->assertJsonPath('message', 'Use an MP3, M4A, AAC or WAV file.');
+        ->assertStatus(422)->assertJsonPath('message', 'Use an MP3, MPEG, M4A, AAC or WAV file.');
     $this->actingAs($admin)->postJson(route('super-admin.radio.store'), ['track' => UploadedFile::fake()->createWithContent('broken.mp3', str_repeat('x', 5000))])
         ->assertStatus(422)->assertJsonPath('message', 'This does not look like a song file we can read.');
     $this->actingAs($admin)->postJson(route('super-admin.radio.store'), [])->assertStatus(422);

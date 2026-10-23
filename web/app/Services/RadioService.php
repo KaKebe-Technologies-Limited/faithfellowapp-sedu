@@ -27,7 +27,7 @@ class RadioService
     public const EPOCH = '2026-01-01 00:00:00';
 
     /** Formats phones can play without extra codecs. */
-    public const EXTENSIONS = ['mp3' => 'audio/mpeg', 'm4a' => 'audio/mp4', 'aac' => 'audio/aac', 'wav' => 'audio/wav'];
+    public const EXTENSIONS = ['mp3' => 'audio/mpeg', 'mpeg' => 'audio/mpeg', 'mpga' => 'audio/mpeg', 'mpg' => 'audio/mpeg', 'mp2' => 'audio/mpeg', 'm4a' => 'audio/mp4', 'aac' => 'audio/aac', 'wav' => 'audio/wav'];
 
     // The Gospel radio keeps its name and its switch in the platform settings (as it always did); every other channel keeps them in its own row.
 
@@ -421,13 +421,17 @@ class RadioService
         $station ??= RadioStation::gospel();
         $extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
         if (! isset(self::EXTENSIONS[$extension])) {
-            throw new InvalidArgumentException(__('Use an MP3, M4A, AAC or WAV file.'));
+            throw new InvalidArgumentException(__('Use an MP3, MPEG, M4A, AAC or WAV file.'));
         }
 
         $info = (new \getID3)->analyze($path);
         $seconds = (int) round((float) ($info['playtime_seconds'] ?? 0));
         if ($seconds < 1 || empty($info['audio'])) {
             throw new InvalidArgumentException(__('This does not look like a song file we can read.'));
+        }
+        // .mpeg and .mpg are mostly video; only the audio kind (MPEG audio) can be played on the radio.
+        if (in_array($extension, ['mpeg', 'mpg'], true) && ! empty($info['video'])) {
+            throw new InvalidArgumentException(__('This MPEG file has a picture track (it is a video). Upload the audio only.'));
         }
         \getid3_lib::CopyTagsToComments($info);
 

@@ -32,7 +32,7 @@ class SermonRequest extends FormRequest
             'language' => ['required', Rule::in(array_keys(config('faithfellows.languages')))],
             'preached_on' => ['nullable', 'date'],
             'duration_minutes' => ['nullable', 'integer', 'min:1', 'max:600'],
-            'audio' => ['nullable', 'file', 'mimetypes:audio/mpeg,audio/mp3,audio/mp4,audio/x-m4a,audio/aac,audio/ogg,audio/wav,audio/x-wav,audio/webm', 'max:'.(ff_audio_upload_mb($this->user()) * 1024), new WithinStorageQuota($church)],
+            'audio' => ['nullable', 'file', 'mimetypes:audio/mpeg,audio/mpeg3,audio/x-mpeg,audio/x-mpeg-3,audio/mp3,audio/mp4,audio/x-m4a,audio/aac,audio/ogg,audio/wav,audio/x-wav,audio/webm', 'max:'.(ff_audio_upload_mb($this->user()) * 1024), new WithinStorageQuota($church)],
             'audio_url' => ['nullable', 'url', 'max:500'],
             'video' => ['nullable', 'file', 'mimetypes:video/mp4,video/webm', "max:$maxKb", new WithinStorageQuota($church)],
             'video_url' => ['nullable', 'url', 'max:500'],

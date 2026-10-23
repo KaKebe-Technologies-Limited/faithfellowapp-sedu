@@ -47,7 +47,7 @@ class MediaLibraryController extends Controller
         $request->validate([
             'files' => ['required', 'array', 'max:20', new WithinStorageQuota($church)],
             'files.*' => ['file', 'max:'.(config('faithfellows.limits.max_upload_mb') * 1024),
-                'mimetypes:image/jpeg,image/png,image/webp,image/gif,audio/mpeg,audio/mp4,audio/x-m4a,audio/ogg,video/mp4,video/webm,application/pdf',
+                'mimetypes:image/jpeg,image/png,image/webp,image/gif,audio/mpeg,audio/mpeg3,audio/x-mpeg,audio/x-mpeg-3,audio/mp4,audio/x-m4a,audio/ogg,video/mp4,video/webm,application/pdf',
                 // Songs and recordings have their own, smaller limit for church staff (bigger for the platform admin).
                 function (string $attribute, mixed $value, Closure $fail) use ($request) {
                     $mb = ff_audio_upload_mb($request->user());
