@@ -1,7 +1,7 @@
 // The top of Home, shaped like a radio app: a big LIVE card for the radio (its name, the pulsing LIVE mark and sound bars that dance while you
 // listen; never the song or who made it, because the radio is live and everyone just listens) with the glowing play / stop button on the
 // card's lower edge, and three small buttons right under the card at the left, on the same line as the play button's lower half: pray, share and
-// give (a round icon each on a narrow phone, an icon with its name on a wider one). Press the card for the full player. `useHomeRadio()` says
+// give, soft white like the Explore tiles (a round icon each on a narrow phone, an icon with its name on a wider one). Press the card for the full player. `useHomeRadio()` says
 // whether this can show ('ready'), is still waiting for the radio ('loading') or has no radio to show ('none': the radio is switched off,
 // empty, or the phone is offline), so Home can fall back to the slider of highlights.
 import { useEffect } from 'react';
@@ -10,7 +10,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { FONTS, SPACING } from '../../constants/theme';
-import { SOFT } from '../../constants/soft';
+import { SOFT, SOFT_SHADOW } from '../../constants/soft';
 import { useFeatures } from '../../lib/features';
 import { selectStation, useRadio, useStationInfo } from '../../lib/radio';
 import AppText from '../AppText';
@@ -40,11 +40,11 @@ export function useHomeRadio() {
   return (station || unreachable) && !moving ? 'none' : 'loading';
 }
 
-/** A small button under the card: an icon with its name, or just the icon on a narrow phone. */
-function Action({ icon, label, onPress, compact }) {
+/** A small soft white button under the card (like the Explore tiles): a coloured icon with its name, or just the icon on a narrow phone. */
+function Action({ icon, color, label, onPress, compact }) {
   return (
-    <Pressable onPress={onPress} hitSlop={6} style={({ pressed }) => [styles.action, compact ? styles.actionRound : styles.actionPill, pressed && { opacity: 0.8 }]} accessibilityRole="button" accessibilityLabel={label}>
-      <Ionicons name={icon} size={compact ? 17 : 15} color="#fff" />
+    <Pressable onPress={onPress} hitSlop={6} style={({ pressed }) => [styles.action, compact ? styles.actionRound : styles.actionPill, pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] }]} accessibilityRole="button" accessibilityLabel={label}>
+      <Ionicons name={icon} size={compact ? 18 : 16} color={color} />
       {compact ? null : <AppText style={styles.actionLabel}>{label}</AppText>}
     </Pressable>
   );
@@ -105,9 +105,9 @@ export default function NowPlayingHero({ state, home }) {
       </View>
 
       <View style={styles.actions}>
-        <Action icon="hand-left-outline" label="Pray" onPress={() => router.push('/prayer')} compact={compact} />
-        <Action icon="share-social-outline" label="Share" onPress={share} compact={compact} />
-        <Action icon="heart-outline" label="Give" onPress={give} compact={compact} />
+        <Action icon="hand-left-outline" color="#E65100" label="Pray" onPress={() => router.push('/prayer')} compact={compact} />
+        <Action icon="share-social-outline" color="#1D5FD1" label="Share" onPress={share} compact={compact} />
+        <Action icon="heart-outline" color="#12704F" label="Give" onPress={give} compact={compact} />
       </View>
     </View>
   );
@@ -125,8 +125,8 @@ const styles = StyleSheet.create({
   tagline: { fontFamily: FONTS.medium, fontSize: 14, lineHeight: 20, color: 'rgba(255,255,255,0.88)', marginTop: 2, marginRight: BUTTON + 22 },
   play: { position: 'absolute', right: SPACING.md + 18 },
   actions: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10, height: ACTIONS - 10, paddingRight: BUTTON + 30 },
-  action: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: SOFT.glassOnDark, borderWidth: 1, borderColor: SOFT.glassOnDarkBorder },
+  action: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: SOFT.glass, borderWidth: 1.5, borderColor: SOFT.glassBorder, ...SOFT_SHADOW },
   actionPill: { height: 36, gap: 6, paddingHorizontal: 13, borderRadius: 18 },
   actionRound: { width: 38, height: 38, borderRadius: 19 },
-  actionLabel: { fontFamily: FONTS.semibold, fontSize: 12.5, color: '#fff' },
+  actionLabel: { fontFamily: FONTS.semibold, fontSize: 12.5, color: SOFT.ink },
 });
