@@ -5,7 +5,7 @@
 //    the site's address as its base; the player reports its errors back, so the screen can offer "Watch on YouTube" instead of a black box.
 //  - AudioPlayerCard: sermon audio (expo-audio) with play/pause, back 15 s, forward 30 s and a progress bar
 import { useEffect, useRef } from 'react';
-import { Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import { VideoView, useVideoPlayer } from 'expo-video';
@@ -13,7 +13,7 @@ import { WebView } from 'react-native-webview';
 import { COLORS, FONTS, RADIUS, SHADOW, SPACING } from '../constants/theme';
 import { mediaUrl } from '../lib/api';
 import { formatDuration } from '../lib/format';
-import { EMBED_ORIGIN, youtubePage } from '../lib/youtubePage';
+import { BAR_HEIGHT, EMBED_ORIGIN, youtubePage } from '../lib/youtubePage';
 import AppText from './AppText';
 
 /** True for page-style video links (YouTube, Facebook, Vimeo…) that need a web view rather than a video player. */
@@ -46,9 +46,15 @@ export function VideoPlayer({ url, autoPlay = true, style, onProblem }) {
   return <VideoView player={player} style={[styles.video, style]} nativeControls allowsFullscreen allowsPictureInPicture contentFit="contain" />;
 }
 
-/** `clean`: the look for a live service (no YouTube control bar, so no logo while it plays; see lib/youtubePage.js). */
-export function EmbedPlayer({ url, style, onProblem, clean = false }) {
+/**
+ * `clean`: the look for a live service (no YouTube control bar, so no logo while it plays; see lib/youtubePage.js).
+ * `bar`: a church's name; a sermon video gets a bar of ours under the picture (play, seek line, time, sound and the church's name) instead of YouTube's own
+ * control bar. `autoPlay` says whether the video starts by itself (a live service does, a sermon only when the person pressed Watch).
+ */
+export function EmbedPlayer({ url, style, onProblem, clean = false, bar, autoPlay }) {
   const youtube = isYoutubeEmbed(url);
+  const { width } = useWindowDimensions();
+  const withBar = youtube && typeof bar === 'string';
   const ready = useRef(false);
   const problem = useRef(onProblem);
   problem.current = onProblem; // the screen's callback changes on every draw; the timer below must not restart each time
@@ -72,9 +78,9 @@ export function EmbedPlayer({ url, style, onProblem, clean = false }) {
   }
 
   return (
-    <View style={[styles.video, style]}>
+    <View style={[withBar ? [styles.videoBox, { height: Math.round((width * 9) / 16) + BAR_HEIGHT }] : styles.video, style]}>
       <WebView
-        source={youtube ? { html: youtubePage(url, { clean }), baseUrl: EMBED_ORIGIN } : { uri: url, headers: { Referer: EMBED_ORIGIN } }}
+        source={youtube ? { html: youtubePage(url, { clean, bar: withBar ? bar : undefined, autoPlay }), baseUrl: EMBED_ORIGIN } : { uri: url, headers: { Referer: EMBED_ORIGIN } }}
         originWhitelist={['*']}
         allowsInlineMediaPlayback
         allowsFullscreenVideo
@@ -156,6 +162,7 @@ export function AudioPlayerCard({ url, title, duration: knownDuration, autoPlay 
 
 const styles = StyleSheet.create({
   video: { width: '100%', aspectRatio: 16 / 9, backgroundColor: '#000', overflow: 'hidden' },
+  videoBox: { width: '100%', backgroundColor: '#000', overflow: 'hidden' },
   audio: { backgroundColor: COLORS.primaryDark, borderRadius: RADIUS.xl - 4, padding: SPACING.md, ...SHADOW },
   track: { height: 5, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.25)', overflow: 'hidden' },
   fill: { height: 5, backgroundColor: COLORS.white },

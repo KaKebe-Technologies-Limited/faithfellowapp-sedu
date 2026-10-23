@@ -61,7 +61,7 @@ export default function SermonScreen() {
           <ScrollView contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
             {showVideo ? (
               <View style={{ paddingTop: insets.top, backgroundColor: '#000' }}>
-                <Video url={s.video_url} onProblem={() => setVideoProblem(true)} />
+                <Video url={s.video_url} bar={s.church?.name ?? 'FaithFellows'} autoPlay={watching} onProblem={() => setVideoProblem(true)} />
                 <View style={[styles.floatBack, { top: insets.top + 8 }]}>
                   <BackButton onDark />
                 </View>

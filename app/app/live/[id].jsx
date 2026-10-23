@@ -118,7 +118,7 @@ export default function LiveScreen() {
               {status === 'live' && source ? (
                 <Video url={source} clean onProblem={() => setProblem(true)} />
               ) : status !== 'live' && recording ? (
-                <Video url={recording} autoPlay={false} />
+                <Video url={recording} autoPlay={false} bar={live.church?.name ?? 'FaithFellows'} />
               ) : (
                 <View style={styles.stage}>
                   <LinearGradient colors={['#2A0A14', COLORS.primaryDark]} style={StyleSheet.absoluteFill} />
