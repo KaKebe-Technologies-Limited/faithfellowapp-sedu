@@ -29,7 +29,7 @@ test('until the admin adds pictures the app is told to use its own', function ()
 test('the super admin adds pictures to each place and the app is told where to find them, in order', function () {
     $super = superAdmin();
     $this->actingAs($super)->get(route('super-admin.app-media.index'))->assertOk()->assertSee('Opening photos')->assertSee('Welcome screen photos')->assertSee('Home banner slider')
-        ->assertSee('using the photos built into it');
+        ->assertSee('using the photos built into it')->assertSee('opens straight to Home, without the opening photos');
 
     $this->actingAs($super)->post(route('super-admin.app-media.store'), ['placement' => 'opening', 'photos' => [appPhoto('a.jpg'), appPhoto('b.jpg')]])
         ->assertRedirect()->assertSessionHas('success', '2 pictures were added.');

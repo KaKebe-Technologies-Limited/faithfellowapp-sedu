@@ -1,5 +1,5 @@
 <x-layouts.super-admin :title="__('App media')">
-    <x-ff.page-header :title="__('App media')" :subtitle="__('The pictures of the app itself: what shows when it opens, behind the welcome screen, and on the Home slider. Where a place has no pictures here, the app keeps the ones built into it.')">
+    <x-ff.page-header :title="__('App media')" :subtitle="__('The pictures of the app itself: what shows when it opens, behind the welcome screen, and on the Home slider. The opening photos show only once you add some; the welcome screen and the Home banner keep the photos built into the app until you add yours.')">
         <a href="{{ route('super-admin.settings') }}#opening_flash_seconds" class="btn btn-ff-ghost"><i class="bi bi-stopwatch"></i> {{ __('How long the opening photos stay') }}</a>
     </x-ff.page-header>
 
@@ -14,7 +14,7 @@
                     <p class="small text-ff-muted"><i class="bi bi-lightbulb text-ff-primary"></i> {{ __($placement['tip']) }}</p>
 
                     @if ($list->isEmpty())
-                        <div class="ff-card ff-card-gray ff-card-sm small mb-3"><i class="bi bi-box"></i> {{ __('No pictures added: the app is using the photos built into it.') }}</div>
+                        <div class="ff-card ff-card-gray ff-card-sm small mb-3"><i class="bi bi-box"></i> {{ __($placement['empty']) }}</div>
                     @else
                         <div class="row g-3 mb-3">
                             @foreach ($list as $photo)

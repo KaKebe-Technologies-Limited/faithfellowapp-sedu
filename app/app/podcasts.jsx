@@ -6,6 +6,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import AppText from '../components/AppText';
 import Chip from '../components/Chip';
 import { EpisodeRow, PodcastCover, PodcastRow, PodcastTile, PublisherStrip } from '../components/podcast/PodcastCards';
+import OurPodcasts from '../components/podcast/OurPodcasts';
 import PodcastRadio from '../components/podcast/PodcastRadio';
 import ScreenHeader from '../components/ScreenHeader';
 import StateView from '../components/StateView';
@@ -49,14 +50,15 @@ function PublisherStripShelf({ podcasts, onSelect }) {
 }
 
 /**
- * The landing view, in the order a listener explores: the Podcast radio, what you follow, the publishers, then a shelf of cover thumbnails for each
+ * The landing view, in the order a listener explores: Our Podcasts (the recordings of your churches, played on demand), the live Podcast radio, what you follow, the publishers, then a shelf of cover thumbnails for each
  * category (Faith and Motivation first; each podcast is in the shelf of its own category), the newest episodes, and the podcasts as a list.
  */
 function Overview({ overview, total, refreshing, reload, onPublisher, onSection, onBrowseAll }) {
-  const { following, new_episodes: fresh, podcasts, sections = [] } = overview;
+  const { ours = [], following, new_episodes: fresh, podcasts, sections = [] } = overview;
 
   return (
     <ScrollView contentContainerStyle={{ paddingTop: 6, paddingBottom: 40 }} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets refreshControl={<RefreshControl refreshing={refreshing} onRefresh={reload} tintColor={COLORS.primary} colors={[COLORS.primary]} />}>
+      <OurPodcasts ours={ours} />
       <PodcastRadio />
       {following.length ? (
         <Shelf title="Following">
@@ -183,7 +185,7 @@ export default function PodcastsScreen() {
           loading={overview.loading}
           error={overview.error}
           onRetry={overview.retry}
-          empty={!overview.loading && !overview.error && !overview.data?.data?.podcasts?.length && !talkOn}
+          empty={!overview.loading && !overview.error && !overview.data?.data?.podcasts?.length && !overview.data?.data?.ours?.length && !talkOn}
           emptyIcon="mic-outline"
           emptyTitle="No podcasts yet"
           emptyMessage="Podcasts made by members appear here once they are approved. You can start one from the FaithFellows website."

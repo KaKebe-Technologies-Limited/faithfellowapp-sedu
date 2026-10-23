@@ -19,12 +19,13 @@ class AppPhoto extends Model implements HasMedia
 {
     use InteractsWithMedia;
 
-    /** @var array<string, array{label: string, where: string, tip: string, max: int, conversion: string}> */
+    /** @var array<string, array{label: string, where: string, tip: string, empty: string, max: int, conversion: string}> */
     public const PLACEMENTS = [
         'opening' => [
             'label' => 'Opening photos',
             'where' => 'The tall rounded photos that roll up and down for a few seconds each time the app is opened.',
-            'tip' => 'Portrait photos of people, with the face in the upper half. Three to twelve look best; fewer than three and the app keeps its own.',
+            'tip' => 'Portrait photos of people, with the face in the upper half. Six to twelve look best. The app has none of its own: it shows this only when you have added some.',
+            'empty' => 'No pictures added: the app opens straight to Home, without the opening photos.',
             'max' => 12,
             'conversion' => 'pill',
         ],
@@ -32,6 +33,7 @@ class AppPhoto extends Model implements HasMedia
             'label' => 'Welcome screen photos',
             'where' => 'The full-screen photos that fade into each other behind “Welcome to your church family”, before someone signs in.',
             'tip' => 'Portrait photos, with the face in the upper half (the words sit over the lower half). Smiling faces and warm light work best.',
+            'empty' => 'No pictures added: the app is using the photos built into it.',
             'max' => 12,
             'conversion' => 'full',
         ],
@@ -39,6 +41,7 @@ class AppPhoto extends Model implements HasMedia
             'label' => 'Home banner slider',
             'where' => 'The default pictures behind the cards of the slider on Home when a church has no pictures of its own, and the banner when there is nothing else to show. A church’s own pictures always come first.',
             'tip' => 'Landscape photos. The title and sentence you add are shown over the picture.',
+            'empty' => 'No pictures added: the app is using the photos built into it.',
             'max' => 12,
             'conversion' => 'banner',
         ],

@@ -1,6 +1,7 @@
-// "Podcast radio" at the top of the Podcasts screen: the podcast channel of the church you follow leads (a church fills it itself), then the platform's own
-// Podcast radio (teaching and podcasts the admin has put on, playing day and night), which is what plays when the church has not added anything. Press play and it joins the live channel; it keeps playing while you
-// move around the app, with the bar above the tabs. Tap a card to open the full player.
+// "Podcast radio" on the Podcasts screen, under Our Podcasts (which plays the recordings on demand): the live side. The platform's own Podcast radio
+// (teaching and podcasts the admin has put on, playing day and night) is the big card, and the podcast channels of the churches you follow are listed under
+// it. Press play and it joins the live channel; it keeps playing while you move around the app, with the bar above the tabs. Tap a card to open the full
+// player.
 import { ActivityIndicator, Image, Pressable, StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -41,7 +42,7 @@ function PlayButton({ slug, size = 56, light = false }) {
   );
 }
 
-/** The big card with what is on air now: the member's church's podcast channel when it has episodes, else the platform's Podcast radio. */
+/** The big card with what is on air now: the platform's Podcast radio, else the first of the member's churches' channels. */
 function MainCard({ channel }) {
   const { stationId, phase } = useRadio();
   const now = useFetch(`/radio/stations/${channel.slug}`);
@@ -103,9 +104,9 @@ export default function PodcastRadio() {
   const talk = stations.filter((s) => s.kind === 'talk');
   const platform = talk.find((s) => !s.church);
   const own = talk.filter((s) => s.church);
-  // The church the member follows comes first: its channel is the big card and the Podcast radio follows with the other churches' channels.
-  const main = own[0] ?? platform;
-  const churches = [...own.slice(1), ...(own[0] && platform ? [platform] : [])];
+  // The Podcast radio is the big live card; the churches' channels (the ones the member follows) are listed under it.
+  const main = platform ?? own[0];
+  const churches = platform ? own : own.slice(1);
   if (!main && !churches.length) return null;
 
   return (
@@ -124,7 +125,7 @@ export default function PodcastRadio() {
       ) : null}
       {churches.length ? (
         <View style={{ marginTop: SPACING.md }}>
-          <AppText style={styles.subsection}>More channels</AppText>
+          <AppText style={styles.subsection}>Live church channels</AppText>
           {churches.map((c) => (
             <ChurchRow key={c.slug} channel={c} />
           ))}

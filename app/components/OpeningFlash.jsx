@@ -1,7 +1,8 @@
 // The flash at the very start of the app: for a few seconds (the platform admin sets how many, how fast and the words; see lib/openingFlash.js), three
 // columns of tall rounded photos roll in opposite directions (up, down, up), with small dark icon badges and sparkles floating over them, the
-// FaithFellows name and a line about staying connected in faith. Then it fades away and the app is there. "Skip" opens the app at once. The photos are the ones in assets/splash (see lib/openingPhotos.js); pass `photos` to
-// show others. Phones set to reduce motion get still photos and a shorter flash.
+// FaithFellows name and a line about staying connected in faith. Then it fades away and the app is there. "Skip" opens the app at once. The photos are
+// the ones the platform admin added in Super admin → App media (`photos`, a list of image sources): none are built into the app, and the layout does not
+// show the flash when there are none. Phones set to reduce motion get still photos and a shorter flash.
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { AccessibilityInfo, Animated, Easing, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -10,7 +11,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, FONTS, SPACING } from '../constants/theme';
 import { FLASH_DEFAULTS } from '../lib/openingFlash';
-import { OPENING_PHOTOS } from '../lib/openingPhotos';
 import AppText from './AppText';
 import Logo from './Logo';
 
@@ -113,7 +113,7 @@ function Sparkle({ style, size = 18, delay = 0, still }) {
   );
 }
 
-export default function OpeningFlash({ photos = OPENING_PHOTOS, seconds = FLASH_DEFAULTS.seconds, speed = FLASH_DEFAULTS.speed, title = FLASH_DEFAULTS.title, text = FLASH_DEFAULTS.text, onDone }) {
+export default function OpeningFlash({ photos, seconds = FLASH_DEFAULTS.seconds, speed = FLASH_DEFAULTS.speed, title = FLASH_DEFAULTS.title, text = FLASH_DEFAULTS.text, onDone }) {
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const [region, setRegion] = useState(0); // the height of the area the photos roll in

@@ -1,7 +1,7 @@
 // Root layout: loads the Clarity City fonts (the website's typeface), keeps the splash screen up until the app is ready,
 // shows the opening flash (a few seconds of rolling photos) once each time the app is opened, provides authentication to every screen
 // and defines the top-level navigation stack.
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { Stack, useSegments } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -43,6 +43,7 @@ function Navigator({ fontsLoaded }) {
 
   const [mediaLoaded, setMediaLoaded] = useState(false);
   const media = useAppMedia();
+  const openingPhotos = useMemo(() => media.opening.map(sourceOf), [media.opening]); // only the admin's: none are built into the app
 
   useEffect(() => {
     storedFlash().then(setFlashSettings);
@@ -51,12 +52,13 @@ function Navigator({ fontsLoaded }) {
     refreshAppMedia();
   }, []);
 
+  // No flash when the admin switched it off or has not added any photos (nothing else waits on it then).
   useEffect(() => {
-    if (flashSettings && !flashSettings.enabled) {
+    if (flashSettings && mediaLoaded && (!flashSettings.enabled || openingPhotos.length === 0)) {
       setFlash(false);
       markFlashDone();
     }
-  }, [flashSettings]);
+  }, [flashSettings, mediaLoaded, openingPhotos.length]);
   const segments = useSegments();
   useJoinLink({ ready, token, user, place: segments[0] }); // a church's join link: keep it through sign-up, then follow the church
   const insets = useSafeAreaInsets();
@@ -82,8 +84,8 @@ function Navigator({ fontsLoaded }) {
         }}
       />
       {showBar ? <NowPlayingBar bottomInset={insets.bottom} /> : null}
-      {flash && ready && mediaLoaded && flashSettings?.enabled ? (
-        <OpeningFlash photos={media.opening.length >= 3 ? media.opening.map(sourceOf) : undefined} seconds={flashSettings.seconds} speed={flashSettings.speed} title={flashSettings.title} text={flashSettings.text} onDone={() => { setFlash(false); markFlashDone(); }} />
+      {flash && ready && mediaLoaded && flashSettings?.enabled && openingPhotos.length > 0 ? (
+        <OpeningFlash photos={openingPhotos} seconds={flashSettings.seconds} speed={flashSettings.speed} title={flashSettings.title} text={flashSettings.text} onDone={() => { setFlash(false); markFlashDone(); }} />
       ) : null}
     </View>
   );
