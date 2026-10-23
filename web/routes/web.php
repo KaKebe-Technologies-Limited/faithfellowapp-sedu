@@ -550,6 +550,9 @@ Route::prefix('super-admin')->name('super-admin.')
         Route::get('/churches/{church:id}', [SuperAdmin\ChurchController::class, 'show'])->name('churches.show');
         Route::get('/churches/{church:id}/manage', [SuperAdmin\ChurchController::class, 'manage'])->name('churches.manage');
         Route::patch('/churches/{church:id}', [SuperAdmin\ChurchController::class, 'update'])->name('churches.update');
+        Route::post('/churches/{church:id}/members', [SuperAdmin\ChurchMemberController::class, 'assign'])->middleware('throttle:20,1')->name('churches.members.assign');
+        Route::delete('/churches/{church:id}/members/{user}', [SuperAdmin\ChurchMemberController::class, 'remove'])->name('churches.members.remove');
+        Route::post('/users/{user}/churches', [SuperAdmin\ChurchMemberController::class, 'assignUser'])->middleware('throttle:60,1')->name('users.churches.assign');
         Route::post('/churches/{church:id}/approve', [SuperAdmin\ChurchController::class, 'approve'])->name('churches.approve');
         Route::post('/churches/{church:id}/suspend', [SuperAdmin\ChurchController::class, 'suspend'])->name('churches.suspend');
         Route::post('/churches/{church:id}/reactivate', [SuperAdmin\ChurchController::class, 'reactivate'])->name('churches.reactivate');

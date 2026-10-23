@@ -62,6 +62,50 @@ class SubscriptionService
         return $subscription;
     }
 
+    /**
+     * The platform admin makes a registered user a follower of a church. It is not the member's own choice, so it does not count against the
+     * limit of churches a member follows and the church's own approval is not asked for; a member the church has blocked stays blocked.
+     *
+     * @return 'added'|'already'|'blocked'|'church_inactive'|'user_inactive'
+     */
+    public function assign(User $user, Church $church, ?User $by = null, string $stage = 'member', bool $notify = true): string
+    {
+        if (! $church->isActive()) {
+            return 'church_inactive';
+        }
+        if ($user->status === 'suspended') {
+            return 'user_inactive';
+        }
+        $existing = Subscription::where('user_id', $user->id)->where('church_id', $church->id)->first();
+        if ($existing?->status === 'blocked') {
+            return 'blocked';
+        }
+        if ($existing?->isActive()) {
+            return 'already';
+        }
+
+        $subscription = Subscription::updateOrCreate(
+            ['user_id' => $user->id, 'church_id' => $church->id],
+            [
+                'status' => 'active',
+                'stage' => array_key_exists($stage, Subscription::STAGES) ? $stage : 'member',
+                'source' => $existing?->source ?? 'assigned',
+                'share_email' => $existing?->share_email ?? (bool) $user->email_consent,
+                'subscribed_at' => $existing?->subscribed_at ?? now(),
+                'unsubscribed_at' => null,
+                'approved_at' => now(),
+            ],
+        );
+        $user->flushSubscriptionCache();
+        Audit::log('member.assigned', $subscription, __(':user added to :church', ['user' => $user->name, 'church' => $church->name]), [], ['church_id' => $church->id, 'user_id' => $user->id, 'by' => $by?->id], $church->id);
+
+        if ($notify) {
+            $user->notify(new WelcomeMember($church));
+        }
+
+        return 'added';
+    }
+
     /** Churches the user currently follows or has asked to join. */
     public function activeCount(User $user): int
     {

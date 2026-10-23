@@ -1,5 +1,5 @@
 // The first screen and the way in. A full-bleed photo (people praising, prayer over the Bible, friends in the morning light, the
-// cross) cross-fades behind the FaithFellows promise, and the ways in are stacked as plain pills: Continue with Google first,
+// cross, and the smiling faces of the church family) cross-fades behind the FaithFellows promise, and the ways in are stacked as plain pills: Continue with Google first,
 // then Continue with email (which opens sign in; "Create an account" is one tap away). Terms and Privacy sit at the foot.
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -15,11 +15,18 @@ import Logo from '../../components/Logo';
 import { COLORS, FONTS, RADIUS, SPACING } from '../../constants/theme';
 import { GOOGLE_ENABLED } from '../../lib/google';
 
+// The photos that cross-fade behind the words: the church scenes, with people of the church (the owner's own photos, cut to the phone's screen) between them.
 const PICTURES = [
   require('../../assets/welcome/praise.jpg'),
+  require('../../assets/welcome/u1.jpg'),
   require('../../assets/welcome/prayer.jpg'),
+  require('../../assets/welcome/u2.jpg'),
   require('../../assets/welcome/fellowship.jpg'),
+  require('../../assets/welcome/u3.jpg'),
   require('../../assets/welcome/cross.jpg'),
+  require('../../assets/welcome/u4.jpg'),
+  require('../../assets/welcome/u5.jpg'),
+  require('../../assets/welcome/u6.jpg'),
 ];
 
 export default function Welcome() {
