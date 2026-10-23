@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Models\Podcast;
 use App\Models\PodcastEpisode;
+use App\Models\RadioStation;
 use App\Services\PodcastService;
+use App\Services\RadioService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -20,13 +22,14 @@ class PodcastController extends Controller
     public function __construct(protected PodcastService $podcasts) {}
 
     /** The landing screen: categories, what you follow, the newest episodes and the newest podcasts. */
-    public function overview(Request $request): JsonResponse
+    public function overview(Request $request, RadioService $radio): JsonResponse
     {
         $user = $request->user();
         $followed = $user->followedPodcasts()->listed()->orderByDesc('latest_episode_at')->take(20)->get();
         $newest = PodcastEpisode::out()->whereHas('podcast', fn ($p) => $p->listed())->with('podcast')->orderByDesc('published_at')->take(12)->get();
 
         return response()->json(['data' => [
+            'ours' => $this->ours($user, $radio),
             'categories' => collect(Podcast::CATEGORIES)->map(fn ($label, $key) => ['key' => $key, 'label' => __($label), 'count' => Podcast::listed()->where('category', $key)->count()])->filter(fn ($c) => $c['count'] > 0)->values(),
             // A shelf for each category that has podcasts (Faith and Motivation first): up to six, the newest first, and how many there are in all.
             'sections' => $this->sections($followed),
@@ -34,6 +37,36 @@ class PodcastController extends Controller
             'new_episodes' => $newest->map(fn (PodcastEpisode $e) => $this->episode($e))->values(),
             'podcasts' => Podcast::listed()->orderByDesc('latest_episode_at')->orderByDesc('id')->take(12)->get()->map(fn (Podcast $p) => $this->card($p, $followed->contains('id', $p->id)))->values(),
         ]]);
+    }
+
+    /**
+     * "Our Podcasts": the teaching and podcasts the member's own churches have put out, a block for each church with its newest episodes first, to play
+     * one by one on demand. Only when none of their churches has any does the platform's own podcast collection stand in, so the section is not empty
+     * while the app has teaching to play.
+     *
+     * @return list<array<string, mixed>>
+     */
+    protected function ours($user, RadioService $radio): array
+    {
+        return rescue(function () use ($user, $radio) {
+            if (! RadioStation::ready()) {
+                return [];
+            }
+            $talk = $radio->stationsFor($user)->where('kind', 'talk')->values();
+            $mine = $talk->filter(fn (RadioStation $s) => $s->church_id);
+
+            return ($mine->isNotEmpty() ? $mine : $talk->reject(fn (RadioStation $s) => $s->church_id))->take(4)->map(function (RadioStation $s) use ($radio) {
+                $episodes = $radio->tracks($s)->sortByDesc('id')->values();
+
+                return [
+                    'slug' => $s->slug,
+                    'name' => $s->church?->name ?? $radio->name($s),
+                    'church' => $s->church ? ['id' => $s->church->id, 'slug' => $s->church->slug, 'name' => $s->church->name, 'logo_url' => $s->church->logo_url] : null,
+                    'total' => $episodes->count(),
+                    'episodes' => $episodes->take(20)->map(fn ($t) => $t->toPayload())->all(),
+                ];
+            })->values()->all();
+        }, [], false);
     }
 
     /**

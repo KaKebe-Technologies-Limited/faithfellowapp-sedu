@@ -12,7 +12,7 @@ use Illuminate\View\View;
 
 /**
  * The pictures of the app itself, from the system end: the opening photos, the welcome screen's photos and the default photos of the Home banner slider.
- * Upload, caption, switch off, reorder and remove; where a placement has none the app keeps the photos built into it.
+ * Upload, caption, switch off, reorder and remove; where the welcome screen or the banner has none the app keeps the photos built into it, and without opening photos it opens straight to Home.
  */
 class AppMediaController extends Controller
 {

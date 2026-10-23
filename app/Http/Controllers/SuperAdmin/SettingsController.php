@@ -29,7 +29,7 @@ class SettingsController extends Controller
         'support_email' => ['Support email', 'email', 'Shown to churches on the support page.'],
         'support_phone' => ['Support phone', 'text', null],
         'trial_months' => ['Free trial length (months)', 'number', 'Applies to newly approved churches.'],
-        'opening_flash_enabled' => ['Opening photos: show when the app opens', 'bool', 'A flash of rolling photos each time the app is opened. Turn off to open the app straight away.'],
+        'opening_flash_enabled' => ['Opening photos: show when the app opens', 'bool', 'A flash of rolling photos each time the app is opened. Turn off to open the app straight away. The photos are the ones you add in App media; with none added the app opens straight away.'],
         'opening_flash_seconds' => ['Opening photos: seconds shown', 'number', 'How long the photos stay on screen before the app opens, from 2 to 20 seconds. Default 6. Phones pick up a change the next time the app is opened.'],
         'opening_flash_speed' => ['Opening photos: rolling speed', 'number', 'How fast the photos roll, from 1 (slow) to 10 (fast). Default 5.'],
         'opening_flash_title' => ['Opening photos: title', 'text', 'The big line under the photos. Leave empty for “Stay Connected in Faith”.'],
