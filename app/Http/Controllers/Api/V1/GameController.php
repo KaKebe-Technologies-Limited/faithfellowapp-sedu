@@ -78,7 +78,7 @@ class GameController extends Controller
             'period' => ['nullable', Rule::in(['today', 'week', 'all'])],
             'scope' => ['nullable', Rule::in(['everyone', 'church'])],
         ]);
-        $quiz = Quiz::samples()->findOrFail($data['quiz_id']);
+        $quiz = Quiz::playableBy($request->user()->memberChurchIds())->findOrFail($data['quiz_id']);
         $period = $data['period'] ?? 'week';
 
         if (! QuizService::selfPaced()) {

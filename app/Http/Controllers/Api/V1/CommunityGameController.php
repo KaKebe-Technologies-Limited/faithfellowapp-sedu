@@ -31,13 +31,20 @@ class CommunityGameController extends Controller
             ->where('quiz_players.user_id', $request->user()->id)->where('quiz_sessions.mode', 'self')->whereNotNull('quiz_players.finished_at')
             ->selectRaw('quiz_sessions.quiz_id as quiz_id, MAX(quiz_players.score) as best, COUNT(*) as runs')->groupBy('quiz_sessions.quiz_id')->get()->keyBy('quiz_id'), collect(), false) : collect();
 
+        // The quizzes of the churches the member follows come first ("From your church"), then the ready-made games.
+        $churchIds = $request->user()->memberChurchIds();
+        $church = $churchIds ? Quiz::with('church')->whereIn('church_id', $churchIds)->has('questions')->withCount('questions')->latest()->get() : collect();
+        $card = fn (Quiz $q, ?string $category, ?string $from) => [
+            'id' => $q->id, 'title' => $q->title, 'description' => $q->description ?: ($from ? __('A quiz from :church', ['church' => $from]) : null), 'category' => $category, 'emoji' => $q->emoji ?: '⛪',
+            'questions' => (int) $q->questions_count, 'plays' => (int) ($plays[$q->id] ?? 0), 'church' => $from,
+            'my_best' => isset($best[$q->id]) ? (int) $best[$q->id]->best : null, 'my_runs' => (int) ($best[$q->id]->runs ?? 0),
+        ];
+        $categories = collect(SampleGames::CATEGORIES)->map(fn ($c, $key) => ['key' => $key, 'label' => $c[0], 'color' => $c[1]])->values();
+
         return response()->json(['data' => [
-            'categories' => collect(SampleGames::CATEGORIES)->map(fn ($c, $key) => ['key' => $key, 'label' => $c[0], 'color' => $c[1]])->values(),
-            'quizzes' => Quiz::samples()->withCount('questions')->orderBy('id')->get()->map(fn (Quiz $q) => [
-                'id' => $q->id, 'title' => $q->title, 'description' => $q->description, 'category' => $q->category, 'emoji' => $q->emoji,
-                'questions' => (int) $q->questions_count, 'plays' => (int) ($plays[$q->id] ?? 0),
-                'my_best' => isset($best[$q->id]) ? (int) $best[$q->id]->best : null, 'my_runs' => (int) ($best[$q->id]->runs ?? 0),
-            ])->values(),
+            'categories' => $church->isNotEmpty() ? $categories->prepend(['key' => 'my-church', 'label' => __('From your church'), 'color' => '#BC2649'])->values() : $categories,
+            'quizzes' => $church->map(fn (Quiz $q) => $card($q, 'my-church', $q->church?->name))
+                ->concat(Quiz::samples()->withCount('questions')->orderBy('id')->get()->map(fn (Quiz $q) => $card($q, $q->category, null)))->values(),
         ]]);
     }
 
@@ -45,7 +52,7 @@ class CommunityGameController extends Controller
     public function start(Request $request): JsonResponse
     {
         $data = $request->validate(['quiz_id' => ['required', 'integer']]);
-        $quiz = Quiz::samples()->findOrFail($data['quiz_id']);
+        $quiz = Quiz::playableBy($request->user()->memberChurchIds())->findOrFail($data['quiz_id']);
         $session = $this->quizzes->hostCommunity($quiz, $request->user());
 
         return response()->json(['data' => ['id' => $session->id, 'pin' => $session->pin, 'quiz' => $quiz->title]], 201);

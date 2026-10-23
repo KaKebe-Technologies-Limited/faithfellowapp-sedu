@@ -40,7 +40,8 @@ trait SelfPacedQuizzes
     /** Opens a game room of a quiz. The host is the first player and presses Start playing when ready; friends join with the PIN any time. */
     public function hostSelf(Quiz $quiz, User $host): QuizSession
     {
-        abort_unless($quiz->is_sample && $quiz->church_id === null, 404);
+        // A ready-made game is for everyone; a church's own quiz is for the members who follow that church.
+        abort_unless(($quiz->is_sample && $quiz->church_id === null) || ($quiz->church_id !== null && $host->isMemberOf($quiz->church_id)), 404);
         abort_if($quiz->questions()->count() === 0, 422, __('This quiz has no questions yet.'));
 
         // Rooms nobody played in do not pile up: the host's earlier room of this quiz that no one else joined, and any room open longer than a week, are closed.

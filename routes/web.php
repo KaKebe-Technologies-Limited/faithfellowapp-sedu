@@ -395,16 +395,19 @@ Route::prefix('church/{church}/admin')->name('church-admin.')
             Route::post('/media', [ChurchAdmin\MediaLibraryController::class, 'store'])->name('media.store');
             Route::delete('/media/{mediaId}', [ChurchAdmin\MediaLibraryController::class, 'destroy'])->whereNumber('mediaId')->name('media.destroy');
 
-            // The church's own radio channel: audio that plays round the clock, in a loop, for the members who follow the church
-            Route::get('/radio', [ChurchAdmin\RadioController::class, 'index'])->name('radio.index');
-            Route::post('/radio/chunk', [ChurchAdmin\RadioController::class, 'chunk'])->middleware('throttle:1500,1')->name('radio.chunk');
-            Route::put('/radio/settings', [ChurchAdmin\RadioController::class, 'settings'])->name('radio.settings');
-            Route::put('/radio/{trackId}', [ChurchAdmin\RadioController::class, 'update'])->whereNumber('trackId')->name('radio.update');
-            Route::post('/radio/{trackId}/move', [ChurchAdmin\RadioController::class, 'move'])->whereNumber('trackId')->name('radio.move');
-            Route::post('/radio/{trackId}/play', [ChurchAdmin\RadioController::class, 'play'])->whereNumber('trackId')->middleware('throttle:30,1')->name('radio.play');
-            Route::post('/radio/schedules', [ChurchAdmin\RadioController::class, 'schedule'])->middleware('throttle:30,1')->name('radio.schedule');
-            Route::delete('/radio/schedules/{scheduleId}', [ChurchAdmin\RadioController::class, 'unschedule'])->whereNumber('scheduleId')->name('radio.unschedule');
-            Route::delete('/radio/{trackId}', [ChurchAdmin\RadioController::class, 'destroy'])->whereNumber('trackId')->name('radio.destroy');
+            // The church's own channels: audio that plays round the clock, in a loop, for the members who follow the church. /songs is its radio (songs, played
+            // on Home); /radio is its podcast channel (teaching and episodes, on the Podcasts page).
+            foreach (['radio' => 'talk', 'songs' => 'music'] as $channel => $kind) {
+                Route::get("/{$channel}", [ChurchAdmin\RadioController::class, 'index'])->defaults('kind', $kind)->name("{$channel}.index");
+                Route::post("/{$channel}/chunk", [ChurchAdmin\RadioController::class, 'chunk'])->defaults('kind', $kind)->middleware('throttle:1500,1')->name("{$channel}.chunk");
+                Route::put("/{$channel}/settings", [ChurchAdmin\RadioController::class, 'settings'])->defaults('kind', $kind)->name("{$channel}.settings");
+                Route::put("/{$channel}/{trackId}", [ChurchAdmin\RadioController::class, 'update'])->defaults('kind', $kind)->whereNumber('trackId')->name("{$channel}.update");
+                Route::post("/{$channel}/{trackId}/move", [ChurchAdmin\RadioController::class, 'move'])->defaults('kind', $kind)->whereNumber('trackId')->name("{$channel}.move");
+                Route::post("/{$channel}/{trackId}/play", [ChurchAdmin\RadioController::class, 'play'])->defaults('kind', $kind)->whereNumber('trackId')->middleware('throttle:30,1')->name("{$channel}.play");
+                Route::post("/{$channel}/schedules", [ChurchAdmin\RadioController::class, 'schedule'])->defaults('kind', $kind)->middleware('throttle:30,1')->name("{$channel}.schedule");
+                Route::delete("/{$channel}/schedules/{scheduleId}", [ChurchAdmin\RadioController::class, 'unschedule'])->defaults('kind', $kind)->whereNumber('scheduleId')->name("{$channel}.unschedule");
+                Route::delete("/{$channel}/{trackId}", [ChurchAdmin\RadioController::class, 'destroy'])->defaults('kind', $kind)->whereNumber('trackId')->name("{$channel}.destroy");
+            }
         });
 
         // Members
@@ -632,6 +635,9 @@ Route::prefix('super-admin')->name('super-admin.')
         Route::post('/radio/chunk', [SuperAdmin\RadioController::class, 'chunk'])->middleware('throttle:1500,1')->name('radio.chunk');
         Route::put('/radio/settings', [SuperAdmin\RadioController::class, 'settings'])->name('radio.settings');
         Route::put('/radio/channels/{station}/block', [SuperAdmin\RadioController::class, 'block'])->whereNumber('station')->name('radio.block');
+        // Interrupts every channel in the app with one track, for everyone listening
+        Route::post('/radio/broadcast', [SuperAdmin\RadioController::class, 'broadcast'])->middleware('throttle:10,1')->name('radio.broadcast');
+        Route::delete('/radio/broadcast', [SuperAdmin\RadioController::class, 'stopBroadcast'])->name('radio.broadcast.stop');
         Route::put('/radio/{track}', [SuperAdmin\RadioController::class, 'update'])->name('radio.update');
         Route::post('/radio/{track}/move', [SuperAdmin\RadioController::class, 'move'])->name('radio.move');
         Route::post('/radio/{track}/play', [SuperAdmin\RadioController::class, 'play'])->middleware('throttle:30,1')->name('radio.play');

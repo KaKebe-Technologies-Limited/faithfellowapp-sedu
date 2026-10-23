@@ -216,12 +216,25 @@ class RadioService
     public function nowPlaying(?CarbonInterface $at = null, int $upcoming = 4, int $recent = 5, ?RadioStation $station = null): ?array
     {
         $station ??= RadioStation::gospel();
+        $at ??= now();
+
+        // The super admin is broadcasting to everyone: every channel plays it, from where it is, whatever else it had on.
+        if ($broadcast = $this->activeBroadcast($at)) {
+            return [
+                'track' => $broadcast['track']->toPayload(),
+                'offset' => $at->getTimestamp() - $broadcast['at'],
+                'started_at' => Carbon::createFromTimestamp($broadcast['at'])->toIso8601String(),
+                'ends_at' => Carbon::createFromTimestamp($broadcast['ends'])->toIso8601String(),
+                'upcoming' => [], // when it ends the phone asks again and rejoins the channel where its clock is
+                'recent' => [],
+                'broadcast' => ['title' => $broadcast['track']->title, 'message' => $broadcast['message']],
+            ];
+        }
+
         $tracks = $this->available($station) ? $this->tracks($station) : collect();
         if ($tracks->isEmpty()) {
             return null;
         }
-
-        $at ??= now();
         $total = (int) $tracks->sum('duration_seconds');
         $phase = ($this->secondsIntoLoop($station, $tracks, $at) % $total + $total) % $total;
 
@@ -275,11 +288,14 @@ class RadioService
     {
         $now = $this->nowPlaying(null, 4, 5, $station);
 
-        // Nothing is on this channel (it is empty or switched off): the Podcast radio plays instead, so the radio always has something to hear.
-        if ($now === null && $allowFallback && $station->slug !== RadioStation::PODCAST && RadioStation::ready()) {
-            $podcast = RadioStation::podcast();
-            if ($this->nowPlaying(null, 1, 0, $podcast) !== null) {
-                return array_merge($this->payload($podcast, false), ['fallback' => true, 'fallback_for' => ['slug' => $station->slug, 'name' => $this->name($station)]]);
+        // Nothing is on this channel (it is empty or switched off): a church's songs radio hands over to the Gospel radio, and every other channel to the
+        // Podcast radio, so the radio always has something to hear.
+        if ($now === null && $allowFallback && RadioStation::ready()) {
+            $options = $station->kind === 'music' ? [RadioStation::gospel(), RadioStation::podcast()] : [RadioStation::podcast()];
+            foreach ($options as $other) {
+                if ($other->slug !== $station->slug && $this->nowPlaying(null, 1, 0, $other) !== null) {
+                    return array_merge($this->payload($other, false), ['fallback' => true, 'fallback_for' => ['slug' => $station->slug, 'name' => $this->name($station)]]);
+                }
             }
         }
 
@@ -296,7 +312,8 @@ class RadioService
                 ? ['id' => $station->church->id, 'name' => $station->church->name]
                 : null,
             'now' => $now,
-            'scheduled' => $now !== null ? $this->nextScheduled($station, $this->tracks($station), now()) : null,
+            'broadcast' => $now['broadcast'] ?? null,
+            'scheduled' => $now !== null && ! isset($now['broadcast']) ? $this->nextScheduled($station, $this->tracks($station), now()) : null,
             'songs' => $this->tracks($station)->count(),
             'server_time' => now()->toIso8601String(),
         ];
@@ -304,22 +321,73 @@ class RadioService
 
     /**
      * The channels this person can listen to: the platform's, and the channels of the churches they follow or work for. Only channels that are on
-     * and have something in them. The Gospel radio comes first.
+     * and have something in them. The songs come first and the teaching after, and in each the member's own churches come before the platform's
+     * (the Gospel radio and the Podcast radio), so the church's radio is what plays by default and the platform's fills in when it has nothing.
      *
      * @return Collection<int, RadioStation>
      */
     public function stationsFor(?User $user): Collection
     {
-        $stations = collect([RadioStation::gospel()]);
+        $church = collect();
         if (RadioStation::ready()) {
-            $stations->push(RadioStation::podcast());
             $churchIds = $this->churchIdsOf($user);
             if ($churchIds->isNotEmpty()) {
-                $stations = $stations->merge(RadioStation::whereIn('church_id', $churchIds)->with('church')->orderBy('name')->get());
+                $church = RadioStation::whereIn('church_id', $churchIds)->with('church')->orderBy('name')->get();
             }
+        }
+        $stations = $church->where('kind', 'music')->concat([RadioStation::gospel()]);
+        if (RadioStation::ready()) {
+            $stations = $stations->concat($church->where('kind', '!=', 'music'))->concat([RadioStation::podcast()]);
         }
 
         return $stations->filter(fn (RadioStation $s) => $this->available($s) && $this->tracks($s)->isNotEmpty())->values();
+    }
+
+    // ── The super admin's broadcast: one track on every channel at once ──────────────────────────────────
+
+    /**
+     * The track the super admin is broadcasting to everyone right now, from the moment they pressed the button until it ends.
+     *
+     * @return array{track: RadioTrack, at: int, ends: int, message: string|null}|null
+     */
+    public function activeBroadcast(?CarbonInterface $at = null): ?array
+    {
+        $saved = json_decode((string) PlatformSetting::get('radio_broadcast'), true);
+        if (! is_array($saved) || empty($saved['track']) || empty($saved['at'])) {
+            return null;
+        }
+        $track = RadioTrack::find($saved['track']);
+        $now = ($at ?? now())->getTimestamp();
+        if (! $track || $track->duration_seconds < 1 || $now < (int) $saved['at'] || $now >= (int) $saved['at'] + $track->duration_seconds) {
+            return null;
+        }
+
+        return ['track' => $track, 'at' => (int) $saved['at'], 'ends' => (int) $saved['at'] + $track->duration_seconds, 'message' => ($saved['message'] ?? null) ?: null];
+    }
+
+    /**
+     * Interrupts every channel (the platform's and every church's) with this track, from its start, for everyone who is listening: their phones
+     * move to it within a few seconds. A channel carries on where its own clock is when the track ends. With `notify`, every phone that has the app
+     * gets a notification as well, for the people who are not listening.
+     */
+    public function startBroadcast(RadioTrack $track, ?string $message = null, ?User $by = null, bool $notify = false): void
+    {
+        $message = trim((string) $message) ?: null;
+        PlatformSetting::put('radio_broadcast', json_encode(['track' => $track->id, 'at' => now()->getTimestamp(), 'message' => $message, 'by' => $by?->id]));
+        if ($notify) {
+            rescue(fn () => app(PushBroadcaster::class)->toEveryone('announcement', [
+                'title' => __('Live on FaithFellows Radio'),
+                'body' => $message ?? $track->title,
+                'data' => ['kind' => 'radio'],
+                'channelId' => 'live',
+            ]), 0, false);
+        }
+    }
+
+    /** Ends the broadcast: every channel goes back to what it had on. */
+    public function stopBroadcast(): void
+    {
+        PlatformSetting::put('radio_broadcast', '');
     }
 
     /** The platform's channels are for everyone; a church's channel is for the people who follow that church or work for it. */
