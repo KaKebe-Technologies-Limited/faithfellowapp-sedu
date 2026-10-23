@@ -492,6 +492,7 @@ return array(
     'App\\Support\\CsvExport' => $baseDir . '/app/Support/CsvExport.php',
     'App\\Support\\DatabaseUpdates' => $baseDir . '/app/Support/DatabaseUpdates.php',
     'App\\Support\\MobileMoneyPhone' => $baseDir . '/app/Support/MobileMoneyPhone.php',
+    'App\\Support\\OpeningFlash' => $baseDir . '/app/Support/OpeningFlash.php',
     'App\\Support\\ReadingPlanTemplates' => $baseDir . '/app/Support/ReadingPlanTemplates.php',
     'App\\Support\\SampleGames' => $baseDir . '/app/Support/SampleGames.php',
     'App\\Support\\ServerErrors' => $baseDir . '/app/Support/ServerErrors.php',

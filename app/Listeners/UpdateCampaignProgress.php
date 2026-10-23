@@ -4,9 +4,12 @@ namespace App\Listeners;
 
 use App\Events\DonationSucceeded;
 use App\Services\CampaignService;
-use Illuminate\Contracts\Queue\ShouldQueue;
 
-class UpdateCampaignProgress implements ShouldQueue
+/**
+ * Counts a paid gift into its campaign's total at once. It is not queued: a shared server may have no queue worker running, and a campaign must show
+ * what has been given (the totals also correct themselves when the campaign is opened, see CampaignService::healCampaign).
+ */
+class UpdateCampaignProgress
 {
     public function __construct(protected CampaignService $campaigns) {}
 
@@ -14,7 +17,8 @@ class UpdateCampaignProgress implements ShouldQueue
     {
         $campaign = $event->donation->campaign()->first();
         if ($campaign) {
-            $this->campaigns->recalculate($campaign);
+            // The gift is already recorded as paid; if counting it fails the error is reported and the campaign corrects itself the next time it is opened.
+            rescue(fn () => $this->campaigns->recalculate($campaign));
         }
     }
 }

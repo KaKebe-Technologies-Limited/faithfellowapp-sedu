@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\V1;
+use App\Support\OpeningFlash;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -29,6 +30,8 @@ Route::prefix('v1')->name('api.v1.')->middleware('throttle:api')->group(function
     Route::post('/auth/password/code', [V1\PasswordResetController::class, 'sendCode'])->middleware('throttle:20,1')->name('auth.password.code');
     Route::post('/auth/password/reset', [V1\PasswordResetController::class, 'reset'])->middleware('throttle:30,1')->name('auth.password.reset');
     Route::get('/pages/{page}', [V1\PageController::class, 'show'])->name('pages.show');
+    // How the app opens (the flash of photos), set by the platform admin; read before anyone has signed in
+    Route::get('/app/opening', fn () => response()->json(['data' => OpeningFlash::settings()]))->middleware('throttle:60,1')->name('app.opening');
 
     // Public directory
     Route::get('/churches', [V1\ChurchController::class, 'index'])->name('churches.index');

@@ -11,6 +11,8 @@ use App\Models\RecurringGift;
 use App\Models\User;
 use App\Services\Payments\PaymentResult;
 use App\Support\Audit;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -123,6 +125,29 @@ class DonationService
         $this->applyResult($donation, $result);
 
         return $donation->fresh();
+    }
+
+    /**
+     * Asks the gateway about the gifts that are still waiting for an answer: the phone may have been closed before the result came, the gateway's
+     * callback may not have arrived, and a shared server may have no cron job running. At most `$limit` of the newest, so a page that does this stays
+     * quick. Returns how many were settled (paid or failed). `$gifts` is any query of donations.
+     *
+     * @param  Builder|Relation  $gifts
+     */
+    public function refreshPending($gifts, int $limit = 8): int
+    {
+        $settled = 0;
+        $gifts->whereIn('status', ['pending', 'processing'])->whereNotIn('method', ['cash', 'bank'])
+            ->where('created_at', '>=', now()->subDays(3))->where('created_at', '<=', now()->subSeconds(45))
+            ->latest()->limit($limit)->get()
+            ->each(function (Donation $donation) use (&$settled) {
+                $after = rescue(fn () => $this->sync($donation), $donation, false);
+                if ($after->isFinal()) {
+                    $settled++;
+                }
+            });
+
+        return $settled;
     }
 
     public function applyResult(Donation $donation, PaymentResult $result): void

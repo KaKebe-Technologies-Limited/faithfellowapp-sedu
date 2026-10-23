@@ -23,6 +23,8 @@ class CampaignController extends Controller
 
     public function index(Church $church): View
     {
+        rescue(fn () => $this->campaigns->healChurch($church), 0, false);
+
         return view('church-admin.campaigns.index', [
             'church' => $church,
             'campaigns' => $church->campaigns()->with('media')->withCount('pledges')->latest()->paginate(20),
@@ -50,6 +52,7 @@ class CampaignController extends Controller
 
     public function show(Church $church, Campaign $campaign): View
     {
+        $this->campaigns->healCampaign($campaign);
         $campaign->load(['milestones', 'teams', 'media', 'updates']);
 
         return view('church-admin.campaigns.show', [

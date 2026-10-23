@@ -1087,6 +1087,7 @@ class ComposerStaticInit6b61fb820dd7281d49fc501460ab603f
         'App\\Support\\CsvExport' => __DIR__ . '/../..' . '/app/Support/CsvExport.php',
         'App\\Support\\DatabaseUpdates' => __DIR__ . '/../..' . '/app/Support/DatabaseUpdates.php',
         'App\\Support\\MobileMoneyPhone' => __DIR__ . '/../..' . '/app/Support/MobileMoneyPhone.php',
+        'App\\Support\\OpeningFlash' => __DIR__ . '/../..' . '/app/Support/OpeningFlash.php',
         'App\\Support\\ReadingPlanTemplates' => __DIR__ . '/../..' . '/app/Support/ReadingPlanTemplates.php',
         'App\\Support\\SampleGames' => __DIR__ . '/../..' . '/app/Support/SampleGames.php',
         'App\\Support\\ServerErrors' => __DIR__ . '/../..' . '/app/Support/ServerErrors.php',

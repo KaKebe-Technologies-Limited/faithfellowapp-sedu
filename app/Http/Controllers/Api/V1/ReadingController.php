@@ -11,6 +11,7 @@ use App\Models\Campaign;
 use App\Models\Comment;
 use App\Models\Devotional;
 use App\Rules\NoContactDetails;
+use App\Services\CampaignService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -68,6 +69,7 @@ class ReadingController extends Controller
     public function campaign(Campaign $campaign): CampaignResource
     {
         $this->authorize('view', $campaign);
+        rescue(fn () => app(CampaignService::class)->healCampaign($campaign), null, false);
 
         return new CampaignResource($campaign->load([
             'church.media', 'media', 'milestones',
