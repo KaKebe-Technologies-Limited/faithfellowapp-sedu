@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\V1;
+use App\Services\AppMedia;
 use App\Support\OpeningFlash;
 use Illuminate\Support\Facades\Route;
 
@@ -31,6 +32,8 @@ Route::prefix('v1')->name('api.v1.')->middleware('throttle:api')->group(function
     Route::post('/auth/password/reset', [V1\PasswordResetController::class, 'reset'])->middleware('throttle:30,1')->name('auth.password.reset');
     Route::get('/pages/{page}', [V1\PageController::class, 'show'])->name('pages.show');
     // How the app opens (the flash of photos), set by the platform admin; read before anyone has signed in
+    // The app's own pictures (opening photos, welcome screen, Home banner defaults) from Super admin → App media; empty lists mean the built-in ones
+    Route::get('/app/media', fn () => response()->json(['data' => AppMedia::payload()])->header('Cache-Control', 'public, max-age=300'))->middleware('throttle:60,1')->name('app.media');
     Route::get('/app/opening', fn () => response()->json(['data' => OpeningFlash::settings()]))->middleware('throttle:60,1')->name('app.opening');
 
     // Public directory

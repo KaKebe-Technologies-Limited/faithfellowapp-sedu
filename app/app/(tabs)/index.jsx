@@ -29,6 +29,7 @@ import Skeleton from '../../components/Skeleton';
 import { COLORS, RADIUS, SHADOW, SPACING } from '../../constants/theme';
 import { SOFT } from '../../constants/soft';
 import { useAuth } from '../../lib/auth';
+import { useAppMedia } from '../../lib/appMedia';
 import { useFetch } from '../../lib/useFetch';
 
 function HomeSkeleton() {
@@ -56,10 +57,13 @@ function Notice({ title, message, actionTitle, onAction }) {
 }
 
 /** What the slider shows: the highlights, else the churches' own banners, else nothing (the welcome card takes over). */
-function sliderItems(data) {
+function sliderItems(data, banner = []) {
   if (data.highlights?.length) return data.highlights;
+  const slides = data.slides ?? [];
+  // No church pictures at all: the default photos the platform admin chose (Super admin → App media) fill the banner.
+  if (!slides.length) return banner.map((p) => ({ kind: 'app', id: p.id, label: 'FaithFellows', title: p.title || 'Welcome to FaithFellows', subtitle: p.subtitle, image: p.url, church: null }));
 
-  return (data.slides ?? []).map((s) => ({ kind: 'church', slug: s.church?.slug, label: s.church?.name, title: s.title, subtitle: s.subtitle, image: s.image, church: null }));
+  return slides.map((s) => ({ kind: 'church', slug: s.church?.slug, label: s.church?.name, title: s.title, subtitle: s.subtitle, image: s.image, church: null }));
 }
 
 export default function HomeScreen() {
@@ -83,7 +87,8 @@ export default function HomeScreen() {
   );
 
   const data = home.data?.data;
-  const items = data ? sliderItems(data) : [];
+  const { banner } = useAppMedia();
+  const items = data ? sliderItems(data, banner) : [];
   const liveNow = (data?.live ?? []).find((stream) => stream.status === 'live');
   const hasChurches = (data?.churches ?? []).length > 0;
   const inviteChurch = (data?.churches ?? []).find((c) => c.join_url);

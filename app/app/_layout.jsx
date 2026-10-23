@@ -18,6 +18,7 @@ import NowPlayingBar from '../components/NowPlayingBar';
 import OpeningFlash from '../components/OpeningFlash';
 import { COLORS } from '../constants/theme';
 import { useActivityTracking } from '../lib/activity';
+import { loadAppMedia, refreshAppMedia, sourceOf, useAppMedia } from '../lib/appMedia';
 import { markFlashDone } from '../lib/appStart';
 import { refreshFlash, storedFlash } from '../lib/openingFlash';
 import { AuthProvider, useAuth } from '../lib/auth';
@@ -40,9 +41,14 @@ function Navigator({ fontsLoaded }) {
   const [flash, setFlash] = useState(true); // the opening flash, once each time the app is opened
   const [flashSettings, setFlashSettings] = useState(null); // what the platform admin set for it (the last answer, kept on the phone)
 
+  const [mediaLoaded, setMediaLoaded] = useState(false);
+  const media = useAppMedia();
+
   useEffect(() => {
     storedFlash().then(setFlashSettings);
-    refreshFlash(); // the answer is kept for the next time the app is opened
+    loadAppMedia().finally(() => setMediaLoaded(true));
+    refreshFlash(); // the answers are kept for the next time the app is opened
+    refreshAppMedia();
   }, []);
 
   useEffect(() => {
@@ -76,8 +82,8 @@ function Navigator({ fontsLoaded }) {
         }}
       />
       {showBar ? <NowPlayingBar bottomInset={insets.bottom} /> : null}
-      {flash && ready && flashSettings?.enabled ? (
-        <OpeningFlash seconds={flashSettings.seconds} speed={flashSettings.speed} title={flashSettings.title} text={flashSettings.text} onDone={() => { setFlash(false); markFlashDone(); }} />
+      {flash && ready && mediaLoaded && flashSettings?.enabled ? (
+        <OpeningFlash photos={media.opening.length >= 3 ? media.opening.map(sourceOf) : undefined} seconds={flashSettings.seconds} speed={flashSettings.speed} title={flashSettings.title} text={flashSettings.text} onDone={() => { setFlash(false); markFlashDone(); }} />
       ) : null}
     </View>
   );

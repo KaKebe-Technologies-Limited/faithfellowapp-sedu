@@ -91,25 +91,48 @@ test('people can be found by name on the church page and added with a tick', fun
     $this->actingAs($super)->get(route('super-admin.churches.show', $church))->assertOk()->assertSee('Followers (2)')->assertSee('Added by FaithFellows');
 });
 
-test('from a user\'s page the super admin picks the church, and can take them out again', function () {
+test('on the Users page the super admin presses Assign and puts the person into a church, or two', function () {
     Notification::fake();
     $user = member(['name' => 'Naomi Newcomer']);
-    $mine = Church::factory()->create(['name' => 'Hope Chapel']);
-    $other = Church::factory()->create(['name' => 'Other Church']);
+    $first = Church::factory()->create(['name' => 'Hope Chapel']);
+    $second = Church::factory()->create(['name' => 'Grace Church']);
+    $third = Church::factory()->create(['name' => 'Third Church']);
     $super = superAdmin();
 
-    $this->actingAs($super)->get(route('super-admin.users.show', $user))->assertOk()->assertSee('Add to a church')->assertSee('Hope Chapel')->assertSee('Other Church');
-    $this->actingAs($super)->post(route('super-admin.users.churches.assign', $user), ['church_id' => $mine->id, 'notify' => 1])->assertSessionHas('success', fn ($m) => str_contains($m, 'Hope Chapel'));
-    expect(followState($mine, $user))->toBe('active');
+    // The list has an Assign button on each row, and a window with every active church to tick.
+    $this->actingAs($super)->get(route('super-admin.users.index'))->assertOk()->assertSee('Assign to a church')->assertSee('id="assignModal"', false)
+        ->assertSee(route('super-admin.users.churches.assign', $user), false)->assertSee('Hope Chapel')->assertSee('Third Church');
 
-    $page = $this->actingAs($super)->get(route('super-admin.users.show', $user))->assertOk();
-    $page->assertSee('Other Church');
-    expect($page->getContent())->not->toContain('<option value="'.$mine->id.'">');
+    $this->actingAs($super)->post(route('super-admin.users.churches.assign', $user), ['church_ids' => [$first->id, $second->id], 'notify' => 1])
+        ->assertRedirect()->assertSessionHas('success', fn ($m) => str_contains($m, 'Naomi Newcomer now follows Grace Church and Hope Chapel.'));
+    expect(followState($first, $user))->toBe('active')->and(followState($second, $user))->toBe('active')->and(followState($third, $user))->toBeNull();
+    Notification::assertSentToTimes($user, WelcomeMember::class, 2);
 
-    $this->actingAs($super)->delete(route('super-admin.churches.members.remove', [$mine, $user]))->assertRedirect()->assertSessionHas('success', fn ($m) => str_contains($m, 'no longer follows Hope Chapel'));
-    expect(followState($mine, $user))->toBe('left');
+    // The list now names the churches the person follows, and the window will open with them already ticked.
+    $row = $this->actingAs($super)->get(route('super-admin.users.index', ['q' => 'Naomi']))->assertOk()->assertSee('Hope Chapel');
+    expect($row->getContent())->toContain('data-followed="['.$second->id.','.$first->id.']"');
+
+    // Ticking one they already follow and one new says so plainly; nothing ticked asks for a tick.
+    $this->actingAs($super)->post(route('super-admin.users.churches.assign', $user), ['church_ids' => [$first->id, $third->id]])
+        ->assertSessionHas('success', fn ($m) => str_contains($m, 'now follows Third Church') && str_contains($m, 'Already followed: Hope Chapel'));
+    $this->actingAs($super)->post(route('super-admin.users.churches.assign', $user), [])->assertSessionHasErrors('church_ids');
+
+    // A user's own page has the same ticks, and Remove takes a church away again.
+    $this->actingAs($super)->delete(route('super-admin.churches.members.remove', [$first, $user]))->assertRedirect()->assertSessionHas('success', fn ($m) => str_contains($m, 'no longer follows Hope Chapel'));
+    expect(followState($first, $user))->toBe('left');
+    $this->actingAs($super)->get(route('super-admin.users.show', $user))->assertOk()->assertSee('Assign to a church')->assertSee('Hope Chapel');
     Sanctum::actingAs($user, ['member']);
-    expect($this->getJson(route('api.v1.home'))->json('data.churches'))->toBe([]);
+    expect(collect($this->getJson(route('api.v1.home'))->json('data.churches'))->pluck('name')->sort()->values()->all())->toBe(['Grace Church', 'Third Church']);
+});
+
+test('a suspended account has no Assign button and cannot be added to a church', function () {
+    $user = member(['name' => 'Sam Suspended', 'status' => 'suspended']);
+    $church = Church::factory()->create();
+    $super = superAdmin();
+
+    $this->actingAs($super)->get(route('super-admin.users.index', ['q' => 'Sam Suspended']))->assertOk()->assertDontSee(route('super-admin.users.churches.assign', $user), false);
+    $this->actingAs($super)->post(route('super-admin.users.churches.assign', $user), ['church_ids' => [$church->id]])->assertSessionHas('success', fn ($m) => str_contains($m, 'suspended'));
+    expect(followState($church, $user))->toBeNull();
 });
 
 test('it can be switched off to add people quietly, and only the super admin can do it', function () {
@@ -127,7 +150,8 @@ test('it can be switched off to add people quietly, and only the super admin can
     $target = member();
     foreach ([$admin, member()] as $who) {
         $this->actingAs($who)->post(route('super-admin.churches.members.assign', $church), ['identifiers' => $target->email])->assertForbidden();
-        $this->actingAs($who)->post(route('super-admin.users.churches.assign', $target), ['church_id' => $church->id])->assertForbidden();
+        $this->actingAs($who)->post(route('super-admin.users.churches.assign', $target), ['church_ids' => [$church->id]])->assertForbidden();
+        $this->actingAs($who)->get(route('super-admin.users.index'))->assertForbidden();
         $this->actingAs($who)->delete(route('super-admin.churches.members.remove', [$church, $quiet]))->assertForbidden();
     }
     expect(followState($church, $target))->toBeNull();

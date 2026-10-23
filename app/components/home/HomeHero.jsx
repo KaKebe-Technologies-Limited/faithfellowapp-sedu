@@ -78,13 +78,14 @@ export default function HomeHero({ user, churches, children }) {
         <View style={styles.top}>
           <View style={styles.brand}>
             <Logo size={42} />
+            {/* The church's name is the big one at the top, so the app feels like the church's own; FaithFellows is under it. Without a church it is the title. */}
             <View style={{ flexShrink: 1 }}>
-              <AppText style={styles.name} numberOfLines={1} accessibilityRole="header">
-                FaithFellows
+              <AppText style={[styles.name, church && styles.churchName]} numberOfLines={2} accessibilityRole="header">
+                {church ?? 'FaithFellows'}
               </AppText>
               {church ? (
                 <AppText style={styles.church} numberOfLines={1}>
-                  {church}
+                  FaithFellows
                 </AppText>
               ) : null}
             </View>
@@ -110,7 +111,8 @@ const styles = StyleSheet.create({
   top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: SPACING.md },
   brand: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, paddingRight: 10 },
   name: { flexShrink: 1, fontFamily: FONTS.bold, fontSize: 21, letterSpacing: 0.2, color: '#fff' },
-  church: { fontFamily: FONTS.medium, fontSize: 12.5, marginTop: -1, color: 'rgba(255,255,255,0.78)' },
+  churchName: { fontSize: 19, lineHeight: 23 },
+  church: { fontFamily: FONTS.semibold, fontSize: 12, marginTop: -1, letterSpacing: 0.4, color: 'rgba(255,255,255,0.72)' },
   buttons: { flexDirection: 'row', gap: 10 },
   round: { width: 42, height: 42, borderRadius: 21, backgroundColor: SOFT.glassOnDark, borderWidth: 1, borderColor: SOFT.glassOnDarkBorder, alignItems: 'center', justifyContent: 'center' },
   badge: { position: 'absolute', top: -4, right: -4, minWidth: 18, height: 18, borderRadius: 9, paddingHorizontal: 4, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#4A0F29' },

@@ -3,8 +3,9 @@
 // FaithFellows name and a line about staying connected in faith. Then it fades away and the app is there. "Skip" opens the app at once. The photos are the ones in assets/splash (see lib/openingPhotos.js); pass `photos` to
 // show others. Phones set to reduce motion get still photos and a shorter flash.
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { AccessibilityInfo, Animated, Easing, Image, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { AccessibilityInfo, Animated, Easing, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, FONTS, SPACING } from '../constants/theme';
@@ -34,7 +35,7 @@ function Pill({ source, width }) {
 
   return (
     <View style={[styles.pill, { width, height, borderRadius: width / 2, marginBottom: GAP }]}>
-      <Image source={source} resizeMode="cover" style={{ width, height, borderRadius: width / 2 }} />
+      <Image source={source} contentFit="cover" cachePolicy="disk" transition={0} style={{ width, height, borderRadius: width / 2 }} />
     </View>
   );
 }

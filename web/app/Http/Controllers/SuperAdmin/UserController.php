@@ -20,8 +20,10 @@ class UserController extends Controller
     public function index(Request $request): View
     {
         return view('super-admin.users.index', [
-            'users' => $this->query($request)->with(['media', 'roles'])->withCount(['subscriptions' => fn ($q) => $q->where('status', 'active')])
+            'users' => $this->query($request)->with(['media', 'roles', 'subscriptions' => fn ($q) => $q->where('status', 'active')->with('church:id,name')])->withCount(['subscriptions' => fn ($q) => $q->where('status', 'active')])
                 ->latest()->paginate(30)->withQueryString(),
+            // The churches a user can be put into (the Assign button on each row)
+            'churches' => Church::active()->orderBy('name')->get(['id', 'name', 'city']),
             'counts' => [
                 'all' => User::count(),
                 'suspended' => User::where('status', 'suspended')->count(),

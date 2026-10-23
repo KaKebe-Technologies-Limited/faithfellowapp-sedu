@@ -13,6 +13,7 @@ import GoogleButton from '../../components/GoogleButton';
 import PendingJoinBanner from '../../components/join/PendingJoinBanner';
 import Logo from '../../components/Logo';
 import { COLORS, FONTS, RADIUS, SPACING } from '../../constants/theme';
+import { sourceOf, useAppMedia } from '../../lib/appMedia';
 import { GOOGLE_ENABLED } from '../../lib/google';
 
 // The photos that cross-fade behind the words: the church scenes, with people of the church (the owner's own photos, cut to the phone's screen) between them.
@@ -32,15 +33,18 @@ const PICTURES = [
 export default function Welcome() {
   const insets = useSafeAreaInsets();
   const [shown, setShown] = useState(0);
+  // The photos the platform admin chose (Super admin → App media), else the ones built into the app.
+  const { welcome } = useAppMedia();
+  const pictures = welcome.length >= 2 ? welcome.map(sourceOf) : PICTURES;
 
   useEffect(() => {
-    const t = setInterval(() => setShown((n) => (n + 1) % PICTURES.length), 5500);
+    const t = setInterval(() => setShown((n) => (n + 1) % pictures.length), 5500);
     return () => clearInterval(t);
-  }, []);
+  }, [pictures.length]);
 
   return (
     <View style={styles.screen}>
-      <Image source={PICTURES[shown]} style={StyleSheet.absoluteFill} contentFit="cover" transition={1000} />
+      <Image source={pictures[shown % pictures.length]} style={StyleSheet.absoluteFill} contentFit="cover" cachePolicy="disk" transition={1000} />
       <LinearGradient colors={['rgba(20,6,12,0.6)', 'rgba(20,6,12,0.12)', 'rgba(20,6,12,0.6)', 'rgba(20,6,12,0.96)']} locations={[0, 0.25, 0.55, 0.92]} style={StyleSheet.absoluteFill} />
 
       <View style={[styles.top, { paddingTop: insets.top + 16 }]}>
@@ -53,7 +57,7 @@ export default function Welcome() {
         <AppText style={styles.sub}>Worship, the Word, prayer and giving, and people who share your faith.</AppText>
 
         <View style={styles.dots}>
-          {PICTURES.map((_, i) => (
+          {pictures.map((_, i) => (
             <View key={i} style={[styles.dot, i === shown && styles.dotOn]} />
           ))}
         </View>

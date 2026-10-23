@@ -11,6 +11,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { COLORS, FONTS, SPACING } from '../../constants/theme';
 import { mediaUrl } from '../../lib/api';
+import { useAppMedia } from '../../lib/appMedia';
 import { useFeatures } from '../../lib/features';
 import { dayAndTime, formatMoney } from '../../lib/format';
 import AppText from '../AppText';
@@ -89,16 +90,17 @@ export function forYou(home, { withHighlights = true, features = {}, invite = nu
   return items.filter((i) => i.title).slice(0, MAX);
 }
 
-function Card({ item, width, compact }) {
+function Card({ item, width, compact, fallback }) {
   const look = LOOKS[item.look] ?? LOOKS.live;
+  const picture = item.image ?? fallback; // a church's own picture first, else one of the default photos the platform admin chose
   const height = Math.max(196, Math.min(240, Math.round(width * 0.64)));
 
   return (
     <Pressable onPress={item.onPress} style={({ pressed }) => [{ width, height }, pressed && { opacity: 0.93 }]} accessibilityRole="button" accessibilityLabel={`${item.kicker}: ${item.title}. ${item.cta}`}>
       <View style={styles.card}>
         <LinearGradient colors={look.colors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
-        {item.image ? (
-          <Image source={{ uri: mediaUrl(item.image) }} style={StyleSheet.absoluteFill} contentFit="cover" transition={300} />
+        {picture ? (
+          <Image source={{ uri: mediaUrl(picture) }} style={StyleSheet.absoluteFill} contentFit="cover" cachePolicy="disk" transition={300} />
         ) : (
           <Ionicons name={look.icon} size={Math.round(width * 0.5)} color="#fff" style={styles.watermark} />
         )}
@@ -138,6 +140,7 @@ export default function ForYou({ home, withHighlights = true, invite = null, tit
   const width = Math.min(Math.round(screen * 0.86), 440);
   const step = width + GAP;
   const items = forYou(home, { withHighlights, features, invite });
+  const { banner } = useAppMedia();
   const count = items.length;
 
   const scroll = useRef(null);
@@ -186,8 +189,8 @@ export default function ForYou({ home, withHighlights = true, invite = null, tit
           setPaused(false);
         }}
       >
-        {items.map((item) => (
-          <Card key={item.key} item={item} width={width} compact={compact} />
+        {items.map((item, i) => (
+          <Card key={item.key} item={item} width={width} compact={compact} fallback={banner.length ? banner[i % banner.length].url : null} />
         ))}
       </ScrollView>
 

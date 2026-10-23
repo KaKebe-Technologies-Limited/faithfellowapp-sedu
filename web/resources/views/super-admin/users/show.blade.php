@@ -62,20 +62,17 @@
                     </table>
                 </div>
                 @if ($assignable->isNotEmpty())
-                    <form method="POST" action="{{ route('super-admin.users.churches.assign', $user) }}" class="row g-2 p-3 border-top align-items-end">@csrf
+                    <form method="POST" action="{{ route('super-admin.users.churches.assign', $user) }}" class="p-3 border-top">@csrf
                         <input type="hidden" name="notify" value="1">
-                        <div class="col-md-6">
-                            <label class="form-label small fw-semibold" for="church_id">{{ __('Add to a church') }}</label>
-                            <select id="church_id" name="church_id" class="form-select" required>
-                                <option value="">{{ __('Choose a church…') }}</option>
-                                @foreach ($assignable as $c)<option value="{{ $c->id }}">{{ $c->name }}{{ $c->city ? ' · '.$c->city : '' }}</option>@endforeach
-                            </select>
+                        <h3 class="h6 mb-2">{{ __('Assign to a church') }}</h3>
+                        @include('super-admin.users._church-list', ['churches' => $assignable])
+                        <div class="d-flex flex-wrap gap-2 align-items-end mt-2">
+                            <div>
+                                <label class="form-label small fw-semibold mb-1" for="stage">{{ __('They are') }}</label>
+                                <select id="stage" name="stage" class="form-select form-select-sm">@foreach (\App\Models\Subscription::STAGES as $key => $label)<option value="{{ $key }}" @selected($key === 'member')>{{ __($label) }}</option>@endforeach</select>
+                            </div>
+                            <button class="btn btn-ff-primary ms-auto"><i class="bi bi-person-plus"></i> {{ __('Assign') }}</button>
                         </div>
-                        <div class="col-md-3">
-                            <label class="form-label small fw-semibold" for="stage">{{ __('They are') }}</label>
-                            <select id="stage" name="stage" class="form-select">@foreach (\App\Models\Subscription::STAGES as $key => $label)<option value="{{ $key }}" @selected($key === 'member')>{{ __($label) }}</option>@endforeach</select>
-                        </div>
-                        <div class="col-md-3"><button class="btn btn-ff-primary w-100"><i class="bi bi-person-plus"></i> {{ __('Add') }}</button></div>
                     </form>
                 @endif
             </x-ff.card>

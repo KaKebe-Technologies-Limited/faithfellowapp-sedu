@@ -53,13 +53,27 @@ class ChurchMemberController extends Controller
         return back()->with('success', $this->report($this->run($users, $church, $request, $data), $unknown));
     }
 
-    /** From a user's page: put this user into the church picked. */
+    /** From the Users page (or a user's page): put this user into the church, or the churches, ticked. */
     public function assignUser(Request $request, User $user): RedirectResponse
     {
-        $data = $request->validate(['church_id' => ['required', 'integer', 'exists:churches,id'], 'stage' => ['nullable', Rule::in(array_keys(Subscription::STAGES))], 'notify' => ['boolean']]);
-        $church = Church::findOrFail($data['church_id']);
+        $data = $request->validate([
+            'church_ids' => ['nullable', 'array', 'max:20'],
+            'church_ids.*' => ['integer', 'exists:churches,id'],
+            'church_id' => ['nullable', 'integer', 'exists:churches,id'],
+            'stage' => ['nullable', Rule::in(array_keys(Subscription::STAGES))],
+            'notify' => ['boolean'],
+        ]);
+        $ids = collect($data['church_ids'] ?? [])->when(! empty($data['church_id']), fn ($c) => $c->push($data['church_id']))->map(fn ($id) => (int) $id)->unique()->values();
+        if ($ids->isEmpty()) {
+            return back()->withErrors(['church_ids' => __('Tick at least one church.')]);
+        }
 
-        return back()->with('success', $this->report($this->run(collect([$user]), $church, $request, $data), collect()));
+        $by = [];
+        foreach (Church::whereIn('id', $ids)->orderBy('name')->get() as $church) {
+            $by[$this->subscriptions->assign($user, $church, $request->user(), $data['stage'] ?? 'member', $request->boolean('notify'))][] = $church->name;
+        }
+
+        return back()->with('success', $this->reportUser($user, $by));
     }
 
     /** Takes the user out of the church: they stop following it (and can follow it again). */
@@ -107,6 +121,35 @@ class ChurchMemberController extends Controller
         }
 
         return implode(' ', $parts) ?: __('Nothing to do.');
+    }
+
+    /** @param  array<string, array<int, string>>  $by  the churches by what happened */
+    protected function reportUser(User $user, array $by): string
+    {
+        $parts = [];
+        if (! empty($by['added'])) {
+            $parts[] = __(':user now follows :churches.', ['user' => $user->name, 'churches' => $this->names($by['added'])]);
+        }
+        if (! empty($by['already'])) {
+            $parts[] = __('Already followed: :churches.', ['churches' => $this->names($by['already'])]);
+        }
+        if (! empty($by['blocked'])) {
+            $parts[] = __('Blocked by :churches (unblock them there first).', ['churches' => $this->names($by['blocked'])]);
+        }
+        if (! empty($by['church_inactive'])) {
+            $parts[] = __(':churches is not active.', ['churches' => $this->names($by['church_inactive'])]);
+        }
+        if (! empty($by['user_inactive'])) {
+            $parts[] = __('This account is suspended, so it cannot be added to a church.');
+        }
+
+        return implode(' ', $parts) ?: __('Nothing to do.');
+    }
+
+    /** "A", "A and B", "A, B and C" */
+    protected function names(array $names): string
+    {
+        return count($names) > 1 ? implode(', ', array_slice($names, 0, -1)).' '.__('and').' '.end($names) : (string) ($names[0] ?? '');
     }
 
     /** A registered user by email address or phone number (the last nine digits, whatever the format they were saved in). */
