@@ -19,6 +19,7 @@
             ['label' => __('Podcasts'), 'icon' => 'bi-broadcast-pin', 'route' => 'super-admin.podcasts.index', 'active' => 'super-admin.podcasts.*', 'badge' => \App\Models\Podcast::where('status', 'pending')->count() ?: null],
             ['label' => __('Hymn book'), 'icon' => 'bi-journal-richtext', 'route' => 'super-admin.hymnals.index', 'active' => 'super-admin.hymnals.*'],
             ['label' => __('App features'), 'icon' => 'bi-toggles', 'route' => 'super-admin.features.index', 'active' => 'super-admin.features.*'],
+            ['label' => __('App media'), 'icon' => 'bi-images', 'route' => 'super-admin.app-media.index', 'active' => 'super-admin.app-media.*'],
             ['label' => __('Inspiration'), 'icon' => 'bi-stars', 'route' => 'super-admin.inspiration.index', 'active' => 'super-admin.inspiration.*'],
             ['label' => __('Email'), 'icon' => 'bi-envelope-at', 'route' => 'super-admin.email.edit', 'active' => 'super-admin.email.*'],
             ['label' => __('Push test'), 'icon' => 'bi-bell', 'route' => 'super-admin.push.index', 'active' => 'super-admin.push.*'],

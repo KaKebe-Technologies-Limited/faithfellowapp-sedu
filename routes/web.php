@@ -639,6 +639,12 @@ Route::prefix('super-admin')->name('super-admin.')
         Route::post('/radio/chunk', [SuperAdmin\RadioController::class, 'chunk'])->middleware('throttle:1500,1')->name('radio.chunk');
         Route::put('/radio/settings', [SuperAdmin\RadioController::class, 'settings'])->name('radio.settings');
         Route::put('/radio/channels/{station}/block', [SuperAdmin\RadioController::class, 'block'])->whereNumber('station')->name('radio.block');
+        // The pictures of the app itself: opening photos, welcome screen photos, the Home banner slider's defaults
+        Route::get('/app-media', [SuperAdmin\AppMediaController::class, 'index'])->name('app-media.index');
+        Route::post('/app-media', [SuperAdmin\AppMediaController::class, 'store'])->middleware('throttle:30,1')->name('app-media.store');
+        Route::put('/app-media/{photo}', [SuperAdmin\AppMediaController::class, 'update'])->name('app-media.update');
+        Route::post('/app-media/{photo}/move', [SuperAdmin\AppMediaController::class, 'move'])->name('app-media.move');
+        Route::delete('/app-media/{photo}', [SuperAdmin\AppMediaController::class, 'destroy'])->name('app-media.destroy');
         // Interrupts every channel in the app with one track, for everyone listening
         Route::post('/radio/broadcast', [SuperAdmin\RadioController::class, 'broadcast'])->middleware('throttle:10,1')->name('radio.broadcast');
         Route::delete('/radio/broadcast', [SuperAdmin\RadioController::class, 'stopBroadcast'])->name('radio.broadcast.stop');
