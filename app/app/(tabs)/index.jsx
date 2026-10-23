@@ -2,6 +2,7 @@
 // (the glowing play / stop button, pray, share and give; a short greeting shows for ten seconds when the app opens), then on the pale
 // surface straight away: Explore (podcasts, hymns, sermons, events, prayer, giving, games, churches), the "For you" slider of things to do
 // (join the live service, events, giving, the devotional, notices, prayer, hymns), the inspiration of the hour, the verse of the day,
+// the member's church name right above Explore, and a pop-up to follow a church for someone who follows none (components/home/FollowChurchPrompt.jsx),
 // Games, the top four podcasts and four sermons. Nothing more: your churches are on Me. When the radio is off, empty or out of reach, the
 // slider of church pictures takes the top of the panel instead. Pull down to refresh.
 // Data: GET /api/v1/home, in one request.
@@ -10,7 +11,9 @@ import { RefreshControl, ScrollView, Share, StyleSheet, View } from 'react-nativ
 import { router, useFocusEffect } from 'expo-router';
 import AppText from '../../components/AppText';
 import Button from '../../components/Button';
+import ChurchStrip from '../../components/home/ChurchStrip';
 import ExploreGrid from '../../components/home/ExploreGrid';
+import FollowChurchPrompt from '../../components/home/FollowChurchPrompt';
 import HeroCarousel from '../../components/home/HeroCarousel';
 import HomeHero from '../../components/home/HomeHero';
 import { LatestSermons, TopPodcasts } from '../../components/home/HomeLists';
@@ -92,7 +95,7 @@ export default function HomeScreen() {
       contentContainerStyle={{ paddingBottom: SPACING.lg }}
       refreshControl={<RefreshControl refreshing={home.refreshing} onRefresh={home.reload} tintColor={COLORS.primary} colors={[COLORS.primary]} />}
     >
-      <HomeHero user={user}>
+      <HomeHero user={user} churches={data?.churches}>
         {radio !== 'none' ? <NowPlayingHero state={radio} home={data} /> : data ? items.length ? <HeroCarousel items={items} /> : <WelcomeBanner /> : null}
       </HomeHero>
 
@@ -105,6 +108,7 @@ export default function HomeScreen() {
 
       {data ? (
         <>
+          <ChurchStrip churches={data.churches} />
           <ExploreGrid home={data} />
           <ForYou
             home={data}
@@ -112,6 +116,7 @@ export default function HomeScreen() {
             invite={inviteChurch ? { title: `Invite friends to ${inviteChurch.name}`, onPress: () => Share.share({ message: `Join ${inviteChurch.name} on FaithFellows: ${inviteChurch.join_url}` }).catch(() => {}) } : null}
           />
           <NotificationsPrompt />
+          <FollowChurchPrompt enabled={!hasChurches} onFollowed={home.reload} />
           {!hasChurches ? (
             <View style={{ paddingHorizontal: SPACING.md, marginBottom: SPACING.lg }}>
               <Notice title="Find your church family" message="Follow a church to get its sermons, events and prayer requests." actionTitle="Find churches" onAction={() => router.push('/churches')} />

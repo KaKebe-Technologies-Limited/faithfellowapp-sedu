@@ -1,6 +1,7 @@
 // Root layout: loads the Clarity City fonts (the website's typeface), keeps the splash screen up until the app is ready,
-// provides authentication to every screen and defines the top-level navigation stack.
-import { useEffect } from 'react';
+// shows the opening flash (a few seconds of rolling photos) once each time the app is opened, provides authentication to every screen
+// and defines the top-level navigation stack.
+import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { Stack, useSegments } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -14,8 +15,10 @@ import {
   useFonts,
 } from '@expo-google-fonts/clarity-city';
 import NowPlayingBar from '../components/NowPlayingBar';
+import OpeningFlash from '../components/OpeningFlash';
 import { COLORS } from '../constants/theme';
 import { useActivityTracking } from '../lib/activity';
+import { markFlashDone } from '../lib/appStart';
 import { AuthProvider, useAuth } from '../lib/auth';
 import { useJoinLink } from '../lib/join';
 import { useOfflineSync } from '../lib/outbox';
@@ -33,6 +36,7 @@ function Navigator({ fontsLoaded }) {
   useRadioLifecycle();
   useActivityTracking(user); // the figures on your profile: minutes reading and listening, what you shared
   useAppUpdates();
+  const [flash, setFlash] = useState(true); // the opening flash, once each time the app is opened
   const segments = useSegments();
   useJoinLink({ ready, token, user, place: segments[0] }); // a church's join link: keep it through sign-up, then follow the church
   const insets = useSafeAreaInsets();
@@ -58,6 +62,7 @@ function Navigator({ fontsLoaded }) {
         }}
       />
       {showBar ? <NowPlayingBar bottomInset={insets.bottom} /> : null}
+      {flash && ready ? <OpeningFlash onDone={() => { setFlash(false); markFlashDone(); }} /> : null}
     </View>
   );
 }

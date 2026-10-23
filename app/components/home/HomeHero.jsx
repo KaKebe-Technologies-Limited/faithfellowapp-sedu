@@ -55,10 +55,12 @@ function Hello({ name }) {
   );
 }
 
-export default function HomeHero({ user, children }) {
+export default function HomeHero({ user, churches, children }) {
   const insets = useSafeAreaInsets();
   const me = useFetch('/me');
   const mine = me.data?.data ?? user;
+  const followed = churches ?? mine?.churches ?? [];
+  const church = followed[0] ? `${followed[0].name}${followed.length > 1 ? ` +${followed.length - 1}` : ''}` : null; // the church's name under the app's, so the app feels like theirs
 
   useFocusEffect(
     useCallback(() => {
@@ -76,9 +78,16 @@ export default function HomeHero({ user, children }) {
         <View style={styles.top}>
           <View style={styles.brand}>
             <Logo size={42} />
-            <AppText style={styles.name} numberOfLines={1} accessibilityRole="header">
-              FaithFellows
-            </AppText>
+            <View style={{ flexShrink: 1 }}>
+              <AppText style={styles.name} numberOfLines={1} accessibilityRole="header">
+                FaithFellows
+              </AppText>
+              {church ? (
+                <AppText style={styles.church} numberOfLines={1}>
+                  {church}
+                </AppText>
+              ) : null}
+            </View>
           </View>
           <View style={styles.buttons}>
             <RoundButton icon="notifications-outline" label="Notifications" count={mine?.unread_notifications ?? 0} onPress={() => router.push('/notifications')} />
@@ -101,6 +110,7 @@ const styles = StyleSheet.create({
   top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: SPACING.md },
   brand: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, paddingRight: 10 },
   name: { flexShrink: 1, fontFamily: FONTS.bold, fontSize: 21, letterSpacing: 0.2, color: '#fff' },
+  church: { fontFamily: FONTS.medium, fontSize: 12.5, marginTop: -1, color: 'rgba(255,255,255,0.78)' },
   buttons: { flexDirection: 'row', gap: 10 },
   round: { width: 42, height: 42, borderRadius: 21, backgroundColor: SOFT.glassOnDark, borderWidth: 1, borderColor: SOFT.glassOnDarkBorder, alignItems: 'center', justifyContent: 'center' },
   badge: { position: 'absolute', top: -4, right: -4, minWidth: 18, height: 18, borderRadius: 9, paddingHorizontal: 4, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#4A0F29' },

@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { Alert, FlatList, Pressable, RefreshControl, StyleSheet, TextInput, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import AppText from '../components/AppText';
 import Button from '../components/Button';
 import Card from '../components/Card';
@@ -21,7 +21,8 @@ const TABS = [
 ];
 
 export default function ChurchesScreen() {
-  const [tab, setTab] = useState('mine');
+  const params = useLocalSearchParams();
+  const [tab, setTab] = useState(params.tab === 'discover' ? 'discover' : 'mine'); // the follow-a-church pop-up opens the directory straight away
   const [query, setQuery] = useState('');
   const [search, setSearch] = useState('');
   const [busySlug, setBusySlug] = useState(null);
