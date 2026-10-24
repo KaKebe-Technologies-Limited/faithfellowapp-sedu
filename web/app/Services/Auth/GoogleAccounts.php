@@ -72,6 +72,6 @@ class GoogleAccounts
     public function assertMayUseApp(User $user): void
     {
         abort_if($user->status !== 'active', 403, __('This account is suspended.'));
-        abort_if($user->isSuperAdmin(), 403, __('Super admin accounts cannot use API tokens.'));
+        abort_if($user->isSuperAdmin(), 403, __('Super admins sign in to the app with their email and password, not with Google.'));
     }
 }

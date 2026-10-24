@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\AuditLog;
 use App\Models\Church;
 use App\Models\Donation;
 use App\Models\PrayerRequest;
@@ -46,7 +47,7 @@ test('browsers get CORS headers on the API; credentials are not offered', functi
         ->assertNoContent()->assertHeader('Access-Control-Allow-Origin', '*')->assertHeaderMissing('Access-Control-Allow-Credentials');
 });
 
-test('members exchange credentials for a token; wrong passwords and super admins are refused', function () {
+test('members exchange credentials for a token; wrong passwords are refused', function () {
     $member = member(['email' => 'grace@example.com', 'password' => 'secret-pass-1']);
 
     $this->postJson(route('api.v1.auth.token'), ['email' => 'grace@example.com', 'password' => 'nope', 'device_name' => 'Phone'])
@@ -56,10 +57,27 @@ test('members exchange credentials for a token; wrong passwords and super admins
         ->assertCreated()->assertJsonStructure(['token', 'token_type', 'expires_at', 'user' => ['id', 'email']])->json('token');
 
     $this->withToken($token)->getJson(route('api.v1.me'))->assertOk()->assertJsonPath('data.email', 'grace@example.com');
+});
 
+test('the platform admin signs in to the app, but for 7 days only, and not with an email-code account or Google', function () {
     $admin = superAdmin();
     $admin->update(['password' => 'admin-pass-1']);
-    $this->postJson(route('api.v1.auth.token'), ['email' => $admin->email, 'password' => 'admin-pass-1', 'device_name' => 'Phone'])->assertForbidden();
+    $login = fn () => $this->postJson(route('api.v1.auth.token'), ['email' => $admin->email, 'password' => 'admin-pass-1', 'device_name' => 'Phone']);
+
+    $response = $login()->assertCreated()->assertJsonPath('user.is_super_admin', true);
+    expect(Carbon\Carbon::parse($response->json('expires_at'))->diffInHours(now(), true))->toBeGreaterThan(24 * 6)->toBeLessThanOrEqual(24 * 7)
+        ->and(AuditLog::where('action', 'api.super_admin_token_created')->count())->toBe(1);
+    $this->withToken($response->json('token'))->getJson(route('api.v1.platform.overview'))->assertOk();
+
+    // A member's own token still lasts 180 days.
+    $member = member(['email' => 'long@example.com', 'password' => 'secret-pass-1']);
+    $long = $this->postJson(route('api.v1.auth.token'), ['email' => 'long@example.com', 'password' => 'secret-pass-1', 'device_name' => 'Phone'])->assertCreated();
+    expect(Carbon\Carbon::parse($long->json('expires_at'))->diffInDays(now(), true))->toBeGreaterThan(170);
+
+    // An account that signs in with an email code on the website is not let in until the app can ask for the code.
+    $admin->update(['two_factor_enabled' => true]);
+    $login()->assertForbidden();
+    expect($member->id)->not->toBe($admin->id);
 });
 
 test('protected endpoints need a token and always answer in JSON', function () {
