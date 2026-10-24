@@ -213,6 +213,26 @@ Route::prefix('v1')->name('api.v1.')->middleware('throttle:api')->group(function
         Route::get('/messages/{user}', [V1\MessageController::class, 'thread'])->middleware('throttle:300,1')->name('messages.thread');
         Route::post('/messages/{user}', [V1\MessageController::class, 'send'])->middleware('throttle:60,1')->name('messages.send');
 
+        // The platform admin: running FaithFellows itself from the app (super admins only; what is hard to undo asks for the password again).
+        Route::prefix('platform')->name('platform.')->middleware(['platform.admin', 'throttle:120,1'])->group(function () {
+            Route::get('/overview', [V1\PlatformController::class, 'overview'])->name('overview');
+            Route::get('/churches', [V1\PlatformController::class, 'churches'])->name('churches');
+            Route::post('/churches/{church}/approve', [V1\PlatformController::class, 'approveChurch'])->name('churches.approve');
+            Route::post('/churches/{church}/decline', [V1\PlatformController::class, 'declineChurch'])->middleware('throttle:20,1')->name('churches.decline');
+            Route::post('/churches/{church}/suspend', [V1\PlatformController::class, 'suspendChurch'])->middleware('throttle:20,1')->name('churches.suspend');
+            Route::post('/churches/{church}/reactivate', [V1\PlatformController::class, 'reactivateChurch'])->middleware('throttle:20,1')->name('churches.reactivate');
+            Route::get('/users', [V1\PlatformController::class, 'users'])->name('users');
+            Route::post('/users/{user}/churches', [V1\PlatformController::class, 'assign'])->middleware('throttle:60,1')->name('users.assign');
+            Route::get('/reports', [V1\PlatformController::class, 'reports'])->name('reports');
+            Route::post('/reports/{contentReport}', [V1\PlatformController::class, 'handleReport'])->middleware('throttle:60,1')->name('reports.handle');
+            Route::get('/podcasts', [V1\PlatformController::class, 'podcasts'])->name('podcasts');
+            Route::post('/podcasts/{podcast}', [V1\PlatformController::class, 'reviewPodcast'])->middleware('throttle:60,1')->name('podcasts.review');
+            Route::post('/announce', [V1\PlatformController::class, 'announce'])->middleware('throttle:6,1')->name('announce');
+            Route::get('/radio', [V1\PlatformController::class, 'radio'])->name('radio');
+            Route::post('/radio/broadcast', [V1\PlatformController::class, 'startBroadcast'])->middleware('throttle:10,1')->name('radio.broadcast');
+            Route::delete('/radio/broadcast', [V1\PlatformController::class, 'stopBroadcast'])->middleware('throttle:10,1')->name('radio.broadcast.stop');
+        });
+
         // Church staff: running the church from the app (the same permissions as the website's admin area).
         Route::get('/admin/churches', [V1\Admin\DashboardController::class, 'churches'])->name('admin.churches');
         Route::prefix('admin/{church}')->name('admin.')->middleware('church.staff')->scopeBindings()->group(function () {
