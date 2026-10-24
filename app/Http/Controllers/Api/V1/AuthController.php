@@ -45,10 +45,11 @@ class AuthController extends Controller
         RateLimiter::clear($key);
 
         abort_if($user->status !== 'active', 403, __('This account is suspended.'));
-        // Platform staff never get long-lived API tokens.
-        abort_if($user->isSuperAdmin(), 403, __('Super admin accounts cannot use API tokens.'));
+        // The platform admin runs FaithFellows from the app too, but never with a long-lived sign-in (see issueToken), and an account that uses email codes
+        // on the website waits until the app can ask for the code as well, so the app is never a way around it.
+        abort_if($user->isSuperAdmin() && $user->two_factor_enabled, 403, __('This account signs in with an email code, which the app cannot ask for yet. Turn the email code off in your profile on the website to use the app.'));
 
-        return $this->issueToken($request, $user, $data['device_name'], 'api.token_created');
+        return $this->issueToken($request, $user, $data['device_name'], $user->isSuperAdmin() ? 'api.super_admin_token_created' : 'api.token_created');
     }
 
     /**
@@ -111,7 +112,8 @@ class AuthController extends Controller
      */
     protected function issueToken(Request $request, User $user, string $device, string $auditAction, array $extra = []): JsonResponse
     {
-        $token = $user->createToken($device, ['member'], now()->addDays(180));
+        // A member stays signed in for 180 days; the platform admin for 7, so a lost phone does not hold the keys to the platform for long.
+        $token = $user->createToken($device, ['member'], now()->addDays($user->isSuperAdmin() ? 7 : 180));
         $user->forceFill(['last_login_at' => now(), 'last_login_ip' => $request->ip()])->saveQuietly();
         Audit::log($auditAction, $user, $device);
 

@@ -39,11 +39,12 @@ class PlatformController extends Controller
         protected RadioService $radio,
     ) {}
 
-    /** Asks for the password again before something that is hard to undo. (An account that signs in with Google only has none to ask for.) */
+    /** Asks for the password again before something that is hard to undo. (The platform admin always signs in to the app with a password.) */
     protected function confirm(Request $request): void
     {
         $user = $request->user();
-        if ($user->password && ! Hash::check((string) $request->input('password'), $user->password)) {
+        abort_unless($user->password, 403, __('Set a password in your profile on the website first.'));
+        if (! Hash::check((string) $request->input('password'), $user->password)) {
             throw ValidationException::withMessages(['password' => __('That password is not right.')]);
         }
     }
