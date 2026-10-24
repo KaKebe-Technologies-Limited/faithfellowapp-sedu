@@ -76,7 +76,7 @@ export default function GiveTab() {
   const header = (
     <View>
       <LinearGradient colors={[COLORS.primaryLight, COLORS.primaryDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
-        <Ionicons name="heart" size={26} color={COLORS.white} />
+        <Ionicons name="heart" size={26} color={COLORS.onColor} />
         <AppText style={styles.heroTitle}>Give with joy</AppText>
         <AppText style={styles.heroVerse}>“God loves a cheerful giver.” — 2 Corinthians 9:7</AppText>
         {s ? (
@@ -254,16 +254,16 @@ export default function GiveTab() {
 
 const styles = StyleSheet.create({
   hero: { margin: SPACING.md, borderRadius: RADIUS.xl, padding: SPACING.lg, gap: 4 },
-  heroTitle: { fontFamily: FONTS.bold, fontSize: 24, color: COLORS.white, marginTop: 4 },
+  heroTitle: { fontFamily: FONTS.display, fontSize: 24, color: COLORS.onColor, marginTop: 4 },
   heroVerse: { fontFamily: FONTS.regular, fontStyle: 'italic', fontSize: 14, lineHeight: 20, color: COLORS.primaryPale },
   heroTotal: { marginTop: 14, backgroundColor: 'rgba(255,255,255,0.16)', borderRadius: RADIUS.lg, padding: 12 },
   heroTotalLabel: { fontFamily: FONTS.medium, fontSize: 12.5, color: COLORS.primaryPale },
-  heroTotalValue: { fontFamily: FONTS.bold, fontSize: 26, color: COLORS.white },
+  heroTotalValue: { fontFamily: FONTS.bold, fontSize: 26, color: COLORS.onColor },
   rail: { paddingHorizontal: SPACING.md, gap: 12, paddingBottom: 6 },
   church: { width: 118, alignItems: 'center', gap: 6, backgroundColor: COLORS.white, borderRadius: RADIUS.lg + 2, padding: 12, ...SHADOW },
   churchName: { fontFamily: FONTS.semibold, fontSize: 13, lineHeight: 17, color: COLORS.black, textAlign: 'center', minHeight: 34 },
   giveChip: { backgroundColor: COLORS.primary, borderRadius: RADIUS.full, paddingHorizontal: 18, paddingVertical: 6 },
-  giveChipText: { fontFamily: FONTS.bold, fontSize: 12.5, color: COLORS.white },
+  giveChipText: { fontFamily: FONTS.bold, fontSize: 12.5, color: COLORS.onColor },
   mine: { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: COLORS.white, borderRadius: RADIUS.lg + 2, padding: 14, marginHorizontal: SPACING.md, ...SHADOW },
   mineName: { fontFamily: FONTS.bold, fontSize: 16.5, lineHeight: 21, color: COLORS.black },
   empty: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: COLORS.primaryMist, borderRadius: RADIUS.lg, padding: 14, marginHorizontal: SPACING.md },

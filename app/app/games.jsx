@@ -99,7 +99,7 @@ export default function GamesScreen() {
           <ScrollView contentContainerStyle={{ paddingBottom: 48 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" refreshControl={<RefreshControl refreshing={games.refreshing} onRefresh={refresh} tintColor={COLORS.primary} colors={[COLORS.primary]} />}>
             <LinearGradient colors={['#7C4DFF', '#4527A0']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.join}>
               <View style={styles.joinTop}>
-                <Ionicons name="game-controller" size={24} color={COLORS.white} />
+                <Ionicons name="game-controller" size={24} color={COLORS.onColor} />
                 <View style={{ flex: 1 }}>
                   <AppText style={styles.joinTitle}>Join a friend’s game</AppText>
                   <AppText style={styles.joinText}>Type the PIN they shared with you.</AppText>
@@ -168,7 +168,7 @@ export default function GamesScreen() {
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
                     {[{ key: 'all', label: 'All games' }, ...lib.categories].map((c) => (
                       <Pressable key={c.key} onPress={() => setCategory(c.key)} style={[styles.chip, category === c.key && styles.chipOn]} accessibilityRole="button" accessibilityState={{ selected: category === c.key }}>
-                        <AppText style={[styles.chipText, category === c.key && { color: COLORS.white }]}>{c.label}</AppText>
+                        <AppText style={[styles.chipText, category === c.key && { color: COLORS.onColor }]}>{c.label}</AppText>
                       </Pressable>
                     ))}
                   </ScrollView>
@@ -189,7 +189,7 @@ export default function GamesScreen() {
                             <AppText style={styles.playText}>{starting === q.id ? '…' : 'Play'}</AppText>
                           </Pressable>
                           <Pressable onPress={() => router.push({ pathname: '/leaderboard/[quiz]', params: { quiz: String(q.id) } })} hitSlop={6} style={styles.records} accessibilityRole="button" accessibilityLabel={`Records of ${q.title}`}>
-                            <Ionicons name="trophy-outline" size={14} color="#C25B00" />
+                            <Ionicons name="trophy-outline" size={14} color={COLORS.warningInk} />
                             <AppText style={styles.recordsText}>Records</AppText>
                           </Pressable>
                         </View>
@@ -208,7 +208,7 @@ export default function GamesScreen() {
                 {g.mine.map((m) => (
                   <Pressable key={`${m.session_id}`} onPress={() => (m.quiz_id ? router.push({ pathname: '/leaderboard/[quiz]', params: { quiz: String(m.quiz_id) } }) : open(m.session_id))} style={styles.row} accessibilityRole="button" accessibilityLabel={`${m.quiz}: ${m.score} points`}>
                     <View style={styles.trophy}>
-                      <Ionicons name="trophy-outline" size={20} color="#C25B00" />
+                      <Ionicons name="trophy-outline" size={20} color={COLORS.warningInk} />
                     </View>
                     <View style={{ flex: 1 }}>
                       <AppText style={styles.title}>{m.quiz}</AppText>
@@ -231,10 +231,10 @@ const styles = StyleSheet.create({
   section: { marginTop: SPACING.lg },
   join: { marginHorizontal: SPACING.md, borderRadius: RADIUS.xl, padding: SPACING.md + 2, gap: 4 },
   joinTop: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  joinTitle: { fontFamily: FONTS.bold, fontSize: 18, color: COLORS.white },
+  joinTitle: { fontFamily: FONTS.bold, fontSize: 18, color: COLORS.onColor },
   joinText: { fontFamily: FONTS.regular, fontSize: 13, color: 'rgba(255,255,255,0.85)' },
   pinRow: { flexDirection: 'row', gap: 10, marginTop: 12, alignItems: 'center' },
-  pinInput: { flex: 1, minWidth: 0, height: 50, borderRadius: RADIUS.lg, backgroundColor: 'rgba(255,255,255,0.18)', color: COLORS.white, fontFamily: FONTS.bold, fontSize: 22, letterSpacing: 6, textAlign: 'center' },
+  pinInput: { flex: 1, minWidth: 0, height: 50, borderRadius: RADIUS.lg, backgroundColor: 'rgba(255,255,255,0.18)', color: COLORS.onColor, fontFamily: FONTS.bold, fontSize: 22, letterSpacing: 6, textAlign: 'center' },
   pinError: { color: '#FFD7E5', fontFamily: FONTS.semibold, fontSize: 13, marginTop: 8 },
   pinErrorDark: { color: COLORS.danger, fontFamily: FONTS.semibold, fontSize: 13, marginHorizontal: SPACING.md, marginBottom: 8 },
   hint: { fontFamily: FONTS.regular, fontSize: 13.5, color: SOFT.muted, marginHorizontal: SPACING.md, marginTop: -4, marginBottom: 10 },
@@ -250,11 +250,11 @@ const styles = StyleSheet.create({
   title: { fontFamily: FONTS.bold, fontSize: 15.5, color: COLORS.black },
   meta: { fontFamily: FONTS.semibold, fontSize: 12, marginTop: 3 },
   play: { backgroundColor: COLORS.primary, borderRadius: RADIUS.full, paddingHorizontal: 16, paddingVertical: 8 },
-  playText: { fontFamily: FONTS.bold, fontSize: 13, color: COLORS.white },
+  playText: { fontFamily: FONTS.bold, fontSize: 13, color: COLORS.onColor },
   quizMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, minWidth: 0 },
   actions: { alignItems: 'center', gap: 8 },
   records: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 2 },
-  recordsText: { fontFamily: FONTS.semibold, fontSize: 12, color: '#C25B00' },
-  trophy: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#FFF3E0', alignItems: 'center', justifyContent: 'center' },
+  recordsText: { fontFamily: FONTS.semibold, fontSize: 12, color: COLORS.warningInk },
+  trophy: { width: 40, height: 40, borderRadius: 20, backgroundColor: COLORS.warningMist, alignItems: 'center', justifyContent: 'center' },
   score: { fontFamily: FONTS.bold, fontSize: 20, color: COLORS.primary },
 });

@@ -1,5 +1,5 @@
 // A private chat with one connection. New messages arrive by polling every few seconds while the screen is open;
-// older ones load when you pull "Earlier messages". Messages are plain text, up to 2,000 characters.
+// older ones load when you pull "Earlier messages". Messages are plain text, up to 2,000 characters. Drag a message to the right to reply to it.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -7,6 +7,8 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AppText from '../../components/AppText';
 import Avatar from '../../components/Avatar';
+import { ReplyBar, ReplyQuote } from '../../components/chat/Reply';
+import SwipeToReply from '../../components/chat/SwipeToReply';
 import { BackButton } from '../../components/ScreenHeader';
 import StateView from '../../components/StateView';
 import { COLORS, FONTS, RADIUS, SPACING, MAX_FONT_SCALE } from '../../constants/theme';
@@ -27,7 +29,9 @@ export default function ChatScreen() {
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
   const [problem, setProblem] = useState(null);
+  const [replyTo, setReplyTo] = useState(null); // the message being answered: { id, body, name }
   const scroller = useRef(null);
+  const input = useRef(null);
   const last = useRef(0);
 
   const load = useCallback(async () => {
@@ -90,10 +94,11 @@ export default function ChatScreen() {
     setSending(true);
     setProblem(null);
     try {
-      const { data } = await api.post(`/messages/${id}`, { body });
+      const { data } = await api.post(`/messages/${id}`, { body, ...(replyTo ? { reply_to: replyTo.id } : {}) });
       last.current = Math.max(last.current, data.data.id);
       setMessages((m) => [...m, data.data]);
       setDraft('');
+      setReplyTo(null);
       // Until they answer once, only one message can be sent (the server decides; this just shows it straight away).
       if (!messages.some((x) => !x.mine) && !more) setPartner((p) => (p ? { ...p, waiting_for_reply: true } : p));
     } catch (e) {
@@ -127,15 +132,24 @@ export default function ChatScreen() {
             {messages.map((m, i) => (
               <View key={m.id}>
                 {i === 0 || day(m.at) !== day(messages[i - 1].at) ? <AppText style={styles.day}>{day(m.at)}</AppText> : null}
-                <View style={[styles.bubbleRow, m.mine && { justifyContent: 'flex-end' }]}>
-                  <View style={[styles.bubble, m.mine ? styles.mine : styles.theirs]}>
-                    <AppText style={[styles.text, m.mine && { color: COLORS.white }]}>{m.body}</AppText>
-                    <AppText style={[styles.time, m.mine && { color: 'rgba(255,255,255,0.75)' }]}>
-                      {clock(m.at)}
-                      {m.mine && m.read ? '  ✓✓' : ''}
-                    </AppText>
+                <SwipeToReply
+                  enabled={!!partner?.can_message}
+                  onReply={() => {
+                    setReplyTo({ id: m.id, body: m.body, name: m.mine ? 'yourself' : String(partner?.name ?? '').split(' ')[0] || 'them' });
+                    input.current?.focus();
+                  }}
+                >
+                  <View style={[styles.bubbleRow, m.mine && { justifyContent: 'flex-end' }]}>
+                    <View style={[styles.bubble, m.mine ? styles.mine : styles.theirs]}>
+                      {m.reply_to ? <ReplyQuote onMine={m.mine} name={m.reply_to.mine ? 'You' : String(partner?.name ?? '').split(' ')[0] || 'Them'} text={m.reply_to.body} /> : null}
+                      <AppText style={[styles.text, m.mine && { color: COLORS.onColor }]}>{m.body}</AppText>
+                      <AppText style={[styles.time, m.mine && { color: 'rgba(255,255,255,0.75)' }]}>
+                        {clock(m.at)}
+                        {m.mine && m.read ? '  ✓✓' : ''}
+                      </AppText>
+                    </View>
                   </View>
-                </View>
+                </SwipeToReply>
               </View>
             ))}
           </ScrollView>
@@ -151,12 +165,13 @@ export default function ChatScreen() {
             </View>
           ) : (
             <View style={[styles.compose, { paddingBottom: Math.max(insets.bottom, 10) }]}>
+              {replyTo ? <ReplyBar name={replyTo.name} text={replyTo.body} onClose={() => setReplyTo(null)} /> : null}
               {problem ? <AppText style={styles.problem}>{problem}</AppText> : null}
               {messages.length === 0 ? <AppText variant="caption" style={styles.safety}>Keep chatting here in the app. Phone numbers and emails cannot be shared.</AppText> : null}
               <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 10 }}>
-                <TextInput maxFontSizeMultiplier={MAX_FONT_SCALE} value={draft} onChangeText={setDraft} placeholder="Write a message…" placeholderTextColor={COLORS.gray500} multiline maxLength={2000} style={styles.input} />
+                <TextInput ref={input} maxFontSizeMultiplier={MAX_FONT_SCALE} value={draft} onChangeText={setDraft} placeholder="Write a message…" placeholderTextColor={COLORS.gray500} multiline maxLength={2000} style={styles.input} />
                 <Pressable onPress={send} disabled={!draft.trim() || sending} style={[styles.send, (!draft.trim() || sending) && { opacity: 0.45 }]} accessibilityRole="button" accessibilityLabel="Send message">
-                  <Ionicons name="send" size={18} color={COLORS.white} />
+                  <Ionicons name="send" size={18} color={COLORS.onColor} />
                 </Pressable>
               </View>
             </View>

@@ -92,7 +92,7 @@ export default function CampaignScreen() {
                     {c.milestones.map((m) => (
                       <View key={m.percent} style={styles.milestone}>
                         <View style={[styles.mark, m.reached && styles.markOn]}>
-                          <Ionicons name={m.reached ? 'checkmark' : 'ellipse-outline'} size={m.reached ? 16 : 10} color={m.reached ? COLORS.white : COLORS.gray300} />
+                          <Ionicons name={m.reached ? 'checkmark' : 'ellipse-outline'} size={m.reached ? 16 : 10} color={m.reached ? COLORS.onColor : COLORS.gray300} />
                         </View>
                         <AppText variant="caption" style={{ color: m.reached ? COLORS.primary : COLORS.gray700, fontFamily: FONTS.semibold }}>
                           {m.percent}%
@@ -173,7 +173,7 @@ export default function CampaignScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: COLORS.canvas },
-  heroTitle: { fontFamily: FONTS.bold, fontSize: 27, lineHeight: 33, color: COLORS.white, marginTop: 4 },
+  heroTitle: { fontFamily: FONTS.display, fontSize: 27, lineHeight: 33, color: COLORS.onColor, marginTop: 4 },
   host: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 },
   hostName: { fontFamily: FONTS.semibold, fontSize: 14, color: 'rgba(255,255,255,0.92)' },
   body: { padding: SPACING.md },

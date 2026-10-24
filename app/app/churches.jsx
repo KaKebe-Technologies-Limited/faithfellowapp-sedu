@@ -62,7 +62,7 @@ export default function ChurchesScreen() {
       <View style={styles.tabs}>
         {TABS.map((t) => (
           <Pressable key={t.key} onPress={() => setTab(t.key)} style={[styles.tab, tab === t.key && styles.tabActive]} accessibilityRole="tab" accessibilityState={{ selected: tab === t.key }}>
-            <AppText variant="label" style={{ color: tab === t.key ? COLORS.white : COLORS.primary }}>
+            <AppText variant="label" style={{ color: tab === t.key ? COLORS.onColor : COLORS.primary }}>
               {t.label}
             </AppText>
           </Pressable>

@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
   hey: { marginTop: 10, backgroundColor: COLORS.primary, borderRadius: RADIUS.full, paddingHorizontal: 18, paddingVertical: 8 },
   heyRow: { marginTop: 0, paddingHorizontal: 14 },
   heyQuiet: { backgroundColor: COLORS.primaryMist },
-  heyText: { fontFamily: FONTS.bold, fontSize: 12.5, color: COLORS.white },
+  heyText: { fontFamily: FONTS.bold, fontSize: 12.5, color: COLORS.onColor },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 16, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: COLORS.gray300 },
   rowName: { fontFamily: FONTS.bold, fontSize: 15.5, color: COLORS.black },
   shared: { flexDirection: 'row', alignItems: 'center', gap: 4 },

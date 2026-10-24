@@ -41,13 +41,13 @@ export default function NotesScreen() {
       <View style={styles.chips}>
         {KINDS.map((k) => (
           <Pressable key={k.key} onPress={() => setKind(k.key)} style={[styles.chip, kind === k.key && styles.chipOn]} accessibilityRole="button" accessibilityState={{ selected: kind === k.key }}>
-            <AppText style={[styles.chipText, kind === k.key && { color: COLORS.white }]}>{k.label}</AppText>
+            <AppText style={[styles.chipText, kind === k.key && { color: COLORS.onColor }]}>{k.label}</AppText>
           </Pressable>
         ))}
       </View>
       {list.offline || pending ? (
         <View style={styles.status}>
-          <Ionicons name={list.offline ? 'cloud-offline-outline' : 'sync-outline'} size={15} color={COLORS.primaryDark} />
+          <Ionicons name={list.offline ? 'cloud-offline-outline' : 'sync-outline'} size={15} color={COLORS.primaryInk} />
           <AppText style={styles.statusText}>
             {list.offline ? `Offline: showing the notes on your phone${pending ? ' · ' : ''}` : ''}
             {pending ? (flushing ? 'Sending your changes…' : `${pending} change${pending === 1 ? '' : 's'} waiting to sync`) : ''}
@@ -64,7 +64,7 @@ export default function NotesScreen() {
         subtitle="Private to you"
         right={
           <Pressable onPress={() => open(newContext())} style={styles.add} accessibilityRole="button" accessibilityLabel="New note">
-            <Ionicons name="add" size={20} color={COLORS.white} />
+            <Ionicons name="add" size={20} color={COLORS.onColor} />
             <AppText style={styles.addText}>New</AppText>
           </Pressable>
         }
@@ -117,9 +117,9 @@ const styles = StyleSheet.create({
   chipOn: { backgroundColor: COLORS.primary },
   chipText: { fontFamily: FONTS.semibold, fontSize: 13, color: COLORS.primary },
   status: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: COLORS.primaryMist, borderRadius: RADIUS.full, paddingHorizontal: 12, paddingVertical: 7 },
-  statusText: { fontFamily: FONTS.semibold, fontSize: 12, color: COLORS.primaryDark },
+  statusText: { fontFamily: FONTS.semibold, fontSize: 12, color: COLORS.primaryInk },
   add: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: COLORS.primary, borderRadius: RADIUS.full, paddingHorizontal: 14, paddingVertical: 8 },
-  addText: { fontFamily: FONTS.bold, fontSize: 13.5, color: COLORS.white },
+  addText: { fontFamily: FONTS.bold, fontSize: 13.5, color: COLORS.onColor },
   card: { borderRadius: RADIUS.lg, padding: 14, marginHorizontal: SPACING.md, marginBottom: 10, gap: 4, ...SHADOW, shadowOpacity: 0.04 },
   kind: { fontFamily: FONTS.bold, fontSize: 11.5, color: COLORS.primary, textTransform: 'uppercase', letterSpacing: 0.6 },
   title: { fontFamily: FONTS.bold, fontSize: 16, color: COLORS.black },

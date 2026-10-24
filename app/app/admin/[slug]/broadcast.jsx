@@ -72,7 +72,7 @@ export default function AdminBroadcast() {
               <AppText style={styles.switchTitle}>Urgent</AppText>
               <AppText variant="caption">Delivered at once, even in quiet hours.</AppText>
             </View>
-            <Switch value={form.urgent} onValueChange={set('urgent')} trackColor={{ true: COLORS.primaryLight, false: COLORS.gray300 }} thumbColor={COLORS.white} />
+            <Switch value={form.urgent} onValueChange={set('urgent')} trackColor={{ true: COLORS.primaryLight, false: COLORS.gray300 }} thumbColor={COLORS.onColor} />
           </View>
           {done ? <AppText style={styles.done}>{done}</AppText> : null}
           <Button title="Send now" onPress={send} loading={busy} disabled={!form.title.trim() || !form.body.trim() || (form.audience === 'stage' && !form.stages.length)} />

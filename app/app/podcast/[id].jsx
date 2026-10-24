@@ -124,8 +124,8 @@ export default function PodcastScreen() {
                 />
               </View>
               <Pressable onPress={toggleFollow} accessibilityRole="button" accessibilityState={{ selected: following }} accessibilityLabel={following ? 'Following. Tap to unfollow' : 'Follow'} style={[styles.follow, following && styles.followOn]}>
-                <Ionicons name={following ? 'heart' : 'heart-outline'} size={20} color={following ? COLORS.white : COLORS.primary} />
-                <AppText style={[styles.followText, following && { color: COLORS.white }]}>{following ? 'Following' : 'Follow'}</AppText>
+                <Ionicons name={following ? 'heart' : 'heart-outline'} size={20} color={following ? COLORS.onColor : COLORS.primary} />
+                <AppText style={[styles.followText, following && { color: COLORS.onColor }]}>{following ? 'Following' : 'Follow'}</AppText>
               </Pressable>
             </View>
             {note ? <AppText style={styles.note}>{note}</AppText> : null}

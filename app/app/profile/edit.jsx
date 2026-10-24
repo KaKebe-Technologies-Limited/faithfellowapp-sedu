@@ -23,7 +23,7 @@ import KeyboardScroll from '../../components/KeyboardScroll';
 function Chip({ label, on, onPress }) {
   return (
     <Pressable onPress={onPress} style={[styles.chip, on && styles.chipOn]} accessibilityRole="button" accessibilityState={{ selected: on }}>
-      <AppText style={[styles.chipText, on && { color: COLORS.white }]}>{label}</AppText>
+      <AppText style={[styles.chipText, on && { color: COLORS.onColor }]}>{label}</AppText>
     </Pressable>
   );
 }
@@ -178,14 +178,14 @@ export default function EditProfile() {
                 <AppText style={styles.switchTitle}>Members of my churches</AppText>
                 <AppText variant="caption">List me in the member directory of the churches I follow.</AppText>
               </View>
-              <Switch value={form.directory_opt_in} onValueChange={(v) => set('directory_opt_in', v)} trackColor={{ true: COLORS.primaryLight, false: COLORS.gray300 }} thumbColor={COLORS.white} />
+              <Switch value={form.directory_opt_in} onValueChange={(v) => set('directory_opt_in', v)} trackColor={{ true: COLORS.primaryLight, false: COLORS.gray300 }} thumbColor={COLORS.onColor} />
             </View>
             <View style={styles.switchRow}>
               <View style={{ flex: 1 }}>
                 <AppText style={styles.switchTitle}>Believers across the app</AppText>
                 <AppText variant="caption">Let any adult on FaithFellows find me and ask to connect.</AppText>
               </View>
-              <Switch value={form.open_to_connect} onValueChange={(v) => set('open_to_connect', v)} trackColor={{ true: COLORS.primaryLight, false: COLORS.gray300 }} thumbColor={COLORS.white} />
+              <Switch value={form.open_to_connect} onValueChange={(v) => set('open_to_connect', v)} trackColor={{ true: COLORS.primaryLight, false: COLORS.gray300 }} thumbColor={COLORS.onColor} />
             </View>
             <View style={styles.switchRow}>
               <View style={{ flex: 1 }}>

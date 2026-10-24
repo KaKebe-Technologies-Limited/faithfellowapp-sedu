@@ -65,5 +65,5 @@ const styles = StyleSheet.create({
   name: { flex: 1, fontFamily: FONTS.bold, fontSize: 15.5, color: COLORS.black },
   last: { fontFamily: FONTS.regular, fontSize: 14, color: COLORS.gray700 },
   badge: { minWidth: 22, height: 22, borderRadius: 11, paddingHorizontal: 6, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center' },
-  badgeText: { fontFamily: FONTS.bold, fontSize: 12, color: COLORS.white },
+  badgeText: { fontFamily: FONTS.bold, fontSize: 12, color: COLORS.onColor },
 });

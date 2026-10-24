@@ -20,7 +20,7 @@ export default function Avatar({ person, size = 44, ring = false }) {
 
   return (
     <View style={[box, styles.center, ring && styles.ring]} accessibilityLabel={person?.name}>
-      {uri ? <Image source={{ uri }} onError={() => setBroken(address)} style={StyleSheet.absoluteFill} contentFit="cover" transition={200} /> : <AppText numberOfLines={1} allowFontScaling={false} style={{ fontFamily: FONTS.bold, fontSize: size * 0.38, color: COLORS.white, textAlign: 'center' }}>{initials(person?.name)}</AppText>}
+      {uri ? <Image source={{ uri }} onError={() => setBroken(address)} style={StyleSheet.absoluteFill} contentFit="cover" transition={200} /> : <AppText numberOfLines={1} allowFontScaling={false} style={{ fontFamily: FONTS.bold, fontSize: size * 0.38, color: COLORS.onColor, textAlign: 'center' }}>{initials(person?.name)}</AppText>}
     </View>
   );
 }

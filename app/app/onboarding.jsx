@@ -100,7 +100,7 @@ const styles = StyleSheet.create({
   stage: { flex: 1, justifyContent: 'center' },
   slide: { alignItems: 'center', paddingHorizontal: SPACING.lg },
   art: { marginBottom: SPACING.lg },
-  title: { fontFamily: FONTS.bold, fontSize: 27, lineHeight: 34, color: COLORS.black, textAlign: 'center' },
+  title: { fontFamily: FONTS.display, fontSize: 27, lineHeight: 34, color: COLORS.black, textAlign: 'center' },
   text: { fontFamily: FONTS.regular, fontSize: 16, lineHeight: 24, color: COLORS.gray700, textAlign: 'center', marginTop: 12, maxWidth: 340 },
   dots: { flexDirection: 'row', justifyContent: 'center', gap: 7, marginVertical: SPACING.md },
   dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: COLORS.primaryPale },

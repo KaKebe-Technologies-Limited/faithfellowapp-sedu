@@ -98,7 +98,7 @@ export default function EventForm({ visible, onClose, slug, event = null, onSave
           <>
             <Image source={{ uri: cover }} style={StyleSheet.absoluteFill} contentFit="cover" />
             <View style={styles.change}>
-              <Ionicons name="camera" size={14} color={COLORS.white} />
+              <Ionicons name="camera" size={14} color={COLORS.onColor} />
               <AppText style={styles.changeText}>Change picture</AppText>
             </View>
           </>
@@ -160,7 +160,7 @@ function Row({ label, value, onChange }) {
   return (
     <View style={styles.row}>
       <AppText style={styles.rowTitle}>{label}</AppText>
-      <Switch value={value} onValueChange={onChange} trackColor={{ true: COLORS.primaryLight, false: COLORS.gray300 }} thumbColor={COLORS.white} />
+      <Switch value={value} onValueChange={onChange} trackColor={{ true: COLORS.primaryLight, false: COLORS.gray300 }} thumbColor={COLORS.onColor} />
     </View>
   );
 }
@@ -168,7 +168,7 @@ function Row({ label, value, onChange }) {
 const styles = StyleSheet.create({
   cover: { height: 130, borderRadius: RADIUS.lg, backgroundColor: COLORS.primaryMist, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', marginBottom: 14 },
   change: { position: 'absolute', right: 10, bottom: 10, flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: RADIUS.full, paddingHorizontal: 10, paddingVertical: 5 },
-  changeText: { fontFamily: FONTS.semibold, fontSize: 12, color: COLORS.white },
+  changeText: { fontFamily: FONTS.semibold, fontSize: 12, color: COLORS.onColor },
   label: { fontFamily: FONTS.semibold, fontSize: 13.5, color: COLORS.black, marginBottom: 8, marginTop: 4 },
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 10 },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 7 },

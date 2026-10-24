@@ -82,7 +82,7 @@ const styles = StyleSheet.create({
   lead: { fontFamily: FONTS.regular, fontSize: 14.5, lineHeight: 21, color: COLORS.gray700, marginBottom: SPACING.md },
   card: { backgroundColor: COLORS.white, borderRadius: RADIUS.xl, padding: SPACING.lg, alignItems: 'stretch', ...SHADOW },
   qr: { alignSelf: 'center', padding: 12, backgroundColor: '#fff', borderRadius: RADIUS.lg, borderWidth: 1, borderColor: COLORS.gray300 },
-  code: { fontFamily: FONTS.bold, fontSize: 28, letterSpacing: 4, color: COLORS.primaryDark, textAlign: 'center', marginTop: SPACING.md },
+  code: { fontFamily: FONTS.bold, fontSize: 28, letterSpacing: 4, color: COLORS.primaryInk, textAlign: 'center', marginTop: SPACING.md },
   stats: { flexDirection: 'row', gap: 12, marginTop: SPACING.md },
   stat: { flex: 1, backgroundColor: COLORS.white, borderRadius: RADIUS.lg, padding: SPACING.md, gap: 2, ...SHADOW },
   statValue: { fontFamily: FONTS.bold, fontSize: 26, color: COLORS.black },

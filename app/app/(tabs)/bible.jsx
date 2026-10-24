@@ -130,7 +130,7 @@ export default function BibleTab() {
                 { key: 'NT', label: 'New Testament' },
               ].map((s) => (
                 <Pressable key={s.key} onPress={() => setTestament(s.key)} style={[styles.segBtn, testament === s.key && styles.segOn]} accessibilityRole="tab" accessibilityState={{ selected: testament === s.key }}>
-                  <AppText style={[styles.segText, testament === s.key && { color: COLORS.white }]}>{s.label}</AppText>
+                  <AppText style={[styles.segText, testament === s.key && { color: COLORS.onColor }]}>{s.label}</AppText>
                 </Pressable>
               ))}
             </View>
@@ -193,12 +193,12 @@ const styles = StyleSheet.create({
   offlineBtn: { width: 42, height: 42, borderRadius: 21, backgroundColor: COLORS.primaryMist, alignItems: 'center', justifyContent: 'center' },
   screen: { flex: 1, backgroundColor: COLORS.canvas },
   head: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.md, paddingTop: 10 },
-  title: { fontFamily: FONTS.bold, fontSize: 30, lineHeight: 36, color: COLORS.black },
+  title: { fontFamily: FONTS.display, fontSize: 30, lineHeight: 36, color: COLORS.black },
   search: { flexDirection: 'row', alignItems: 'center', gap: 8, margin: SPACING.md, marginBottom: 12, paddingHorizontal: SPACING.md, borderRadius: RADIUS.full, backgroundColor: COLORS.white, ...SHADOW, shadowOpacity: 0.04 },
   searchInput: { flex: 1, minHeight: 46, fontFamily: FONTS.regular, fontSize: 15, color: COLORS.black },
   continue: { marginHorizontal: SPACING.md, borderRadius: RADIUS.xl - 4, padding: SPACING.md, flexDirection: 'row', alignItems: 'center' },
   contLabel: { fontFamily: FONTS.medium, fontSize: 12.5, color: COLORS.primaryPale },
-  contTitle: { fontFamily: FONTS.bold, fontSize: 22, color: COLORS.white },
+  contTitle: { fontFamily: FONTS.bold, fontSize: 22, color: COLORS.onColor },
   contPlay: { width: 46, height: 46, borderRadius: 23, backgroundColor: COLORS.white, alignItems: 'center', justifyContent: 'center' },
   tiles: { flexDirection: 'row', gap: 10, paddingHorizontal: SPACING.md, marginTop: 12 },
   tile: { flex: 1, backgroundColor: COLORS.white, borderRadius: RADIUS.lg, paddingVertical: 14, alignItems: 'center', gap: 8, ...SHADOW, shadowOpacity: 0.04 },
@@ -206,7 +206,7 @@ const styles = StyleSheet.create({
   tileText: { fontFamily: FONTS.semibold, fontSize: 12.5, color: COLORS.black },
   hl: { width: 230, borderRadius: RADIUS.lg, padding: 14, gap: 6 },
   hlRef: { fontFamily: FONTS.bold, fontSize: 13.5, color: COLORS.black },
-  hlText: { fontFamily: FONTS.regular, fontSize: 13.5, lineHeight: 19, color: '#2B2B2B' },
+  hlText: { fontFamily: FONTS.regular, fontSize: 13.5, lineHeight: 19, color: COLORS.ink },
   seg: { flexDirection: 'row', backgroundColor: COLORS.primaryMist, borderRadius: RADIUS.full, padding: 4, marginHorizontal: SPACING.md },
   segBtn: { flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: RADIUS.full },
   segOn: { backgroundColor: COLORS.primary },

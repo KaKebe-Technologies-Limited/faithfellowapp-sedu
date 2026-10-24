@@ -193,7 +193,7 @@ export default function LiveScreen() {
                   <View style={[styles.compose, { paddingBottom: Math.max(insets.bottom, 10) }]}>
                     <TextInput maxFontSizeMultiplier={MAX_FONT_SCALE} value={draft} onChangeText={setDraft} placeholder="Write a message…" placeholderTextColor={COLORS.gray500} maxLength={500} onSubmitEditing={send} returnKeyType="send" style={styles.input} />
                     <Pressable onPress={send} disabled={!draft.trim() || sending} style={[styles.send, (!draft.trim() || sending) && { opacity: 0.45 }]} accessibilityLabel="Send message" accessibilityRole="button">
-                      <Ionicons name="send" size={18} color={COLORS.white} />
+                      <Ionicons name="send" size={18} color={COLORS.onColor} />
                     </Pressable>
                   </View>
                 ) : null}
@@ -212,7 +212,7 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: COLORS.canvas },
   back: { position: 'absolute', left: SPACING.md },
   stage: { width: '100%', aspectRatio: 16 / 9, alignItems: 'center', justifyContent: 'center', gap: 6, padding: SPACING.lg },
-  stageTitle: { fontFamily: FONTS.bold, fontSize: 20, color: COLORS.white, textAlign: 'center' },
+  stageTitle: { fontFamily: FONTS.bold, fontSize: 20, color: COLORS.onColor, textAlign: 'center' },
   stageSub: { fontFamily: FONTS.regular, fontSize: 14, color: COLORS.primaryPale, textAlign: 'center' },
   info: { flexDirection: 'row', padding: SPACING.md, backgroundColor: COLORS.white },
   problem: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: COLORS.primaryMist, padding: 14, paddingHorizontal: SPACING.md },
@@ -224,11 +224,11 @@ const styles = StyleSheet.create({
   host: { flexDirection: 'row', alignItems: 'center', gap: 7, marginTop: 2 },
   chat: { flex: 1 },
   chatSoon: { flexDirection: 'row', alignItems: 'center', gap: 10, margin: SPACING.md, padding: 14, borderRadius: RADIUS.lg, backgroundColor: COLORS.primaryMist },
-  chatSoonText: { flex: 1, fontFamily: FONTS.medium, fontSize: 14, color: COLORS.primaryDark },
+  chatSoonText: { flex: 1, fontFamily: FONTS.medium, fontSize: 14, color: COLORS.primaryInk },
   chatTitle: { fontFamily: FONTS.bold, fontSize: 15, color: COLORS.black, paddingHorizontal: SPACING.md, paddingTop: 12, paddingBottom: 6 },
   msg: { flexDirection: 'row', gap: 10 },
   msgDot: { width: 30, height: 30, borderRadius: 15, backgroundColor: COLORS.primaryLight, alignItems: 'center', justifyContent: 'center' },
-  msgInitial: { fontFamily: FONTS.bold, fontSize: 12, color: COLORS.white },
+  msgInitial: { fontFamily: FONTS.bold, fontSize: 12, color: COLORS.onColor },
   msgName: { fontFamily: FONTS.semibold, fontSize: 12.5, color: COLORS.gray700 },
   msgBody: { fontFamily: FONTS.regular, fontSize: 14.5, lineHeight: 20, color: COLORS.black },
   compose: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: SPACING.md, paddingTop: 10, backgroundColor: COLORS.white, borderTopWidth: 1, borderTopColor: COLORS.gray100 },

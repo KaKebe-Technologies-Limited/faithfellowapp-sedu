@@ -58,9 +58,10 @@ class PeopleService
     }
 
     /**
-     * "For you": the people the viewer may find (the same rules as everyone else), ranked by what they share: faith interests,
-     * podcasts they follow, hymns they love, books of the Bible they highlight, the same church, a similar age, the same town,
-     * and living close by. Each person says why they were suggested. A person with nothing in common still follows, so a new
+     * "For you": the people the viewer may find (the same rules as everyone else), ranked by what they share: the same church above all (a member in
+     * London finds the others in London who follow the same church in Kampala, and so does everyone who follows it from another town), then faith
+     * interests, podcasts they follow, hymns they love, books of the Bible they highlight, a similar age, the same town, and living close by. Each person says
+     * why they were suggested. A person with nothing in common still follows, so a new
      * member never sees an empty list.
      *
      * @param  array<string, mixed>  $filters
@@ -78,7 +79,8 @@ class PeopleService
         $myBooks = DB::table('bible_highlights')->where('user_id', $viewer->id)->distinct()->pluck('book');
         $books = $myBooks->isEmpty() ? collect() : $count(DB::table('bible_highlights')->whereIn('user_id', $ids)->whereIn('book', $myBooks)->selectRaw('user_id, COUNT(DISTINCT book) c'));
         $mine = $viewer->memberChurchIds();
-        $churches = $mine === [] ? collect() : $count(Subscription::query()->whereIn('user_id', $ids)->whereIn('church_id', $mine)->where('status', 'active')->selectRaw('user_id, COUNT(*) c')->toBase());
+        // The churches each candidate follows that the viewer follows too (named, so the suggestion can say which).
+        $churches = $mine === [] ? collect() : Subscription::query()->whereIn('user_id', $ids)->whereIn('church_id', $mine)->where('status', 'active')->with('church:id,name,country')->get()->groupBy('user_id');
         $myInterests = collect($viewer->interests ?? [])->map(fn ($i) => mb_strtolower((string) $i));
         $myAge = $viewer->date_of_birth?->age;
 
@@ -91,9 +93,17 @@ class PeopleService
                 $score += min(5, $interests->count()) * 3;
                 $why[] = __('Both like :things', ['things' => $interests->take(2)->implode(' & ')]);
             }
-            if (($churches[$other->id] ?? 0) > 0) {
-                $score += 4;
-                $why[] = __('Same church');
+            $shared = ($churches[$other->id] ?? collect())->pluck('church')->filter()->unique('id')->values();
+            if ($shared->isNotEmpty()) {
+                $score += 12;
+                $why[] = $shared->count() === 1
+                    ? __('Follows :church too', ['church' => $shared[0]->name])
+                    : __('Follows :church and :n more of your churches', ['church' => $shared[0]->name, 'n' => $shared->count() - 1]);
+                // Far from the church's country, together: two Ugandans in the UK who follow the same church in Kampala.
+                if ($viewer->country && $other->country === $viewer->country && $shared->contains(fn ($c) => $c->country && $c->country !== $viewer->country)) {
+                    $score += 6;
+                    $why[] = __('Also in :country', ['country' => $this->countryName($viewer->country)]);
+                }
             }
             if (($podcasts[$other->id] ?? 0) > 0) {
                 $score += min(3, (int) $podcasts[$other->id]) * 2;
@@ -134,6 +144,14 @@ class PeopleService
         })->sortBy([['match_score', 'desc'], ['name', 'asc']])->values();
 
         return new LengthAwarePaginator($ranked->forPage($page, $perPage)->values(), $ranked->count(), $perPage, $page);
+    }
+
+    /** "United Kingdom" for "GB" (the code itself when the name is not known). */
+    protected function countryName(string $code): string
+    {
+        $name = class_exists(\Locale::class) ? \Locale::getDisplayRegion('-'.strtoupper($code), 'en') : '';
+
+        return $name !== '' && $name !== strtoupper($code) ? $name : strtoupper($code);
     }
 
     /** Straight-line kilometres between two members who both shared a place. */

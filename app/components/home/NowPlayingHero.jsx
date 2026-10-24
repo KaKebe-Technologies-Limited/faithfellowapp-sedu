@@ -121,7 +121,7 @@ const styles = StyleSheet.create({
   top: { position: 'absolute', left: 16, right: 16, top: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   text: { position: 'absolute', left: 18, right: 18, bottom: 18 },
   kicker: { fontFamily: FONTS.bold, fontSize: 10.5, letterSpacing: 1.5, color: 'rgba(255,255,255,0.8)', marginBottom: 4 },
-  title: { fontFamily: FONTS.bold, fontSize: 25, lineHeight: 30, color: '#fff' },
+  title: { fontFamily: FONTS.display, fontSize: 25, lineHeight: 30, color: '#fff' },
   tagline: { fontFamily: FONTS.medium, fontSize: 14, lineHeight: 20, color: 'rgba(255,255,255,0.88)', marginTop: 2, marginRight: BUTTON + 22 },
   play: { position: 'absolute', right: SPACING.md + 18 },
   actions: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10, height: ACTIONS - 10, paddingRight: BUTTON + 30 },

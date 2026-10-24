@@ -138,7 +138,7 @@ export default function PodcastRadio() {
 const styles = StyleSheet.create({
   sectionHead: { flexDirection: 'row', alignItems: 'center', gap: 9, paddingHorizontal: SPACING.md, marginBottom: 12 },
   sectionBar: { width: 4, height: 20, borderRadius: 2, backgroundColor: PURPLE.main },
-  section: { fontFamily: FONTS.bold, fontSize: 19, color: COLORS.black, flex: 1 },
+  section: { fontFamily: FONTS.display, fontSize: 19, color: COLORS.black, flex: 1 },
   commentsButton: { marginHorizontal: SPACING.md, marginTop: 12 },
   subsection: { fontFamily: FONTS.semibold, fontSize: 14, color: COLORS.gray700, paddingHorizontal: SPACING.md, marginBottom: 8 },
   mark: { position: 'absolute', right: -30, top: -34, width: 220, height: 220, tintColor: '#fff', opacity: 0.12 },

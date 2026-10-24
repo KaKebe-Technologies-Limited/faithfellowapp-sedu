@@ -227,7 +227,7 @@ const styles = StyleSheet.create({
   head: { alignItems: 'center', gap: 6 },
   icon: { width: 68, height: 68, borderRadius: 24, alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
   title: { fontFamily: FONTS.bold, fontSize: 23, lineHeight: 30, color: SOFT.ink, textAlign: 'center' },
-  lead: { fontFamily: FONTS.regular, fontSize: 14.5, lineHeight: 21, color: '#6F5F68', textAlign: 'center', paddingHorizontal: 6 },
+  lead: { fontFamily: FONTS.regular, fontSize: 14.5, lineHeight: 21, color: COLORS.gray700, textAlign: 'center', paddingHorizontal: 6 },
   benefits: { backgroundColor: COLORS.white, borderRadius: 20, padding: 14, gap: 10, marginTop: 16 },
   benefit: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   benefitIcon: { width: 32, height: 32, borderRadius: 11, backgroundColor: 'rgba(188,38,73,0.1)', alignItems: 'center', justifyContent: 'center' },

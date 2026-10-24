@@ -101,7 +101,7 @@ export default function AdminEvent() {
                 <Button title="Check in" small onPress={() => { checkIn(code); setCode(''); }} disabled={!code.trim()} />
               </View>
               {result ? (
-                <View style={[styles.result, { backgroundColor: result.ok ? '#EAF7EF' : '#FDECEC' }]}>
+                <View style={[styles.result, { backgroundColor: result.ok ? COLORS.successMist : COLORS.dangerMist }]}>
                   <Ionicons name={result.ok ? 'checkmark-circle' : 'close-circle'} size={22} color={result.ok ? COLORS.success : COLORS.danger} />
                   <AppText style={[styles.resultText, { color: result.ok ? COLORS.success : COLORS.danger }]}>{result.message}</AppText>
                 </View>
@@ -138,7 +138,7 @@ export default function AdminEvent() {
           <CameraView style={StyleSheet.absoluteFill} facing="back" barcodeScannerSettings={{ barcodeTypes: ['qr'] }} onBarcodeScanned={onScanned} />
           <View style={[styles.camTop, { paddingTop: insets.top + 10 }]}>
             <Pressable onPress={() => setScanning(false)} style={styles.camClose} accessibilityRole="button" accessibilityLabel="Close scanner">
-              <Ionicons name="close" size={24} color={COLORS.white} />
+              <Ionicons name="close" size={24} color={COLORS.onColor} />
             </Pressable>
             <AppText style={styles.camTitle}>Point at a guest's QR ticket</AppText>
           </View>
@@ -161,7 +161,7 @@ export default function AdminEvent() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: COLORS.canvas },
   stats: { flexDirection: 'row', gap: 8 },
-  paidIn: { fontFamily: FONTS.semibold, fontSize: 14, color: COLORS.primaryDark, backgroundColor: COLORS.primaryMist, borderRadius: RADIUS.md, padding: 12, marginTop: 8, textAlign: 'center' },
+  paidIn: { fontFamily: FONTS.semibold, fontSize: 14, color: COLORS.primaryInk, backgroundColor: COLORS.primaryMist, borderRadius: RADIUS.md, padding: 12, marginTop: 8, textAlign: 'center' },
   stat: { flex: 1, backgroundColor: COLORS.white, borderRadius: RADIUS.lg, paddingVertical: 12, alignItems: 'center', gap: 2, ...SHADOW, shadowOpacity: 0.05 },
   statValue: { fontFamily: FONTS.bold, fontSize: 20, color: COLORS.black },
   door: { backgroundColor: COLORS.white, borderRadius: RADIUS.xl - 4, padding: SPACING.md, gap: 12, marginTop: SPACING.md, ...SHADOW, shadowOpacity: 0.05 },
@@ -172,17 +172,17 @@ const styles = StyleSheet.create({
   resultText: { flex: 1, fontFamily: FONTS.semibold, fontSize: 14.5 },
   guest: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: COLORS.white, borderRadius: RADIUS.lg, padding: 12, marginTop: 8 },
   name: { fontFamily: FONTS.semibold, fontSize: 15, color: COLORS.black },
-  here: { flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: '#EAF7EF', borderRadius: RADIUS.full, paddingHorizontal: 10, paddingVertical: 5 },
+  here: { flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: COLORS.successMist, borderRadius: RADIUS.full, paddingHorizontal: 10, paddingVertical: 5 },
   hereText: { fontFamily: FONTS.bold, fontSize: 12, color: COLORS.success },
   checkBtn: { backgroundColor: COLORS.primary, borderRadius: RADIUS.full, paddingHorizontal: 14, paddingVertical: 8 },
-  checkText: { fontFamily: FONTS.bold, fontSize: 12.5, color: COLORS.white },
+  checkText: { fontFamily: FONTS.bold, fontSize: 12.5, color: COLORS.onColor },
   camWrap: { flex: 1, backgroundColor: '#000' },
   camTop: { position: 'absolute', top: 0, left: 0, right: 0, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: SPACING.md, paddingBottom: 12, backgroundColor: 'rgba(0,0,0,0.45)' },
   camClose: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },
-  camTitle: { fontFamily: FONTS.bold, fontSize: 16, color: COLORS.white },
+  camTitle: { fontFamily: FONTS.bold, fontSize: 16, color: COLORS.onColor },
   frame: { position: 'absolute', alignSelf: 'center', top: '30%', width: 240, height: 240, borderRadius: 24, borderWidth: 3, borderColor: COLORS.white },
   camBottom: { position: 'absolute', bottom: 0, left: 0, right: 0, alignItems: 'center', paddingHorizontal: SPACING.md },
-  camHint: { fontFamily: FONTS.semibold, fontSize: 15, color: COLORS.white, backgroundColor: 'rgba(0,0,0,0.55)', paddingHorizontal: 18, paddingVertical: 10, borderRadius: RADIUS.full },
+  camHint: { fontFamily: FONTS.semibold, fontSize: 15, color: COLORS.onColor, backgroundColor: 'rgba(0,0,0,0.55)', paddingHorizontal: 18, paddingVertical: 10, borderRadius: RADIUS.full },
   camResult: { borderRadius: RADIUS.lg, paddingHorizontal: 18, paddingVertical: 14, alignSelf: 'stretch' },
-  camResultText: { fontFamily: FONTS.bold, fontSize: 16, color: COLORS.white, textAlign: 'center' },
+  camResultText: { fontFamily: FONTS.bold, fontSize: 16, color: COLORS.onColor, textAlign: 'center' },
 });

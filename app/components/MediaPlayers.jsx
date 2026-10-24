@@ -142,13 +142,13 @@ export function AudioPlayerCard({ url, title, duration: knownDuration, autoPlay 
       </View>
       <View style={styles.controls}>
         <Pressable onPress={() => skip(-15)} hitSlop={10} accessibilityLabel="Back 15 seconds">
-          <Ionicons name="play-back" size={26} color={COLORS.white} />
+          <Ionicons name="play-back" size={26} color={COLORS.onColor} />
         </Pressable>
         <Pressable onPress={() => (status.playing ? player.pause() : player.play())} style={styles.play} accessibilityLabel={status.playing ? 'Pause' : 'Play'}>
           <Ionicons name={status.playing ? 'pause' : 'play'} size={30} color={COLORS.primary} style={status.playing ? null : { marginLeft: 3 }} />
         </Pressable>
         <Pressable onPress={() => skip(30)} hitSlop={10} accessibilityLabel="Forward 30 seconds">
-          <Ionicons name="play-forward" size={26} color={COLORS.white} />
+          <Ionicons name="play-forward" size={26} color={COLORS.onColor} />
         </Pressable>
       </View>
       {title ? (

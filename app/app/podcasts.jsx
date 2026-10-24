@@ -204,7 +204,7 @@ const styles = StyleSheet.create({
   chips: { paddingHorizontal: SPACING.md, gap: 8, paddingBottom: 6 },
   sectionHead: { flexDirection: 'row', alignItems: 'center', gap: 9, paddingHorizontal: SPACING.md, marginBottom: 12 },
   sectionBar: { width: 4, height: 20, borderRadius: 2, backgroundColor: PURPLE.main },
-  section: { fontFamily: FONTS.bold, fontSize: 19, color: COLORS.black, flex: 1 },
+  section: { fontFamily: FONTS.display, fontSize: 19, color: COLORS.black, flex: 1 },
   hint: { fontFamily: FONTS.regular, fontSize: 12.5, color: COLORS.gray700 },
   action: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   actionText: { fontFamily: FONTS.semibold, fontSize: 13.5, color: PURPLE.main },

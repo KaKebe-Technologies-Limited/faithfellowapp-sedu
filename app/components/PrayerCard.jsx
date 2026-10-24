@@ -31,7 +31,7 @@ export function PrayedButton({ prayer, onChange }) {
   return (
     <Pressable onPress={toggle} style={[styles.prayed, prayed && styles.prayedOn]} accessibilityRole="button" accessibilityState={{ selected: prayed }} accessibilityLabel={`I prayed, ${count}`}>
       <AppText style={{ fontSize: 15 }}>🙏</AppText>
-      <AppText style={[styles.prayedText, prayed && { color: COLORS.white }]}>{prayed ? 'You prayed' : 'I prayed'} · {count}</AppText>
+      <AppText style={[styles.prayedText, prayed && { color: COLORS.onColor }]}>{prayed ? 'You prayed' : 'I prayed'} · {count}</AppText>
     </Pressable>
   );
 }
@@ -80,12 +80,12 @@ const styles = StyleSheet.create({
   card: { backgroundColor: COLORS.white, borderRadius: RADIUS.lg + 2, padding: SPACING.md, marginHorizontal: SPACING.md, marginBottom: 12, borderTopWidth: 4, borderTopColor: COLORS.primaryPale, ...SHADOW },
   head: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   person: { width: 38, height: 38, borderRadius: 19, backgroundColor: COLORS.primaryLight, alignItems: 'center', justifyContent: 'center' },
-  initial: { fontFamily: FONTS.bold, fontSize: 13, color: COLORS.white },
+  initial: { fontFamily: FONTS.bold, fontSize: 13, color: COLORS.onColor },
   name: { fontFamily: FONTS.bold, fontSize: 14, color: COLORS.black },
   title: { fontFamily: FONTS.bold, fontSize: 16, lineHeight: 22, color: COLORS.black, marginTop: 12 },
-  body: { fontFamily: FONTS.regular, fontSize: 15, lineHeight: 23, color: '#2B2B2B', marginTop: 8 },
+  body: { fontFamily: FONTS.regular, fontSize: 15, lineHeight: 23, color: COLORS.ink, marginTop: 8 },
   answer: { backgroundColor: COLORS.primaryMist, borderRadius: RADIUS.md, padding: 10, marginTop: 10 },
-  answerText: { fontFamily: FONTS.medium, fontSize: 13.5, lineHeight: 19, color: COLORS.primaryDark },
+  answerText: { fontFamily: FONTS.medium, fontSize: 13.5, lineHeight: 19, color: COLORS.primaryInk },
   prayed: { flexDirection: 'row', alignItems: 'center', gap: 7, backgroundColor: COLORS.primaryMist, borderRadius: RADIUS.full, paddingHorizontal: 16, paddingVertical: 9 },
   prayedOn: { backgroundColor: COLORS.primary },
   prayedText: { fontFamily: FONTS.bold, fontSize: 13.5, color: COLORS.primary },

@@ -30,13 +30,13 @@ function Board({ rows, limit = 5, light = false, progress = false, total = 0 }) 
     <View style={{ gap: 6 }}>
       {rows.slice(0, limit).map((r) => (
         <View key={r.id} style={[styles.boardRow, r.me && styles.boardMe, light && { backgroundColor: 'rgba(255,255,255,0.14)' }]}>
-          <AppText style={[styles.rank, light && { color: COLORS.white }]}>{r.rank}</AppText>
-          <AppText style={[styles.boardName, light && { color: COLORS.white }]} numberOfLines={1}>
+          <AppText style={[styles.rank, light && { color: COLORS.onColor }]}>{r.rank}</AppText>
+          <AppText style={[styles.boardName, light && { color: COLORS.onColor }]} numberOfLines={1}>
             {r.me ? `${r.name} (you)` : r.name}
           </AppText>
           {progress ? <AppText style={styles.progressChip}>{r.done ? 'Done ✓' : r.at ? `Q${r.at}/${total}` : 'Waiting'}</AppText> : null}
           {r.gained > 0 ? <AppText style={styles.gained}>+{r.gained}</AppText> : null}
-          <AppText style={[styles.boardScore, light && { color: COLORS.white }]}>{r.score}</AppText>
+          <AppText style={[styles.boardScore, light && { color: COLORS.onColor }]}>{r.score}</AppText>
         </View>
       ))}
     </View>
@@ -238,7 +238,7 @@ export default function GameScreen() {
           {state?.status === 'question' || state?.status === 'reveal' ? <AppText style={styles.progress}>Question {state.index + 1} of {state.total}</AppText> : null}
         </View>
         <Pressable onPress={sound.toggle} hitSlop={8} style={styles.speaker} accessibilityRole="button" accessibilityLabel={sound.on ? 'Turn the game sounds off' : 'Turn the game sounds on'}>
-          <Ionicons name={sound.on ? 'volume-high' : 'volume-mute'} size={20} color={COLORS.white} />
+          <Ionicons name={sound.on ? 'volume-high' : 'volume-mute'} size={20} color={COLORS.onColor} />
         </Pressable>
         {state?.me ? (
           <View style={styles.scorePill}>
@@ -254,7 +254,7 @@ export default function GameScreen() {
             {state.status === 'lobby' ? (
               <View style={styles.center}>
                 <View style={styles.pulse}>
-                  <Ionicons name={state.is_host ? 'people' : 'hourglass-outline'} size={42} color={COLORS.white} />
+                  <Ionicons name={state.is_host ? 'people' : 'hourglass-outline'} size={42} color={COLORS.onColor} />
                 </View>
                 <AppText style={styles.big}>{self ? 'Ready to play?' : state.is_host ? 'Your game is ready' : 'You are in!'}</AppText>
                 <AppText style={styles.sub}>
@@ -278,11 +278,11 @@ export default function GameScreen() {
                     {state.is_host ? (
                       <View style={styles.hostRow}>
                         <Pressable onPress={share} style={styles.ghost} accessibilityRole="button" accessibilityLabel="Share the game PIN">
-                          <Ionicons name="share-social-outline" size={18} color={COLORS.white} />
+                          <Ionicons name="share-social-outline" size={18} color={COLORS.onColor} />
                           <AppText style={styles.ghostText}>Share PIN</AppText>
                         </Pressable>
                         <Pressable onPress={openPeople} style={styles.ghost} accessibilityRole="button" accessibilityLabel="Invite people you have played with">
-                          <Ionicons name="person-add-outline" size={18} color={COLORS.white} />
+                          <Ionicons name="person-add-outline" size={18} color={COLORS.onColor} />
                           <AppText style={styles.ghostText}>Invite people</AppText>
                         </Pressable>
                       </View>
@@ -320,7 +320,7 @@ export default function GameScreen() {
                           <AppText style={styles.letterText}>{LETTERS[i]}</AppText>
                         </View>
                         <AppText style={styles.optText}>{opt}</AppText>
-                        {chosen ? <Ionicons name="checkmark-circle" size={24} color={COLORS.white} /> : null}
+                        {chosen ? <Ionicons name="checkmark-circle" size={24} color={COLORS.onColor} /> : null}
                       </Pressable>
                     );
                   })}
@@ -339,7 +339,7 @@ export default function GameScreen() {
                   <AppText style={styles.qText}>{q.text}</AppText>
                 </View>
                 <View style={[styles.result, { backgroundColor: state.me?.correct ? '#1E9E5A' : '#E21B3C' }]}>
-                  <Ionicons name={state.me?.correct ? 'checkmark-circle' : 'close-circle'} size={30} color={COLORS.white} />
+                  <Ionicons name={state.me?.correct ? 'checkmark-circle' : 'close-circle'} size={30} color={COLORS.onColor} />
                   <View style={{ flex: 1 }}>
                     <AppText style={styles.resultTitle}>{state.me?.answer == null ? 'Time ran out' : state.me.correct ? 'Correct!' : 'Not this time'}</AppText>
                     {state.me?.points ? <AppText style={styles.resultSub}>+{state.me.points} points</AppText> : null}
@@ -357,7 +357,7 @@ export default function GameScreen() {
                         </View>
                         <AppText style={styles.optText}>{opt}</AppText>
                         <AppText style={styles.count}>{state.reveal?.counts?.[i] ?? 0}</AppText>
-                        {right ? <Ionicons name="checkmark-circle" size={24} color={COLORS.white} /> : null}
+                        {right ? <Ionicons name="checkmark-circle" size={24} color={COLORS.onColor} /> : null}
                       </View>
                     );
                   })}
@@ -373,7 +373,7 @@ export default function GameScreen() {
             {state.status === 'cancelled' ? (
               <View style={styles.center}>
                 <View style={styles.pulse}>
-                  <Ionicons name="close-circle-outline" size={42} color={COLORS.white} />
+                  <Ionicons name="close-circle-outline" size={42} color={COLORS.onColor} />
                 </View>
                 <AppText style={styles.big}>This game was closed</AppText>
                 <AppText style={styles.sub}>{self ? 'Its host closed it, or it was open for a week. Start your own from the games list.' : 'The host ended it. Start your own from the games list.'}</AppText>
@@ -411,15 +411,15 @@ export default function GameScreen() {
                 <Button title="See the records" variant="light" onPress={() => router.push(`/leaderboard/${state.quiz_id}`)} style={{ alignSelf: 'stretch' }} />
                 <View style={{ flexDirection: 'row', gap: 10, alignSelf: 'stretch' }}>
                   <Pressable onPress={playAgain} disabled={busy} style={styles.ghost} accessibilityRole="button" accessibilityLabel="Play this quiz again">
-                    <Ionicons name="refresh" size={18} color={COLORS.white} />
+                    <Ionicons name="refresh" size={18} color={COLORS.onColor} />
                     <AppText style={styles.ghostText}>Play again</AppText>
                   </Pressable>
                   <Pressable onPress={share} style={styles.ghost} accessibilityRole="button" accessibilityLabel="Challenge friends to this quiz">
-                    <Ionicons name="share-social-outline" size={18} color={COLORS.white} />
+                    <Ionicons name="share-social-outline" size={18} color={COLORS.onColor} />
                     <AppText style={styles.ghostText}>Challenge</AppText>
                   </Pressable>
                   <Pressable onPress={() => router.replace('/games')} style={styles.ghost} accessibilityRole="button" accessibilityLabel="Back to games">
-                    <Ionicons name="grid-outline" size={18} color={COLORS.white} />
+                    <Ionicons name="grid-outline" size={18} color={COLORS.onColor} />
                     <AppText style={styles.ghostText}>Games</AppText>
                   </Pressable>
                 </View>
@@ -493,19 +493,19 @@ export default function GameScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: '#4527A0', paddingHorizontal: SPACING.md },
   top: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  quiz: { fontFamily: FONTS.bold, fontSize: 17, color: COLORS.white },
+  quiz: { fontFamily: FONTS.bold, fontSize: 17, color: COLORS.onColor },
   progress: { fontFamily: FONTS.medium, fontSize: 12.5, color: 'rgba(255,255,255,0.8)' },
   speaker: { width: 38, height: 38, borderRadius: 19, backgroundColor: 'rgba(255,255,255,0.16)', alignItems: 'center', justifyContent: 'center', marginRight: 8 },
   scorePill: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'rgba(255,255,255,0.18)', borderRadius: RADIUS.full, paddingHorizontal: 12, paddingVertical: 7 },
-  scoreText: { fontFamily: FONTS.bold, fontSize: 15, color: COLORS.white },
+  scoreText: { fontFamily: FONTS.bold, fontSize: 15, color: COLORS.onColor },
   center: { alignItems: 'center', gap: 8, paddingTop: 30 },
   pulse: { width: 96, height: 96, borderRadius: 48, backgroundColor: 'rgba(255,255,255,0.16)', alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
-  big: { fontFamily: FONTS.bold, fontSize: 30, color: COLORS.white, textAlign: 'center' },
+  big: { fontFamily: FONTS.bold, fontSize: 30, color: COLORS.onColor, textAlign: 'center' },
   sub: { fontFamily: FONTS.regular, fontSize: 15, color: 'rgba(255,255,255,0.85)', textAlign: 'center' },
   pin: { fontFamily: FONTS.bold, fontSize: 22, letterSpacing: 4, color: '#FFD36B', marginVertical: 6 },
   names: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center', marginTop: 12 },
   nameChip: { backgroundColor: 'rgba(255,255,255,0.16)', borderRadius: RADIUS.full, paddingHorizontal: 12, paddingVertical: 6 },
-  nameText: { fontFamily: FONTS.medium, fontSize: 13, color: COLORS.white },
+  nameText: { fontFamily: FONTS.medium, fontSize: 13, color: COLORS.onColor },
   timer: { height: 10, borderRadius: 5, backgroundColor: 'rgba(255,255,255,0.2)', overflow: 'hidden' },
   timerFill: { height: 10, borderRadius: 5 },
   qCard: { backgroundColor: COLORS.white, borderRadius: RADIUS.xl - 4, padding: SPACING.md, minHeight: 100, justifyContent: 'center' },
@@ -515,12 +515,12 @@ const styles = StyleSheet.create({
   option: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: RADIUS.lg, paddingVertical: 14, paddingHorizontal: 14, minHeight: 62 },
   optionChosen: { borderWidth: 3, borderColor: COLORS.white },
   letter: { width: 34, height: 34, borderRadius: 17, backgroundColor: 'rgba(255,255,255,0.25)', alignItems: 'center', justifyContent: 'center' },
-  letterText: { fontFamily: FONTS.bold, fontSize: 16, color: COLORS.white },
-  optText: { flex: 1, fontFamily: FONTS.bold, fontSize: 17, color: COLORS.white },
-  count: { fontFamily: FONTS.bold, fontSize: 16, color: COLORS.white, opacity: 0.9 },
+  letterText: { fontFamily: FONTS.bold, fontSize: 16, color: COLORS.onColor },
+  optText: { flex: 1, fontFamily: FONTS.bold, fontSize: 17, color: COLORS.onColor },
+  count: { fontFamily: FONTS.bold, fontSize: 16, color: COLORS.onColor, opacity: 0.9 },
   locked: { fontFamily: FONTS.medium, fontSize: 14, color: 'rgba(255,255,255,0.88)', textAlign: 'center' },
   boardBox: { backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: RADIUS.lg, padding: 12, gap: 8 },
-  boardTitle: { fontFamily: FONTS.bold, fontSize: 14, color: COLORS.white },
+  boardTitle: { fontFamily: FONTS.bold, fontSize: 14, color: COLORS.onColor },
   boardRow: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: COLORS.white, borderRadius: RADIUS.md, paddingHorizontal: 12, paddingVertical: 8 },
   boardMe: { borderWidth: 2, borderColor: '#FFD36B' },
   rank: { width: 22, fontFamily: FONTS.bold, fontSize: 14, color: COLORS.primary },
@@ -528,23 +528,23 @@ const styles = StyleSheet.create({
   gained: { fontFamily: FONTS.bold, fontSize: 13, color: '#1E9E5A' },
   boardScore: { fontFamily: FONTS.bold, fontSize: 15, color: COLORS.black, minWidth: 44, textAlign: 'right' },
   result: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: RADIUS.lg, padding: 14 },
-  resultTitle: { fontFamily: FONTS.bold, fontSize: 19, color: COLORS.white },
+  resultTitle: { fontFamily: FONTS.bold, fontSize: 19, color: COLORS.onColor },
   resultSub: { fontFamily: FONTS.semibold, fontSize: 14, color: 'rgba(255,255,255,0.92)' },
   podium: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, alignSelf: 'stretch', marginTop: 8 },
   pod: { width: '100%', borderTopLeftRadius: 12, borderTopRightRadius: 12, alignItems: 'center', paddingTop: 8 },
   podRank: { fontFamily: FONTS.bold, fontSize: 24, color: '#2B1B22' },
-  podName: { fontFamily: FONTS.bold, fontSize: 13, color: COLORS.white, maxWidth: '100%' },
+  podName: { fontFamily: FONTS.bold, fontSize: 13, color: COLORS.onColor, maxWidth: '100%' },
   podScore: { fontFamily: FONTS.semibold, fontSize: 13, color: '#FFD36B', marginBottom: 4 },
   hostBox: { alignSelf: 'stretch', gap: 12, marginTop: 22 },
   hostRow: { flexDirection: 'row', gap: 10 },
   ghost: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 48, borderRadius: RADIUS.full, backgroundColor: 'rgba(255,255,255,0.16)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)' },
-  ghostText: { fontFamily: FONTS.semibold, fontSize: 14, color: COLORS.white },
+  ghostText: { fontFamily: FONTS.semibold, fontSize: 14, color: COLORS.onColor },
   cancel: { fontFamily: FONTS.semibold, fontSize: 14, color: 'rgba(255,255,255,0.75)' },
   empty: { fontFamily: FONTS.regular, fontSize: 14, lineHeight: 20, color: COLORS.gray700, textAlign: 'center', paddingVertical: 12 },
   person: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: COLORS.gray300 },
   personName: { fontFamily: FONTS.semibold, fontSize: 15.5, color: COLORS.black },
   inviteBtn: { backgroundColor: COLORS.primary, borderRadius: RADIUS.full, paddingHorizontal: 16, paddingVertical: 8 },
-  inviteText: { fontFamily: FONTS.bold, fontSize: 13, color: COLORS.white },
+  inviteText: { fontFamily: FONTS.bold, fontSize: 13, color: COLORS.onColor },
   invited: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   invitedText: { fontFamily: FONTS.semibold, fontSize: 13, color: COLORS.success },
   joined: { fontFamily: FONTS.semibold, fontSize: 13, color: COLORS.gray700 },
@@ -554,8 +554,8 @@ const styles = StyleSheet.create({
   mySub: { fontFamily: FONTS.semibold, fontSize: 14, color: 'rgba(255,255,255,0.85)', marginBottom: 14 },
   myStats: { flexDirection: 'row', alignSelf: 'stretch', justifyContent: 'space-around' },
   myStat: { alignItems: 'center', flex: 1 },
-  myStatValue: { fontFamily: FONTS.bold, fontSize: 20, color: COLORS.white },
+  myStatValue: { fontFamily: FONTS.bold, fontSize: 20, color: COLORS.onColor },
   myStatLabel: { fontFamily: FONTS.regular, fontSize: 12, color: 'rgba(255,255,255,0.8)' },
   final: { backgroundColor: 'rgba(255,255,255,0.16)', borderRadius: RADIUS.full, paddingHorizontal: 18, paddingVertical: 10 },
-  finalText: { fontFamily: FONTS.bold, fontSize: 15, color: COLORS.white },
+  finalText: { fontFamily: FONTS.bold, fontSize: 15, color: COLORS.onColor },
 });

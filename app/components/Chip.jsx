@@ -9,7 +9,7 @@ export default function Chip({ label, on = false, onPress, style, tone }) {
 
   return (
     <Pressable onPress={onPress} style={[styles.chip, purple && { backgroundColor: PURPLE.mist }, on && styles.on, on && purple && { backgroundColor: PURPLE.main }, style]} accessibilityRole="button" accessibilityState={{ selected: on }}>
-      <AppText style={[styles.text, purple && { color: PURPLE.main }, on && { color: COLORS.white }]}>{label}</AppText>
+      <AppText style={[styles.text, purple && { color: PURPLE.main }, on && { color: COLORS.onColor }]}>{label}</AppText>
     </Pressable>
   );
 }

@@ -12,7 +12,7 @@
     },
     "orientation": "portrait",
     "scheme": "faithfellows",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "icon": "./assets/icon.png",
     "assetBundlePatterns": [
       "**/*"

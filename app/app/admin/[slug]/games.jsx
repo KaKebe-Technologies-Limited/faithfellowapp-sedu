@@ -111,7 +111,7 @@ export default function AdminGames() {
         subtitle="Play Bible quizzes with your church"
         right={
           <Pressable onPress={openNew} style={styles.add} accessibilityRole="button" accessibilityLabel="Write a new quiz">
-            <Ionicons name="add" size={20} color={COLORS.white} />
+            <Ionicons name="add" size={20} color={COLORS.onColor} />
             <AppText style={styles.addText}>New</AppText>
           </Pressable>
         }
@@ -120,12 +120,12 @@ export default function AdminGames() {
         <ScrollView contentContainerStyle={{ padding: SPACING.md, paddingBottom: 48, gap: 12 }}>
           {active.map((s) => (
             <Pressable key={s.id} onPress={() => router.push({ pathname: '/admin/[slug]/game/[id]', params: { slug, id: String(s.id) } })} style={styles.live} accessibilityRole="button">
-              <Ionicons name="game-controller" size={24} color={COLORS.white} />
+              <Ionicons name="game-controller" size={24} color={COLORS.onColor} />
               <View style={{ flex: 1 }}>
                 <AppText style={styles.liveLabel}>Running now · PIN {s.pin} · {s.players_count} playing</AppText>
                 <AppText style={styles.liveTitle}>{s.quiz}</AppText>
               </View>
-              <Ionicons name="chevron-forward" size={18} color={COLORS.white} />
+              <Ionicons name="chevron-forward" size={18} color={COLORS.onColor} />
             </Pressable>
           ))}
 
@@ -134,7 +134,7 @@ export default function AdminGames() {
               <AppText style={styles.switchTitle}>Tell members when I start a game</AppText>
               <AppText variant="caption">Sends a notice with a button to join.</AppText>
             </View>
-            <Switch value={notify} onValueChange={setNotify} trackColor={{ true: COLORS.primaryLight, false: COLORS.gray300 }} thumbColor={COLORS.white} />
+            <Switch value={notify} onValueChange={setNotify} trackColor={{ true: COLORS.primaryLight, false: COLORS.gray300 }} thumbColor={COLORS.onColor} />
           </View>
 
           {quizzes.length === 0 ? <AppText variant="caption" style={{ textAlign: 'center', marginTop: 20 }}>No quizzes yet — write your first with "New".</AppText> : null}
@@ -192,10 +192,10 @@ export default function AdminGames() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: COLORS.canvas },
   add: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: COLORS.primary, borderRadius: RADIUS.full, paddingHorizontal: 14, paddingVertical: 8 },
-  addText: { fontFamily: FONTS.bold, fontSize: 13.5, color: COLORS.white },
+  addText: { fontFamily: FONTS.bold, fontSize: 13.5, color: COLORS.onColor },
   live: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#5E35B1', borderRadius: RADIUS.lg + 2, padding: 14 },
   liveLabel: { fontFamily: FONTS.medium, fontSize: 12.5, color: 'rgba(255,255,255,0.85)' },
-  liveTitle: { fontFamily: FONTS.bold, fontSize: 16.5, color: COLORS.white },
+  liveTitle: { fontFamily: FONTS.bold, fontSize: 16.5, color: COLORS.onColor },
   switch: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: COLORS.white, borderRadius: RADIUS.lg, padding: 12 },
   switchTitle: { fontFamily: FONTS.semibold, fontSize: 14.5, color: COLORS.black },
   card: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: COLORS.white, borderRadius: RADIUS.lg + 2, padding: 14, ...SHADOW, shadowOpacity: 0.05 },

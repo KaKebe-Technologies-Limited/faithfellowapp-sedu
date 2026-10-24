@@ -35,7 +35,7 @@ export default function AdminEvents() {
         subtitle="Create events and check people in"
         right={
           <Pressable onPress={() => setOpen(true)} style={styles.add} accessibilityRole="button" accessibilityLabel="New event">
-            <Ionicons name="add" size={20} color={COLORS.white} />
+            <Ionicons name="add" size={20} color={COLORS.onColor} />
             <AppText style={styles.addText}>New</AppText>
           </Pressable>
         }
@@ -73,7 +73,7 @@ export default function AdminEvents() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: COLORS.canvas },
   add: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: COLORS.primary, borderRadius: RADIUS.full, paddingHorizontal: 14, paddingVertical: 8 },
-  addText: { fontFamily: FONTS.bold, fontSize: 13.5, color: COLORS.white },
+  addText: { fontFamily: FONTS.bold, fontSize: 13.5, color: COLORS.onColor },
   card: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: COLORS.white, borderRadius: RADIUS.lg + 2, padding: 12, ...SHADOW, shadowOpacity: 0.05 },
   tile: { width: 54, paddingVertical: 7, borderRadius: 14, backgroundColor: COLORS.primaryMist, alignItems: 'center' },
   tileMonth: { fontFamily: FONTS.bold, fontSize: 11, letterSpacing: 0.8, color: COLORS.primary },

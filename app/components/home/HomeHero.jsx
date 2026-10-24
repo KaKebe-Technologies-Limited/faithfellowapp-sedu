@@ -1,5 +1,5 @@
-// The top of the home screen: a deep wine panel with clean rounded corners at the bottom. On it: the FaithFellows mark and name, the
-// notification and messages buttons, and the radio card (or the slider of highlights). A short greeting with a smile shows for ten
+// The top of the home screen: a deep wine panel with clean rounded corners at the bottom. On it: the church's logo and name (the FaithFellows
+// mark and name when the member follows no church), the notification and messages buttons, and the radio card (or the slider of highlights). A short greeting with a smile shows for ten
 // seconds when the app opens, then folds away so it never takes room. The counts come from GET /api/v1/me and refresh each time the
 // screen is shown.
 import { useCallback, useEffect, useRef } from 'react';
@@ -13,6 +13,7 @@ import { SOFT } from '../../constants/soft';
 import { firstName, greeting } from '../../lib/format';
 import { useFetch } from '../../lib/useFetch';
 import AppText from '../AppText';
+import ChurchAvatar from '../ChurchAvatar';
 import Logo from '../Logo';
 
 const GREETING_MS = 10000;
@@ -77,7 +78,14 @@ export default function HomeHero({ user, churches, children }) {
 
         <View style={styles.top}>
           <View style={styles.brand}>
-            <Logo size={42} />
+            {/* The church's own logo, on a white tile so any logo shows on the dark panel; FaithFellows' mark when there is no church. */}
+            {followed[0] ? (
+              <View style={styles.logoTile}>
+                <ChurchAvatar church={followed[0]} size={42} />
+              </View>
+            ) : (
+              <Logo size={46} />
+            )}
             {/* The church's name is the big one at the top, so the app feels like the church's own; FaithFellows is under it. Without a church it is the title. */}
             <View style={{ flexShrink: 1 }}>
               <AppText style={[styles.name, church && styles.churchName]} numberOfLines={2} accessibilityRole="header">
@@ -109,8 +117,9 @@ const styles = StyleSheet.create({
   glowA: { position: 'absolute', right: -70, top: -60, width: 240, height: 240, borderRadius: 120, backgroundColor: 'rgba(255,255,255,0.07)' },
   glowB: { position: 'absolute', left: -90, bottom: 30, width: 220, height: 220, borderRadius: 110, backgroundColor: 'rgba(242,126,168,0.10)' },
   top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: SPACING.md },
+  logoTile: { width: 50, height: 50, borderRadius: 16, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
   brand: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, paddingRight: 10 },
-  name: { flexShrink: 1, fontFamily: FONTS.bold, fontSize: 21, letterSpacing: 0.2, color: '#fff' },
+  name: { flexShrink: 1, fontFamily: FONTS.display, fontSize: 21, letterSpacing: 0.2, color: '#fff' },
   churchName: { fontSize: 19, lineHeight: 23 },
   church: { fontFamily: FONTS.semibold, fontSize: 12, marginTop: -1, letterSpacing: 0.4, color: 'rgba(255,255,255,0.72)' },
   buttons: { flexDirection: 'row', gap: 10 },
@@ -118,5 +127,5 @@ const styles = StyleSheet.create({
   badge: { position: 'absolute', top: -4, right: -4, minWidth: 18, height: 18, borderRadius: 9, paddingHorizontal: 4, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#4A0F29' },
   badgeText: { fontFamily: FONTS.bold, fontSize: 10, color: '#fff' },
   hello: { alignItems: 'center', justifyContent: 'center', paddingHorizontal: SPACING.lg, overflow: 'hidden' },
-  greeting: { fontFamily: FONTS.bold, fontSize: 22, lineHeight: 30, color: '#fff' },
+  greeting: { fontFamily: FONTS.display, fontSize: 22, lineHeight: 30, color: '#fff' },
 });

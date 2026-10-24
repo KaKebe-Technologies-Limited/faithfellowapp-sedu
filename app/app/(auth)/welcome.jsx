@@ -67,7 +67,7 @@ export default function Welcome() {
         {GOOGLE_ENABLED ? <GoogleButton /> : null}
 
         <Pressable onPress={() => router.push('/(auth)/login')} style={({ pressed }) => [styles.email, pressed && { opacity: 0.85 }]} accessibilityRole="button" accessibilityLabel="Continue with email">
-          <Ionicons name="mail-outline" size={20} color={COLORS.white} />
+          <Ionicons name="mail-outline" size={20} color={COLORS.onColor} />
           <AppText style={styles.emailText}>Continue with email</AppText>
         </Pressable>
 
@@ -101,20 +101,20 @@ export default function Welcome() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: COLORS.primaryDark },
   top: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: SPACING.lg },
-  brand: { fontFamily: FONTS.bold, fontSize: 21, color: COLORS.white },
+  brand: { fontFamily: FONTS.bold, fontSize: 21, color: COLORS.onColor },
   bottom: { flex: 1, justifyContent: 'flex-end', paddingHorizontal: SPACING.lg, gap: 12 },
-  headline: { fontFamily: FONTS.bold, fontSize: 34, lineHeight: 40, color: COLORS.white },
+  headline: { fontFamily: FONTS.display, fontSize: 34, lineHeight: 40, color: COLORS.onColor },
   sub: { fontFamily: FONTS.regular, fontSize: 16, lineHeight: 23, color: 'rgba(255,255,255,0.88)', marginBottom: 2 },
   dots: { flexDirection: 'row', gap: 6, marginBottom: 8 },
   dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.4)' },
   dotOn: { width: 22, backgroundColor: COLORS.white },
   email: { minHeight: 54, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, borderRadius: RADIUS.full, backgroundColor: 'rgba(255,255,255,0.14)', borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.55)' },
-  emailText: { fontFamily: FONTS.semibold, fontSize: 16, color: COLORS.white },
+  emailText: { fontFamily: FONTS.semibold, fontSize: 16, color: COLORS.onColor },
   newRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6, marginTop: 4 },
   newText: { fontFamily: FONTS.regular, fontSize: 14, color: 'rgba(255,255,255,0.8)' },
-  newLink: { fontFamily: FONTS.bold, fontSize: 14, color: COLORS.white, textDecorationLine: 'underline' },
+  newLink: { fontFamily: FONTS.bold, fontSize: 14, color: COLORS.onColor, textDecorationLine: 'underline' },
   codeRow: { alignSelf: 'center', marginTop: 2 },
   codeText: { fontFamily: FONTS.semibold, fontSize: 14, color: 'rgba(255,255,255,0.9)', textDecorationLine: 'underline' },
   legal: { fontFamily: FONTS.regular, fontSize: 12, lineHeight: 18, color: 'rgba(255,255,255,0.7)', textAlign: 'center', marginTop: 6 },
-  link: { fontFamily: FONTS.semibold, color: COLORS.white, textDecorationLine: 'underline' },
+  link: { fontFamily: FONTS.semibold, color: COLORS.onColor, textDecorationLine: 'underline' },
 });

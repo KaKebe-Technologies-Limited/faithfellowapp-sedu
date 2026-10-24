@@ -110,7 +110,7 @@ export default function AdminPosts() {
         subtitle="Share what is happening"
         right={
           <Pressable onPress={openNew} style={styles.add} accessibilityRole="button" accessibilityLabel="New update">
-            <Ionicons name="add" size={20} color={COLORS.white} />
+            <Ionicons name="add" size={20} color={COLORS.onColor} />
             <AppText style={styles.addText}>New</AppText>
           </Pressable>
         }
@@ -127,7 +127,7 @@ export default function AdminPosts() {
                   <Image source={{ uri: mediaUrl(p.images[0]) }} style={StyleSheet.absoluteFill} contentFit="cover" />
                   {p.images.length > 1 ? (
                     <View style={styles.count}>
-                      <Ionicons name="images" size={13} color={COLORS.white} />
+                      <Ionicons name="images" size={13} color={COLORS.onColor} />
                       <AppText style={styles.countText}>{p.images.length}</AppText>
                     </View>
                   ) : null}
@@ -157,7 +157,7 @@ export default function AdminPosts() {
               <View key={photo.uri + i} style={styles.thumb}>
                 <Image source={{ uri: photo.uri }} style={StyleSheet.absoluteFill} contentFit="cover" />
                 <Pressable onPress={() => setForm((f) => ({ ...f, photos: f.photos.filter((_, j) => j !== i) }))} style={styles.remove} accessibilityLabel={`Remove photo ${i + 1}`} hitSlop={6}>
-                  <Ionicons name="close" size={14} color={COLORS.white} />
+                  <Ionicons name="close" size={14} color={COLORS.onColor} />
                 </Pressable>
               </View>
             ))}
@@ -186,11 +186,11 @@ export default function AdminPosts() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: COLORS.canvas },
   add: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: COLORS.primary, borderRadius: RADIUS.full, paddingHorizontal: 14, paddingVertical: 8 },
-  addText: { fontFamily: FONTS.bold, fontSize: 13.5, color: COLORS.white },
+  addText: { fontFamily: FONTS.bold, fontSize: 13.5, color: COLORS.onColor },
   card: { backgroundColor: COLORS.white, borderRadius: RADIUS.lg + 2, padding: 12, gap: 8, ...SHADOW, shadowOpacity: 0.05 },
   photo: { height: 190, borderRadius: RADIUS.lg, overflow: 'hidden', backgroundColor: COLORS.gray100 },
   count: { position: 'absolute', right: 10, bottom: 10, flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: RADIUS.full, paddingHorizontal: 9, paddingVertical: 4 },
-  countText: { fontFamily: FONTS.bold, fontSize: 12, color: COLORS.white },
+  countText: { fontFamily: FONTS.bold, fontSize: 12, color: COLORS.onColor },
   body: { fontFamily: FONTS.regular, fontSize: 15.5, lineHeight: 22, color: COLORS.black },
   actions: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
   thumbs: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 14 },

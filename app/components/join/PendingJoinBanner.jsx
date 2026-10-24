@@ -55,7 +55,7 @@ const styles = StyleSheet.create({
   answer: { flex: 1, minHeight: 40, borderRadius: RADIUS.full, alignItems: 'center', justifyContent: 'center' },
   yes: { backgroundColor: COLORS.primary },
   yesText: { fontFamily: FONTS.bold, fontSize: 14, color: '#fff' },
-  no: { backgroundColor: '#fff', borderWidth: 1, borderColor: COLORS.gray300 },
+  no: { backgroundColor: COLORS.white, borderWidth: 1, borderColor: COLORS.gray300 },
   noDark: { borderWidth: 1, borderColor: 'rgba(255,255,255,0.5)' },
   noText: { fontFamily: FONTS.semibold, fontSize: 14, color: COLORS.gray700 },
 });

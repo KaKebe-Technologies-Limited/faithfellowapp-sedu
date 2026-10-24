@@ -21,5 +21,5 @@ export default function TabTitle({ title, subtitle, right }) {
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.md, paddingBottom: 8, backgroundColor: COLORS.canvas },
-  title: { fontFamily: FONTS.bold, fontSize: 30, lineHeight: 36, color: COLORS.black },
+  title: { fontFamily: FONTS.display, fontSize: 30, lineHeight: 36, color: COLORS.black },
 });

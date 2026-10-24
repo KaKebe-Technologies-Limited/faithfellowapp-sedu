@@ -22,7 +22,7 @@ export default function PrayerWall() {
     <View style={styles.tabs}>
       {TABS.map((t) => (
         <Pressable key={t.key} onPress={() => setTab(t.key)} style={[styles.tab, tab === t.key && styles.tabOn]} accessibilityRole="tab" accessibilityState={{ selected: tab === t.key }}>
-          <AppText style={[styles.tabText, tab === t.key && { color: COLORS.white }]}>{t.label}</AppText>
+          <AppText style={[styles.tabText, tab === t.key && { color: COLORS.onColor }]}>{t.label}</AppText>
         </Pressable>
       ))}
     </View>
@@ -43,7 +43,7 @@ export default function PrayerWall() {
       emptyAction={tab === 'mine' ? { title: 'Ask for prayer', onPress: () => router.push('/prayer/new') } : undefined}
       right={
         <Pressable onPress={() => router.push('/prayer/new')} style={styles.add} accessibilityRole="button" accessibilityLabel="Ask for prayer">
-          <Ionicons name="add" size={20} color={COLORS.white} />
+          <Ionicons name="add" size={20} color={COLORS.onColor} />
           <AppText style={styles.addText}>Ask</AppText>
         </Pressable>
       }
@@ -57,5 +57,5 @@ const styles = StyleSheet.create({
   tabOn: { backgroundColor: COLORS.primary },
   tabText: { fontFamily: FONTS.semibold, fontSize: 13.5, color: COLORS.primary },
   add: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: COLORS.primary, borderRadius: RADIUS.full, paddingHorizontal: 14, paddingVertical: 8 },
-  addText: { fontFamily: FONTS.bold, fontSize: 13.5, color: COLORS.white },
+  addText: { fontFamily: FONTS.bold, fontSize: 13.5, color: COLORS.onColor },
 });

@@ -120,7 +120,7 @@ export default function PlanScreen() {
                 const current = d.day === plan.day.day;
                 return (
                   <Pressable key={d.day} onPress={() => setDay(d.day)} style={[styles.dayChip, d.done && styles.dayDone, current && styles.dayCurrent]} accessibilityRole="button" accessibilityLabel={`Day ${d.day}${d.done ? ', read' : ''}`}>
-                    {d.done ? <Ionicons name="checkmark" size={15} color={COLORS.white} /> : <AppText style={[styles.dayText, current && { color: COLORS.primary }]}>{d.day}</AppText>}
+                    {d.done ? <Ionicons name="checkmark" size={15} color={COLORS.onColor} /> : <AppText style={[styles.dayText, current && { color: COLORS.primary }]}>{d.day}</AppText>}
                   </Pressable>
                 );
               })}
@@ -183,7 +183,7 @@ export default function PlanScreen() {
           <View style={styles.wrap}>
             {TIMES.map((t) => (
               <Pressable key={t} onPress={() => setTime(t)} style={[styles.chip, time === t && styles.chipOn]} accessibilityRole="button">
-                <AppText style={[styles.chipText, time === t && { color: COLORS.white }]}>{t}</AppText>
+                <AppText style={[styles.chipText, time === t && { color: COLORS.onColor }]}>{t}</AppText>
               </Pressable>
             ))}
           </View>
@@ -191,7 +191,7 @@ export default function PlanScreen() {
           <View style={styles.wrap}>
             {DAYS.map((d, i) => (
               <Pressable key={d} onPress={() => toggleDay(i)} style={[styles.chip, days.includes(i) && styles.chipOn]} accessibilityRole="button" accessibilityState={{ selected: days.includes(i) }}>
-                <AppText style={[styles.chipText, days.includes(i) && { color: COLORS.white }]}>{d}</AppText>
+                <AppText style={[styles.chipText, days.includes(i) && { color: COLORS.onColor }]}>{d}</AppText>
               </Pressable>
             ))}
           </View>
@@ -222,7 +222,7 @@ const styles = StyleSheet.create({
   dayTitle: { fontFamily: FONTS.bold, fontSize: 21, color: COLORS.black },
   passages: { fontFamily: FONTS.semibold, fontSize: 15.5, color: COLORS.gray900 },
   reflection: { fontFamily: FONTS.regular, fontStyle: 'italic', fontSize: 14.5, lineHeight: 21, color: COLORS.gray700, marginTop: 6 },
-  done: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#EAF7EF', borderRadius: RADIUS.full, paddingVertical: 14 },
+  done: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: COLORS.successMist, borderRadius: RADIUS.full, paddingVertical: 14 },
   doneText: { fontFamily: FONTS.bold, fontSize: 15, color: COLORS.success },
   h2: { fontFamily: FONTS.bold, fontSize: 18, color: COLORS.black, marginBottom: 10 },
   circle: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: COLORS.white, borderRadius: RADIUS.lg, padding: 14, marginBottom: 8 },

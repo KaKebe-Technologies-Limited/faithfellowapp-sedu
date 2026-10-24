@@ -152,7 +152,7 @@ const styles = StyleSheet.create({
   avatarText: { fontFamily: FONTS.bold, fontSize: 16, color: '#fff' },
   label: { fontFamily: FONTS.bold, fontSize: 11.5, letterSpacing: 1.4, color: 'rgba(255,255,255,0.9)' },
   content: { position: 'absolute', left: 18, right: 18, bottom: 22 },
-  name: { fontFamily: FONTS.bold, fontSize: 30, lineHeight: 35, color: '#fff' },
+  name: { fontFamily: FONTS.display, fontSize: 30, lineHeight: 35, color: '#fff' },
   title: { fontFamily: FONTS.semibold, fontSize: 16, lineHeight: 22, color: 'rgba(255,255,255,0.94)', marginTop: 4 },
   meta: { fontFamily: FONTS.medium, fontSize: 13, color: 'rgba(255,255,255,0.75)', marginTop: 4 },
   buttons: { flexDirection: 'row', gap: 10, marginTop: 14 },

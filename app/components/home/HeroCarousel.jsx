@@ -137,7 +137,7 @@ const styles = StyleSheet.create({
   card: { borderRadius: 28, overflow: 'hidden', backgroundColor: COLORS.primaryDark, borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.25)' },
   content: { position: 'absolute', left: 18, right: 18, bottom: 34 },
   label: { fontFamily: FONTS.bold, fontSize: 11, letterSpacing: 1.6, color: 'rgba(255,255,255,0.9)', marginBottom: 4 },
-  title: { fontFamily: FONTS.bold, fontSize: 24, lineHeight: 30, color: COLORS.white },
+  title: { fontFamily: FONTS.display, fontSize: 24, lineHeight: 30, color: COLORS.onColor },
   subtitle: { fontFamily: FONTS.medium, fontSize: 14, lineHeight: 20, color: 'rgba(255,255,255,0.9)', marginTop: 3 },
   church: { fontFamily: FONTS.regular, fontSize: 12.5, color: 'rgba(255,255,255,0.72)', marginTop: 5 },
   dots: { position: 'absolute', bottom: 14, left: 0, right: 0, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 5 },

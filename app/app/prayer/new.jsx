@@ -78,7 +78,7 @@ export default function NewPrayer() {
               <View style={styles.wrap}>
                 {churches.map((c) => (
                   <Pressable key={c.id} onPress={() => setChurchId(c.id)} style={[styles.chip, churchId === c.id && styles.chipOn]} accessibilityRole="button">
-                    <AppText style={[styles.chipText, churchId === c.id && { color: COLORS.white }]}>{c.name}</AppText>
+                    <AppText style={[styles.chipText, churchId === c.id && { color: COLORS.onColor }]}>{c.name}</AppText>
                   </Pressable>
                 ))}
               </View>
@@ -110,7 +110,7 @@ export default function NewPrayer() {
               <AppText style={styles.whoTitle}>Ask anonymously</AppText>
               <AppText variant="caption">Your name is hidden from everyone but your pastors.</AppText>
             </View>
-            <Switch value={anonymous} onValueChange={setAnonymous} trackColor={{ true: COLORS.primaryLight, false: COLORS.gray300 }} thumbColor={COLORS.white} />
+            <Switch value={anonymous} onValueChange={setAnonymous} trackColor={{ true: COLORS.primaryLight, false: COLORS.gray300 }} thumbColor={COLORS.onColor} />
           </View>
           {visibility !== 'pastor' ? (
             <View style={styles.switch}>
@@ -118,7 +118,7 @@ export default function NewPrayer() {
                 <AppText style={styles.whoTitle}>Start a prayer chain</AppText>
                 <AppText variant="caption">One member at a time is asked to pray, passing it on.</AppText>
               </View>
-              <Switch value={chain} onValueChange={setChain} trackColor={{ true: COLORS.primaryLight, false: COLORS.gray300 }} thumbColor={COLORS.white} />
+              <Switch value={chain} onValueChange={setChain} trackColor={{ true: COLORS.primaryLight, false: COLORS.gray300 }} thumbColor={COLORS.onColor} />
             </View>
           ) : null}
 
@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
   chipOn: { backgroundColor: COLORS.primary },
   chipText: { fontFamily: FONTS.semibold, fontSize: 13.5, color: COLORS.primary },
   who: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: RADIUS.lg, backgroundColor: COLORS.white, borderWidth: 1.5, borderColor: COLORS.gray100 },
-  whoOn: { borderColor: COLORS.primary, backgroundColor: '#FFF7FB' },
+  whoOn: { borderColor: COLORS.primary, backgroundColor: COLORS.selected },
   whoTitle: { fontFamily: FONTS.semibold, fontSize: 15, color: COLORS.black },
   switch: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: COLORS.white, borderRadius: RADIUS.lg, padding: 14, marginTop: 12 },
   none: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: SPACING.xl, gap: 10 },

@@ -5,7 +5,10 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Modal, Platform, Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Clipboard from 'expo-clipboard';
+import { useFonts } from 'expo-font';
 import { router, useLocalSearchParams } from 'expo-router';
+import { PlayfairDisplay_500Medium_Italic } from '@expo-google-fonts/playfair-display/500Medium_Italic';
+import { PlayfairDisplay_700Bold_Italic } from '@expo-google-fonts/playfair-display/700Bold_Italic';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AppText from '../../../components/AppText';
 import Button from '../../../components/Button';
@@ -15,10 +18,11 @@ import VerseList from '../../../components/VerseList';
 import { COLORS, FONTS, RADIUS, SHADOW, SPACING } from '../../../constants/theme';
 import { shareMessage, trackCount, useReadingTimer } from '../../../lib/activity';
 import api, { errorMessage } from '../../../lib/api';
-import { HIGHLIGHTS, getFontSize, referenceLabel, setFontSize, setLastRead, shareText } from '../../../lib/bible';
+import { HIGHLIGHTS_LIGHT, HIGHLIGHTS_NIGHT, getFontSize, referenceLabel, setFontSize, setLastRead, shareText } from '../../../lib/bible';
 import { setHighlight, useChapter } from '../../../lib/bibleOffline';
 import { setVerseColors } from '../../../lib/bibleStore';
 import { useOutbox } from '../../../lib/outbox';
+import { PAGES, READER_LOOKS, setReaderLook, useReaderLook } from '../../../lib/readerLook';
 import { useFetch } from '../../../lib/useFetch';
 
 function Sheet({ visible, onClose, title, children }) {
@@ -41,6 +45,10 @@ export default function ReaderScreen() {
   const chapter = Number(params.chapter);
   const target = useMemo(() => (params.v ? String(params.v).split('-').map(Number).filter(Boolean) : null), [params.v]);
   const insets = useSafeAreaInsets();
+  const { key: lookKey, page } = useReaderLook();
+  // The rose page's serif heading; loaded here so it works even when the app itself is not in the rose look (a few hundred kilobytes, only in the reader).
+  useFonts({ PlayfairDisplay_700Bold_Italic, PlayfairDisplay_500Medium_Italic });
+  const highlightColors = page.night ? HIGHLIGHTS_NIGHT : HIGHLIGHTS_LIGHT;
 
   const [t, setT] = useState(undefined); // undefined = the member's own translation
   const { chapterInfo, loading, error, offline, retry } = useChapter(book, chapter, t);
@@ -149,15 +157,16 @@ export default function ReaderScreen() {
   };
 
   return (
-    <View style={styles.screen}>
+    <View style={[styles.screen, { backgroundColor: page.bg }]}>
       <ScreenHeader
+        page={page}
         title={chapterInfo ? `${chapterInfo.book_name} ${chapter}` : 'Bible'}
         subtitle={chapterInfo ? chapterInfo.translation.toUpperCase() : undefined}
         right={
           <View style={{ flexDirection: 'row', gap: 8 }}>
-            <HeaderAction icon="text" label="Text size" onPress={() => setSheet('size')} />
-            <HeaderAction icon="swap-horizontal" label="Change translation" onPress={() => setSheet('translations')} />
-            <HeaderAction icon="grid-outline" label="Choose chapter" onPress={() => setSheet('chapters')} />
+            <HeaderAction page={page} icon="text" label="Text size and page" onPress={() => setSheet('size')} />
+            <HeaderAction page={page} icon="swap-horizontal" label="Change translation" onPress={() => setSheet('translations')} />
+            <HeaderAction page={page} icon="grid-outline" label="Choose chapter" onPress={() => setSheet('chapters')} />
           </View>
         }
       />
@@ -166,33 +175,45 @@ export default function ReaderScreen() {
           <ScrollView ref={scroller} contentContainerStyle={{ padding: SPACING.md, paddingBottom: 140 + insets.bottom }} showsVerticalScrollIndicator={false}>
             {offline || pending ? (
               <View style={styles.offline}>
-                <Ionicons name={offline ? 'cloud-offline-outline' : 'sync-outline'} size={15} color={COLORS.primaryDark} />
+                <Ionicons name={offline ? 'cloud-offline-outline' : 'sync-outline'} size={15} color={COLORS.primaryInk} />
                 <AppText style={styles.offlineText}>
                   {offline ? `Offline copy${pending ? ' · ' : ''}` : ''}
                   {pending ? (flushing ? 'Sending your changes…' : `${pending} change${pending === 1 ? '' : 's'} waiting to sync`) : ''}
                 </AppText>
               </View>
             ) : null}
-            <AppText style={styles.hint}>Tap a verse to copy, highlight, note or share it.</AppText>
+            {page.rose ? (
+              <AppText style={[styles.roseTitle, { color: page.accent }]} accessibilityRole="header">
+                {chapterInfo.book_name} {chapter}
+              </AppText>
+            ) : null}
+            {page.rose ? (
+              <View style={styles.ornament} accessible={false}>
+                <View style={[styles.ornamentLine, { backgroundColor: page.accentSoft }]} />
+                <AppText style={[styles.ornamentFlower, { color: page.accent }]}>✿</AppText>
+                <View style={[styles.ornamentLine, { backgroundColor: page.accentSoft }]} />
+              </View>
+            ) : null}
+            <AppText style={[styles.hint, { color: page.soft }]}>Tap a verse to copy, highlight, note or share it.</AppText>
             <View onLayout={(e) => { listTop.current = e.nativeEvent.layout.y; }}>
-              <VerseList verses={verses} selected={selected} onToggle={toggle} fontSize={fontSize} target={target} onTargetLayout={(y) => setTimeout(() => scroller.current?.scrollTo({ y: Math.max(0, listTop.current + y - 90), animated: true }), 150)} />
+              <VerseList page={page} verses={verses} selected={selected} onToggle={toggle} fontSize={fontSize} target={target} onTargetLayout={(y) => setTimeout(() => scroller.current?.scrollTo({ y: Math.max(0, listTop.current + y - 90), animated: true }), 150)} />
             </View>
             <View style={styles.pager}>
-              <Pressable disabled={!chapterInfo.previous} onPress={() => go(chapterInfo.previous)} style={[styles.pageBtn, !chapterInfo.previous && { opacity: 0.35 }]} accessibilityRole="button">
-                <Ionicons name="chevron-back" size={18} color={COLORS.primary} />
-                <AppText style={styles.pageText} numberOfLines={1}>
+              <Pressable disabled={!chapterInfo.previous} onPress={() => go(chapterInfo.previous)} style={[styles.pageBtn, { backgroundColor: page.accentSoft }, !chapterInfo.previous && { opacity: 0.35 }]} accessibilityRole="button">
+                <Ionicons name="chevron-back" size={18} color={page.accent} />
+                <AppText style={[styles.pageText, { color: page.accent }]} numberOfLines={1}>
                   {chapterInfo.previous?.label ?? ''}
                 </AppText>
               </Pressable>
-              <Pressable disabled={!chapterInfo.next} onPress={() => go(chapterInfo.next)} style={[styles.pageBtn, { justifyContent: 'flex-end' }, !chapterInfo.next && { opacity: 0.35 }]} accessibilityRole="button">
-                <AppText style={styles.pageText} numberOfLines={1}>
+              <Pressable disabled={!chapterInfo.next} onPress={() => go(chapterInfo.next)} style={[styles.pageBtn, { backgroundColor: page.accentSoft, justifyContent: 'flex-end' }, !chapterInfo.next && { opacity: 0.35 }]} accessibilityRole="button">
+                <AppText style={[styles.pageText, { color: page.accent }]} numberOfLines={1}>
                   {chapterInfo.next?.label ?? ''}
                 </AppText>
-                <Ionicons name="chevron-forward" size={18} color={COLORS.primary} />
+                <Ionicons name="chevron-forward" size={18} color={page.accent} />
               </Pressable>
             </View>
             <Button title={`Notes on ${chapterInfo.book_name} ${chapter}`} variant="outline" onPress={() => note()} style={{ marginTop: 14 }} />
-            {chapterInfo.copyright ? <AppText style={styles.copyright}>{chapterInfo.copyright}</AppText> : null}
+            {chapterInfo.copyright ? <AppText style={[styles.copyright, { color: page.soft }]}>{chapterInfo.copyright}</AppText> : null}
           </ScrollView>
         ) : null}
       </StateView>
@@ -204,11 +225,11 @@ export default function ReaderScreen() {
       ) : null}
 
       {chosen.length ? (
-        <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 10) + 6 }]}>
-          <AppText style={styles.barTitle}>{referenceLabel(chapterInfo.book_name, chapter, chosen.map((v) => v.v))}</AppText>
+        <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 10) + 6, backgroundColor: page.card }]}>
+          <AppText style={[styles.barTitle, { color: page.ink }]}>{referenceLabel(chapterInfo.book_name, chapter, chosen.map((v) => v.v))}</AppText>
           <View style={styles.barRow}>
             <View style={styles.colors}>
-              {Object.entries(HIGHLIGHTS).map(([key, hex]) => (
+              {Object.entries(highlightColors).map(([key, hex]) => (
                 <Pressable key={key} disabled={busy} onPress={() => highlight(key)} accessibilityRole="button" accessibilityLabel={`Highlight ${key}`} style={[styles.swatch, { backgroundColor: hex }]} />
               ))}
               <Pressable disabled={busy} onPress={() => highlight(null)} accessibilityRole="button" accessibilityLabel="Remove highlight" style={[styles.swatch, styles.clear]}>
@@ -216,17 +237,17 @@ export default function ReaderScreen() {
               </Pressable>
             </View>
             <View style={styles.actions}>
-              <Pressable onPress={share} style={[styles.action, styles.shareBtn]} accessibilityRole="button" accessibilityLabel="Share scripture">
-                <Ionicons name="share-social" size={20} color={COLORS.white} />
-                <AppText style={[styles.actionText, { color: COLORS.white }]}>Share</AppText>
+              <Pressable onPress={share} style={[styles.action, styles.shareBtn, { backgroundColor: page.accent }]} accessibilityRole="button" accessibilityLabel="Share scripture">
+                <Ionicons name="share-social" size={20} color={page.onAccent} />
+                <AppText style={[styles.actionText, { color: page.onAccent }]}>Share</AppText>
               </Pressable>
               <Pressable onPress={copy} style={styles.action} accessibilityRole="button" accessibilityLabel="Copy">
-                <Ionicons name="copy-outline" size={20} color={COLORS.primary} />
-                <AppText style={styles.actionText}>Copy</AppText>
+                <Ionicons name="copy-outline" size={20} color={page.accent} />
+                <AppText style={[styles.actionText, { color: page.accent }]}>Copy</AppText>
               </Pressable>
               <Pressable onPress={note} style={styles.action} accessibilityRole="button" accessibilityLabel="Note">
-                <Ionicons name="create-outline" size={20} color={COLORS.primary} />
-                <AppText style={styles.actionText}>Note</AppText>
+                <Ionicons name="create-outline" size={20} color={page.accent} />
+                <AppText style={[styles.actionText, { color: page.accent }]}>Note</AppText>
               </Pressable>
               <Pressable onPress={() => setSelected(new Set())} style={styles.action} accessibilityRole="button" accessibilityLabel="Clear selection">
                 <Ionicons name="close-circle-outline" size={20} color={COLORS.gray700} />
@@ -241,7 +262,7 @@ export default function ReaderScreen() {
         <ScrollView style={{ maxHeight: 360 }} contentContainerStyle={styles.grid}>
           {Array.from({ length: chapterInfo?.chapters ?? 0 }, (_, i) => i + 1).map((n) => (
             <Pressable key={n} onPress={() => { setSheet(null); if (n !== chapter) go({ book, chapter: n }); }} style={[styles.chapterBtn, n === chapter && styles.chapterOn]} accessibilityRole="button" accessibilityLabel={`Chapter ${n}`}>
-              <AppText style={[styles.chapterText, n === chapter && { color: COLORS.white }]}>{n}</AppText>
+              <AppText style={[styles.chapterText, n === chapter && { color: COLORS.onColor }]}>{n}</AppText>
             </Pressable>
           ))}
         </ScrollView>
@@ -267,7 +288,7 @@ export default function ReaderScreen() {
         </StateView>
       </Sheet>
 
-      <Sheet visible={sheet === 'size'} onClose={() => setSheet(null)} title="Text size">
+      <Sheet visible={sheet === 'size'} onClose={() => setSheet(null)} title="Reading style">
         <View style={styles.sizeRow}>
           <Pressable onPress={() => bumpSize(-2)} style={styles.sizeBtn} accessibilityRole="button" accessibilityLabel="Smaller text">
             <AppText style={{ fontFamily: FONTS.bold, fontSize: 16, color: COLORS.primary }}>A</AppText>
@@ -277,9 +298,27 @@ export default function ReaderScreen() {
             <AppText style={{ fontFamily: FONTS.bold, fontSize: 26, color: COLORS.primary }}>A</AppText>
           </Pressable>
         </View>
-        <AppText style={{ fontFamily: FONTS.regular, fontSize, lineHeight: fontSize * 1.55, color: '#1F1F1F', marginTop: 14 }}>
-          For God so loved the world, that he gave his only begotten Son.
-        </AppText>
+        <View style={styles.looks}>
+          {READER_LOOKS.map((look) => {
+            const preview = PAGES[look.key] ?? page;
+            const picked = lookKey === look.key;
+
+            return (
+              <Pressable key={look.key} onPress={() => setReaderLook(look.key)} style={styles.lookItem} accessibilityRole="radio" accessibilityState={{ selected: picked }} accessibilityLabel={`${look.title} page`}>
+                <View style={[styles.lookSwatch, { backgroundColor: look.key === 'auto' ? COLORS.gray100 : preview.bg, borderColor: picked ? COLORS.primary : COLORS.gray300 }, picked && { borderWidth: 2.5 }]}>
+                  {look.key === 'auto' ? <Ionicons name="phone-portrait-outline" size={18} color={COLORS.gray700} /> : <AppText style={[styles.lookAa, { color: preview.ink }]}>Aa</AppText>}
+                  {look.key === 'rose' ? <AppText style={styles.lookFlower}>✿</AppText> : null}
+                </View>
+                <AppText style={[styles.lookName, picked && { color: COLORS.primary }]} numberOfLines={1}>
+                  {look.key === 'auto' ? 'Match app' : look.title}
+                </AppText>
+              </Pressable>
+            );
+          })}
+        </View>
+        <View style={[styles.previewBox, { backgroundColor: page.bg }]}>
+          <AppText style={{ fontFamily: FONTS.regular, fontSize, lineHeight: fontSize * 1.55, color: page.ink }}>For God so loved the world, that he gave his only begotten Son.</AppText>
+        </View>
       </Sheet>
     </View>
   );
@@ -290,7 +329,7 @@ const styles = StyleSheet.create({
   hint: { fontFamily: FONTS.regular, fontSize: 12.5, color: COLORS.gray700, textAlign: 'center', marginBottom: 10 },
   copyright: { fontFamily: FONTS.regular, fontSize: 11, lineHeight: 15, color: COLORS.gray700, textAlign: 'center', marginTop: 18 },
   offline: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, alignSelf: 'center', backgroundColor: COLORS.primaryMist, borderRadius: RADIUS.full, paddingHorizontal: 12, paddingVertical: 6, marginBottom: 10 },
-  offlineText: { fontFamily: FONTS.semibold, fontSize: 12, color: COLORS.primaryDark },
+  offlineText: { fontFamily: FONTS.semibold, fontSize: 12, color: COLORS.primaryInk },
   pager: { flexDirection: 'row', gap: 12, marginTop: 22 },
   pageBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: COLORS.primaryMist, borderRadius: RADIUS.full, paddingHorizontal: 14, paddingVertical: 11 },
   pageText: { flexShrink: 1, fontFamily: FONTS.semibold, fontSize: 13, color: COLORS.primary },
@@ -303,7 +342,7 @@ const styles = StyleSheet.create({
   actions: { flexDirection: 'row', justifyContent: 'space-between' },
   shareBtn: { backgroundColor: COLORS.primary, borderRadius: RADIUS.full, paddingVertical: 8, paddingHorizontal: 16, flexDirection: 'row', gap: 6, alignItems: 'center', minWidth: 0 },
   toast: { position: 'absolute', alignSelf: 'center', bottom: 180, backgroundColor: 'rgba(26,26,26,0.92)', borderRadius: RADIUS.full, paddingHorizontal: 16, paddingVertical: 9 },
-  toastText: { fontFamily: FONTS.semibold, fontSize: 13, color: COLORS.white },
+  toastText: { fontFamily: FONTS.semibold, fontSize: 13, color: COLORS.onColor },
   action: { alignItems: 'center', gap: 2, paddingHorizontal: 8, minWidth: 64 },
   actionText: { fontFamily: FONTS.semibold, fontSize: 12, color: COLORS.primary },
   backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(20,6,12,0.5)' },
@@ -315,8 +354,19 @@ const styles = StyleSheet.create({
   chapterOn: { backgroundColor: COLORS.primary },
   chapterText: { fontFamily: FONTS.bold, fontSize: 15, color: COLORS.primary },
   tr: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: RADIUS.lg, borderWidth: 1.5, borderColor: COLORS.gray100 },
-  trOn: { borderColor: COLORS.primary, backgroundColor: '#FFF7FB' },
+  trOn: { borderColor: COLORS.primary, backgroundColor: COLORS.selected },
   trName: { fontFamily: FONTS.semibold, fontSize: 15, color: COLORS.black },
   sizeRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 30 },
+  roseTitle: { fontFamily: 'PlayfairDisplay_700Bold_Italic', fontSize: 38, lineHeight: 46, textAlign: 'center', marginTop: 2 },
+  ornament: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 6, paddingHorizontal: SPACING.lg },
+  ornamentLine: { flex: 1, height: 2, borderRadius: 1 },
+  ornamentFlower: { fontSize: 20 },
+  looks: { flexDirection: 'row', justifyContent: 'space-between', gap: 6, marginTop: 20 },
+  lookItem: { flex: 1, alignItems: 'center', gap: 6 },
+  lookSwatch: { width: 54, height: 54, borderRadius: 16, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
+  lookAa: { fontFamily: FONTS.bold, fontSize: 17 },
+  lookFlower: { position: 'absolute', right: 5, bottom: 1, fontSize: 12, color: '#D93F7E' },
+  lookName: { fontFamily: FONTS.semibold, fontSize: 11.5, color: COLORS.gray700 },
+  previewBox: { marginTop: 18, borderRadius: RADIUS.lg, padding: 14 },
   sizeBtn: { width: 56, height: 56, borderRadius: 28, backgroundColor: COLORS.primaryMist, alignItems: 'center', justifyContent: 'center' },
 });

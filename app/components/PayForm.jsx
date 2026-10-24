@@ -95,10 +95,10 @@ const styles = StyleSheet.create({
   label: { fontFamily: FONTS.semibold, fontSize: 14, color: COLORS.black, marginBottom: 8 },
   list: { gap: 10, marginBottom: SPACING.md },
   method: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderRadius: RADIUS.lg, backgroundColor: COLORS.white, borderWidth: 1.5, borderColor: COLORS.gray100 },
-  methodOn: { borderColor: COLORS.primary, backgroundColor: '#FFF7FB' },
+  methodOn: { borderColor: COLORS.primary, backgroundColor: COLORS.selected },
   badge: { width: 42, height: 42, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
   methodName: { fontFamily: FONTS.semibold, fontSize: 15, color: COLORS.black },
   note: { marginTop: -8, marginBottom: 8 },
   error: { color: COLORS.danger, fontFamily: FONTS.medium, marginBottom: 6 },
-  none: { flexDirection: 'row', gap: 10, padding: 14, borderRadius: RADIUS.lg, backgroundColor: '#FFF8E6', alignItems: 'center' },
+  none: { flexDirection: 'row', gap: 10, padding: 14, borderRadius: RADIUS.lg, backgroundColor: COLORS.noteMist, alignItems: 'center' },
 });

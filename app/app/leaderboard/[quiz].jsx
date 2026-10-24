@@ -55,7 +55,7 @@ export default function LeaderboardScreen() {
       <View style={styles.tabs}>
         {PERIODS.map((p) => (
           <Pressable key={p.key} onPress={() => setPeriod(p.key)} style={[styles.tab, period === p.key && styles.tabOn]} accessibilityRole="button" accessibilityState={{ selected: period === p.key }}>
-            <AppText style={[styles.tabText, period === p.key && { color: COLORS.white }]}>{p.label}</AppText>
+            <AppText style={[styles.tabText, period === p.key && { color: COLORS.onColor }]}>{p.label}</AppText>
           </Pressable>
         ))}
       </View>
@@ -73,7 +73,7 @@ export default function LeaderboardScreen() {
             {r.rows.length === 0 ? (
               <View style={styles.empty}>
                 <View style={styles.emptyIcon}>
-                  <Ionicons name="trophy-outline" size={34} color="#C25B00" />
+                  <Ionicons name="trophy-outline" size={34} color={COLORS.warningInk} />
                 </View>
                 <AppText style={styles.emptyTitle}>No records yet</AppText>
                 <AppText style={styles.emptyText}>{scope === 'church' ? 'Nobody from your churches has finished this quiz in this time.' : text.empty}</AppText>
@@ -162,18 +162,18 @@ const styles = StyleSheet.create({
   podium: { flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
   pod: { width: '100%', borderTopLeftRadius: 12, borderTopRightRadius: 12, alignItems: 'center', paddingTop: 8 },
   podRank: { fontFamily: FONTS.bold, fontSize: 24, color: '#2B1B22' },
-  podName: { fontFamily: FONTS.bold, fontSize: 13, color: COLORS.white, maxWidth: '100%' },
+  podName: { fontFamily: FONTS.bold, fontSize: 13, color: COLORS.onColor, maxWidth: '100%' },
   podScore: { fontFamily: FONTS.semibold, fontSize: 13, color: '#FFD36B', marginBottom: 4 },
   list: { marginHorizontal: SPACING.md, marginTop: 12, backgroundColor: COLORS.white, borderRadius: 24, overflow: 'hidden', ...SHADOW, shadowOpacity: 0.05 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 16, backgroundColor: COLORS.white },
-  rowMe: { backgroundColor: '#FFF6D9' },
+  rowMe: { backgroundColor: COLORS.noteMist },
   divider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: COLORS.gray300 },
   rank: { width: 28, fontFamily: FONTS.bold, fontSize: 16, color: COLORS.primary },
   name: { fontFamily: FONTS.bold, fontSize: 15.5, color: COLORS.black },
   score: { fontFamily: FONTS.bold, fontSize: 18, color: COLORS.primary },
   note: { fontFamily: FONTS.regular, fontSize: 12.5, color: SOFT.muted, textAlign: 'center', marginHorizontal: SPACING.lg, marginTop: 16 },
   empty: { alignItems: 'center', paddingHorizontal: SPACING.xl, paddingTop: 48, gap: 8 },
-  emptyIcon: { width: 72, height: 72, borderRadius: 36, backgroundColor: '#FFF3E0', alignItems: 'center', justifyContent: 'center' },
+  emptyIcon: { width: 72, height: 72, borderRadius: 36, backgroundColor: COLORS.warningMist, alignItems: 'center', justifyContent: 'center' },
   emptyTitle: { fontFamily: FONTS.bold, fontSize: 18, color: COLORS.black },
   emptyText: { fontFamily: FONTS.regular, fontSize: 14.5, lineHeight: 21, color: SOFT.muted, textAlign: 'center' },
   bar: { position: 'absolute', left: 0, right: 0, bottom: 0, flexDirection: 'row', alignItems: 'center', gap: 12, padding: SPACING.md, backgroundColor: COLORS.white, borderTopLeftRadius: 24, borderTopRightRadius: 24, ...SHADOW, shadowOpacity: 0.1 },

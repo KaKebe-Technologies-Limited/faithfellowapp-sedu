@@ -23,7 +23,7 @@ export default function TabsLayout() {
       tabBar={(props) => <AppTabBar {...props} />}
       screenOptions={{
         headerStyle: { backgroundColor: COLORS.primary },
-        headerTintColor: COLORS.white,
+        headerTintColor: COLORS.onColor,
         headerTitleStyle: { fontFamily: FONTS.semibold, fontSize: 18 },
         headerShadowVisible: false,
         tabBarActiveTintColor: COLORS.primary,

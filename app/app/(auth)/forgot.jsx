@@ -94,7 +94,7 @@ export default function Forgot() {
           {step === 'code' ? (
             <>
               <View style={styles.sent}>
-                <AppText variant="label" style={{ color: COLORS.primaryDark }}>
+                <AppText variant="label" style={{ color: COLORS.primaryInk }}>
                   Check your inbox, and the spam folder too. The code works for 15 minutes.
                 </AppText>
               </View>
@@ -128,7 +128,7 @@ const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: COLORS.primary },
   scroll: { flexGrow: 1 },
   hero: { paddingTop: SPACING.md, paddingBottom: SPACING.xl, paddingHorizontal: SPACING.lg },
-  heroTitle: { color: COLORS.white },
+  heroTitle: { color: COLORS.onColor },
   heroText: { color: COLORS.primaryPale, marginTop: 4 },
   card: { flexGrow: 1, backgroundColor: COLORS.white, borderTopLeftRadius: RADIUS.xl, borderTopRightRadius: RADIUS.xl, padding: SPACING.lg, paddingTop: SPACING.xl },
   banner: { backgroundColor: COLORS.primaryMist, borderRadius: RADIUS.md, padding: SPACING.md, marginBottom: SPACING.md },

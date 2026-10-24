@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
   head: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   name: { fontFamily: FONTS.bold, fontSize: 14.5, color: COLORS.black },
   title: { fontFamily: FONTS.bold, fontSize: 16, color: COLORS.black },
-  body: { fontFamily: FONTS.regular, fontSize: 15, lineHeight: 22, color: '#2B2B2B' },
+  body: { fontFamily: FONTS.regular, fontSize: 15, lineHeight: 22, color: COLORS.ink },
   response: { fontFamily: FONTS.regular, fontStyle: 'italic', fontSize: 14, color: COLORS.gray900, backgroundColor: COLORS.canvas, borderRadius: RADIUS.md, padding: 10 },
   btns: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 },
 });

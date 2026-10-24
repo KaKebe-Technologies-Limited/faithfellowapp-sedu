@@ -139,9 +139,9 @@ export default function JoinScreen() {
 
 const styles = StyleSheet.create({
   scroll: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: SPACING.lg },
-  card: { backgroundColor: '#fff', borderRadius: 28, padding: SPACING.lg, width: '100%', maxWidth: 460, alignSelf: 'center' },
+  card: { backgroundColor: COLORS.white, borderRadius: 28, padding: SPACING.lg, width: '100%', maxWidth: 460, alignSelf: 'center' },
   kicker: { fontFamily: FONTS.bold, fontSize: 11.5, letterSpacing: 1.6, color: COLORS.primary, textAlign: 'center', marginTop: SPACING.md },
-  title: { fontFamily: FONTS.bold, fontSize: 24, lineHeight: 30, color: COLORS.black, textAlign: 'center', marginTop: 6 },
+  title: { fontFamily: FONTS.display, fontSize: 24, lineHeight: 30, color: COLORS.black, textAlign: 'center', marginTop: 6 },
   meta: { fontFamily: FONTS.medium, fontSize: 13.5, color: COLORS.gray700, textAlign: 'center', marginTop: 6 },
   text: { fontFamily: FONTS.regular, fontSize: 15, lineHeight: 22, color: COLORS.gray700, textAlign: 'center', marginTop: 10 },
   button: { marginTop: SPACING.md },

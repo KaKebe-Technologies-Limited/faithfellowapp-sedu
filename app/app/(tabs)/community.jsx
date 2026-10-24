@@ -91,7 +91,7 @@ export default function CommunityTab() {
         {onNow ? (
           <Pressable onPress={() => router.push({ pathname: '/game/[id]', params: { id: String(onNow.id) } })} accessibilityRole="button" accessibilityLabel={`Quiz on now: ${onNow.quiz}`}>
             <LinearGradient colors={['#7C4DFF', '#4527A0']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.quiz}>
-              <Ionicons name="game-controller" size={26} color={COLORS.white} />
+              <Ionicons name="game-controller" size={26} color={COLORS.onColor} />
               <View style={{ flex: 1 }}>
                 <AppText style={styles.quizLabel}>Quiz on now · {onNow.players_count} playing</AppText>
                 <AppText style={styles.quizTitle} numberOfLines={1}>{onNow.quiz}</AppText>
@@ -147,7 +147,7 @@ export default function CommunityTab() {
             <Pressable key={t.path} onPress={() => router.push(t.path)} style={({ pressed }) => [styles.tileWrap, pressed && { opacity: 0.92 }]} accessibilityRole="button" accessibilityLabel={`${t.label}: ${t.text}`}>
               <LinearGradient colors={t.colors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.tile}>
                 <View style={styles.icon}>
-                  <Ionicons name={t.icon} size={22} color={COLORS.white} />
+                  <Ionicons name={t.icon} size={22} color={COLORS.onColor} />
                 </View>
                 <View>
                   <AppText style={styles.label}>{t.label}</AppText>
@@ -166,14 +166,14 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: COLORS.canvas },
   iconBtn: { width: 42, height: 42, borderRadius: 21, backgroundColor: COLORS.white, alignItems: 'center', justifyContent: 'center', ...SHADOW, shadowOpacity: 0.05 },
   badge: { position: 'absolute', top: -3, right: -3, minWidth: 18, height: 18, borderRadius: 9, paddingHorizontal: 4, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: COLORS.canvas },
-  badgeText: { fontFamily: FONTS.bold, fontSize: 10, color: COLORS.white },
+  badgeText: { fontFamily: FONTS.bold, fontSize: 10, color: COLORS.onColor },
   quiz: { flexDirection: 'row', alignItems: 'center', gap: 12, marginHorizontal: SPACING.md, marginTop: SPACING.sm, borderRadius: RADIUS.xl - 4, padding: 14 },
   quizLabel: { fontFamily: FONTS.medium, fontSize: 12, color: 'rgba(255,255,255,0.85)' },
-  quizTitle: { fontFamily: FONTS.bold, fontSize: 17, color: COLORS.white },
+  quizTitle: { fontFamily: FONTS.bold, fontSize: 17, color: COLORS.onColor },
   play: { backgroundColor: COLORS.white, borderRadius: RADIUS.full, paddingHorizontal: 18, paddingVertical: 9 },
   playText: { fontFamily: FONTS.bold, fontSize: 13, color: '#4527A0' },
   requests: { flexDirection: 'row', alignItems: 'center', gap: 10, marginHorizontal: SPACING.md, marginTop: SPACING.sm, backgroundColor: COLORS.primaryMist, borderRadius: RADIUS.lg, padding: 13 },
-  requestsText: { flex: 1, fontFamily: FONTS.semibold, fontSize: 14, color: COLORS.primaryDark },
+  requestsText: { flex: 1, fontFamily: FONTS.semibold, fontSize: 14, color: COLORS.primaryInk },
   rail: { paddingHorizontal: SPACING.md, gap: 12, paddingBottom: 8 },
   invite: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: COLORS.white, borderRadius: RADIUS.lg + 2, padding: 14, marginHorizontal: SPACING.md, ...SHADOW, shadowOpacity: 0.05 },
   inviteTitle: { fontFamily: FONTS.bold, fontSize: 15.5, color: COLORS.black },
@@ -181,6 +181,6 @@ const styles = StyleSheet.create({
   tileWrap: { width: '47.8%' },
   tile: { height: 118, borderRadius: RADIUS.xl - 4, padding: 13, justifyContent: 'space-between', ...SHADOW },
   icon: { width: 38, height: 38, borderRadius: 13, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },
-  label: { fontFamily: FONTS.bold, fontSize: 16, color: COLORS.white },
+  label: { fontFamily: FONTS.bold, fontSize: 16, color: COLORS.onColor },
   text: { fontFamily: FONTS.regular, fontSize: 11.5, lineHeight: 15, color: 'rgba(255,255,255,0.85)' },
 });

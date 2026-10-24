@@ -5,7 +5,7 @@ import { StyleSheet, Text } from 'react-native';
 import { COLORS, FONTS, MAX_FONT_SCALE } from '../constants/theme';
 
 const VARIANTS = {
-  title: { fontFamily: FONTS.bold, fontSize: 26, lineHeight: 32, color: COLORS.black },
+  title: { fontFamily: FONTS.display, fontSize: 26, lineHeight: 32, color: COLORS.black },
   heading: { fontFamily: FONTS.semibold, fontSize: 18, lineHeight: 24, color: COLORS.black },
   body: { fontFamily: FONTS.regular, fontSize: 15, lineHeight: 22, color: COLORS.gray900 },
   label: { fontFamily: FONTS.medium, fontSize: 13, lineHeight: 18, color: COLORS.black },

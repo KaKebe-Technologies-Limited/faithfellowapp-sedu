@@ -148,7 +148,7 @@ export default function HymnScreen() {
             {note ? <AppText style={styles.note}>{note}</AppText> : null}
             {state.offline ? (
               <View style={styles.offline}>
-                <Ionicons name="cloud-offline-outline" size={15} color={COLORS.primaryDark} />
+                <Ionicons name="cloud-offline-outline" size={15} color={COLORS.primaryInk} />
                 <AppText style={styles.offlineText}>Opened from your phone</AppText>
               </View>
             ) : null}
@@ -227,7 +227,7 @@ const styles = StyleSheet.create({
   circleB: { position: 'absolute', left: -40, bottom: -60, width: 150, height: 150, borderRadius: 75, backgroundColor: 'rgba(255,255,255,0.07)' },
   topRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14 },
   number: { fontFamily: FONTS.bold, fontSize: 12, letterSpacing: 1.6, color: 'rgba(255,255,255,0.8)' },
-  title: { fontFamily: FONTS.bold, fontSize: 28, lineHeight: 35, color: '#fff', marginTop: 4 },
+  title: { fontFamily: FONTS.display, fontSize: 28, lineHeight: 35, color: '#fff', marginTop: 4 },
   hymnal: { fontFamily: FONTS.medium, fontSize: 14, color: 'rgba(255,255,255,0.85)', marginTop: 4 },
   part: { alignSelf: 'flex-start', marginTop: 10, backgroundColor: 'rgba(255,255,255,0.16)', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 6 },
   partText: { fontFamily: FONTS.bold, fontSize: 13, color: '#fff' },
@@ -244,7 +244,7 @@ const styles = StyleSheet.create({
   toolText: { fontFamily: FONTS.semibold, fontSize: 13, color: COLORS.primary },
   note: { fontFamily: FONTS.medium, fontSize: 12.5, color: COLORS.gray900, marginHorizontal: SPACING.md, marginTop: 8 },
   offline: { flexDirection: 'row', alignItems: 'center', gap: 6, marginHorizontal: SPACING.md, marginTop: 8 },
-  offlineText: { fontFamily: FONTS.medium, fontSize: 12.5, color: COLORS.primaryDark },
+  offlineText: { fontFamily: FONTS.medium, fontSize: 12.5, color: COLORS.primaryInk },
   small: { fontFamily: FONTS.semibold, fontSize: 13, color: COLORS.gray700, marginBottom: 6 },
   lyrics: { backgroundColor: COLORS.white, marginHorizontal: SPACING.md, marginTop: 16, borderRadius: 24, paddingHorizontal: 18, paddingTop: 22, paddingBottom: 4, ...SHADOW, shadowOpacity: 0.05 },
   credits: { backgroundColor: COLORS.white, marginHorizontal: SPACING.md, marginTop: 16, borderRadius: 20, padding: 16 },

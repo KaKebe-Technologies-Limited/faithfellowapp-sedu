@@ -73,7 +73,7 @@ const styles = StyleSheet.create({
   wrap: { marginTop: 18, paddingTop: 14, borderTopWidth: 1, borderTopColor: COLORS.gray100 },
   label: { fontFamily: FONTS.semibold, fontSize: 13, color: COLORS.gray700, marginBottom: 10 },
   row: { flexDirection: 'row', gap: 10, flexWrap: 'wrap' },
-  pill: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 46, paddingHorizontal: 18, borderRadius: 999, backgroundColor: '#fff', borderWidth: 1.5, borderColor: COLORS.gray100 },
+  pill: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 46, paddingHorizontal: 18, borderRadius: 999, backgroundColor: COLORS.white, borderWidth: 1.5, borderColor: COLORS.gray100 },
   on: { backgroundColor: COLORS.primaryMist, borderColor: COLORS.primaryPale },
   emoji: { fontSize: 24, lineHeight: 30 },
   count: { fontFamily: FONTS.bold, fontSize: 14.5, color: COLORS.gray900, minWidth: 8 },

@@ -199,10 +199,10 @@ const styles = StyleSheet.create({
   ref: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', backgroundColor: COLORS.primaryMist, borderRadius: RADIUS.full, paddingHorizontal: 12, paddingVertical: 6, marginBottom: 12 },
   refText: { fontFamily: FONTS.semibold, fontSize: 12.5, color: COLORS.primary },
   title: { fontFamily: FONTS.bold, fontSize: 24, color: COLORS.black, paddingVertical: 8, ...Platform.select({ web: { outlineStyle: 'none' } }) },
-  body: { fontFamily: FONTS.regular, fontSize: 17, lineHeight: 27, color: '#1F1F1F', minHeight: 260, paddingTop: 6, ...Platform.select({ web: { outlineStyle: 'none' } }) },
+  body: { fontFamily: FONTS.regular, fontSize: 17, lineHeight: 27, color: COLORS.ink, minHeight: 260, paddingTop: 6, ...Platform.select({ web: { outlineStyle: 'none' } }) },
   colors: { flexDirection: 'row', gap: 12, marginTop: 20 },
   dot: { width: 34, height: 34, borderRadius: 17, borderWidth: 1.5, borderColor: 'rgba(0,0,0,0.12)' },
   dotOn: { borderColor: COLORS.primary, borderWidth: 2.5 },
   done: { position: 'absolute', right: SPACING.md, bottom: 24, backgroundColor: COLORS.primary, borderRadius: RADIUS.full, paddingHorizontal: 26, paddingVertical: 13 },
-  doneText: { fontFamily: FONTS.bold, fontSize: 15, color: COLORS.white },
+  doneText: { fontFamily: FONTS.bold, fontSize: 15, color: COLORS.onColor },
 });

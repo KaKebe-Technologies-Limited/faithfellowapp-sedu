@@ -13,7 +13,7 @@ export default function ProgressRing({ percent = 0, color = COLORS.primary, size
   return (
     <View style={{ width: size, height: size }} accessibilityRole="progressbar" accessibilityLabel={label} accessibilityValue={{ min: 0, max: 100, now: Math.round(value) }}>
       <Svg width={size} height={size} style={{ transform: [{ rotate: '-90deg' }] }}>
-        <Circle cx={size / 2} cy={size / 2} r={radius} stroke="#ECE4E8" strokeWidth={stroke} fill="none" />
+        <Circle cx={size / 2} cy={size / 2} r={radius} stroke={COLORS.track} strokeWidth={stroke} fill="none" />
         {value > 0 ? <Circle cx={size / 2} cy={size / 2} r={radius} stroke={color} strokeWidth={stroke} fill="none" strokeLinecap="round" strokeDasharray={`${(circumference * value) / 100} ${circumference}`} /> : null}
       </Svg>
       <View style={[StyleSheet.absoluteFill, styles.center]}>

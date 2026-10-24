@@ -36,5 +36,5 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: COLORS.canvas },
   card: { backgroundColor: COLORS.white, borderRadius: RADIUS.lg, padding: 14, borderLeftWidth: 6, gap: 4 },
   ref: { fontFamily: FONTS.bold, fontSize: 15, color: COLORS.black },
-  text: { fontFamily: FONTS.regular, fontSize: 15, lineHeight: 22, color: '#2B2B2B' },
+  text: { fontFamily: FONTS.regular, fontSize: 15, lineHeight: 22, color: COLORS.ink },
 });

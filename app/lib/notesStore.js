@@ -2,11 +2,15 @@
 // "context" (bible:JHN.3, sermon:12, note:abc123…), which is unique per member and what the server also keys on.
 // Changes are marked `dirty` until lib/outbox.js has sent them. Notes are private: signing out clears this.
 import { useSyncExternalStore } from 'react';
+import { IS_DARK } from '../constants/theme';
 import { readJson, removeFile, serial, writeJson } from './localFiles';
 
 const FILE = 'notes/notes.json';
 
-export const PAPER = { paper: '#FFFDF7', rose: '#FDF0F3', sky: '#EEF5FF', mint: '#EDF9F2', sun: '#FFF8E6' };
+// The colours of a note's paper (a note keeps the paper's name, so each look draws its own tint of it).
+export const PAPER = IS_DARK
+  ? { paper: '#26211F', rose: '#2E1D24', sky: '#1C2433', mint: '#1B2B24', sun: '#2D2716' }
+  : { paper: '#FFFDF7', rose: '#FDF0F3', sky: '#EEF5FF', mint: '#EDF9F2', sun: '#FFF8E6' };
 export const KINDS = { bible: 'Bible', plan: 'Reading plan', sermon: 'Sermon', devotional: 'Devotional', podcast: 'Podcast', live: 'Live service', note: 'Note' };
 
 let state = null; // { notes: { [context]: record }, syncedAt }

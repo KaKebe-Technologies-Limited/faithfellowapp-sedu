@@ -126,13 +126,13 @@ export default function HymnsScreen() {
           <ScrollView contentContainerStyle={{ paddingBottom: 48 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
             {state.offline ? (
               <View style={styles.offline}>
-                <Ionicons name="cloud-offline-outline" size={16} color={COLORS.primaryDark} />
+                <Ionicons name="cloud-offline-outline" size={16} color={COLORS.primaryInk} />
                 <AppText style={styles.offlineText}>No connection: showing what is saved on your phone.</AppText>
               </View>
             ) : null}
 
             <Pressable onPress={() => router.push('/hymns/favorites')} style={({ pressed }) => [styles.fav, pressed && { opacity: 0.93 }]} accessibilityRole="button" accessibilityLabel={`My favourite hymns, ${state.favorites}`}>
-              <LinearGradient colors={['#FFF4D6', '#FFE3EF']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.favCard}>
+              <LinearGradient colors={[COLORS.noteMist, COLORS.pink]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.favCard}>
                 <View style={styles.starBubble}>
                   <Ionicons name="star" size={22} color="#F5B800" />
                 </View>
@@ -185,7 +185,7 @@ const styles = StyleSheet.create({
   search: { flexDirection: 'row', alignItems: 'center', gap: 8, margin: SPACING.md, marginBottom: SPACING.sm, paddingHorizontal: SPACING.md, borderRadius: RADIUS.full, backgroundColor: COLORS.white },
   searchInput: { flex: 1, minHeight: 46, fontFamily: FONTS.regular, fontSize: 15, color: COLORS.black },
   offline: { flexDirection: 'row', alignItems: 'center', gap: 8, marginHorizontal: SPACING.md, marginBottom: 10, padding: 10, borderRadius: 12, backgroundColor: COLORS.primaryMist },
-  offlineText: { flex: 1, fontFamily: FONTS.medium, fontSize: 12.5, color: COLORS.primaryDark },
+  offlineText: { flex: 1, fontFamily: FONTS.medium, fontSize: 12.5, color: COLORS.primaryInk },
   fav: { marginHorizontal: SPACING.md, marginTop: 4, marginBottom: 16, ...SHADOW, shadowOpacity: 0.06 },
   favCard: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 18, padding: 14 },
   starBubble: { width: 44, height: 44, borderRadius: 22, backgroundColor: COLORS.white, alignItems: 'center', justifyContent: 'center' },

@@ -20,6 +20,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Study groups, cells and fellowships in the app: find and join one, read its notices, meetings and members,
@@ -108,7 +109,7 @@ class GroupController extends Controller
     public function posts(Request $request, SmallGroup $group): JsonResponse
     {
         $this->mayTalk($request, $group);
-        $posts = SmallGroupPost::with('user.media')->where('small_group_id', $group->id)
+        $posts = SmallGroupPost::with(SmallGroupPost::repliesReady() ? ['user.media', 'replyTo.user'] : ['user.media'])->where('small_group_id', $group->id)
             ->when($request->filled('after'), fn ($q) => $q->where('id', '>', (int) $request->query('after')))
             ->when($request->filled('before'), fn ($q) => $q->where('id', '<', (int) $request->query('before')))
             ->orderByDesc('id')->take(40)->get();
@@ -119,10 +120,16 @@ class GroupController extends Controller
     public function storePost(Request $request, SmallGroup $group): JsonResponse
     {
         $this->mayTalk($request, $group);
-        $data = $request->validate(['body' => ['required', 'string', 'max:2000', new NoContactDetails]]);
-        $post = SmallGroupPost::create(['church_id' => $group->church_id, 'small_group_id' => $group->id, 'user_id' => $request->user()->id, 'body' => trim(strip_tags($data['body']))]);
+        $data = $request->validate(['body' => ['required', 'string', 'max:2000', new NoContactDetails], 'reply_to' => ['nullable', 'integer']]);
+        // A reply points at a message of this very group.
+        $replyTo = null;
+        if (! empty($data['reply_to']) && SmallGroupPost::repliesReady()) {
+            $replyTo = SmallGroupPost::where('small_group_id', $group->id)->whereKey((int) $data['reply_to'])->first()
+                ?? throw ValidationException::withMessages(['reply_to' => __('That message is not in this group.')]);
+        }
+        $post = SmallGroupPost::create(['church_id' => $group->church_id, 'small_group_id' => $group->id, 'user_id' => $request->user()->id, 'body' => trim(strip_tags($data['body']))] + ($replyTo ? ['reply_to_id' => $replyTo->id] : []));
 
-        return response()->json(['data' => $this->post($post->load('user.media'), $request->user(), $group)], 201);
+        return response()->json(['data' => $this->post($post->load(SmallGroupPost::repliesReady() ? ['user.media', 'replyTo.user'] : ['user.media']), $request->user(), $group)], 201);
     }
 
     public function destroyPost(Request $request, SmallGroup $group, SmallGroupPost $post): JsonResponse
@@ -260,6 +267,8 @@ class GroupController extends Controller
     /** @return array<string, mixed> */
     protected function post(SmallGroupPost $p, User $viewer, SmallGroup $group): array
     {
+        $reply = SmallGroupPost::repliesReady() && $p->reply_to_id ? $p->replyTo : null;
+
         return [
             'id' => $p->id,
             'body' => $p->body,
@@ -267,6 +276,6 @@ class GroupController extends Controller
             'author' => ['id' => $p->user?->id, 'name' => $p->user?->name, 'avatar_url' => $p->user?->avatar_url],
             'mine' => $p->user_id === $viewer->id,
             'can_delete' => $p->user_id === $viewer->id || $viewer->can('lead', $group),
-        ];
+        ] + ($reply ? ['reply_to' => ['id' => $reply->id, 'body' => $reply->trashed() ? __('This message was deleted.') : Str::limit($reply->body, 140), 'author' => $reply->user?->name, 'mine' => $reply->user_id === $viewer->id]] : []);
     }
 }

@@ -7,6 +7,8 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import BrandPlaceholder from '../../components/BrandPlaceholder';
+import { ReplyBar, ReplyQuote } from '../../components/chat/Reply';
+import SwipeToReply from '../../components/chat/SwipeToReply';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AppText from '../../components/AppText';
@@ -26,7 +28,9 @@ function Conversation({ group }) {
   const [draft, setDraft] = useState('');
   const [error, setError] = useState(null);
   const [sending, setSending] = useState(false);
+  const [replyTo, setReplyTo] = useState(null); // the message being answered: { id, body, name }
   const scroller = useRef(null);
+  const input = useRef(null);
   const last = useRef(0);
 
   const load = useCallback(async () => {
@@ -64,10 +68,11 @@ function Conversation({ group }) {
     if (!body || sending) return;
     setSending(true);
     try {
-      const { data } = await api.post(`/groups/${group.id}/posts`, { body });
+      const { data } = await api.post(`/groups/${group.id}/posts`, { body, ...(replyTo ? { reply_to: replyTo.id } : {}) });
       last.current = Math.max(last.current, data.data.id);
       setPosts((p) => [...(p ?? []), data.data]);
       setDraft('');
+      setReplyTo(null);
     } catch (e) {
       Alert.alert('Could not send', errorMessage(e));
     } finally {
@@ -90,22 +95,34 @@ function Conversation({ group }) {
         <ScrollView ref={scroller} contentContainerStyle={{ padding: SPACING.md, gap: 10 }} keyboardShouldPersistTaps="handled">
           {posts?.length === 0 ? <AppText variant="caption" style={{ textAlign: 'center', marginTop: 24 }}>No messages yet — start the conversation 🙏</AppText> : null}
           {posts?.map((p) => (
-            <Pressable key={p.id} onLongPress={p.can_delete ? () => remove(p) : undefined} style={[styles.post, p.mine && { flexDirection: 'row-reverse' }]} accessibilityLabel={`${p.author.name}: ${p.body}`}>
-              <Avatar person={p.author} size={34} />
-              <View style={[styles.bubble, p.mine ? styles.mine : styles.theirs]}>
-                {!p.mine ? <AppText style={styles.author}>{p.author.name}</AppText> : null}
-                <AppText style={[styles.postText, p.mine && { color: COLORS.white }]}>{p.body}</AppText>
-                <AppText style={[styles.postTime, p.mine && { color: 'rgba(255,255,255,0.75)' }]}>{timeAgo(p.at)}</AppText>
-              </View>
-            </Pressable>
+            <SwipeToReply
+              key={p.id}
+              onReply={() => {
+                setReplyTo({ id: p.id, body: p.body, name: p.mine ? 'yourself' : p.author.name });
+                input.current?.focus();
+              }}
+            >
+              <Pressable onLongPress={p.can_delete ? () => remove(p) : undefined} style={[styles.post, p.mine && { flexDirection: 'row-reverse' }]} accessibilityLabel={`${p.author.name}: ${p.body}`}>
+                <Avatar person={p.author} size={34} />
+                <View style={[styles.bubble, p.mine ? styles.mine : styles.theirs]}>
+                  {!p.mine ? <AppText style={styles.author}>{p.author.name}</AppText> : null}
+                  {p.reply_to ? <ReplyQuote onMine={p.mine} name={p.reply_to.mine ? 'You' : p.reply_to.author ?? 'Someone'} text={p.reply_to.body} /> : null}
+                  <AppText style={[styles.postText, p.mine && { color: COLORS.onColor }]}>{p.body}</AppText>
+                  <AppText style={[styles.postTime, p.mine && { color: 'rgba(255,255,255,0.75)' }]}>{timeAgo(p.at)}</AppText>
+                </View>
+              </Pressable>
+            </SwipeToReply>
           ))}
         </ScrollView>
       </StateView>
-      <View style={[styles.compose, { paddingBottom: Math.max(insets.bottom, 10) }]}>
-        <TextInput maxFontSizeMultiplier={MAX_FONT_SCALE} value={draft} onChangeText={setDraft} placeholder="Write to the group…" placeholderTextColor={COLORS.gray500} multiline maxLength={2000} style={styles.input} />
-        <Pressable onPress={send} disabled={!draft.trim() || sending} style={[styles.send, (!draft.trim() || sending) && { opacity: 0.45 }]} accessibilityRole="button" accessibilityLabel="Send">
-          <Ionicons name="send" size={18} color={COLORS.white} />
-        </Pressable>
+      <View style={[styles.composeWrap, { paddingBottom: Math.max(insets.bottom, 10) }]}>
+        {replyTo ? <ReplyBar name={replyTo.name} text={replyTo.body} onClose={() => setReplyTo(null)} /> : null}
+        <View style={styles.compose}>
+          <TextInput ref={input} maxFontSizeMultiplier={MAX_FONT_SCALE} value={draft} onChangeText={setDraft} placeholder="Write to the group…" placeholderTextColor={COLORS.gray500} multiline maxLength={2000} style={styles.input} />
+          <Pressable onPress={send} disabled={!draft.trim() || sending} style={[styles.send, (!draft.trim() || sending) && { opacity: 0.45 }]} accessibilityRole="button" accessibilityLabel="Send">
+            <Ionicons name="send" size={18} color={COLORS.onColor} />
+          </Pressable>
+        </View>
       </View>
     </KeyboardAvoidingView>
   );
@@ -214,7 +231,7 @@ export default function GroupScreen() {
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={styles.tabs}>
               {tabs.map(([key, label]) => (
                 <Pressable key={key} onPress={() => setTab(key)} style={[styles.tab, current === key && styles.tabOn]} accessibilityRole="tab" accessibilityState={{ selected: current === key }}>
-                  <AppText style={[styles.tabText, current === key && { color: COLORS.white }]}>{label}</AppText>
+                  <AppText style={[styles.tabText, current === key && { color: COLORS.onColor }]}>{label}</AppText>
                 </Pressable>
               ))}
             </ScrollView>
@@ -310,7 +327,7 @@ export default function GroupScreen() {
             <View key={m.user_id} style={styles.member}>
               <Avatar person={m} size={34} />
               <AppText style={[styles.memberName, { flex: 1 }]}>{m.name}</AppText>
-              <Switch value={!!meeting.present[m.user_id]} onValueChange={(v) => setMeeting((x) => ({ ...x, present: { ...x.present, [m.user_id]: v } }))} trackColor={{ true: COLORS.primaryLight, false: COLORS.gray300 }} thumbColor={COLORS.white} />
+              <Switch value={!!meeting.present[m.user_id]} onValueChange={(v) => setMeeting((x) => ({ ...x, present: { ...x.present, [m.user_id]: v } }))} trackColor={{ true: COLORS.primaryLight, false: COLORS.gray300 }} thumbColor={COLORS.onColor} />
             </View>
           ))}
         </ScrollView>
@@ -338,11 +355,11 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: COLORS.canvas },
   hero: { marginHorizontal: SPACING.md, borderRadius: RADIUS.xl - 4, overflow: 'hidden', padding: 14, gap: 10, backgroundColor: COLORS.primaryDark },
   heroInfo: { gap: 3 },
-  heroLine: { fontFamily: FONTS.medium, fontSize: 13.5, color: COLORS.white },
+  heroLine: { fontFamily: FONTS.medium, fontSize: 13.5, color: COLORS.onColor },
   joinBtn: { alignSelf: 'flex-start', backgroundColor: COLORS.white, borderRadius: RADIUS.full, paddingHorizontal: 20, paddingVertical: 10 },
   joinText: { fontFamily: FONTS.bold, fontSize: 14, color: COLORS.primary },
   pending: { alignSelf: 'flex-start', backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: RADIUS.full, paddingHorizontal: 14, paddingVertical: 8 },
-  pendingText: { fontFamily: FONTS.semibold, fontSize: 13, color: COLORS.white },
+  pendingText: { fontFamily: FONTS.semibold, fontSize: 13, color: COLORS.onColor },
   tabs: { gap: 8, paddingHorizontal: SPACING.md, paddingVertical: 12 },
   tab: { paddingHorizontal: 15, paddingVertical: 8, borderRadius: RADIUS.full, backgroundColor: COLORS.primaryMist },
   tabOn: { backgroundColor: COLORS.primary },
@@ -353,7 +370,7 @@ const styles = StyleSheet.create({
   member: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 7 },
   memberName: { fontFamily: FONTS.semibold, fontSize: 15, color: COLORS.black },
   approve: { backgroundColor: COLORS.primary, borderRadius: RADIUS.full, paddingHorizontal: 14, paddingVertical: 7 },
-  approveText: { fontFamily: FONTS.bold, fontSize: 12.5, color: COLORS.white },
+  approveText: { fontFamily: FONTS.bold, fontSize: 12.5, color: COLORS.onColor },
   post: { flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
   bubble: { maxWidth: '78%', borderRadius: 18, paddingHorizontal: 13, paddingVertical: 8 },
   mine: { backgroundColor: COLORS.primary, borderBottomRightRadius: 4 },
@@ -361,7 +378,8 @@ const styles = StyleSheet.create({
   author: { fontFamily: FONTS.bold, fontSize: 12, color: COLORS.primary, marginBottom: 1 },
   postText: { fontFamily: FONTS.regular, fontSize: 15, lineHeight: 21, color: COLORS.black },
   postTime: { fontFamily: FONTS.regular, fontSize: 10.5, color: COLORS.gray500, alignSelf: 'flex-end', marginTop: 2 },
-  compose: { flexDirection: 'row', alignItems: 'flex-end', gap: 10, paddingHorizontal: SPACING.md, paddingTop: 10, backgroundColor: COLORS.white, borderTopWidth: 1, borderTopColor: COLORS.gray100 },
+  composeWrap: { paddingHorizontal: SPACING.md, paddingTop: 10, backgroundColor: COLORS.white, borderTopWidth: 1, borderTopColor: COLORS.gray100 },
+  compose: { flexDirection: 'row', alignItems: 'flex-end', gap: 10 },
   input: { flex: 1, maxHeight: 110, minHeight: 42, borderRadius: 21, backgroundColor: COLORS.canvas, paddingHorizontal: 16, paddingTop: 11, paddingBottom: 10, fontFamily: FONTS.regular, fontSize: 15, color: COLORS.black, ...Platform.select({ web: { outlineStyle: 'none' } }) },
   send: { width: 42, height: 42, borderRadius: 21, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center' },
   backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(20,6,12,0.5)' },

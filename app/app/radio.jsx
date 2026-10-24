@@ -134,7 +134,7 @@ const styles = StyleSheet.create({
   liveArt: { width: 300, height: 300, maxWidth: '100%', overflow: 'hidden', backgroundColor: '#7D1A39' },
   liveMark: { position: 'absolute', right: -40, bottom: -40, width: 300, height: 300, tintColor: '#fff', opacity: 0.14 },
   liveTop: { position: 'absolute', left: 16, right: 16, top: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  title: { fontFamily: FONTS.bold, fontSize: 25, lineHeight: 31, color: '#fff', textAlign: 'center', marginTop: 24 },
+  title: { fontFamily: FONTS.display, fontSize: 25, lineHeight: 31, color: '#fff', textAlign: 'center', marginTop: 24 },
   artist: { fontFamily: FONTS.medium, fontSize: 16.5, color: 'rgba(255,255,255,0.7)', textAlign: 'center', marginTop: 4 },
   buttonRow: { alignItems: 'center', marginTop: 24 },
   hint: { fontFamily: FONTS.medium, fontSize: 13.5, color: 'rgba(255,255,255,0.6)', textAlign: 'center', marginTop: 16 },

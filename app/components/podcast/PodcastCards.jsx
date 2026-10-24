@@ -106,7 +106,7 @@ export function EpisodeRow({ episode, list, showPodcast = false }) {
         ) : null}
       </View>
       <View style={styles.play}>
-        {mine && phase === 'loading' ? <ActivityIndicator color={COLORS.white} /> : <Ionicons name={playing ? 'pause' : 'play'} size={20} color={COLORS.white} style={playing ? null : { marginLeft: 2 }} />}
+        {mine && phase === 'loading' ? <ActivityIndicator color={COLORS.onColor} /> : <Ionicons name={playing ? 'pause' : 'play'} size={20} color={COLORS.onColor} style={playing ? null : { marginLeft: 2 }} />}
       </View>
     </Pressable>
   );

@@ -1,13 +1,13 @@
 // Helpers for the Bible screens: highlight colours, "John 3:16–18" style references and the text that is copied or shared.
+import { IS_DARK } from '../constants/theme';
 import { getStored, setStored } from './storage';
 
 /** Highlight colour key → swatch (matches the website). */
-export const HIGHLIGHTS = {
-  yellow: '#FFE97A',
-  green: '#A8E6B8',
-  blue: '#B5D6FF',
-  pink: '#FFC2DA',
-};
+export const HIGHLIGHTS_LIGHT = { yellow: '#FFE97A', green: '#A8E6B8', blue: '#B5D6FF', pink: '#FFC2DA' };
+/** The same four colours, deeper, so light text stays easy to read on them. */
+export const HIGHLIGHTS_NIGHT = { yellow: '#B79A1C', green: '#2F8F57', blue: '#3F6FB8', pink: '#B5446F' };
+/** The colours of the look the app is using. */
+export const HIGHLIGHTS = IS_DARK ? HIGHLIGHTS_NIGHT : HIGHLIGHTS_LIGHT;
 
 /** Verses [16, 17, 18, 20] → "16–18, 20". */
 export function verseRanges(numbers) {

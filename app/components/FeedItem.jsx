@@ -32,7 +32,7 @@ const go = (pathname, id) => router.push({ pathname, params: { id } });
 function PersonAvatar({ name, anonymous }) {
   return (
     <View style={styles.person}>
-      {anonymous ? <Ionicons name="person" size={18} color={COLORS.white} /> : <AppText style={{ fontFamily: FONTS.bold, fontSize: 13, color: COLORS.white }}>{initials(name)}</AppText>}
+      {anonymous ? <Ionicons name="person" size={18} color={COLORS.onColor} /> : <AppText style={{ fontFamily: FONTS.bold, fontSize: 13, color: COLORS.onColor }}>{initials(name)}</AppText>}
     </View>
   );
 }
@@ -150,7 +150,7 @@ function PrayerBody({ item }) {
       <View style={styles.prayerRow}>
         <Pressable onPress={toggle} style={[styles.prayed, prayed && styles.prayedOn]} accessibilityRole="button" accessibilityState={{ selected: prayed }} accessibilityLabel={`I prayed, ${count}`}>
           <AppText style={styles.prayedEmoji}>🙏</AppText>
-          <AppText style={[styles.prayedText, prayed && { color: COLORS.white }]}>I prayed {count}</AppText>
+          <AppText style={[styles.prayedText, prayed && { color: COLORS.onColor }]}>I prayed {count}</AppText>
         </Pressable>
         <Pressable onPress={() => go('/prayer/[id]', item.id)} style={styles.openLink} accessibilityRole="link" hitSlop={8}>
           <AppText variant="label" style={{ color: COLORS.primary }}>
@@ -188,7 +188,7 @@ function Body({ entry }) {
             <AppText style={styles.title}>{item.title}</AppText>
           </View>
           <View style={[styles.action, { backgroundColor: COLORS.danger }]}>
-            <AppText style={[styles.actionText, { color: COLORS.white }]}>Watch</AppText>
+            <AppText style={[styles.actionText, { color: COLORS.onColor }]}>Watch</AppText>
           </View>
         </Pressable>
       );
@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
   content: { marginTop: 12 },
   title: { fontFamily: FONTS.bold, fontSize: 16, lineHeight: 22, color: COLORS.black },
   meta: { marginTop: 3 },
-  body: { fontFamily: FONTS.regular, fontSize: 15, lineHeight: 23, color: '#2B2B2B', marginTop: 6 },
+  body: { fontFamily: FONTS.regular, fontSize: 15, lineHeight: 23, color: COLORS.ink, marginTop: 6 },
   noticeBody: { fontFamily: FONTS.regular, fontSize: 14, lineHeight: 20, color: COLORS.gray700, marginTop: 4 },
   eventRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   tile: { width: 54, paddingVertical: 7, borderRadius: 14, backgroundColor: COLORS.primaryMist, alignItems: 'center' },
@@ -274,5 +274,5 @@ const styles = StyleSheet.create({
   scripture: { fontFamily: FONTS.bold, fontSize: 14, color: COLORS.primary, marginTop: 8 },
   photo: { height: 190, borderRadius: 14, overflow: 'hidden', marginTop: 12, backgroundColor: COLORS.gray100 },
   more: { position: 'absolute', right: 10, bottom: 10, backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: RADIUS.full, paddingHorizontal: 10, paddingVertical: 4 },
-  moreText: { fontFamily: FONTS.bold, fontSize: 12, color: COLORS.white },
+  moreText: { fontFamily: FONTS.bold, fontSize: 12, color: COLORS.onColor },
 });

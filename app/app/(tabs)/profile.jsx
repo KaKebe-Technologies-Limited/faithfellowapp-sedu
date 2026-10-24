@@ -28,6 +28,7 @@ import { useFetch } from '../../lib/useFetch';
 const MENU = [
   { icon: 'notifications-outline', label: 'Notifications', path: '/notifications' },
   { icon: 'options-outline', label: 'Notification settings', path: '/settings/notifications' },
+  { icon: 'color-palette-outline', label: 'Appearance', path: '/settings/appearance' },
   { icon: 'chatbubble-ellipses-outline', label: 'Messages', path: '/chats' },
   { icon: 'people-circle-outline', label: 'My connections', path: '/connections' },
   { icon: 'ticket-outline', label: 'My tickets', path: '/tickets' },
@@ -107,7 +108,7 @@ function PhonePrompt({ onSaved }) {
     <View style={styles.phoneCard}>
       <View style={styles.phoneTop}>
         <View style={styles.phoneIcon}>
-          <Ionicons name="call" size={18} color={COLORS.white} />
+          <Ionicons name="call" size={18} color={COLORS.onColor} />
         </View>
         <View style={{ flex: 1 }}>
           <AppText style={styles.phoneTitle}>Add your phone number</AppText>
@@ -200,7 +201,7 @@ export default function ProfileScreen() {
           <View style={styles.moon} />
           <View style={styles.moonSmall} />
           <Pressable onPress={() => router.push('/profile/edit')} style={[styles.bandEdit, { top: insets.top + 12 }]} accessibilityRole="button" accessibilityLabel="Edit profile" hitSlop={8}>
-            <Ionicons name="create-outline" size={20} color={COLORS.white} />
+            <Ionicons name="create-outline" size={20} color={COLORS.onColor} />
           </Pressable>
         </LinearGradient>
 
@@ -216,7 +217,7 @@ export default function ProfileScreen() {
           </AppText>
           <View style={styles.badges}>
             <View style={styles.badgeOn}>
-              <Ionicons name={role === 'Member' ? 'person' : 'shield-checkmark'} size={12} color={COLORS.white} />
+              <Ionicons name={role === 'Member' ? 'person' : 'shield-checkmark'} size={12} color={COLORS.onColor} />
               <AppText style={styles.badgeOnText}>{role}</AppText>
             </View>
             {secondBadge ? (
@@ -298,7 +299,7 @@ export default function ProfileScreen() {
               ['month', 'This month'],
             ].map(([key, label]) => (
               <Pressable key={key} onPress={() => setPeriod(key)} style={[styles.period, period === key && styles.periodOn]} accessibilityRole="button" accessibilityState={{ selected: period === key }}>
-                <AppText style={[styles.periodText, period === key && { color: COLORS.white }]}>{label}</AppText>
+                <AppText style={[styles.periodText, period === key && { color: COLORS.onColor }]}>{label}</AppText>
               </Pressable>
             ))}
           </View>
@@ -406,11 +407,26 @@ export default function ProfileScreen() {
           </Section>
         ) : null}
 
+        {user?.is_super_admin ? (
+          <View style={styles.pad}>
+            <Pressable onPress={() => router.push('/platform')} style={styles.admin} accessibilityRole="button" accessibilityLabel="Platform admin">
+              <View style={styles.adminIcon}>
+                <Ionicons name="planet" size={22} color={COLORS.onColor} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <AppText style={styles.adminTitle}>Platform admin</AppText>
+                <AppText variant="caption">Church applications, people, reports, podcasts and broadcasts</AppText>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={COLORS.primary} />
+            </Pressable>
+          </View>
+        ) : null}
+
         {user?.staff_of?.length || user?.is_super_admin ? (
           <View style={styles.pad}>
             <Pressable onPress={() => router.push('/admin')} style={styles.admin} accessibilityRole="button" accessibilityLabel="Manage your church">
               <View style={styles.adminIcon}>
-                <Ionicons name="shield-checkmark" size={22} color={COLORS.white} />
+                <Ionicons name="shield-checkmark" size={22} color={COLORS.onColor} />
               </View>
               <View style={{ flex: 1 }}>
                 <AppText style={styles.adminTitle}>{user.is_super_admin ? 'Manage any church' : `Manage ${user.staff_of.length === 1 ? user.staff_of[0].name : 'your churches'}`}</AppText>
@@ -457,12 +473,12 @@ const styles = StyleSheet.create({
   identity: { alignItems: 'center', marginTop: -52, paddingHorizontal: SPACING.md },
   avatarWrap: { width: 104, height: 104 },
   avatarEdit: { position: 'absolute', right: -2, bottom: 2, width: 34, height: 34, borderRadius: 17, backgroundColor: COLORS.white, alignItems: 'center', justifyContent: 'center', ...SHADOW },
-  name: { fontFamily: FONTS.bold, fontSize: 24, color: COLORS.black, marginTop: 10, textAlign: 'center' },
+  name: { fontFamily: FONTS.display, fontSize: 24, color: COLORS.black, marginTop: 10, textAlign: 'center' },
   badges: { flexDirection: 'row', gap: 8, marginTop: 8, alignItems: 'center', maxWidth: '100%' },
   badgeOn: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: COLORS.primary, borderRadius: RADIUS.md, paddingHorizontal: 12, paddingVertical: 6 },
-  badgeOnText: { fontFamily: FONTS.semibold, fontSize: 13, color: COLORS.white },
+  badgeOnText: { fontFamily: FONTS.semibold, fontSize: 13, color: COLORS.onColor },
   badgeSoft: { backgroundColor: COLORS.primaryMist, borderRadius: RADIUS.md, paddingHorizontal: 12, paddingVertical: 6, flexShrink: 1 },
-  badgeSoftText: { fontFamily: FONTS.semibold, fontSize: 13, color: COLORS.primaryDark },
+  badgeSoftText: { fontFamily: FONTS.semibold, fontSize: 13, color: COLORS.primaryInk },
 
   phoneCard: { backgroundColor: COLORS.white, borderRadius: 24, padding: 14, borderWidth: 1.5, borderColor: COLORS.primaryPale, ...SOFT_SHADOW },
   phoneTop: { flexDirection: 'row', gap: 12, alignItems: 'flex-start' },
@@ -503,7 +519,7 @@ const styles = StyleSheet.create({
   ringTitle: { fontFamily: FONTS.bold, fontSize: 14 },
   ringCaption: { fontFamily: FONTS.regular, fontSize: 11.5, color: SOFT.muted },
   summary: { flexDirection: 'row', gap: 10, alignItems: 'flex-start', backgroundColor: COLORS.primaryMist, borderRadius: 18, padding: 14, marginHorizontal: SPACING.md, marginTop: 16 },
-  summaryText: { flex: 1, fontFamily: FONTS.medium, fontSize: 13.5, lineHeight: 20, color: COLORS.primaryDark },
+  summaryText: { flex: 1, fontFamily: FONTS.medium, fontSize: 13.5, lineHeight: 20, color: COLORS.primaryInk },
 
   tiles: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, paddingHorizontal: SPACING.md },
   tile: { backgroundColor: COLORS.white, borderRadius: 20, padding: 12, gap: 4, ...SOFT_SHADOW },
@@ -513,7 +529,7 @@ const styles = StyleSheet.create({
 
   bars: { flexDirection: 'row', justifyContent: 'space-between', marginHorizontal: SPACING.md, backgroundColor: COLORS.white, borderRadius: 20, paddingHorizontal: 14, paddingTop: 16, paddingBottom: 10, ...SOFT_SHADOW },
   barCol: { alignItems: 'center', gap: 4, flex: 1 },
-  barTrack: { width: 20, height: 90, borderRadius: 10, backgroundColor: '#F3ECEF', justifyContent: 'flex-end', overflow: 'hidden' },
+  barTrack: { width: 20, height: 90, borderRadius: 10, backgroundColor: COLORS.gray100, justifyContent: 'flex-end', overflow: 'hidden' },
   barPart: { width: '100%' },
   barLabel: { fontFamily: FONTS.semibold, fontSize: 11.5, color: COLORS.gray900 },
   barValue: { fontFamily: FONTS.regular, fontSize: 10.5, color: SOFT.muted },
@@ -528,7 +544,7 @@ const styles = StyleSheet.create({
 
   admin: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: COLORS.primaryMist, borderRadius: RADIUS.lg + 2, padding: 14 },
   adminIcon: { width: 44, height: 44, borderRadius: 15, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center' },
-  adminTitle: { fontFamily: FONTS.bold, fontSize: 15.5, color: COLORS.primaryDark },
+  adminTitle: { fontFamily: FONTS.bold, fontSize: 15.5, color: COLORS.primaryInk },
 
   menu: { backgroundColor: COLORS.white, borderRadius: 24, paddingHorizontal: 14, paddingVertical: 4, ...SOFT_SHADOW },
   menuRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },

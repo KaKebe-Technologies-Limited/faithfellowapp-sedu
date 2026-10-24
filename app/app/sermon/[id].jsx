@@ -154,7 +154,7 @@ const styles = StyleSheet.create({
   floatBack: { position: 'absolute', left: SPACING.md },
   bigPlay: { alignSelf: 'center', width: 76, height: 76, borderRadius: 38, backgroundColor: COLORS.white, alignItems: 'center', justifyContent: 'center', marginVertical: 14 },
   body: { padding: SPACING.md },
-  title: { fontFamily: FONTS.bold, fontSize: 24, lineHeight: 30, color: COLORS.black },
+  title: { fontFamily: FONTS.display, fontSize: 24, lineHeight: 30, color: COLORS.black },
   host: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 12 },
   hostName: { fontFamily: FONTS.semibold, fontSize: 15, color: COLORS.black },
   pills: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 14 },

@@ -8,8 +8,8 @@ import AppText from './AppText';
 const TONES = {
   soft: { bg: COLORS.primaryMist, fg: COLORS.primary },
   urgent: { bg: COLORS.dangerMist, fg: COLORS.danger },
-  live: { bg: COLORS.danger, fg: COLORS.white },
-  dark: { bg: 'rgba(0,0,0,0.45)', fg: COLORS.white },
+  live: { bg: COLORS.danger, fg: COLORS.onColor },
+  dark: { bg: 'rgba(0,0,0,0.45)', fg: COLORS.onColor },
   white: { bg: COLORS.white, fg: COLORS.primary },
 };
 

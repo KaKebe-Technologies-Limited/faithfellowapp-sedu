@@ -14,15 +14,18 @@ import {
   ClarityCity_700Bold,
   useFonts,
 } from '@expo-google-fonts/clarity-city';
+import { PlayfairDisplay_500Medium_Italic } from '@expo-google-fonts/playfair-display/500Medium_Italic';
+import { PlayfairDisplay_700Bold_Italic } from '@expo-google-fonts/playfair-display/700Bold_Italic';
 import NowPlayingBar from '../components/NowPlayingBar';
 import OpeningFlash from '../components/OpeningFlash';
-import { COLORS } from '../constants/theme';
+import { COLORS, IS_GIRLS } from '../constants/theme';
 import { useActivityTracking } from '../lib/activity';
 import { loadAppMedia, refreshAppMedia, sourceOf, useAppMedia } from '../lib/appMedia';
 import { markFlashDone } from '../lib/appStart';
 import { refreshFlash, storedFlash } from '../lib/openingFlash';
 import { AuthProvider, useAuth } from '../lib/auth';
 import { useJoinLink } from '../lib/join';
+import { consumeSkipFlash } from '../lib/theme';
 import { useOfflineSync } from '../lib/outbox';
 import { syncNotes } from '../lib/notesSync';
 import { usePushSetup } from '../lib/push';
@@ -31,6 +34,9 @@ import { useRadioLifecycle } from '../lib/radio';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
+// The app was started again only to change its look: the opening photos do not play a second time.
+const RESTARTED_FOR_LOOK = consumeSkipFlash();
+
 function Navigator({ fontsLoaded }) {
   const { ready, token, user } = useAuth();
   usePushSetup(user);
@@ -38,7 +44,7 @@ function Navigator({ fontsLoaded }) {
   useRadioLifecycle();
   useActivityTracking(user); // the figures on your profile: minutes reading and listening, what you shared
   useAppUpdates();
-  const [flash, setFlash] = useState(true); // the opening flash, once each time the app is opened
+  const [flash, setFlash] = useState(!RESTARTED_FOR_LOOK); // the opening flash, once each time the app is opened
   const [flashSettings, setFlashSettings] = useState(null); // what the platform admin set for it (the last answer, kept on the phone)
 
   const [mediaLoaded, setMediaLoaded] = useState(false);
@@ -53,6 +59,9 @@ function Navigator({ fontsLoaded }) {
   }, []);
 
   // No flash when the admin switched it off or has not added any photos (nothing else waits on it then).
+  useEffect(() => {
+    if (RESTARTED_FOR_LOOK) markFlashDone();
+  }, []);
   useEffect(() => {
     if (flashSettings && mediaLoaded && (!flashSettings.enabled || openingPhotos.length === 0)) {
       setFlash(false);
@@ -77,7 +86,7 @@ function Navigator({ fontsLoaded }) {
       <Stack
         screenOptions={{
           headerStyle: { backgroundColor: COLORS.primary },
-          headerTintColor: COLORS.white,
+          headerTintColor: COLORS.onColor,
           headerTitleStyle: { fontWeight: '600' },
           contentStyle: { backgroundColor: COLORS.white },
           headerShown: false,
@@ -97,6 +106,8 @@ export default function RootLayout() {
     ClarityCity_500Medium,
     ClarityCity_600SemiBold,
     ClarityCity_700Bold,
+    // The serif italic of the headings in the rose look is only loaded when that look is on.
+    ...(IS_GIRLS ? { PlayfairDisplay_700Bold_Italic, PlayfairDisplay_500Medium_Italic } : {}),
   });
 
   return (

@@ -24,7 +24,7 @@ const AGES = [['18–24', 18, 24], ['25–34', 25, 34], ['35–44', 35, 44], ['4
 function Chip({ label, on, onPress }) {
   return (
     <Pressable onPress={onPress} style={[styles.chip, on && styles.chipOn]} accessibilityRole="button" accessibilityState={{ selected: on }}>
-      <AppText style={[styles.chipText, on && { color: COLORS.white }]}>{label}</AppText>
+      <AppText style={[styles.chipText, on && { color: COLORS.onColor }]}>{label}</AppText>
     </Pressable>
   );
 }
@@ -74,7 +74,7 @@ export default function PeopleScreen() {
       <View style={styles.seg}>
         {[['recommended', 'For you'], ['church', 'My church'], ['nearby', 'Near me'], ['everyone', 'Everyone']].map(([key, label]) => (
           <Pressable key={key} onPress={() => setScope(key)} style={[styles.segBtn, scope === key && styles.segOn]} accessibilityRole="tab" accessibilityState={{ selected: scope === key }}>
-            <AppText style={[styles.segText, scope === key && { color: COLORS.white }]}>{label}</AppText>
+            <AppText style={[styles.segText, scope === key && { color: COLORS.onColor }]}>{label}</AppText>
           </Pressable>
         ))}
       </View>
@@ -131,7 +131,7 @@ export default function PeopleScreen() {
           <TextInput maxFontSizeMultiplier={MAX_FONT_SCALE} value={query} onChangeText={setQuery} onSubmitEditing={() => setSearch(query.trim())} returnKeyType="search" placeholder="Search by name" placeholderTextColor={COLORS.gray500} style={styles.input} />
         </View>
         <Pressable onPress={() => { setDraft(filters); setOpen(true); }} style={[styles.filterBtn, active.length > 0 && { backgroundColor: COLORS.primary }]} accessibilityRole="button" accessibilityLabel="Filters">
-          <Ionicons name="options-outline" size={20} color={active.length ? COLORS.white : COLORS.primary} />
+          <Ionicons name="options-outline" size={20} color={active.length ? COLORS.onColor : COLORS.primary} />
           {active.length ? <AppText style={styles.filterCount}>{active.length}</AppText> : null}
         </Pressable>
       </View>
@@ -212,7 +212,7 @@ export default function PeopleScreen() {
 
 const styles = StyleSheet.create({
   notice: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: COLORS.primaryMist, borderRadius: RADIUS.lg, padding: 12 },
-  noticeText: { flex: 1, fontFamily: FONTS.medium, fontSize: 13, lineHeight: 18, color: COLORS.primaryDark },
+  noticeText: { flex: 1, fontFamily: FONTS.medium, fontSize: 13, lineHeight: 18, color: COLORS.primaryInk },
   seg: { flexDirection: 'row', backgroundColor: COLORS.primaryMist, borderRadius: RADIUS.full, padding: 4 },
   segBtn: { flex: 1, alignItems: 'center', paddingVertical: 9, borderRadius: RADIUS.full },
   segOn: { backgroundColor: COLORS.primary },
@@ -220,7 +220,7 @@ const styles = StyleSheet.create({
   search: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: SPACING.md, borderRadius: RADIUS.full, backgroundColor: COLORS.white },
   input: { flex: 1, minHeight: 44, fontFamily: FONTS.regular, fontSize: 15, color: COLORS.black },
   filterBtn: { width: 46, height: 46, borderRadius: 23, backgroundColor: COLORS.primaryMist, alignItems: 'center', justifyContent: 'center' },
-  filterCount: { position: 'absolute', top: -2, right: -2, minWidth: 18, textAlign: 'center', backgroundColor: COLORS.black, color: COLORS.white, fontFamily: FONTS.bold, fontSize: 11, borderRadius: 9, overflow: 'hidden', paddingHorizontal: 4 },
+  filterCount: { position: 'absolute', top: -2, right: -2, minWidth: 18, textAlign: 'center', backgroundColor: COLORS.primary, color: COLORS.onColor, fontFamily: FONTS.bold, fontSize: 11, borderRadius: 9, overflow: 'hidden', paddingHorizontal: 4 },
   reqBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: COLORS.primaryMist, borderRadius: RADIUS.full, paddingHorizontal: 12, paddingVertical: 8 },
   reqText: { fontFamily: FONTS.bold, fontSize: 12.5, color: COLORS.primary },
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },

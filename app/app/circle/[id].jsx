@@ -24,7 +24,7 @@ const TIMES = ['05:00', '06:00', '07:00', '12:30', '20:00', '21:00'];
 function Face({ member, size = 40 }) {
   return (
     <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: COLORS.primaryLight, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-      {member.avatar_url ? <Image source={{ uri: mediaUrl(member.avatar_url) }} style={StyleSheet.absoluteFill} contentFit="cover" /> : <AppText style={{ fontFamily: FONTS.bold, fontSize: size * 0.38, color: COLORS.white }}>{String(member.name).charAt(0)}</AppText>}
+      {member.avatar_url ? <Image source={{ uri: mediaUrl(member.avatar_url) }} style={StyleSheet.absoluteFill} contentFit="cover" /> : <AppText style={{ fontFamily: FONTS.bold, fontSize: size * 0.38, color: COLORS.onColor }}>{String(member.name).charAt(0)}</AppText>}
     </View>
   );
 }
@@ -111,7 +111,7 @@ export default function CircleScreen() {
                   <AppText style={styles.code}>{c.code}</AppText>
                 </View>
                 <Pressable onPress={() => Share.share({ message: `Read ${c.plan.title} with me on FaithFellows! Open Bible → Reading plans → Join, and enter the code ${c.code}.` }).catch(() => {})} style={styles.share} accessibilityRole="button" accessibilityLabel="Share the code">
-                  <Ionicons name="share-social-outline" size={20} color={COLORS.white} />
+                  <Ionicons name="share-social-outline" size={20} color={COLORS.onColor} />
                 </Pressable>
               </View>
 
@@ -186,7 +186,7 @@ export default function CircleScreen() {
           <View style={styles.wrap}>
             {TIMES.map((t) => (
               <Pressable key={t} onPress={() => setTime(t)} style={[styles.chip, time === t && styles.chipOn]} accessibilityRole="button">
-                <AppText style={[styles.chipText, time === t && { color: COLORS.white }]}>{t}</AppText>
+                <AppText style={[styles.chipText, time === t && { color: COLORS.onColor }]}>{t}</AppText>
               </Pressable>
             ))}
           </View>
@@ -194,7 +194,7 @@ export default function CircleScreen() {
           <View style={styles.wrap}>
             {DAYS.map((d, i) => (
               <Pressable key={d} onPress={() => toggleDay(i)} style={[styles.chip, days.includes(i) && styles.chipOn]} accessibilityRole="button">
-                <AppText style={[styles.chipText, days.includes(i) && { color: COLORS.white }]}>{d}</AppText>
+                <AppText style={[styles.chipText, days.includes(i) && { color: COLORS.onColor }]}>{d}</AppText>
               </Pressable>
             ))}
           </View>
@@ -208,7 +208,7 @@ export default function CircleScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: COLORS.canvas },
   codeCard: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: COLORS.primaryMist, borderRadius: RADIUS.lg, padding: 14 },
-  code: { fontFamily: FONTS.bold, fontSize: 26, letterSpacing: 5, color: COLORS.primaryDark, marginTop: 2 },
+  code: { fontFamily: FONTS.bold, fontSize: 26, letterSpacing: 5, color: COLORS.primaryInk, marginTop: 2 },
   share: { width: 44, height: 44, borderRadius: 22, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center' },
   faces: { flexDirection: 'row', gap: 6, marginTop: 14 },
   dayNav: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: SPACING.md, backgroundColor: COLORS.white, borderRadius: RADIUS.lg, padding: 10, ...SHADOW, shadowOpacity: 0.04 },

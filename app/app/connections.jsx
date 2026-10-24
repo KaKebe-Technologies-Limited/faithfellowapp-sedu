@@ -48,7 +48,7 @@ export default function ConnectionsScreen() {
       <View style={styles.tabs}>
         {TABS.map(([key, label]) => (
           <Pressable key={key} onPress={() => setTab(key)} style={[styles.tab, tab === key && styles.tabOn]} accessibilityRole="tab" accessibilityState={{ selected: tab === key }}>
-            <AppText style={[styles.tabText, tab === key && { color: COLORS.white }]}>
+            <AppText style={[styles.tabText, tab === key && { color: COLORS.onColor }]}>
               {label}
               {lists?.[key]?.length ? ` · ${lists[key].length}` : ''}
             </AppText>
@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
   message: { fontFamily: FONTS.regular, fontStyle: 'italic', fontSize: 14, lineHeight: 20, color: COLORS.gray900, backgroundColor: COLORS.canvas, borderRadius: RADIUS.md, padding: 10 },
   btns: { flexDirection: 'row', gap: 10 },
   accept: { flex: 1, backgroundColor: COLORS.primary, borderRadius: RADIUS.full, alignItems: 'center', paddingVertical: 11 },
-  acceptText: { fontFamily: FONTS.bold, fontSize: 14, color: COLORS.white },
+  acceptText: { fontFamily: FONTS.bold, fontSize: 14, color: COLORS.onColor },
   decline: { backgroundColor: COLORS.primaryMist, borderRadius: RADIUS.full, alignItems: 'center', paddingHorizontal: 18, paddingVertical: 10 },
   declineText: { fontFamily: FONTS.bold, fontSize: 13, color: COLORS.primary },
 });

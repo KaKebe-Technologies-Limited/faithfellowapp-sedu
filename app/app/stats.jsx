@@ -45,7 +45,7 @@ export default function StatsScreen() {
       <View style={styles.periods}>
         {PERIODS.map(([key, label]) => (
           <Pressable key={key} onPress={() => setPeriod(key)} style={[styles.period, period === key && styles.periodOn]} accessibilityRole="button" accessibilityState={{ selected: period === key }}>
-            <AppText style={[styles.periodText, period === key && { color: COLORS.white }]}>{label}</AppText>
+            <AppText style={[styles.periodText, period === key && { color: COLORS.onColor }]}>{label}</AppText>
           </Pressable>
         ))}
       </View>

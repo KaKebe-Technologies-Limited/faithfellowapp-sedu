@@ -56,7 +56,7 @@ export default function Register() {
     <KeyboardAvoidingView style={styles.flex} behavior="padding">
       <KeyboardScroll contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <View style={styles.hero}>
-          <AppText variant="title" style={{ color: COLORS.white }}>
+          <AppText variant="title" style={{ color: COLORS.onColor }}>
             Create your account
           </AppText>
           <AppText style={{ color: COLORS.primaryPale, marginTop: 4 }}>Follow your church and grow together.</AppText>
@@ -111,7 +111,7 @@ export default function Register() {
               value={agreed}
               onValueChange={setAgreed}
               trackColor={{ true: COLORS.primary, false: COLORS.gray300 }}
-              thumbColor={COLORS.white}
+              thumbColor={COLORS.onColor}
               accessibilityLabel="I agree to the Terms of Service and Privacy Policy"
             />
             <AppText variant="caption" style={styles.termsText}>

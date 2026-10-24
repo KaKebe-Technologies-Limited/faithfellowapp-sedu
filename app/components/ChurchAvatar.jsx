@@ -17,7 +17,7 @@ export default function ChurchAvatar({ church, size = 40 }) {
 
   return (
     <View style={[box, styles.fallback]}>
-      <AppText style={{ fontFamily: FONTS.bold, fontSize: size * 0.36, color: COLORS.white }}>{initials(church?.name)}</AppText>
+      <AppText style={{ fontFamily: FONTS.bold, fontSize: size * 0.36, color: COLORS.onColor }}>{initials(church?.name)}</AppText>
     </View>
   );
 }

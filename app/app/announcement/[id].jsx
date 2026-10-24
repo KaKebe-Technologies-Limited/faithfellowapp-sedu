@@ -47,8 +47,8 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: COLORS.canvas },
   content: { padding: SPACING.md, paddingBottom: 48, gap: 12 },
   image: { width: '100%', aspectRatio: 16 / 9, borderRadius: RADIUS.xl - 4, backgroundColor: COLORS.gray100 },
-  title: { fontFamily: FONTS.bold, fontSize: 24, lineHeight: 30, color: COLORS.black },
+  title: { fontFamily: FONTS.display, fontSize: 24, lineHeight: 30, color: COLORS.black },
   host: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   hostName: { fontFamily: FONTS.semibold, fontSize: 15, color: COLORS.black },
-  text: { fontFamily: FONTS.regular, fontSize: 16.5, lineHeight: 27, color: '#2B2B2B', marginTop: 4 },
+  text: { fontFamily: FONTS.regular, fontSize: 16.5, lineHeight: 27, color: COLORS.ink, marginTop: 4 },
 });

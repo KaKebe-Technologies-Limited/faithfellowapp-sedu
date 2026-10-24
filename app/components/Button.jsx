@@ -6,7 +6,7 @@ import AppText from './AppText';
 export default function Button({ title, onPress, variant = 'primary', loading = false, disabled = false, small = false, style }) {
   const filled = variant === 'primary';
   // 'light' = white button for use on a magenta background.
-  const textColor = filled ? COLORS.white : COLORS.primary;
+  const textColor = filled ? COLORS.onColor : COLORS.primary;
   const inactive = disabled || loading;
 
   return (

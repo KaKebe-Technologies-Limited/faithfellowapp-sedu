@@ -75,7 +75,7 @@ export default function AdminLive() {
         subtitle="Go live to your church"
         right={
           <Pressable onPress={() => setOpen(true)} style={styles.add} accessibilityRole="button" accessibilityLabel="Schedule a service">
-            <Ionicons name="add" size={20} color={COLORS.white} />
+            <Ionicons name="add" size={20} color={COLORS.onColor} />
             <AppText style={styles.addText}>New</AppText>
           </Pressable>
         }
@@ -110,7 +110,7 @@ export default function AdminLive() {
         {form.source !== 'rtmp' ? <TextField label={form.source === 'hls' ? 'Stream link (.m3u8)' : 'Video link'} value={form.url} onChangeText={(t) => setForm((f) => ({ ...f, url: t }))} error={errors.external_url} autoCapitalize="none" keyboardType="url" placeholder="https://…" /> : <AppText variant="caption" style={{ marginBottom: 10 }}>The stream key for your encoder is on the service's page on the website.</AppText>}
         <View style={styles.switch}>
           <AppText style={styles.switchTitle}>Live chat</AppText>
-          <Switch value={form.chat} onValueChange={(v) => setForm((f) => ({ ...f, chat: v }))} trackColor={{ true: COLORS.primaryLight, false: COLORS.gray300 }} thumbColor={COLORS.white} />
+          <Switch value={form.chat} onValueChange={(v) => setForm((f) => ({ ...f, chat: v }))} trackColor={{ true: COLORS.primaryLight, false: COLORS.gray300 }} thumbColor={COLORS.onColor} />
         </View>
         <Button title="Schedule" onPress={schedule} loading={busy === 'new'} disabled={!form.title.trim()} style={{ marginTop: 6 }} />
       </Sheet>
@@ -121,7 +121,7 @@ export default function AdminLive() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: COLORS.canvas },
   add: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: COLORS.primary, borderRadius: RADIUS.full, paddingHorizontal: 14, paddingVertical: 8 },
-  addText: { fontFamily: FONTS.bold, fontSize: 13.5, color: COLORS.white },
+  addText: { fontFamily: FONTS.bold, fontSize: 13.5, color: COLORS.onColor },
   card: { backgroundColor: COLORS.white, borderRadius: RADIUS.lg + 2, padding: 14, gap: 8, ...SHADOW, shadowOpacity: 0.05 },
   title: { fontFamily: FONTS.bold, fontSize: 17, color: COLORS.black },
   label: { fontFamily: FONTS.semibold, fontSize: 13.5, color: COLORS.black, marginBottom: 8 },

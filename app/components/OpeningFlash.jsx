@@ -9,13 +9,14 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { COLORS, FONTS, SPACING } from '../constants/theme';
+import { COLORS, FONTS, IS_DARK, IS_GIRLS, SPACING } from '../constants/theme';
 import { FLASH_DEFAULTS } from '../lib/openingFlash';
 import AppText from './AppText';
 import Logo from './Logo';
 
 const FADE_MS = 400;
-const PAGE = '#F8F4F6';
+const PAGE = IS_DARK ? '#161215' : IS_GIRLS ? '#FFF0F6' : '#F8F4F6';
+const PAGE_CLEAR = IS_DARK ? 'rgba(22,18,21,0)' : IS_GIRLS ? 'rgba(255,240,246,0)' : 'rgba(248,244,246,0)'; // the same colour, see-through
 const GAP = 12;
 const ASPECT = 0.52; // width / height of one photo
 const SPEEDS = [62, 84, 70]; // pixels a second for each column at the normal speed (5 of 10)
@@ -180,8 +181,8 @@ export default function OpeningFlash({ photos, seconds = FLASH_DEFAULTS.seconds,
           ? columns.map((column, i) => <Column key={i} photos={column} width={pillWidth} left={lefts[i]} up={i !== 1} speed={SPEEDS[i] * pace} start={STARTS[i]} still={still} region={region} />)
           : null}
 
-        <LinearGradient colors={[PAGE, 'rgba(248,244,246,0)']} style={styles.fadeTop} pointerEvents="none" />
-        <LinearGradient colors={['rgba(248,244,246,0)', PAGE]} style={styles.fadeBottom} pointerEvents="none" />
+        <LinearGradient colors={[PAGE, PAGE_CLEAR]} style={styles.fadeTop} pointerEvents="none" />
+        <LinearGradient colors={[PAGE_CLEAR, PAGE]} style={styles.fadeBottom} pointerEvents="none" />
 
         <Badge icon="musical-notes" still={still} style={{ left: lefts[1] + pillWidth / 2 - 19, top: region * 0.3 }} />
         <Badge icon="hand-left" still={still} delay={500} style={{ left: lefts[0] + pillWidth / 2 - 19, top: region * 0.58 }} />
@@ -205,18 +206,18 @@ const styles = StyleSheet.create({
   glowB: { position: 'absolute', left: -110, bottom: 120, width: 260, height: 260, borderRadius: 130, backgroundColor: 'rgba(242,126,168,0.10)' },
   top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: SPACING.md },
   brand: { flexDirection: 'row', alignItems: 'center', gap: 9 },
-  brandName: { fontFamily: FONTS.bold, fontSize: 18, color: '#2B1B22' },
-  skip: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 16, backgroundColor: 'rgba(43,27,34,0.06)' },
-  skipText: { fontFamily: FONTS.semibold, fontSize: 13, color: '#6F5F68' },
+  brandName: { fontFamily: FONTS.bold, fontSize: 18, color: COLORS.black },
+  skip: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 16, backgroundColor: IS_DARK ? 'rgba(255,255,255,0.1)' : 'rgba(43,27,34,0.06)' },
+  skipText: { fontFamily: FONTS.semibold, fontSize: 13, color: COLORS.gray700 },
   track: { height: 3, borderRadius: 2, marginHorizontal: SPACING.md, marginTop: 12, backgroundColor: 'rgba(188,38,73,0.14)', overflow: 'hidden' },
   fill: { height: 3, borderRadius: 2, backgroundColor: COLORS.primary },
   region: { flex: 1, marginTop: 14, overflow: 'hidden' },
   fadeTop: { position: 'absolute', left: 0, right: 0, top: 0, height: 46 },
   fadeBottom: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 90 },
-  pill: { backgroundColor: '#EADDE3', shadowColor: '#A67C8E', shadowOpacity: 0.3, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 4 },
+  pill: { backgroundColor: IS_DARK ? '#2A2429' : '#EADDE3', shadowColor: IS_DARK ? '#000' : '#A67C8E', shadowOpacity: 0.3, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 4 },
   badge: { position: 'absolute', width: 38, height: 38, borderRadius: 13, backgroundColor: '#3A0C22', alignItems: 'center', justifyContent: 'center', shadowColor: '#F27EA8', shadowOpacity: 0.7, shadowRadius: 14, shadowOffset: { width: 0, height: 0 }, elevation: 8 },
   sparkle: { position: 'absolute' },
   text: { paddingHorizontal: SPACING.lg, paddingTop: 6, alignItems: 'center' },
-  title: { fontFamily: FONTS.bold, fontSize: 28, lineHeight: 34, color: '#2B1B22', textAlign: 'center' },
-  subtitle: { fontFamily: FONTS.regular, fontSize: 15, lineHeight: 22, color: '#6F5F68', textAlign: 'center', marginTop: 8 },
+  title: { fontFamily: FONTS.display, fontSize: 28, lineHeight: 34, color: COLORS.black, textAlign: 'center' },
+  subtitle: { fontFamily: FONTS.regular, fontSize: 15, lineHeight: 22, color: COLORS.gray700, textAlign: 'center', marginTop: 8 },
 });

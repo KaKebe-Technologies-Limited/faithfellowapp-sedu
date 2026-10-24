@@ -17,7 +17,7 @@ import { useFetch } from '../../lib/useFetch';
 const TRACK = { true: COLORS.primaryLight, false: COLORS.gray300 };
 
 function Toggle({ value, onValueChange, label }) {
-  return <Switch value={value} onValueChange={onValueChange} trackColor={TRACK} thumbColor={COLORS.white} accessibilityLabel={label} />;
+  return <Switch value={value} onValueChange={onValueChange} trackColor={TRACK} thumbColor={COLORS.onColor} accessibilityLabel={label} />;
 }
 
 export default function NotificationSettings() {

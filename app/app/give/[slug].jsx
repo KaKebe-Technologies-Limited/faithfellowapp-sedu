@@ -29,7 +29,7 @@ const REPEAT = [
 function Chip({ label, on, onPress }) {
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityState={{ selected: on }} style={[styles.chip, on && styles.chipOn]}>
-      <AppText style={[styles.chipText, on && { color: COLORS.white }]}>{label}</AppText>
+      <AppText style={[styles.chipText, on && { color: COLORS.onColor }]}>{label}</AppText>
     </Pressable>
   );
 }
@@ -168,7 +168,7 @@ export default function GiveScreen() {
                     </View>
                     {phoneError ? <AppText style={[styles.err, { textAlign: 'left', marginTop: 6 }]}>{phoneError}</AppText> : null}
                     <View style={styles.prompt}>
-                      <Ionicons name="phone-portrait-outline" size={18} color={COLORS.primaryDark} />
+                      <Ionicons name="phone-portrait-outline" size={18} color={COLORS.primaryInk} />
                       <AppText style={styles.promptText}>A prompt will be sent to this phone. Enter your mobile money PIN to approve it, and the amount is deducted from your mobile money.</AppText>
                     </View>
                     {!options.saved_phone ? (
@@ -261,7 +261,7 @@ export default function GiveScreen() {
                       <AppText style={styles.switchTitle}>Give anonymously</AppText>
                       <AppText variant="caption">Your name will not show on the church's lists.</AppText>
                     </View>
-                    <Switch value={anonymous} onValueChange={setAnonymous} trackColor={{ true: COLORS.primaryLight, false: COLORS.gray300 }} thumbColor={COLORS.white} />
+                    <Switch value={anonymous} onValueChange={setAnonymous} trackColor={{ true: COLORS.primaryLight, false: COLORS.gray300 }} thumbColor={COLORS.onColor} />
                   </View>
                   <TextField label="Note (optional)" value={note} onChangeText={setNote} placeholder="A word with your gift" maxLength={255} />
                 </View>
@@ -311,7 +311,7 @@ const styles = StyleSheet.create({
   phoneField: { flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1.5, borderColor: COLORS.gray300, borderRadius: RADIUS.lg, paddingHorizontal: 14 },
   phoneInput: { flex: 1, minHeight: 50, fontFamily: FONTS.semibold, fontSize: 16, color: COLORS.black, ...Platform.select({ web: { outlineStyle: 'none' } }) },
   prompt: { flexDirection: 'row', gap: 8, alignItems: 'flex-start', backgroundColor: COLORS.primaryMist, borderRadius: RADIUS.md, padding: 10, marginTop: 10 },
-  promptText: { flex: 1, fontFamily: FONTS.medium, fontSize: 12.5, lineHeight: 18, color: COLORS.primaryDark },
+  promptText: { flex: 1, fontFamily: FONTS.medium, fontSize: 12.5, lineHeight: 18, color: COLORS.primaryInk },
   link: { fontFamily: FONTS.semibold, fontSize: 12.5, color: COLORS.primary, marginTop: 8 },
   h: { fontFamily: FONTS.bold, fontSize: 16, color: COLORS.black, marginBottom: 10 },
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
@@ -323,6 +323,6 @@ const styles = StyleSheet.create({
   switchRow: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: COLORS.white, borderRadius: RADIUS.lg, padding: 14, marginVertical: SPACING.md },
   switchTitle: { fontFamily: FONTS.semibold, fontSize: 15, color: COLORS.black },
   secure: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 10 },
-  none: { flexDirection: 'row', gap: 10, padding: 14, borderRadius: RADIUS.lg, backgroundColor: '#FFF8E6', alignItems: 'center' },
+  none: { flexDirection: 'row', gap: 10, padding: 14, borderRadius: RADIUS.lg, backgroundColor: COLORS.noteMist, alignItems: 'center' },
   offline: { flexDirection: 'row', gap: 10, backgroundColor: COLORS.primaryMist, borderRadius: RADIUS.lg, padding: 14, marginTop: SPACING.lg },
 });

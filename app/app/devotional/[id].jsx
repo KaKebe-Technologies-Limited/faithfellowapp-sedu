@@ -83,14 +83,14 @@ export default function DevotionalScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: COLORS.canvas },
-  heroTitle: { fontFamily: FONTS.bold, fontSize: 26, lineHeight: 32, color: COLORS.white, marginTop: 4 },
+  heroTitle: { fontFamily: FONTS.display, fontSize: 26, lineHeight: 32, color: COLORS.onColor, marginTop: 4 },
   body: { padding: SPACING.md },
   host: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: SPACING.md },
   hostName: { fontFamily: FONTS.semibold, fontSize: 15, color: COLORS.black },
   verse: { backgroundColor: COLORS.pink, borderRadius: RADIUS.xl - 4, padding: SPACING.lg, gap: 10, marginBottom: SPACING.md },
   quote: { fontFamily: FONTS.regular, fontStyle: 'italic', fontSize: 18, lineHeight: 28, color: COLORS.black },
   ref: { fontFamily: FONTS.bold, fontSize: 14, color: COLORS.primary },
-  text: { fontFamily: FONTS.regular, fontSize: 16.5, lineHeight: 27, color: '#2B2B2B' },
+  text: { fontFamily: FONTS.regular, fontSize: 16.5, lineHeight: 27, color: COLORS.ink },
   prayer: { backgroundColor: COLORS.white, borderRadius: RADIUS.xl - 4, padding: SPACING.lg, marginTop: SPACING.lg },
   prayerTitle: { fontFamily: FONTS.bold, fontSize: 16, color: COLORS.primary },
 });

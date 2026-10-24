@@ -27,7 +27,7 @@ const styles = StyleSheet.create({
   wrap: { paddingHorizontal: SPACING.md, marginBottom: SPACING.md },
   card: { borderRadius: RADIUS.xl, padding: SPACING.lg, overflow: 'hidden', ...SHADOW, shadowOpacity: 0.16 },
   glow: { position: 'absolute', right: -50, top: -50, width: 180, height: 180, borderRadius: 90, backgroundColor: 'rgba(255,255,255,0.12)' },
-  title: { fontFamily: FONTS.bold, fontSize: 22, lineHeight: 28, color: COLORS.white, marginTop: SPACING.md },
+  title: { fontFamily: FONTS.bold, fontSize: 22, lineHeight: 28, color: COLORS.onColor, marginTop: SPACING.md },
   text: { fontFamily: FONTS.regular, fontSize: 14, lineHeight: 21, color: 'rgba(255,255,255,0.88)', marginTop: 6 },
   button: { alignSelf: 'flex-start', backgroundColor: COLORS.white, borderRadius: RADIUS.full, paddingHorizontal: 20, paddingVertical: 11, marginTop: SPACING.md },
   buttonText: { fontFamily: FONTS.bold, fontSize: 14, color: COLORS.primary },

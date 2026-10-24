@@ -11,6 +11,7 @@ use App\Services\DevicePushService;
 use App\Services\PeopleService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -54,7 +55,7 @@ class MessageController extends Controller
         $me = $request->user();
         abort_unless($this->people->mayMessage($me, $user) || DirectMessage::between($me->id, $user->id)->exists() && ! in_array($user->id, UserBlock::idsAround($me->id), true), 404);
 
-        $query = DirectMessage::between($me->id, $user->id);
+        $query = DirectMessage::between($me->id, $user->id)->when(DirectMessage::repliesReady(), fn ($q) => $q->with('replyTo'));
         $messages = $request->filled('after')
             ? $query->where('id', '>', (int) $request->query('after'))->orderBy('id')->take(100)->get()
             : $query->when($request->filled('before'), fn ($q) => $q->where('id', '<', (int) $request->query('before')))->orderByDesc('id')->take(40)->get()->reverse()->values();
@@ -71,13 +72,20 @@ class MessageController extends Controller
     public function send(Request $request, User $user): JsonResponse
     {
         $me = $request->user();
-        $data = $request->validate(['body' => ['required', 'string', 'max:2000', new NoContactDetails]]);
+        $data = $request->validate(['body' => ['required', 'string', 'max:2000', new NoContactDetails], 'reply_to' => ['nullable', 'integer']]);
         abort_unless($this->people->mayMessage($me, $user), 403, __('You can only message people you are connected to.'));
         if ($this->awaitingReply($me, $user)) {
             throw ValidationException::withMessages(['body' => __('Wait for :name to reply before you send another message.', ['name' => $user->first_name ?? $user->name])]);
         }
 
-        $message = DirectMessage::create(['sender_id' => $me->id, 'recipient_id' => $user->id, 'body' => trim(strip_tags($data['body']))]);
+        // A reply points at a message of this very conversation.
+        $replyTo = null;
+        if (! empty($data['reply_to']) && DirectMessage::repliesReady()) {
+            $replyTo = DirectMessage::between($me->id, $user->id)->whereKey((int) $data['reply_to'])->first()
+                ?? throw ValidationException::withMessages(['reply_to' => __('That message is not in this chat.')]);
+        }
+
+        $message = DirectMessage::create(['sender_id' => $me->id, 'recipient_id' => $user->id, 'body' => trim(strip_tags($data['body']))] + ($replyTo ? ['reply_to_id' => $replyTo->id] : []));
         app(DevicePushService::class)->newMessage($message);
 
         return response()->json(['data' => $this->payload($message, $me)], 201);
@@ -100,6 +108,9 @@ class MessageController extends Controller
     /** @return array<string, mixed> */
     protected function payload(DirectMessage $m, User $me): array
     {
-        return ['id' => $m->id, 'body' => $m->body, 'mine' => $m->sender_id === $me->id, 'at' => $m->created_at?->toIso8601String(), 'read' => $m->read_at !== null];
+        $reply = DirectMessage::repliesReady() && $m->reply_to_id ? $m->replyTo : null;
+
+        return ['id' => $m->id, 'body' => $m->body, 'mine' => $m->sender_id === $me->id, 'at' => $m->created_at?->toIso8601String(), 'read' => $m->read_at !== null]
+            + ($reply ? ['reply_to' => ['id' => $reply->id, 'body' => Str::limit($reply->body, 140), 'mine' => $reply->sender_id === $me->id]] : []);
     }
 }

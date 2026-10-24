@@ -61,7 +61,7 @@ export default function AdminAnnouncements() {
         subtitle="Tell your church what is happening"
         right={
           <Pressable onPress={() => setOpen(true)} style={styles.add} accessibilityRole="button" accessibilityLabel="New announcement">
-            <Ionicons name="add" size={20} color={COLORS.white} />
+            <Ionicons name="add" size={20} color={COLORS.onColor} />
             <AppText style={styles.addText}>New</AppText>
           </Pressable>
         }
@@ -104,14 +104,14 @@ export default function AdminAnnouncements() {
             <AppText style={styles.switchTitle}>Mark as urgent</AppText>
             <AppText variant="caption">Shown in red and sent even in quiet hours.</AppText>
           </View>
-          <Switch value={form.urgent} onValueChange={(v) => setForm((f) => ({ ...f, urgent: v }))} trackColor={{ true: COLORS.primaryLight, false: COLORS.gray300 }} thumbColor={COLORS.white} />
+          <Switch value={form.urgent} onValueChange={(v) => setForm((f) => ({ ...f, urgent: v }))} trackColor={{ true: COLORS.primaryLight, false: COLORS.gray300 }} thumbColor={COLORS.onColor} />
         </View>
         <View style={styles.switch}>
           <View style={{ flex: 1 }}>
             <AppText style={styles.switchTitle}>Save as a draft</AppText>
             <AppText variant="caption">Nobody is notified until you publish it.</AppText>
           </View>
-          <Switch value={form.draft} onValueChange={(v) => setForm((f) => ({ ...f, draft: v }))} trackColor={{ true: COLORS.primaryLight, false: COLORS.gray300 }} thumbColor={COLORS.white} />
+          <Switch value={form.draft} onValueChange={(v) => setForm((f) => ({ ...f, draft: v }))} trackColor={{ true: COLORS.primaryLight, false: COLORS.gray300 }} thumbColor={COLORS.onColor} />
         </View>
         <Button title={form.draft ? 'Save draft' : 'Publish now'} onPress={save} loading={busy} disabled={!form.title.trim() || !form.body.trim()} style={{ marginTop: 8 }} />
       </Sheet>
@@ -122,7 +122,7 @@ export default function AdminAnnouncements() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: COLORS.canvas },
   add: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: COLORS.primary, borderRadius: RADIUS.full, paddingHorizontal: 14, paddingVertical: 8 },
-  addText: { fontFamily: FONTS.bold, fontSize: 13.5, color: COLORS.white },
+  addText: { fontFamily: FONTS.bold, fontSize: 13.5, color: COLORS.onColor },
   card: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: COLORS.white, borderRadius: RADIUS.lg, padding: 14, ...SHADOW, shadowOpacity: 0.05 },
   title: { flex: 1, fontFamily: FONTS.bold, fontSize: 15.5, color: COLORS.black },
   label: { fontFamily: FONTS.semibold, fontSize: 13.5, color: COLORS.black, marginBottom: 8 },

@@ -28,7 +28,7 @@ export default function ChurchTabBar({ tabs, active, onChange }) {
 const styles = StyleSheet.create({
   bar: { backgroundColor: SOFT.surface, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: 'rgba(120,80,100,0.12)' },
   row: { paddingHorizontal: SPACING.md, gap: 8 },
-  tab: { flexDirection: 'row', alignItems: 'center', gap: 6, height: 38, paddingHorizontal: 15, borderRadius: 999, backgroundColor: '#fff', borderWidth: 1.5, borderColor: COLORS.primaryMist },
+  tab: { flexDirection: 'row', alignItems: 'center', gap: 6, height: 38, paddingHorizontal: 15, borderRadius: 999, backgroundColor: COLORS.white, borderWidth: 1.5, borderColor: COLORS.primaryMist },
   tabOn: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
   label: { fontFamily: FONTS.semibold, fontSize: 13.5, color: COLORS.primary },
 });

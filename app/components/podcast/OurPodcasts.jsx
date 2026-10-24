@@ -138,7 +138,7 @@ export default function OurPodcasts({ ours }) {
 const styles = StyleSheet.create({
   sectionHead: { flexDirection: 'row', alignItems: 'center', gap: 9, paddingHorizontal: SPACING.md, marginBottom: 12 },
   sectionBar: { width: 4, height: 20, borderRadius: 2, backgroundColor: PURPLE.main },
-  section: { fontFamily: FONTS.bold, fontSize: 19, color: COLORS.black, flex: 1 },
+  section: { fontFamily: FONTS.display, fontSize: 19, color: COLORS.black, flex: 1 },
   head: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: PURPLE.mist, borderRadius: RADIUS.xl, padding: 12, marginHorizontal: SPACING.md, marginBottom: 10 },
   who: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 11 },
   church: { fontFamily: FONTS.bold, fontSize: 16, lineHeight: 20, color: COLORS.black },

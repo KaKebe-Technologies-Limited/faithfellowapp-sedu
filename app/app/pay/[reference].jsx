@@ -104,11 +104,11 @@ export default function PayScreen() {
       <View style={styles.center}>
         {done ? (
           <View style={[styles.ring, styles.okRing]}>
-            <Ionicons name="checkmark" size={54} color={COLORS.white} />
+            <Ionicons name="checkmark" size={54} color={COLORS.onColor} />
           </View>
         ) : failed ? (
           <View style={[styles.ring, styles.failRing]}>
-            <Ionicons name="close" size={54} color={COLORS.white} />
+            <Ionicons name="close" size={54} color={COLORS.onColor} />
           </View>
         ) : (
           <Pulse>
@@ -181,7 +181,7 @@ const styles = StyleSheet.create({
   ring: { width: 112, height: 112, borderRadius: 56, backgroundColor: COLORS.primaryMist, alignItems: 'center', justifyContent: 'center' },
   okRing: { backgroundColor: COLORS.success },
   failRing: { backgroundColor: COLORS.danger },
-  title: { fontFamily: FONTS.bold, fontSize: 24, lineHeight: 30, color: COLORS.black, textAlign: 'center', marginTop: 24 },
+  title: { fontFamily: FONTS.display, fontSize: 24, lineHeight: 30, color: COLORS.black, textAlign: 'center', marginTop: 24 },
   message: { fontFamily: FONTS.regular, fontSize: 15, lineHeight: 22, color: COLORS.gray700, textAlign: 'center', marginTop: 10, maxWidth: 320 },
   summary: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: COLORS.white, borderRadius: RADIUS.lg, padding: 14, marginTop: 20, alignSelf: 'stretch', ...SHADOW },
   amount: { fontFamily: FONTS.bold, fontSize: 18, color: COLORS.black },

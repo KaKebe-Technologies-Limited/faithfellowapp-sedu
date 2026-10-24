@@ -35,7 +35,7 @@ export default function GroupsScreen() {
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
               {[{ key: '', label: 'All' }, ...g.types].map((t) => (
                 <Pressable key={t.key} onPress={() => setType(t.key)} style={[styles.chip, type === t.key && styles.chipOn]} accessibilityRole="button" accessibilityState={{ selected: type === t.key }}>
-                  <AppText style={[styles.chipText, type === t.key && { color: COLORS.white }]}>{t.label}</AppText>
+                  <AppText style={[styles.chipText, type === t.key && { color: COLORS.onColor }]}>{t.label}</AppText>
                 </Pressable>
               ))}
             </ScrollView>

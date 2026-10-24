@@ -111,7 +111,7 @@ export default function AdminDashboard() {
                 {TOOLS.filter((t) => !t.perm || can(d.permissions, t.perm)).map((t) => (
                   <Pressable key={t.key} onPress={() => go(t.key)} style={({ pressed }) => [styles.tileWrap, pressed && { opacity: 0.92 }]} accessibilityRole="button" accessibilityLabel={t.label}>
                     <LinearGradient colors={t.colors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.tile}>
-                      <Ionicons name={t.icon} size={24} color={COLORS.white} />
+                      <Ionicons name={t.icon} size={24} color={COLORS.onColor} />
                       <AppText style={styles.tileLabel}>{t.label}</AppText>
                     </LinearGradient>
                   </Pressable>
@@ -129,19 +129,19 @@ export default function AdminDashboard() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: COLORS.canvas },
   hero: { flexDirection: 'row', alignItems: 'center', gap: 14, marginHorizontal: SPACING.md, borderRadius: RADIUS.xl, padding: SPACING.md },
-  heroName: { fontFamily: FONTS.bold, fontSize: 18, color: COLORS.white },
+  heroName: { fontFamily: FONTS.bold, fontSize: 18, color: COLORS.onColor },
   heroSub: { fontFamily: FONTS.medium, fontSize: 13, color: COLORS.primaryPale },
   stats: { flexDirection: 'row', gap: 12, paddingHorizontal: SPACING.md, marginTop: 12 },
   stat: { flex: 1, backgroundColor: COLORS.white, borderRadius: RADIUS.lg + 2, padding: 14, gap: 3, ...SHADOW, shadowOpacity: 0.05 },
   statValue: { fontFamily: FONTS.bold, fontSize: 20, color: COLORS.black },
   attention: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: COLORS.primaryMist, borderRadius: RADIUS.lg, padding: 12, marginHorizontal: SPACING.md, marginBottom: 8 },
   attIcon: { width: 38, height: 38, borderRadius: 13, backgroundColor: COLORS.white, alignItems: 'center', justifyContent: 'center' },
-  attText: { flex: 1, fontFamily: FONTS.semibold, fontSize: 14, lineHeight: 19, color: COLORS.primaryDark },
+  attText: { flex: 1, fontFamily: FONTS.semibold, fontSize: 14, lineHeight: 19, color: COLORS.primaryInk },
   next: { backgroundColor: COLORS.white, borderRadius: RADIUS.lg + 2, padding: 14, marginHorizontal: SPACING.md, marginTop: SPACING.md, gap: 3, ...SHADOW, shadowOpacity: 0.05 },
   nextLabel: { fontFamily: FONTS.bold, fontSize: 11.5, letterSpacing: 0.8, color: COLORS.primary, textTransform: 'uppercase' },
   nextTitle: { fontFamily: FONTS.bold, fontSize: 17, color: COLORS.black },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, paddingHorizontal: SPACING.md },
   tileWrap: { width: '47.8%' },
   tile: { height: 92, borderRadius: RADIUS.xl - 4, padding: 13, justifyContent: 'space-between', ...SHADOW },
-  tileLabel: { fontFamily: FONTS.bold, fontSize: 14.5, color: COLORS.white },
+  tileLabel: { fontFamily: FONTS.bold, fontSize: 14.5, color: COLORS.onColor },
 });

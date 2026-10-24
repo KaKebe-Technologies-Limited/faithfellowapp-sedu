@@ -58,7 +58,7 @@ export default function NotificationsPrompt() {
     <View style={styles.wrap}>
       <View style={styles.card}>
         <View style={styles.icon}>
-          <Ionicons name="notifications" size={22} color={COLORS.white} />
+          <Ionicons name="notifications" size={22} color={COLORS.onColor} />
         </View>
         <View style={{ flex: 1 }}>
           <AppText style={styles.title}>Don't miss a thing</AppText>
@@ -85,6 +85,6 @@ const styles = StyleSheet.create({
   text: { fontFamily: FONTS.regular, fontSize: 13, lineHeight: 19, color: COLORS.gray700, marginTop: 2 },
   row: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md, marginTop: SPACING.sm },
   button: { backgroundColor: COLORS.primary, borderRadius: RADIUS.full, paddingHorizontal: 16, paddingVertical: 9 },
-  buttonText: { fontFamily: FONTS.semibold, fontSize: 13, color: COLORS.white },
+  buttonText: { fontFamily: FONTS.semibold, fontSize: 13, color: COLORS.onColor },
   later: { fontFamily: FONTS.semibold, fontSize: 13, color: COLORS.gray700 },
 });

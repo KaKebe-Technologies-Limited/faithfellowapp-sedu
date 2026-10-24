@@ -74,7 +74,7 @@ export default function ExploreGrid({ home }) {
 
 const styles = StyleSheet.create({
   wrap: { paddingHorizontal: SPACING.md, marginBottom: SPACING.lg },
-  title: { fontFamily: FONTS.bold, fontSize: 18, color: SOFT.ink, marginBottom: 12 },
+  title: { fontFamily: FONTS.display, fontSize: 18, color: SOFT.ink, marginBottom: 12 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', rowGap: 16 },
   cell: { width: '25%', alignItems: 'center' },
   frame: { width: TILE, height: TILE, borderRadius: 24, backgroundColor: SOFT.glass, borderWidth: 1.5, borderColor: SOFT.glassBorder, alignItems: 'center', justifyContent: 'center', ...SOFT_SHADOW },

@@ -64,7 +64,7 @@ const styles = StyleSheet.create({
   readAll: { backgroundColor: COLORS.primaryMist, borderRadius: RADIUS.full, paddingHorizontal: 13, paddingVertical: 8 },
   readAllText: { fontFamily: FONTS.bold, fontSize: 12.5, color: COLORS.primary },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: SPACING.md, paddingVertical: 13, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.gray100 },
-  unread: { backgroundColor: '#FFF7FB' },
+  unread: { backgroundColor: COLORS.selected },
   icon: { width: 42, height: 42, borderRadius: 14, backgroundColor: COLORS.primaryMist, alignItems: 'center', justifyContent: 'center' },
   title: { fontFamily: FONTS.semibold, fontSize: 15, lineHeight: 20, color: COLORS.black },
   dot: { width: 10, height: 10, borderRadius: 5, backgroundColor: COLORS.primary },

@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: COLORS.canvas },
   cover: { height: 110, marginHorizontal: SPACING.md, borderRadius: RADIUS.xl - 4 },
   head: { alignItems: 'center', marginTop: -55, gap: 4 },
-  name: { fontFamily: FONTS.bold, fontSize: 24, color: COLORS.black, marginTop: 6 },
+  name: { fontFamily: FONTS.display, fontSize: 24, color: COLORS.black, marginTop: 6 },
   actions: { flexDirection: 'row', gap: 10, paddingHorizontal: SPACING.md, marginTop: 16 },
   card: { backgroundColor: COLORS.white, borderRadius: RADIUS.lg + 2, padding: SPACING.md, marginHorizontal: SPACING.md, marginTop: 12, gap: 8, ...SHADOW, shadowOpacity: 0.05 },
   h: { fontFamily: FONTS.bold, fontSize: 16, color: COLORS.black },

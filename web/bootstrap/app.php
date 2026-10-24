@@ -5,6 +5,7 @@ use App\Http\Middleware\EnsureApiUserActive;
 use App\Http\Middleware\EnsureAppFeature;
 use App\Http\Middleware\EnsureChurchPermission;
 use App\Http\Middleware\EnsureChurchStaff;
+use App\Http\Middleware\EnsurePlatformAdmin;
 use App\Http\Middleware\EnsureSubscribed;
 use App\Http\Middleware\ResolveCustomDomain;
 use App\Http\Middleware\SecurityHeaders;
@@ -51,6 +52,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission' => PermissionMiddleware::class,
             'role_or_permission' => RoleOrPermissionMiddleware::class,
             'church.staff' => EnsureChurchStaff::class,
+            'platform.admin' => EnsurePlatformAdmin::class,
             'church.can' => EnsureChurchPermission::class,
             'subscribed' => EnsureSubscribed::class,
             'api.active' => EnsureApiUserActive::class,

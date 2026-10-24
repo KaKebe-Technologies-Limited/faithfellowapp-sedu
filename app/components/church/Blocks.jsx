@@ -349,7 +349,7 @@ export function NoticeCard({ notice }) {
         <Ionicons name={notice.urgent ? 'alert' : 'megaphone'} size={18} color="#fff" />
       </View>
       <View style={{ flex: 1, gap: 2 }}>
-        <AppText style={[styles.rowTitle, notice.urgent && { color: '#7A1B1B' }]} numberOfLines={2}>
+        <AppText style={[styles.rowTitle, notice.urgent && { color: COLORS.dangerInk }]} numberOfLines={2}>
           {notice.title}
         </AppText>
         {notice.body ? (
@@ -366,7 +366,7 @@ export function NoticeCard({ notice }) {
 export function DevotionalCard({ devotional }) {
   return (
     <Pressable onPress={() => router.push({ pathname: '/devotional/[id]', params: { id: devotional.id } })} style={({ pressed }) => [styles.devotional, pressed && { opacity: 0.94 }]} accessibilityRole="button" accessibilityLabel={`Devotional: ${devotional.title}`}>
-      <LinearGradient colors={['#FFF6E0', '#FFE3A8']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
+      <LinearGradient colors={[COLORS.goldFrom, COLORS.goldTo]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
       <Ionicons name="book" size={90} color="#C77700" style={styles.devotionalMark} />
       <AppText style={styles.devotionalKicker}>DEVOTIONAL</AppText>
       <AppText style={styles.devotionalTitle} numberOfLines={2}>
@@ -407,7 +407,7 @@ const styles = StyleSheet.create({
   section: { marginBottom: SPACING.lg },
   sectionHead: { flexDirection: 'row', alignItems: 'center', gap: 9, marginBottom: 12 },
   bar: { width: 4, height: 20, borderRadius: 2, backgroundColor: COLORS.primary },
-  sectionTitle: { flex: 1, fontFamily: FONTS.bold, fontSize: 18, color: SOFT.ink },
+  sectionTitle: { flex: 1, fontFamily: FONTS.display, fontSize: 18, color: SOFT.ink },
   action: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   actionText: { fontFamily: FONTS.semibold, fontSize: 13.5, color: COLORS.primary },
   card: { backgroundColor: SOFT.glass, borderRadius: 24, borderWidth: 1.5, borderColor: SOFT.glassBorder, padding: 16, ...SOFT_SHADOW },
@@ -421,7 +421,7 @@ const styles = StyleSheet.create({
   playDark: { backgroundColor: COLORS.primary },
   playLight: { backgroundColor: '#fff' },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: SOFT.glass, borderRadius: 22, borderWidth: 1.5, borderColor: SOFT.glassBorder, padding: 10, marginBottom: 10, ...SOFT_SHADOW, shadowOpacity: 0.16 },
-  rowOn: { borderColor: COLORS.primaryPale, backgroundColor: '#FFF6FA' },
+  rowOn: { borderColor: COLORS.primaryPale, backgroundColor: COLORS.selected },
   rowMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },
   rowTitle: { fontFamily: FONTS.bold, fontSize: 15, lineHeight: 20, color: SOFT.ink },
   rowMeta: { fontFamily: FONTS.regular, fontSize: 12.5, lineHeight: 17, color: SOFT.muted },
@@ -472,20 +472,20 @@ const styles = StyleSheet.create({
   updateHead: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
   updateAvatar: { width: 38, height: 38, borderRadius: 19, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center' },
   updateInitial: { fontFamily: FONTS.bold, fontSize: 16, color: '#fff' },
-  updateBody: { fontFamily: FONTS.regular, fontSize: 14.5, lineHeight: 22, color: '#2B2B2B' },
+  updateBody: { fontFamily: FONTS.regular, fontSize: 14.5, lineHeight: 22, color: COLORS.ink },
   photos: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 10 },
   photo: { width: '48.8%', aspectRatio: 1, borderRadius: 14, backgroundColor: COLORS.gray100 },
   photoOne: { width: '100%', aspectRatio: 1.5 },
-  notice: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#FFF0F6', borderRadius: 20, padding: 12, marginBottom: 10 },
-  noticeUrgent: { backgroundColor: '#FFE9E9' },
+  notice: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: COLORS.selected, borderRadius: 20, padding: 12, marginBottom: 10 },
+  noticeUrgent: { backgroundColor: COLORS.dangerMist },
   noticeIcon: { width: 38, height: 38, borderRadius: 19, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center' },
   devotional: { borderRadius: 24, overflow: 'hidden', padding: 18, gap: 4 },
   devotionalMark: { position: 'absolute', right: -6, top: -6, opacity: 0.16 },
   devotionalKicker: { fontFamily: FONTS.bold, fontSize: 11, letterSpacing: 1.5, color: '#C77700' },
-  devotionalTitle: { fontFamily: FONTS.bold, fontSize: 19, lineHeight: 25, color: '#6B4309' },
-  devotionalText: { fontFamily: FONTS.regular, fontSize: 14, lineHeight: 21, color: '#8C6422', marginTop: 2 },
+  devotionalTitle: { fontFamily: FONTS.bold, fontSize: 19, lineHeight: 25, color: COLORS.goldInk },
+  devotionalText: { fontFamily: FONTS.regular, fontSize: 14, lineHeight: 21, color: COLORS.goldInk2, marginTop: 2 },
   devotionalFoot: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 8 },
-  devotionalRef: { flex: 1, fontFamily: FONTS.semibold, fontSize: 13, color: '#6B4309' },
+  devotionalRef: { flex: 1, fontFamily: FONTS.semibold, fontSize: 13, color: COLORS.goldInk },
   devotionalRead: { fontFamily: FONTS.bold, fontSize: 13.5, color: '#C77700' },
   prayer: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: SOFT.glass, borderRadius: 22, borderWidth: 1.5, borderColor: SOFT.glassBorder, padding: 14, ...SOFT_SHADOW, shadowOpacity: 0.16 },
   prayerIcon: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#E65100', alignItems: 'center', justifyContent: 'center' },

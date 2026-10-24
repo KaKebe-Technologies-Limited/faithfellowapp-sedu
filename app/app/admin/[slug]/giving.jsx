@@ -132,7 +132,7 @@ export default function AdminGiving() {
                     <AppText style={[styles.rowLabel, !r.is_active && { color: COLORS.gray500 }]} numberOfLines={1}>{r.name}</AppText>
                     <AppText variant="caption">{r.gifts ? `${r.gifts} gifts · ${formatMoney(r.total, s.currency)}` : 'No gifts yet'}</AppText>
                   </View>
-                  <Switch value={r.is_active} onValueChange={(v) => toggle(r, v)} trackColor={{ true: COLORS.primaryLight, false: COLORS.gray300 }} thumbColor={COLORS.white} accessibilityLabel={`Show ${r.name} to members`} />
+                  <Switch value={r.is_active} onValueChange={(v) => toggle(r, v)} trackColor={{ true: COLORS.primaryLight, false: COLORS.gray300 }} thumbColor={COLORS.onColor} accessibilityLabel={`Show ${r.name} to members`} />
                   <Pressable onPress={() => remove(r)} accessibilityRole="button" accessibilityLabel={`Remove ${r.name}`} style={{ padding: 6 }}>
                     <Ionicons name="trash-outline" size={19} color={COLORS.danger} />
                   </Pressable>
@@ -169,13 +169,13 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: COLORS.canvas },
   hero: { backgroundColor: COLORS.primaryDark, borderRadius: RADIUS.xl, padding: SPACING.lg, gap: 3 },
   heroLabel: { fontFamily: FONTS.medium, fontSize: 13, color: COLORS.primaryPale },
-  heroValue: { fontFamily: FONTS.bold, fontSize: 32, color: COLORS.white },
+  heroValue: { fontFamily: FONTS.bold, fontSize: 32, color: COLORS.onColor },
   heroSub: { fontFamily: FONTS.regular, fontSize: 13, color: COLORS.primaryPale },
   grid: { gap: 8, marginTop: 10 },
   stat: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: COLORS.white, borderRadius: RADIUS.lg, paddingHorizontal: 14, paddingVertical: 12, ...SHADOW, shadowOpacity: 0.05 },
   statLabel: { fontFamily: FONTS.medium, fontSize: 14, color: COLORS.gray700 },
   statValue: { fontFamily: FONTS.bold, fontSize: 15, color: COLORS.black },
-  pending: { fontFamily: FONTS.medium, fontSize: 13.5, color: '#C25B00', backgroundColor: '#FFF3E0', borderRadius: RADIUS.md, padding: 12, marginTop: 10 },
+  pending: { fontFamily: FONTS.medium, fontSize: 13.5, color: COLORS.warningInk, backgroundColor: COLORS.warningMist, borderRadius: RADIUS.md, padding: 12, marginTop: 10 },
   card: { backgroundColor: COLORS.white, borderRadius: RADIUS.lg + 2, padding: 14, marginTop: 12, gap: 12, ...SHADOW, shadowOpacity: 0.05 },
   h: { fontFamily: FONTS.bold, fontSize: 16, color: COLORS.black },
   rowLabel: { fontFamily: FONTS.medium, fontSize: 14, color: COLORS.black },
