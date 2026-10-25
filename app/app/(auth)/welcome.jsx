@@ -78,6 +78,11 @@ export default function Welcome() {
           </Pressable>
         </View>
 
+        <Pressable onPress={() => router.push('/(auth)/login?admin=1')} accessibilityRole="button" hitSlop={8} style={styles.adminRow}>
+          <Ionicons name="shield-checkmark-outline" size={16} color={COLORS.onColor} />
+          <AppText style={styles.newLink}>Admin sign in</AppText>
+        </Pressable>
+
         <Pressable onPress={() => router.push('/join')} accessibilityRole="button" hitSlop={8} style={styles.codeRow}>
           <AppText style={styles.codeText}>Have a church code?</AppText>
         </Pressable>
@@ -114,6 +119,7 @@ const styles = StyleSheet.create({
   newText: { fontFamily: FONTS.regular, fontSize: 14, color: 'rgba(255,255,255,0.8)' },
   newLink: { fontFamily: FONTS.bold, fontSize: 14, color: COLORS.onColor, textDecorationLine: 'underline' },
   codeRow: { alignSelf: 'center', marginTop: 2 },
+  adminRow: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'center', marginTop: 8, marginBottom: 4 },
   codeText: { fontFamily: FONTS.semibold, fontSize: 14, color: 'rgba(255,255,255,0.9)', textDecorationLine: 'underline' },
   legal: { fontFamily: FONTS.regular, fontSize: 12, lineHeight: 18, color: 'rgba(255,255,255,0.7)', textAlign: 'center', marginTop: 6 },
   link: { fontFamily: FONTS.semibold, color: COLORS.onColor, textDecorationLine: 'underline' },

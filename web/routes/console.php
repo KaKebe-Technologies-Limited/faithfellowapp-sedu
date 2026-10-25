@@ -18,6 +18,7 @@ use App\Services\ReadingCircleService;
 use App\Services\VerseBroadcaster;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schedule;
 
 Artisan::command('inspire', function () {
@@ -182,6 +183,9 @@ Artisan::command('ff:vapid {--write : Write the keys into .env}', function () {
 if (config('queue.default') !== 'sync') {
     Schedule::command('queue:work --stop-when-empty --max-time=50 --tries=2')->everyMinute()->withoutOverlapping(2)->runInBackground();
 }
+
+// Proof that the hosting's cron job is running: Super admin, Push test shows when this last ran.
+Schedule::call(fn () => Cache::put('scheduler.ran_at', time(), 86400))->name('scheduler-heartbeat')->everyMinute();
 
 Schedule::command('ff:send-broadcasts')->everyMinute()->withoutOverlapping();
 Schedule::command('ff:send-digests')->dailyAt('18:00');

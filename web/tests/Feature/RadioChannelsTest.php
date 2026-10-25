@@ -321,6 +321,7 @@ test('Play now puts a song on air this second and the loop carries on from it', 
 });
 
 test('Play now on a song that is off switches it on, and the answer phones poll shows it', function () {
+    $this->freezeSecond(); // the offset is read from the clock: never let a second tick between the press and the poll
     [$one, $two] = loopOf(RadioStation::gospel(), [100, 200]);
     $two->update(['is_active' => false]);
 

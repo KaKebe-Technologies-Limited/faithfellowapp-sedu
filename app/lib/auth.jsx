@@ -71,17 +71,43 @@ export function AuthProvider({ children }) {
     if (me) writeJson(USER_FILE, me);
   }, []);
 
-  const signIn = useCallback(async (email, password) => {
-    const { data } = await api.post('/auth/token', {
-      email: email.trim(),
-      password,
-      device_name: `FaithFellows app (${Platform.OS})`,
-    });
+  // Email and password. An account that signs in with an email code on the website answers with `{ twoFactor: true }` (a code was emailed): the
+  // sign-in is finished with verifyTwoFactor().
+  // `admin` is "Admin sign in": an account that manages no church and not the platform is turned away before it is signed in.
+  const accept = useCallback(async (data, admin) => {
+    if (admin && !data.user?.is_super_admin && !data.user?.staff_of?.length) {
+      await api.delete('/auth/token', { headers: { Authorization: `Bearer ${data.token}` } }).catch(() => {});
+      const error = new Error('not-an-admin');
+      error.notAdmin = true;
+      throw error;
+    }
     await setToken(data.token);
     setTokenState(data.token);
     remember(data.user);
     return data.user;
   }, []);
+
+  const signIn = useCallback(async (email, password, { admin = false } = {}) => {
+    const { data } = await api.post('/auth/token', {
+      email: email.trim(),
+      password,
+      device_name: `FaithFellows app (${Platform.OS})`,
+    });
+    if (data.two_factor) return { twoFactor: true, message: data.message };
+
+    return accept(data, admin);
+  }, [accept]);
+
+  // The six digits that were emailed, then the same sign-in as without a code. Returns the user.
+  const verifyTwoFactor = useCallback(async (email, code, { admin = false } = {}) => {
+    const { data } = await api.post('/auth/two-factor', {
+      email: email.trim(),
+      code: String(code).trim(),
+      device_name: `FaithFellows app (${Platform.OS})`,
+    });
+
+    return accept(data, admin);
+  }, [accept]);
 
   // Create an account with email + password (POST /auth/register) and sign in. Throws the API error for the form to show.
   const signUp = useCallback(async (form) => {
@@ -129,7 +155,7 @@ export function AuthProvider({ children }) {
     setUser(null);
   }, []);
 
-  const value = useMemo(() => ({ ready, token, user, signIn, signUp, signInWithGoogle, signOut, setUser: remember }), [ready, token, user, signIn, signUp, signInWithGoogle, signOut, remember]);
+  const value = useMemo(() => ({ ready, token, user, signIn, verifyTwoFactor, signUp, signInWithGoogle, signOut, setUser: remember }), [ready, token, user, signIn, verifyTwoFactor, signUp, signInWithGoogle, signOut, remember]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
