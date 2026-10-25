@@ -1,6 +1,40 @@
 <x-layouts.super-admin :title="__('Push test')">
     <x-ff.page-header :title="__('Push test')" :subtitle="__('Send a test notification to one member’s phone and see exactly what happened, for Android and iPhone.')" />
 
+    @php
+        $ago = fn ($t) => $t ? \Carbon\Carbon::createFromTimestamp((int) $t)->diffForHumans() : null;
+        $cronOk = $health['scheduler_ran_at'] && time() - (int) $health['scheduler_ran_at'] < 240;
+        $stuck = $health['waiting'] > 0 && ($health['oldest_seconds'] ?? 0) > 300;
+    @endphp
+    <div class="ff-card mb-4" id="delivery-health">
+        <h2 class="h6 mb-1">{{ __('Are notifications leaving the server?') }}</h2>
+        <p class="small text-ff-muted">{{ __('An announcement, an email or a push first waits in a queue. Something has to empty that queue every minute: the hosting’s cron job, or, when there is none, the first visit of each minute (the app opens many a minute, so it happens by itself).') }}</p>
+        <div class="row g-3">
+            <div class="col-md-4">
+                <div class="small text-ff-muted">{{ __('Hosting cron job') }}</div>
+                <div class="fw-semibold {{ $cronOk ? 'text-success' : 'text-warning' }}">
+                    @if ($cronOk) <i class="bi bi-check-circle-fill"></i> {{ __('Running') }} · {{ $ago($health['scheduler_ran_at']) }}
+                    @elseif ($health['scheduler_ran_at']) <i class="bi bi-exclamation-triangle-fill"></i> {{ __('Stopped') }} · {{ __('last ran :when', ['when' => $ago($health['scheduler_ran_at'])]) }}
+                    @else <i class="bi bi-exclamation-triangle-fill"></i> {{ __('Not seen yet') }} @endif
+                </div>
+                @unless ($cronOk)<div class="small-xs text-ff-muted mt-1">{{ __('Add the cron job in the hosting panel (every minute: php artisan schedule:run). Until then visits to the app empty the queue.') }}</div>@endunless
+            </div>
+            <div class="col-md-4">
+                <div class="small text-ff-muted">{{ __('Waiting to be sent') }}</div>
+                <div class="fw-semibold {{ $stuck ? 'text-danger' : 'text-ff-black' }}">
+                    {{ number_format($health['waiting']) }}
+                    @if ($health['oldest_seconds'] && $health['waiting']) <span class="small fw-normal text-ff-muted">· {{ __('oldest :age', ['age' => \Carbon\CarbonInterval::seconds($health['oldest_seconds'])->cascade()->forHumans(['parts' => 2, 'short' => true])]) }}</span> @endif
+                </div>
+                @if ($stuck)<div class="small-xs text-danger mt-1">{{ __('Things are waiting for more than 5 minutes: nothing is emptying the queue. Open the app on a phone, or check the cron job.') }}</div>@endif
+            </div>
+            <div class="col-md-4">
+                <div class="small text-ff-muted">{{ __('Emptied by a visit') }}</div>
+                <div class="fw-semibold text-ff-black">{{ $health['drained_at'] ? $ago($health['drained_at']) : __('Not needed yet') }}</div>
+                @if ($health['failed'])<div class="small-xs text-danger mt-1">{{ trans_choice(':n send failed and was given up on.|:n sends failed and were given up on.', $health['failed'], ['n' => $health['failed']]) }}</div>@endif
+            </div>
+        </div>
+    </div>
+
     <div class="row g-4">
         <div class="col-xl-7">
             <form method="POST" action="{{ route('super-admin.push.send') }}" class="ff-card mb-4">

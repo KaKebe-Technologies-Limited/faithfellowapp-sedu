@@ -7,6 +7,7 @@ use App\Models\DeviceToken;
 use App\Models\User;
 use App\Services\Messaging\ExpoPushSender;
 use App\Support\Audit;
+use App\Support\QueueHealth;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -29,6 +30,7 @@ class PushTestController extends Controller
     public function index(): View
     {
         return view('super-admin.push.index', [
+            'health' => QueueHealth::summary(),
             'devices' => DeviceToken::query()->selectRaw('platform, COUNT(*) as n, COUNT(DISTINCT user_id) as people')->groupBy('platform')->get(),
             'recent' => DeviceToken::with('user:id,name,email')->latest('last_used_at')->take(8)->get(),
             'results' => session('push_results'),

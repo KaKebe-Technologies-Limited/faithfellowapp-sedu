@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\DrainQueueAfterResponse;
 use App\Http\Middleware\EnsureAccountActive;
 use App\Http\Middleware\EnsureApiUserActive;
 use App\Http\Middleware\EnsureAppFeature;
@@ -35,6 +36,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->trustProxies(at: '*');
 
         $middleware->append(SecurityHeaders::class);
+        $middleware->append(DrainQueueAfterResponse::class);
 
         $middleware->web(append: [
             ResolveCustomDomain::class,

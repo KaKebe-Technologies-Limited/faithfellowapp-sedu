@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
+use App\Notifications\Auth\TwoFactorCode;
 use App\Services\AccountDeletion;
 use App\Services\Auth\GoogleAccounts;
 use App\Services\Auth\GoogleIdTokenVerifier;
@@ -45,11 +46,59 @@ class AuthController extends Controller
         RateLimiter::clear($key);
 
         abort_if($user->status !== 'active', 403, __('This account is suspended.'));
-        // The platform admin runs FaithFellows from the app too, but never with a long-lived sign-in (see issueToken), and an account that uses email codes
-        // on the website waits until the app can ask for the code as well, so the app is never a way around it.
-        abort_if($user->isSuperAdmin() && $user->two_factor_enabled, 403, __('This account signs in with an email code, which the app cannot ask for yet. Turn the email code off in your profile on the website to use the app.'));
+        // An account that signs in with an email code on the website is asked for the code in the app too (a second step, POST /auth/two-factor),
+        // so the app is never a way around it.
+        if ($user->two_factor_enabled) {
+            $this->sendCode($user);
+
+            return response()->json(['two_factor' => true, 'message' => __('We sent a 6-digit code to :email. Enter it to finish signing in.', ['email' => $user->email])], 202);
+        }
 
         return $this->issueToken($request, $user, $data['device_name'], $user->isSuperAdmin() ? 'api.super_admin_token_created' : 'api.token_created');
+    }
+
+    /** The second step for an account with the email code switched on: the six digits that were emailed, then the same token as a normal sign-in. */
+    public function twoFactor(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'email' => ['required', 'email'],
+            'code' => ['required', 'digits:6'],
+            'device_name' => ['required', 'string', 'max:100'],
+        ]);
+
+        $key = 'api-2fa:'.strtolower($data['email']).'|'.$request->ip();
+        if (RateLimiter::tooManyAttempts($key, 5)) {
+            throw ValidationException::withMessages(['code' => __('Too many attempts. Please sign in again to get a new code.')]);
+        }
+
+        $user = User::where('email', $data['email'])->first();
+        if (! $user || ! $user->two_factor_enabled || ! $user->two_factor_code || $user->two_factor_expires_at?->isPast() || ! Hash::check($data['code'], $user->two_factor_code)) {
+            RateLimiter::hit($key, 600);
+            throw ValidationException::withMessages(['code' => __('That code is invalid or has expired.')]);
+        }
+        RateLimiter::clear($key);
+        $user->forceFill(['two_factor_code' => null, 'two_factor_expires_at' => null])->save();
+        abort_if($user->status !== 'active', 403, __('This account is suspended.'));
+
+        return $this->issueToken($request, $user, $data['device_name'], $user->isSuperAdmin() ? 'api.super_admin_token_created' : 'api.token_created');
+    }
+
+    /** Emails a new six-digit code, valid for 10 minutes (signing in again within a minute does not send another). */
+    protected function sendCode(User $user): void
+    {
+        if ($user->two_factor_expires_at?->gt(now()->addMinutes(9))) {
+            return;
+        }
+        $code = (string) random_int(100000, 999999);
+        $user->forceFill(['two_factor_code' => Hash::make($code), 'two_factor_expires_at' => now()->addMinutes(10)])->save();
+        try {
+            $user->notify(new TwoFactorCode($code));
+        } catch (\Throwable $e) {
+            // The email could not be sent: say so plainly, and do not leave a code nobody has.
+            report($e);
+            $user->forceFill(['two_factor_code' => null, 'two_factor_expires_at' => null])->save();
+            abort(503, __('We could not email your code. Please try again in a moment.'));
+        }
     }
 
     /**
