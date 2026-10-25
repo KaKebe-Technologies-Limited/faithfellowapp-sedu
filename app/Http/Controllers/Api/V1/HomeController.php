@@ -37,6 +37,12 @@ use Illuminate\Support\Str;
  */
 class HomeController extends Controller
 {
+    /** Today's word for this part of the day, on its own (the Bible tab shows it too), so a screen need not load the whole home. */
+    public function inspiration(InspirationService $inspiration): JsonResponse
+    {
+        return response()->json(['data' => rescue(fn () => $inspiration->current(), null, false)]);
+    }
+
     public function __invoke(Request $request, HomeSlider $slider, BibleService $bible, InspirationService $inspiration): JsonResponse
     {
         $user = $request->user();
