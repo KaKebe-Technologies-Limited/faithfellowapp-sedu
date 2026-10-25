@@ -10,10 +10,16 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AppText from '../../components/AppText';
 import SectionHeader from '../../components/SectionHeader';
 import StateView from '../../components/StateView';
-import { COLORS, FONTS, RADIUS, SHADOW, SPACING, MAX_FONT_SCALE } from '../../constants/theme';
+import { BloomCluster } from '../../components/rose/Bloom';
+import RoseBible from '../../components/rose/RoseBible';
+import { COLORS, FONTS, IS_GIRLS, RADIUS, SHADOW, SPACING, MAX_FONT_SCALE } from '../../constants/theme';
 import api, { errorMessage } from '../../lib/api';
 import { HIGHLIGHTS, getLastRead } from '../../lib/bible';
 import { useBibleIndex } from '../../lib/bibleOffline';
+
+// The Rose look colours each part of the Bible in its own soft tint: the Law, history, wisdom, the prophets, the Gospels, Acts, the letters and Revelation.
+const TINTS = [[5, '#FFDCEB'], [17, '#FFE6D2'], [22, '#E7DBFA'], [39, '#D9F2E6'], [43, '#FFD0E4'], [44, '#FFF0C9'], [65, '#D8E9FC'], [66, '#F8DAF3']];
+const tintOf = (number) => (TINTS.find(([last]) => number <= last) ?? TINTS[TINTS.length - 1])[1];
 
 const open = (book, chapter, v) => router.push({ pathname: '/bible/[book]/[chapter]', params: { book, chapter: String(chapter), ...(v ? { v: String(v) } : {}) } });
 
@@ -58,6 +64,7 @@ export default function BibleTab() {
     <View style={[styles.screen, { paddingTop: insets.top }]}>
       <StateView loading={loading && !bible} error={!bible ? error : null} onRetry={retry}>
         <ScrollView contentContainerStyle={{ paddingBottom: 32 }} showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={reload} tintColor={COLORS.primary} colors={[COLORS.primary]} />} keyboardShouldPersistTaps="handled">
+          {IS_GIRLS ? <BloomCluster style={{ top: -20 }} /> : null}
           <View style={styles.head}>
             <View style={{ flex: 1 }}>
               <AppText style={styles.title}>Bible</AppText>
@@ -89,6 +96,8 @@ export default function BibleTab() {
               </LinearGradient>
             </Pressable>
           ) : null}
+
+          {IS_GIRLS ? <RoseBible /> : null}
 
           <View style={styles.tiles}>
             {[
@@ -137,7 +146,7 @@ export default function BibleTab() {
             <View style={styles.books}>
               {books.map((b, i) => (
                 <Pressable key={b.code} onPress={() => (b.chapters === 1 ? open(b.code, 1) : setPicked(b))} style={[styles.book, i > 0 && styles.bookLine]} accessibilityRole="button" accessibilityLabel={`Book ${b.number}, ${b.name}, ${b.chapters} ${b.chapters === 1 ? 'chapter' : 'chapters'}`}>
-                  <View style={styles.number}>
+                  <View style={[styles.number, IS_GIRLS && { backgroundColor: tintOf(b.number) }]}>
                     <AppText style={styles.numberText}>{b.number}</AppText>
                   </View>
                   <AppText style={styles.bookName} numberOfLines={1}>

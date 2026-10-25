@@ -7,7 +7,7 @@ import { HIGHLIGHTS, HIGHLIGHTS_LIGHT, HIGHLIGHTS_NIGHT } from '../lib/bible';
 import AppText from './AppText';
 
 export default function VerseList({ verses, selected = new Set(), onToggle, fontSize = 18, target, onTargetLayout, page }) {
-  const colors = page ? (page.night ? HIGHLIGHTS_NIGHT : HIGHLIGHTS_LIGHT) : HIGHLIGHTS;
+  const colors = page ? (page.highlights ?? (page.night ? HIGHLIGHTS_NIGHT : HIGHLIGHTS_LIGHT)) : HIGHLIGHTS;
 
   return (
     <View style={styles.list}>

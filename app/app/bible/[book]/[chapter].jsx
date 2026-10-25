@@ -11,6 +11,7 @@ import { PlayfairDisplay_500Medium_Italic } from '@expo-google-fonts/playfair-di
 import { PlayfairDisplay_700Bold_Italic } from '@expo-google-fonts/playfair-display/700Bold_Italic';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AppText from '../../../components/AppText';
+import { Bloom, BloomCluster } from '../../../components/rose/Bloom';
 import Button from '../../../components/Button';
 import ScreenHeader, { HeaderAction } from '../../../components/ScreenHeader';
 import StateView from '../../../components/StateView';
@@ -48,7 +49,7 @@ export default function ReaderScreen() {
   const { key: lookKey, page } = useReaderLook();
   // The rose page's serif heading; loaded here so it works even when the app itself is not in the rose look (a few hundred kilobytes, only in the reader).
   useFonts({ PlayfairDisplay_700Bold_Italic, PlayfairDisplay_500Medium_Italic });
-  const highlightColors = page.night ? HIGHLIGHTS_NIGHT : HIGHLIGHTS_LIGHT;
+  const highlightColors = page.highlights ?? (page.night ? HIGHLIGHTS_NIGHT : HIGHLIGHTS_LIGHT);
 
   const [t, setT] = useState(undefined); // undefined = the member's own translation
   const { chapterInfo, loading, error, offline, retry } = useChapter(book, chapter, t);
@@ -182,6 +183,7 @@ export default function ReaderScreen() {
                 </AppText>
               </View>
             ) : null}
+            {page.rose ? <BloomCluster style={{ top: -14 }} /> : null}
             {page.rose ? (
               <AppText style={[styles.roseTitle, { color: page.accent }]} accessibilityRole="header">
                 {chapterInfo.book_name} {chapter}
@@ -198,6 +200,13 @@ export default function ReaderScreen() {
             <View onLayout={(e) => { listTop.current = e.nativeEvent.layout.y; }}>
               <VerseList page={page} verses={verses} selected={selected} onToggle={toggle} fontSize={fontSize} target={target} onTargetLayout={(y) => setTimeout(() => scroller.current?.scrollTo({ y: Math.max(0, listTop.current + y - 90), animated: true }), 150)} />
             </View>
+            {page.rose ? (
+              <View style={styles.endOrnament} accessible={false}>
+                <Bloom size={20} color={page.accentSoft} center="#FFD36B" petals={6} />
+                <Bloom size={30} color={page.accent} center="#FFD36B" petals={6} opacity={0.85} />
+                <Bloom size={20} color={page.accentSoft} center="#FFD36B" petals={6} />
+              </View>
+            ) : null}
             <View style={styles.pager}>
               <Pressable disabled={!chapterInfo.previous} onPress={() => go(chapterInfo.previous)} style={[styles.pageBtn, { backgroundColor: page.accentSoft }, !chapterInfo.previous && { opacity: 0.35 }]} accessibilityRole="button">
                 <Ionicons name="chevron-back" size={18} color={page.accent} />
@@ -357,6 +366,7 @@ const styles = StyleSheet.create({
   trOn: { borderColor: COLORS.primary, backgroundColor: COLORS.selected },
   trName: { fontFamily: FONTS.semibold, fontSize: 15, color: COLORS.black },
   sizeRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 30 },
+  endOrnament: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 26 },
   roseTitle: { fontFamily: 'PlayfairDisplay_700Bold_Italic', fontSize: 38, lineHeight: 46, textAlign: 'center', marginTop: 2 },
   ornament: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 6, paddingHorizontal: SPACING.lg },
   ornamentLine: { flex: 1, height: 2, borderRadius: 1 },

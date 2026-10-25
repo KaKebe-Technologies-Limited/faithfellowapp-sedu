@@ -19,7 +19,11 @@ export const PAGES = {
   light: { name: 'light', bg: '#FAFAFA', card: '#FFFFFF', ink: '#2B2B2B', soft: '#727272', accent: '#BC2649', accentSoft: '#FFE9F5', onAccent: '#FFFFFF', night: false, rose: false },
   sepia: { name: 'sepia', bg: '#F4EAD5', card: '#FBF4E4', ink: '#3B2F1E', soft: '#7A6A52', accent: '#9A5B2A', accentSoft: '#EBDDBF', onAccent: '#FFFFFF', night: false, rose: false },
   night: { name: 'night', bg: '#0E0C10', card: '#1B181D', ink: '#E6E0E4', soft: '#A39AA0', accent: '#FF8AA5', accentSoft: '#2A2229', onAccent: '#1A0A10', night: true, rose: false },
-  rose: { name: 'rose', bg: '#FFF1F7', card: '#FFFFFF', ink: '#3A1A2B', soft: '#8B6B7B', accent: '#D93F7E', accentSoft: '#FFDDEC', onAccent: '#FFFFFF', night: false, rose: true },
+  rose: {
+    name: 'rose', bg: '#FFF1F7', card: '#FFFFFF', ink: '#3A1A2B', soft: '#8B6B7B', accent: '#D93F7E', accentSoft: '#FFDDEC', onAccent: '#FFFFFF', night: false, rose: true,
+    // The four highlight colours, in the Rose page's own soft tints (the same four choices, drawn as peach, mint, lilac and rose).
+    highlights: { yellow: '#FFD9A8', green: '#BDEFD5', blue: '#D9C8F7', pink: '#FFC2DA' },
+  },
 };
 
 let choice = 'auto';

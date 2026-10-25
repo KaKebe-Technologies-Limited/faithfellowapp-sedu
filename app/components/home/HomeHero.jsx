@@ -8,7 +8,8 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { COLORS, FONTS, SPACING } from '../../constants/theme';
+import { BloomCluster } from '../rose/Bloom';
+import { COLORS, FONTS, IS_GIRLS, SPACING } from '../../constants/theme';
 import { SOFT } from '../../constants/soft';
 import { firstName, greeting } from '../../lib/format';
 import { useFetch } from '../../lib/useFetch';
@@ -75,6 +76,7 @@ export default function HomeHero({ user, churches, children }) {
       <LinearGradient colors={SOFT.panel} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.panel, { paddingTop: insets.top + SPACING.sm }]}>
         <View style={styles.glowA} />
         <View style={styles.glowB} />
+        {IS_GIRLS ? <BloomCluster tone="light" style={{ right: -6, top: 4 }} /> : null}
 
         <View style={styles.top}>
           <View style={styles.brand}>
